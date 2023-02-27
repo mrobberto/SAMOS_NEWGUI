@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Dec 30 10:49:37 2021
+
+@author: robberto
+"""
+import tkinter
+
+class Astrometry:
+    def __init__(self, val):
+        
+        self.val=val
+        
+        # Create labels, entries,buttons
+        self.title("SAMOS")
+       
+        self.geometry("1000x800")   
+        
+        #root.set_border_width(2)
+        #root.connect("delete_event", lambda w, e: self.quit(w))
+
+        self.frame0l = tkinter.Frame(self,background="cyan")#, width=400, height=800)
+        self.frame0l.place(x=0, y=0, anchor="nw", width=220, height=140)
+
+#    
+    def return_from_astrometry(self):
+        print("voila")
+
+    def button_click(self):
+        pass
+        # If button is clicked, run this method and open window 2
+            
+    def Simbad_query_region():
+        from astroquery.simbad import Simbad                                                            
+        from astropy.coordinates import SkyCoord
+        from astropy import units as u
+        coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5') 
+        query_results = Simbad.query_region(coord)                                                      
+        print(query_results)
+    
+    # =============================================================================
+    # Download an image centered on the first object in the results 
+    # 
+    # =============================================================================
+        from urllib.parse import urlencode
+        from astropy.io import fits
+        object_main_id = query_results[0]['MAIN_ID']#.decode('ascii')
+        object_coords = SkyCoord(ra=query_results['RA'], dec=query_results['DEC'], 
+                                 unit=(u.hourangle, u.deg), frame='icrs')
+        query_params = { 
+             'hips': 'DSS', 
+             'object': object_main_id, 
+             'ra': object_coords[0].ra.value, 
+             'dec': object_coords[0].dec.value, 
+             'fov': (2 * u.arcmin).to(u.deg).value, 
+             'width': 500, 
+             'height': 500 
+             }                                                                                               
+        
+        url = f'http://alasky.u-strasbg.fr/hips-image-services/hips2fits?{urlencode(query_params)}' 
+        hdul = fits.open(url)                                                                           
+        # Downloading http://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=DSS&object=%5BT64%5D++7&ra=243.58457533549102&dec=-19.113364937196987&fov=0.03333333333333333&width=500&height=500
+        #|==============================================================| 504k/504k (100.00%)         0s
+        hdul.info()
+        hdul.info()                                                                                     
+        #Filename: /path/to/.astropy/cache/download/py3/ef660443b43c65e573ab96af03510e19
+        #No.    Name      Ver    Type      Cards   Dimensions   Format
+        #  0  PRIMARY       1 PrimaryHDU      22   (500, 500)   int16   
+        print(hdul[0].header)                                                                                  
+        # SIMPLE  =                    T / conforms to FITS standard                      
+        # BITPIX  =                   16 / array data type                                
+        # NAXIS   =                    2 / number of array dimensions                     
+        # NAXIS1  =                  500                                                  
+        # NAXIS2  =                  500                                                  
+        # WCSAXES =                    2 / Number of coordinate axes                      
+        # CRPIX1  =                250.0 / Pixel coordinate of reference point            
+        # CRPIX2  =                250.0 / Pixel coordinate of reference point            
+        # CDELT1  = -6.6666668547014E-05 / [deg] Coordinate increment at reference point  
+        # CDELT2  =  6.6666668547014E-05 / [deg] Coordinate increment at reference point  
+        # CUNIT1  = 'deg'                / Units of coordinate increment and value        
+        # CUNIT2  = 'deg'                / Units of coordinate increment and value        
+        # CTYPE1  = 'RA---TAN'           / Right ascension, gnomonic projection           
+        # CTYPE2  = 'DEC--TAN'           / Declination, gnomonic projection               
+        # CRVAL1  =           243.584534 / [deg] Coordinate value at reference point      
+        # CRVAL2  =         -19.11335065 / [deg] Coordinate value at reference point      
+        # LONPOLE =                180.0 / [deg] Native longitude of celestial pole       
+        # LATPOLE =         -19.11335065 / [deg] Native latitude of celestial pole        
+        # RADESYS = 'ICRS'               / Equatorial coordinate system                   
+        # HISTORY Generated by CDS hips2fits service - See http://alasky.u-strasbg.fr/hips
+        # HISTORY -image-services/hips2fits for details                                   
+        # HISTORY From HiPS CDS/P/DSS2/NIR (DSS2 NIR (XI+IS))    
+                                            
+        
+        
+        
+        import aplpy
+        from astropy.nddata import block_reduce
+        gc = aplpy.FITSFigure(hdul)                                                                     
+        gc.show_grayscale()                                                                             
+    # =============================================================================
+    # INFO: Auto-setting vmin to  2.560e+03 [aplpy.core]
+    # INFO: Auto-setting vmax to  1.513e+04 [aplpy.core]
+    # =============================================================================
+        gc.show_markers(object_coords.ra, object_coords.dec, edgecolor='red',
+                     marker='s', s=50**2)         
+        gc.save('plot.png')
+    
+    Simbad_query_region()    

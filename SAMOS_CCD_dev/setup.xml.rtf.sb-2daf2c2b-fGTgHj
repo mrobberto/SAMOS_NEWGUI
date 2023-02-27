@@ -1,0 +1,72 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2513
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\margl1440\margr1440\vieww12600\viewh10200\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>\
+<!DOCTYPE si_data [\
+<!ELEMENT display (#PCDATA)>\
+<!ELEMENT mask (#PCDATA)>\
+<!ELEMENT step (#PCDATA)>\
+<!ELEMENT units (#PCDATA)>\
+<!ELEMENT unit_type (#PCDATA)>\
+<!ELEMENT value (#PCDATA)>\
+<!ELEMENT bit_field (mask, display)>\
+<!ELEMENT pull_down (value, display)>\
+<!ELEMENT max (#PCDATA)>\
+<!ELEMENT min (#PCDATA)>\
+<!ELEMENT post_name (#PCDATA)>\
+<!ELEMENT read_only (#PCDATA)>\
+<!ELEMENT parameter (post_name, display, value, min, max, unit_type, (units | step | bit_field | pull_down+)?)>\
+<!ELEMENT list (display, read_only?, parameter+)>\
+<!ELEMENT si_data (list)>\
+]>\
+<si_data><list><display>Setup</display>\
+<parameter><post_name>SETUP_0</post_name><display>Exposure Time</display><value>1000</value><min>0</min><max>16777215</max><unit_type>7</unit_type></parameter>\
+<parameter><post_name>SETUP_1</post_name><display>CCD Temperature Setpoint</display><value>1930</value><min>872</min><max>3032</max><unit_type>3</unit_type></parameter>\
+<parameter><post_name>SETUP_2</post_name><display>Shutter Close Delay</display><value>20</value><min>0</min><max>8191</max><unit_type>7</unit_type></parameter>\
+<parameter><post_name>SETUP_3</post_name><display>Server Data Source</display><value>0</value><min>0</min><max>3</max><unit_type>9</unit_type>\
+	<pull_down><value>0</value><display>Camera</display></pull_down>\
+	<pull_down><value>1</value><display>Server</display></pull_down>\
+	<pull_down><value>2</value><display>Interface</display></pull_down></parameter>\
+<parameter><post_name>SETUP_4</post_name><display>Server Test Image Type</display><value>6</value><min>0</min><max>8</max><unit_type>8</unit_type>\
+	<pull_down><value>0</value><display>All 0</display></pull_down>\
+	<pull_down><value>1</value><display>Port ID</display></pull_down>\
+	<pull_down><value>2</value><display>Gausian</display></pull_down>\
+	<pull_down><value>3</value><display>Continuous Ramp</display></pull_down>\
+	<pull_down><value>4</value><display>Serial Ramp</display></pull_down>\
+	<pull_down><value>5</value><display>Parallel Ramp</display></pull_down>\
+	<pull_down><value>6</value><display>Walking 1</display></pull_down>\
+	<pull_down><value>7</value><display>Walking 0</display></pull_down></parameter>\
+<parameter><post_name>SETUP_5</post_name><display>TDI Delay</display><value>1</value><min>0</min><max>65535</max><unit_type>12</unit_type><units>us</units></parameter>\
+<parameter><post_name>SETUP_6</post_name><display>Trigger Mode</display><value>4</value><min>0</min><max>6</max><unit_type>9</unit_type>\
+	<pull_down><value>1</value><display>Open Shutter</display></pull_down>\
+	<pull_down><value>2</value><display>Close Shutter</display></pull_down>\
+	<pull_down><value>3</value><display>Test Image</display></pull_down>\
+	<pull_down><value>4</value><display>Light Exposure</display></pull_down>\
+	<pull_down><value>5</value><display>Dark Exposure</display></pull_down>\
+	<pull_down><value>26</value><display>TDI Exposure</display></pull_down></parameter>\
+<parameter><post_name>SETUP_7</post_name><display>Parallel Shift Delay</display><value>1</value><min>1</min><max>4095</max><unit_type>12</unit_type><units>100 ns</units></parameter>\
+<parameter><post_name>SETUP_8</post_name><display>CCD Temp. Setpoint Offset</display><value>76</value><min>0</min><max>4095</max><unit_type>12</unit_type><units>0.1 C</units></parameter>\
+<parameter><post_name>SETUP_9</post_name><display>Acquisition Mode</display><value>0</value><min>0</min><max>12</max><unit_type>8</unit_type>\
+	<pull_down><value>0</value><display>Normal</display></pull_down>\
+	<pull_down><value>1</value><display>Digital Offset</display></pull_down>\
+	<pull_down><value>2</value><display>Pixel Ramp</display></pull_down>\
+	<pull_down><value>3</value><display>Serial Ramp</display></pull_down>\
+	<pull_down><value>4</value><display>Parallel Ramp</display></pull_down>\
+	<pull_down><value>5</value><display>Gaussian Noise</display></pull_down>\
+	<pull_down><value>6</value><display>Light Avg.</display></pull_down>\
+	<pull_down><value>7</value><display>Dark Avg.</display></pull_down>\
+	<pull_down><value>8</value><display>ADC A Light</display></pull_down>\
+	<pull_down><value>9</value><display>ADC A Dark</display></pull_down>\
+	<pull_down><value>10</value><display>ADC B Light</display></pull_down>\
+	<pull_down><value>11</value><display>ADC B Dark</display></pull_down></parameter>\
+<parameter><post_name>SETUP_10</post_name><display>UART 100 byte Ack</display><value>0</value><min>0</min><max>2</max><unit_type>8</unit_type>\
+	<pull_down><value>0</value><display>Off</display></pull_down>\
+	<pull_down><value>1</value><display>On</display></pull_down></parameter>\
+</list></si_data>\
+}

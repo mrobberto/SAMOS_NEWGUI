@@ -1,0 +1,21 @@
+Position Counts Filter
+FW_A1 46667  void-[SLOAN-g]
+FW_A2 62222  void-[SLOAN-r]
+FW_A3 77778  void-[SLOAN-i]
+FW_A4 00000  void-[open]
+FW_A5 15555  void-[SLOAN-z]
+FW_A6 31111  void-[blank]
+FW_B1 46667  Halpha
+FW_B2 62222  OIII
+FW_B3 77778  void-[S[II]]
+FW_B4 00000  blank
+FW_B5 15555  void-[TBD1]
+FW_B6 31111  void-[TBD2]
+GR_H1 5      GR1_Home
+GR_H2 7      GR2_Home 
+GR_A1 70600  TBD-[69800-71400]
+GR_A2 105300  TBD-[104500-106100]
+GR_B1 173200  TBD-[172499-174000]
+GR_B2 207850  TBD-[207000-208700]
+
+ 

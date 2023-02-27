@@ -1,0 +1,10 @@
+<HTML><HEAD><TITLE>Camera Home</TITLE><LINK REL='stylesheet' TYPE='text/css' HREF='/STYLE.CSS'></HEAD><BODY><TABLE>
+<TR><TH><H1>Spectral Instruments, Inc.<BR>HTTP Camera Server<BR>850-406</H1></TH></TR>
+<TR><TH><A HREF='/setup.htm'>View/Edit Setup Parameters</A></TH></TR>
+<TR><TH><A HREF='/control.htm'>View/Edit Control Parameters</A></TH></TR>
+<TR><TH><A HREF='/factory.htm'>View Factory Parameters</A></TH></TR>
+<TR><TH><A HREF='/status.htm'>Check Status</A></TH></TR>
+<TR><TH><FORM NAME='camera_acquire' METHOD='POST' ACTION='/acq.htm'>Image Type:<SELECT NAME='ACQUIRE'><OPTION VALUE='0' SELECTED>Light<OPTION VALUE='1'>Dark<OPTION VALUE='2'>Triggered</SELECT><INPUT TYPE='submit' VALUE='Acquire Image'><FORM></TH></TR>
+<TR><TH><A HREF='/image.fit'>Download FITS Image</A></TH></TR>
+<TR><TH><A HREF='/command.htm'>Camera Utilities</A></TH></TR>
+</TABLE></BODY></HTML>
