@@ -3,6 +3,16 @@
 """
 Created on Tue Feb 25 13:21:00 2023
 
+02.27.2023 
+    - cleaned first jupyter notebook to create target list using ipyaladin interactive
+    - region file in RADEC must be copieed to directory /regions/RADEC
+    - putton "load .red RADEC" allows to lod the region file in RADEC. File name format is rather rigid
+    - coordinates of the center are extracted searching filename between "RADEC="  and ".reg"
+    - observations is assumed to be done at this point: use sSkyMapper Query for test
+    - after twirl vs. GAIA and WCS header created, convert the RADEC region file to a pixel region file
+    - the regions (slits) appear on the display!    
+02.26.2023 First committ to share with Dana
+=======
 - V7. Created a button for saving the Stil Table made by Dana, to be completeed.
       moved folder "asset" to archive
       Fixed when Convertsilly correction is done, overwrites newimage.fit
@@ -17,8 +27,10 @@ import tkinter as tk
 #from tkinter import *
 #import tkinter as tk  #small t for Python 3
 from tkinter import ttk
-# import filedialog module
+#import filedialog module
 from tkinter import filedialog
+#from tkinter.filedialog import askopenfilename
+#from tkinter.filedialog import asksaveasfile
 
 from astropy import units as u
 from astropy.io import fits, ascii
@@ -136,6 +148,7 @@ from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion#, PointPix
 import math
 import pathlib
 import glob
+import re #re module of the standard library handles strings, e.g. use re.search() to extract substrings
 
 #import sewpy   #to run sextractor wrapper
 
@@ -2907,17 +2920,17 @@ class MainPage(tk.Frame):
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA.set("150.17110")  #NGC 3105
         label_RA = tk.Label(labelframe_FITSmanager, text='RA:',  bd =3)
-        entry_RA = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_RA)
+        self.entry_RA = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_RA)
         label_RA.place(x=190,y=5)
-        entry_RA.place(x=230,y=5)
+        self.entry_RA.place(x=230,y=5)
         
         self.string_DEC = tk.StringVar()
 #        self.string_DEC.set("-11.62305")#Sombrero
         self.string_DEC.set("-54.79004") #NGC 3105
         label_DEC = tk.Label(labelframe_FITSmanager, text='Dec:',  bd =3)
-        entry_DEC = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_DEC)
+        self.entry_DEC = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_DEC)
         label_DEC.place(x=290,y=30)
-        entry_DEC.place(x=230,y=30)
+        self.entry_DEC.place(x=230,y=30)
         
         self.string_Filter = tk.StringVar()
         self.string_Filter.set("i")
@@ -3106,7 +3119,7 @@ class MainPage(tk.Frame):
 #         
 # =============================================================================
         self.frame0r = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame0r.place(x=900, y=10, anchor="nw", width=360, height=500)
+        self.frame0r.place(x=900, y=10, anchor="nw", width=360, height=600)
  
         labelframe_DMD =  tk.LabelFrame(self.frame0r, text="DMD", font=("Arial", 24))
         labelframe_DMD.pack(fill="both", expand="yes")
@@ -3166,17 +3179,91 @@ class MainPage(tk.Frame):
         self.textbox_filename_slits.place(x=120,y=250)
 
 
-        
         button_save_slittable = tk.Button(labelframe_DMD,
                        text = "Save Slit Table",
                        command = self.Save_slittable)
-        button_save_slittable.place(x=4,y=302)
-
-        label_filename_slittable = tk.Label(labelframe_DMD, text="Save Slit Table")
-        label_filename_slittable.place(x=4,y=330)
+        button_save_slittable.place(x=4,y=282)
+        
+        label_filename_slittable = tk.Label(labelframe_DMD, text="Saved Slit Table")
+        label_filename_slittable.place(x=4,y=310)
         self.str_filename_slittable = tk.StringVar() 
         self.textbox_filename_slittable= tk.Text(labelframe_DMD, height = 1, width = 22)      
-        self.textbox_filename_slittable.place(x=120,y=330)
+        self.textbox_filename_slittable.place(x=120,y=310)
+
+
+        button_load_regfile_RADEC = tk.Button(labelframe_DMD,
+                       text = "load .reg RADEC",
+                       command = self.load_redfile_RADEC)
+        button_load_regfile_RADEC.place(x=4,y=352)
+
+        
+        label_filename_regfile_RADEC = tk.Label(labelframe_DMD, text="Loaded Region File in RADEC units:")
+        label_filename_regfile_RADEC.place(x=4,y=380)
+        self.str_filename_regfile_RADEC = tk.StringVar() 
+        self.textbox_filename_regfile_RADEC= tk.Text(labelframe_DMD, height = 1, width = 48)      
+        self.textbox_filename_regfile_RADEC.place(x=4,y=405)
+
+        button_push_RADEC = tk.Button(labelframe_DMD,
+                       text = "push RADEC",
+                       command = self.push_RADEC)
+        button_push_RADEC.place(x=4,y=430)
+
+        label_workflow = tk.Label(labelframe_DMD, text="Take an image and twirl WCS from GAIA...")
+        label_workflow.place(x=4,y=480)
+
+        button_regions_RADEC2pixel = tk.Button(labelframe_DMD,
+                                           text = "convert Regions RADEC -> pixels",
+                       command = self.convert_regions_RADEC2pixel)
+        button_regions_RADEC2pixel.place(x=4,y=500)
+        
+    def convert_regions_RADEC2pixel(self):    
+        #collect WCS
+        print(self.wcs)
+        #collect region
+        print(self.filename_regfile_RADEC)
+        #get regions in pixels
+        RRR  = Astrometry.APRegion_RAD2pix(self.filename_regfile_RADEC,self.wcs)
+        #pass to ginga
+        print("inside")
+        pass
+# =============================================================================
+#
+# Load AP Region file in RADEC
+#
+# =============================================================================
+
+    def push_RADEC(self):
+        self.string_RA  = tk.StringVar(self,self.RA_regCNTR)
+        self.string_DEC  = tk.StringVar(self,self.DEC_regCNTR)
+        self.entry_RA.delete(0, tk.END)
+        self.entry_DEC.delete(0, tk.END)
+        self.entry_RA.insert(0, self.RA_regCNTR)
+        self.entry_DEC.insert(0, self.DEC_regCNTR)
+        print("RADEC loaded")
+
+    def load_redfile_RADEC(self):
+        self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
+#        self.textbox_filename_slits.delete('1.0', tk.END)
+        self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir = local_dir +"/SAMOS_regions/RADEC",
+                                        title = "Select a File",
+                                        filetypes = (("Text files",
+                                                      "*.reg"),
+                                                     ("all files",
+                                                      "*.*")))
+        head, tail = os.path.split(self.filename_regfile_RADEC)
+        self.textbox_filename_regfile_RADEC.insert(tk.END, tail)
+        #the filename must carry the RADEC coordinates are "RADEC_". Find this string...
+        s=re.search(r'RADEC=',tail)
+        #extract RADEC
+        RADEC = tail[s.end():-4]
+        RA_cut=(re.findall('.*-',RADEC))
+        #and RA, DEC as strings at disposal 
+        self.RA_regCNTR = RA_cut[0][:-1]
+        self.DEC_regCNTR = (re.findall('-.*',RADEC))[0]
+        #we return the filename
+        return self.filename_regfile_RADEC
+
+
         
         """
         # =============================================================================
@@ -3229,7 +3316,7 @@ class MainPage(tk.Frame):
         print("\nSlits written to region file\n")
 
     def read_slits(self):
-        reg = tk.askopenfilename(filetypes=[("region files", "*.reg")],initialdir=local_dir+'/Astropy Regions')
+        reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],initialdir=local_dir+'/Astropy Regions')
         print("trying to read region file")
         if isinstance(reg, tuple):
             regfileName = reg[0]
@@ -3732,14 +3819,14 @@ class MainPage(tk.Frame):
         
         # we can now compute the WCS
         gaias = twirl.gaia_radecs(center, fov, limit=25)
-        wcs = twirl._compute_wcs(stars, gaias)
+        self.wcs = twirl._compute_wcs(stars, gaias)
         
         
         # Lets check the WCS solution 
         
 #        plt.figure(figsize=(8,8))
         radius_pix = 25
-        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(wcs)).T
+        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.wcs)).T
         regions_gaia = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
                 for x, y in gaia_pixel]  #[(1, 2), (3, 4)]]
         regs_gaia = Regions(regions_gaia)
@@ -3749,8 +3836,8 @@ class MainPage(tk.Frame):
         #add_region(self.canvas, obj, tag="twirlstars", redraw=True)
             self.canvas.add(obj)
         
-        print(wcs)
-        hdu_wcs = wcs.to_fits()
+        print(self.wcs)
+        hdu_wcs = self.wcs.to_fits()
         self.wcs_filename = "./SAMOS_Astrometry_dev/" + "WCS_"+ra+"_"+dec+".fits"
         hdu_wcs[0].writeto(self.wcs_filename,overwrite=True)
         #
@@ -3805,7 +3892,7 @@ class MainPage(tk.Frame):
         self.root.title(self.fullpath_FITSfilename)
 
     def open_file(self):
-        filename = askopenfilename(filetypes=[("allfiles", "*"),
+        filename = filedialog.askopenfilename(filetypes=[("allfiles", "*"),
                                               ("fitsfiles", "*.fits")])
         self.load_file(filename)
 
@@ -4345,8 +4432,6 @@ class MainPage(tk.Frame):
 
 
 
-
-
 # =============================================================================
 #
 # Load DMD map file
@@ -4356,7 +4441,7 @@ class MainPage(tk.Frame):
     def LoadMap(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = tk.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -4402,7 +4487,7 @@ class MainPage(tk.Frame):
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = tk.askopenfilename(initialdir = dir_DMD +"/DMD_maps_csv",
+        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD +"/DMD_maps_csv",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -4453,7 +4538,7 @@ class MainPage(tk.Frame):
             files == ('Text Document', '*.txt')
         elif file_type == 'csv':   
             files == ('DMD grid', '*.csv')
-        file = tk.asksaveasfile(filetypes = files, defaultextension = files)
+        file = filedialog.asksaveasfile(filetypes = files, defaultextension = files)
       
         #btn = ttk.Button(self, text = 'Save', command = lambda : save())        
         
