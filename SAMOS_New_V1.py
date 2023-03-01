@@ -4,6 +4,11 @@
 Created on Tue Feb 25 13:21:00 2023
 
 02.27.2023 
+    - Added Slit Configuration Frame with fields to enter slit width and lenght
+    - Moved Slit Pointer check
+    - Added in paraemters the DMD2PIXEL scale of 0.892. To be used for the conversion
+    
+02.27.2023 
     - cleaned first jupyter notebook to create target list using ipyaladin interactive
     - region file in RADEC must be copieed to directory /regions/RADEC
     - putton "load .red RADEC" allows to lod the region file in RADEC. File name format is rather rigid
@@ -3049,6 +3054,10 @@ class MainPage(tk.Frame):
 
 #        fi.configure(516, 528) #height, width
         fi.set_window_size(514,522)
+        
+        """
+        HORIZONTAL BOX AT THE BOTTOM WITH ORIGINAL GINGA TOOLS
+        """
 
         hbox = tk.Frame(self)
         hbox.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
@@ -3066,9 +3075,9 @@ class MainPage(tk.Frame):
         wdrawtype.bind("<Return>", self.set_drawparams)
         self.wdrawtype = wdrawtype
 
-        self.vslit = tk.IntVar()
-        wslit = tk.Checkbutton(hbox, text="Slit", variable=self.vslit)
-        self.wslit = wslit
+        #self.vslit = tk.IntVar()
+        #wslit = tk.Checkbutton(hbox, text="Slit", variable=self.vslit)
+        #self.wslit = wslit
 
         wdrawcolor = ttk.Combobox(hbox, values=self.drawcolors)#,
         #                           command=self.set_drawparams)
@@ -3102,8 +3111,10 @@ class MainPage(tk.Frame):
                                command=lambda: self.quit(self))
 
         for w in (wquit, wsave, wclear, wrun, walpha, tk.Label(hbox, text='Alpha:'),
-                  wfill, wdrawcolor, wslit, wdrawtype, wopen):
+#                  wfill, wdrawcolor, wslit, wdrawtype, wopen):
+                  wfill, wdrawcolor, wdrawtype, wopen):
             w.pack(side=tk.RIGHT)
+ 
 
         #mode = self.canvas.get_draw_mode() #initially set to draw by line >canvas.set_draw_mode('draw')
         hbox1 = tk.Frame(hbox)
@@ -3114,6 +3125,42 @@ class MainPage(tk.Frame):
         btn2 = tk.Radiobutton(hbox1,text="Edit",padx=20,variable=self.setChecked,value="edit", command=self.set_mode_cb).pack(anchor=tk.SW)
         btn3 = tk.Radiobutton(hbox1,text="Pick",padx=20,variable=self.setChecked,value="pick", command=self.set_mode_cb).pack(anchor=tk.SW)
  
+# =============================================================================
+#         
+#  #    SLIT Configuration Frame
+#         
+# =============================================================================
+        self.frame_SlitConf = tk.Frame(self,background="gray")#, width=400, height=800)
+        self.frame_SlitConf.place(x=400, y=600, anchor="nw", width=360, height=150)
+        labelframe_SlitConf =  tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration", font=("Arial", 24))
+        labelframe_SlitConf.pack(fill="both", expand="yes")
+
+# =============================================================================
+#  #    SLIT WIDTH in mirrors, dispersion direction (affects Resolving power)
+# =============================================================================        
+        label_slit_w = tk.Label(labelframe_SlitConf, text="Slit width (mirrors)")
+        label_slit_w.place(x=4,y=4)
+        self.slit_w = tk.IntVar(value=3) 
+        self.textbox_slit_w = tk.Entry(labelframe_SlitConf, textvariable=self.slit_w, width = 4)      
+        self.textbox_slit_w.place(x=130,y=5)
+
+# =============================================================================
+#  #    SLIT LENGTH in mirror, cross-dispersion (affets sky subtraction) 
+# =============================================================================        
+        label_slit_l = tk.Label(labelframe_SlitConf, text="Slit length (mirrors)")
+        label_slit_l.place(x=4,y=29)
+        self.slit_l = tk.IntVar() 
+        self.slit_l.set(9)
+        self.textbox_slit_l = tk.Entry(labelframe_SlitConf, textvariable=self.slit_l, width = 4)      
+        self.textbox_slit_l.place(x=130,y=30)
+
+# =============================================================================
+#  #    SLIT POINTER ENABLED
+# =============================================================================        
+        self.vslit = tk.IntVar()
+        wslit = tk.Checkbutton(labelframe_SlitConf, text="Slit Pointer", variable=self.vslit)
+        wslit.place(x=180, y=4)
+        
 
 # =============================================================================
 #         
@@ -3308,7 +3355,12 @@ class MainPage(tk.Frame):
         pattern_path = created_patterns_path / Path(pattern_name)
         
         #create astropy regions and save them after checking that there is something to save...
+        """
         slits = CM.CompoundMixin.get_objects_by_kind(self.canvas,'rectangle')
+        """
+        slits = CM.CompoundMixin.get_objects_by_kind(self.canvas,'box')
+        
+        
         list_slits = list(slits)
         if len(list_slits) != 0:
             RRR=Regions([g2r(list_slits[0])])
@@ -3961,7 +4013,7 @@ class MainPage(tk.Frame):
         self.canvas.objects   #check that the points are gone
            
         #we can remove both points and boxes
-        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas,['point','box','circle'])
+        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas,['point','circle'])
         list_points=list(points)
         CM.CompoundMixin.delete_objects(self.canvas,list_points)
         self.canvas.objects   #check that the points are gone
@@ -4137,7 +4189,7 @@ class MainPage(tk.Frame):
         if self.vslit.get() != 0 and kind == 'point':
             true_kind='Slit'
             print("It is a slit")
-            print("Handle the rectangle as a slit")
+#            print("Handle the rectangle as a slit")
             if self.SlitTabView is None:
                 self.SlitTabView = STView() 
                 
@@ -4157,11 +4209,12 @@ class MainPage(tk.Frame):
         r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)),
                                         width=40, height=40,
                                         angle = 0*u.deg)
-        # and we convert it to ginga...
+        # and we convert it to ginga.
+        #Note: r as an Astropy region is a RECTANGLE
+        #      obj is a Ginga region type BOX
         obj = r2g(r)
         #this retuns a Box object 
         self.canvas.add(obj)
-        print("check")
         data_box = self.AstroImage.cutout_shape(obj)
         
         #we can now remove the "pointer" object
@@ -4213,14 +4266,28 @@ class MainPage(tk.Frame):
         print("the RADEC of the fitted centroid are, in decimal degrees:")
         print(self.AstroImage.pixtoradec(objs[0].objx,objs[0].objy))
         slit_box = self.canvas.get_draw_class('rectangle')
-        slit_h=3
-        slit_w=7
-        self.canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
-                        width=100,
-                        height=30,
-                        angle = 0*u.deg))
+        slit_w=3
+#        slit_l=9
+#        self.canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
+#                        width=100,
+#                        height=30,
+#                        angle = 0*u.deg))
+        
+        slit_box = self.canvas.get_draw_class('box')
+        xradius = self.slit_l.get() * 0.5 * self.PAR.scale_DMD2PIXEL
+        yradius = self.slit_w.get() * 0.5 * self.PAR.scale_DMD2PIXEL
+        obj.fill = 1
+        self.canvas.add(slit_box(x=objs[0].objx+x1, 
+                                 y=objs[0].objy+y1, 
+                                 xradius = xradius,
+                                 yradius = yradius,
+                                 color = 'red',
+                                 alpha = 0.8,
+                                 fill = True))
+
         self.SlitTabView.add_slit_obj(r, self.fitsimage)
         print("slit added")
+
         #self.cleanup_kind('point')
         #ssself.cleanup_kind('box')
 
@@ -4615,6 +4682,8 @@ class SAMOS_Parameters():
 
         self.inoutvar=tk.StringVar()
         self.inoutvar.set("outside") 
+        
+        self.scale_DMD2PIXEL = 0.892   #mirros to pixel as per e-mail by RB  Jan 207, 2023
 
 
 if __name__ == "__main__":

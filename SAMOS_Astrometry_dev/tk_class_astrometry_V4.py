@@ -592,6 +592,8 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         # Save to FITS file
         hdu.writeto('test.fits')
         
+        
+        
     def APRegion_RAD2pix(APRegionfile,WCS):
         """
         based on example on 
@@ -599,10 +601,10 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
 
         Parameters
         ----------
-        APRegion : TYPE
-            DESCRIPTION: an Astropy Region.
-        WCS : TYPE
-            DESCRIPTION: a WCS 
+        APRegionfile : TYPE string 
+            DESCRIPTION: a filename containing an Astropy Region in RADEC
+        WCS : TYPE 
+            DESCRIPTION: a WCS  
 
         Returns
         -------
@@ -623,4 +625,41 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         RRR_pix.write(APregionfile_pixel, overwrite=True)
         
         #skycoord = SkyCoord(42, 43, unit='deg', frame='galactic')
-        pass
+        return RRR_pix
+    
+    
+
+    def APRegion_pix2RA(RRR_pix,WCS):
+        """
+        based on example on 
+        https://astropy-regions.readthedocs.io/en/stable/getting_started.html
+
+        Parameters
+        ----------
+        APRegionfile : TYPE string 
+            DESCRIPTION: a filename containing an Astropy Region in RADEC
+        WCS : TYPE 
+            DESCRIPTION: a WCS  
+
+        Returns
+        -------
+        region in pixel units
+
+        """
+        from regions import Regions
+#        regions = Regions.read(APRegionfile, format='ds9')
+#        RRR_pix = []
+#        for i in range(len(regions)):
+#            RRR_pix.append(regions[i].to_pixel(WCS))
+#        print("looped")    
+        RRR_RADec=Regions([RRR_pix[0].to_sky(WCS)])
+        for i in range(1,len(RRR_pix)):
+            RRR_RADec.append(RRR_pix[i].to_sky(WCS))
+
+#        APregionfile_pixel = APRegionfile.replace("RADEC","pixels")
+#        RRR_pix.write(APregionfile_pixel, overwrite=True)
+        
+        #skycoord = SkyCoord(42, 43, unit='deg', frame='galactic')
+        return RRR_RADec
+
+
