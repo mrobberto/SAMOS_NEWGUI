@@ -12,14 +12,21 @@ import os
 
 from astropy.io import fits
 
-
-class Wrapper():
+# TODO: be able import WCS created from GUI's 'twirl' method
+#       include     
+    
+          
+class Wrapper(object):
+    
+    #  class doesn't work anymore????
+    # probably no longer needed but I'm keeping it here for now.
     
     """
     Wrapper for main FITSHead class that updates the main dict
     whenever one of the param attributes is changed.
     Also keeps track of the original value before the change.
     """
+#"""
     def __init__(self, wrapped):
         self._wrapped = wrapped
         
@@ -35,11 +42,9 @@ class Wrapper():
             setattr(self._wrapped, attr, val)
             self.create_main_params_dict()
             print("{} changed from {} to {}".format(attr,old_val,val))
- 
-           
 
 
-class FITSHead():
+class FITSHead(object):
     """
     Obtain instrument configurations, WCS, etc. and
         keep track of them with a dictionary.
@@ -52,16 +57,18 @@ class FITSHead():
     which will get written to header.
     
     """
+
     
     def __init__(self):
         
         self.main_dict = None # main dictionary will be the container for all params
         
-        self.filename = None
+        self.filename = None # base filename e.g. 'NGC1976_83.819696	-5.390333'
+        self.filedir = None # main directory to which output FITS are saved.
         
         self.expTime = None
-        self.objName = None # 'OBJECT' name of object i.e. ABELL S1101
-        self.obsType = None# 'OBSTYPE' type of observation i.e. BIAS, FLAT, OBJ...
+        self.objName = None # 'OBJECT' name of object e.g. ABELL S1101
+        self.obsType = None# 'OBSTYPE' type of observation e.g. BIAS, FLAT, OBJ...
         self.radecSys = 'FK5' # prob won't change
         self.radecEq = 2000# prob won't change
         self.ra = None
@@ -120,8 +127,32 @@ class FITSHead():
         self.filter2 = None
         self.filtpos = None
         self.grating = None
-        self.dmdReg = None # not a standard FITS keyword
+        self.dmdReg = None # region file of slits in in celestial coords
         
+        # ----------------------- #
+        
+        
+        
+#####################----Begin Methods----#####################
+
+
+    # might not need wrapper with this
+    def set_param(self, param, val):
+        
+        """
+        Set/change parameter value 
+        
+        """
+        #
+        old_val = self.__getattribute__(param)
+        
+        self.__setattr__(param,val)
+        self.create_main_params_dict()
+        # recreate the main param dict to reflect the change
+        
+        #TODO: write this in the log file to keep track of changes
+        print("{} changed from {} to {}".format(param,old_val,val))
+    
     def create_main_params_dict(self):
         
         """
@@ -129,7 +160,7 @@ class FITSHead():
             that will be passed to the write_fits_header method.
         """
         
-        ## need to put these in a better order
+        #TODO: Put these in a better order
         
         self.main_dict = {'FILENAME' : self.filename,
                 'EXPTIME': (self.expTime, 'Exposure time (s)'),
@@ -137,7 +168,7 @@ class FITSHead():
                 'OBSTYPE': (self.obsType, 'Type of observation'),
                 'RADECSYS': (self.radecSys, 'Default coordinate system'),
                 'RADECEQ': (self.radecEq, 'Default equinox'),
-                'RA': (self.ra,'RA of object (hr)'),
+                'RA': (self.ra,'RA of object (hr)'), 
                 'DEC': (self.dec,'DEC of object (deg)'),
                 'TELRA':(self.telRA, 'RA of telescope (hr)'),
                 'TELDEC': (self.telDEC, 'DEC of telescope (deg)'),
@@ -170,7 +201,7 @@ class FITSHead():
                 'DMDREG' : (self.dmdReg, 'Name of corresponding DMD .reg file')}
         
         
-    def write_fits_header(self, input_header):
+    def create_fits_header(self, input_header):
         
         """
         Set header keys based on main dictionary
@@ -201,9 +232,21 @@ class FITSHead():
             
         self.output_header = output_header
         
+       
+    def write_fits(self, imdata):
         
+        """
+        At the end of the acquisition, create a new 
+        FITS Primary HDU,  set the image data, and 
+        write the main_dict to the header.
+        Returns the final FITS file.
+        """
+        
+        pass
 
-#FITSHead()   
-        
+    
+
+ 
+#"""   
         
         
