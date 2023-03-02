@@ -629,7 +629,7 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
     
     
 
-    def APRegion_pix2RA(RRR_pix,WCS):
+    def APRegion_pix2RAD(RRR_xyAP,WCS):
         """
         based on example on 
         https://astropy-regions.readthedocs.io/en/stable/getting_started.html
@@ -652,9 +652,9 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
 #        for i in range(len(regions)):
 #            RRR_pix.append(regions[i].to_pixel(WCS))
 #        print("looped")    
-        RRR_RADec=Regions([RRR_pix[0].to_sky(WCS)])
-        for i in range(1,len(RRR_pix)):
-            RRR_RADec.append(RRR_pix[i].to_sky(WCS))
+        RRR_RADec=Regions([RRR_xyAP[0].to_sky(WCS)])
+        for i in range(1,len(RRR_xyAP)):
+            RRR_RADec.append(RRR_xyAP[i].to_sky(WCS))
 
 #        APregionfile_pixel = APRegionfile.replace("RADEC","pixels")
 #        RRR_pix.write(APregionfile_pixel, overwrite=True)
