@@ -3,6 +3,29 @@
 """
 Created on Tue Feb 25 13:21:00 2023
 
+03.91.2023 - V1.1
+    - Major redesign of the SLit handling part, created the 3 color column on the right side
+      following the data flow. 
+    - Minor reorg, but notice the new structure of the .csv maps/slit pattern under DMD_dev
+
+02.28.2023 - V1.0
+    - Added Slit Configuration Frame with fields to enter slit width and lenght
+    - Moved Slit Pointer check
+    - Added in paraemters the DMD2PIXEL scale of 0.892. To be used for the conversion
+    - Slit loaded from file  appear in red
+    
+02.27.2023 
+    - cleaned first jupyter notebook to create target list using ipyaladin interactive
+    - region file in RADEC must be copieed to directory /regions/RADEC
+    - putton "load .red RADEC" allows to lod the region file in RADEC. File name format is rather rigid
+    - coordinates of the center are extracted searching filename between "RADEC="  and ".reg"
+    - observations is assumed to be done at this point: use sSkyMapper Query for test
+    - after twirl vs. GAIA and WCS header created, convert the RADEC region file to a pixel region file
+    - the regions (slits) appear on the display!  
+TO DO: "Run Code" erases everything, should leave the slits untouched.
+
+02.26.2023 First committ to share with Dana
+=======
 - V7. Created a button for saving the Stil Table made by Dana, to be completeed.
       moved folder "asset" to archive
       Fixed when Convertsilly correction is done, overwrites newimage.fit
@@ -15,10 +38,12 @@ Created on Tue Feb 25 13:21:00 2023
 """
 import tkinter as tk
 #from tkinter import *
-#import tkinter as tk  #small t for Python 3
+#import tkinter as tk  #small t for Python 3f
 from tkinter import ttk
-# import filedialog module
+#import filedialog module
 from tkinter import filedialog
+#from tkinter.filedialog import askopenfilename
+#from tkinter.filedialog import asksaveasfile
 
 from astropy import units as u
 from astropy.io import fits, ascii
@@ -136,6 +161,7 @@ from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion#, PointPix
 import math
 import pathlib
 import glob
+import re #re module of the standard library handles strings, e.g. use re.search() to extract substrings
 
 #import sewpy   #to run sextractor wrapper
 
@@ -1187,10 +1213,10 @@ class DMDPage(tk.Frame):
         y2 = (round(table['x'])+np.ceil(table['dx2'])).astype(int) + yoffset
         x1 = (round(table['y'])-np.floor(table['dy1'])).astype(int) + xoffset
         x2 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
-        slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
         for i in table.index:
-           slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
-        DMD.apply_shape(slit_shape)
+           self.slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
+        DMD.apply_shape(self.slit_shape)
         
         # Create a photoimage object of the image in the path
         #Load the image
@@ -2224,7 +2250,7 @@ class CCDPage(tk.Frame):
 
 
     def clear_canvas(self):
-        self.canvas.deleteAllObjects()
+        self.canvas.delete_all_objects(redraw=True)
 
 #    
     def return_from_astrometry(self):
@@ -2277,7 +2303,7 @@ class CCDPage(tk.Frame):
         query_params = { 
              'hips': self.Survey_selected.get(), #'DSS', #
              #'object': object_main_id, 
-             # Download an image centered on the first object in the results 
+             # Download an image centef on the first object in the results 
              #'ra': object_coords[0].ra.value, 
              #'dec': object_coords[0].dec.value, 
              'ra': c.ra.value, 
@@ -2907,17 +2933,17 @@ class MainPage(tk.Frame):
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA.set("150.17110")  #NGC 3105
         label_RA = tk.Label(labelframe_FITSmanager, text='RA:',  bd =3)
-        entry_RA = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_RA)
+        self.entry_RA = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_RA)
         label_RA.place(x=190,y=5)
-        entry_RA.place(x=230,y=5)
+        self.entry_RA.place(x=230,y=5)
         
         self.string_DEC = tk.StringVar()
 #        self.string_DEC.set("-11.62305")#Sombrero
         self.string_DEC.set("-54.79004") #NGC 3105
         label_DEC = tk.Label(labelframe_FITSmanager, text='Dec:',  bd =3)
-        entry_DEC = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_DEC)
+        self.entry_DEC = tk.Entry(labelframe_FITSmanager, width=11,  bd =3, textvariable = self.string_DEC)
         label_DEC.place(x=290,y=30)
-        entry_DEC.place(x=230,y=30)
+        self.entry_DEC.place(x=230,y=30)
         
         self.string_Filter = tk.StringVar()
         self.string_Filter.set("i")
@@ -3034,6 +3060,10 @@ class MainPage(tk.Frame):
 
 #        fi.configure(516, 528) #height, width
         fi.set_window_size(514,522)
+        
+        """
+        HORIZONTAL BOX AT THE BOTTOM WITH ORIGINAL GINGA TOOLS
+        """
 
         hbox = tk.Frame(self)
         hbox.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
@@ -3051,9 +3081,9 @@ class MainPage(tk.Frame):
         wdrawtype.bind("<Return>", self.set_drawparams)
         self.wdrawtype = wdrawtype
 
-        self.vslit = tk.IntVar()
-        wslit = tk.Checkbutton(hbox, text="Slit", variable=self.vslit)
-        self.wslit = wslit
+        #self.vslit = tk.IntVar()
+        #wslit = tk.Checkbutton(hbox, text="Slit", variable=self.vslit)
+        #self.wslit = wslit
 
         wdrawcolor = ttk.Combobox(hbox, values=self.drawcolors)#,
         #                           command=self.set_drawparams)
@@ -3087,8 +3117,10 @@ class MainPage(tk.Frame):
                                command=lambda: self.quit(self))
 
         for w in (wquit, wsave, wclear, wrun, walpha, tk.Label(hbox, text='Alpha:'),
-                  wfill, wdrawcolor, wslit, wdrawtype, wopen):
+#                  wfill, wdrawcolor, wslit, wdrawtype, wopen):
+                  wfill, wdrawcolor, wdrawtype, wopen):
             w.pack(side=tk.RIGHT)
+ 
 
         #mode = self.canvas.get_draw_mode() #initially set to draw by line >canvas.set_draw_mode('draw')
         hbox1 = tk.Frame(hbox)
@@ -3099,14 +3131,50 @@ class MainPage(tk.Frame):
         btn2 = tk.Radiobutton(hbox1,text="Edit",padx=20,variable=self.setChecked,value="edit", command=self.set_mode_cb).pack(anchor=tk.SW)
         btn3 = tk.Radiobutton(hbox1,text="Pick",padx=20,variable=self.setChecked,value="pick", command=self.set_mode_cb).pack(anchor=tk.SW)
  
+# =============================================================================
+#         
+#  #    SLIT Configuration Frame
+#         
+# =============================================================================
+        self.frame_SlitConf = tk.Frame(self,background="gray")#, width=400, height=800)
+        self.frame_SlitConf.place(x=400, y=600, anchor="nw", width=360, height=150)
+        labelframe_SlitConf =  tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration", font=("Arial", 24))
+        labelframe_SlitConf.pack(fill="both", expand="yes")
 
+# =============================================================================
+#  #    SLIT WIDTH in mirrors, dispersion direction (affects Resolving power)
+# =============================================================================        
+        label_slit_w = tk.Label(labelframe_SlitConf, text="Slit width (mirrors)")
+        label_slit_w.place(x=4,y=4)
+        self.slit_w = tk.IntVar(value=3) 
+        self.textbox_slit_w = tk.Entry(labelframe_SlitConf, textvariable=self.slit_w, width = 4)      
+        self.textbox_slit_w.place(x=130,y=5)
+
+# =============================================================================
+#  #    SLIT LENGTH in mirror, cross-dispersion (affets sky subtraction) 
+# =============================================================================        
+        label_slit_l = tk.Label(labelframe_SlitConf, text="Slit length (mirrors)")
+        label_slit_l.place(x=4,y=29)
+        self.slit_l = tk.IntVar() 
+        self.slit_l.set(9)
+        self.textbox_slit_l = tk.Entry(labelframe_SlitConf, textvariable=self.slit_l, width = 4)      
+        self.textbox_slit_l.place(x=130,y=30)
+
+# =============================================================================
+#  #    SLIT POINTER ENABLED
+# =============================================================================        
+        self.vslit = tk.IntVar()
+        wslit = tk.Checkbutton(labelframe_SlitConf, text="Slit Pointer", variable=self.vslit)
+        wslit.place(x=180, y=4)
+        
+        """
 # =============================================================================
 #         
 #  #    DMD Handler Label Frame
 #         
 # =============================================================================
         self.frame0r = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame0r.place(x=900, y=10, anchor="nw", width=360, height=500)
+        self.frame0r.place(x=1270, y=10, anchor="nw", width=360, height=120)
  
         labelframe_DMD =  tk.LabelFrame(self.frame0r, text="DMD", font=("Arial", 24))
         labelframe_DMD.pack(fill="both", expand="yes")
@@ -3133,15 +3201,19 @@ class MainPage(tk.Frame):
         # click in entry box deletes default text and allows entry of new text
         button_write_slits =  tk.Button(labelframe_DMD, text="SAVE: Slits -> .reg file", bd=3, command=self.write_slits)
         button_write_slits.place(x=155,y=25)      
-        button_read_slits =  tk.Button(labelframe_DMD, text="LOAD: .reg file -> Slits", bd=3, command=self.read_slits)
-        button_read_slits.place(x=155,y=50)
+        
+        
+        button_load_regfile_xyAP =  tk.Button(labelframe_DMD, text="LOAD: .reg file -> Slits", bd=3, command=self.load_regfile_xyAP)
+        button_load_regfile_xyAP.place(x=155,y=50)
+        
         button_push_slits =  tk.Button(labelframe_DMD, text="Slits -> DMD", bd=3, font=("Arial", 24),  relief=tk.RAISED, command=self.push_slits)
         button_push_slits.place(x=80,y=85)
-
+        """
 
 # =============================================================================
          #4)# LOAD BUTTONS
 # =============================================================================
+        """
         button_load_map = tk.Button(labelframe_DMD,
                         text = "Load DMD Map",
                         command = self.LoadMap)
@@ -3152,8 +3224,9 @@ class MainPage(tk.Frame):
         self.str_filename = tk.StringVar() 
         self.textbox_filename = tk.Text(labelframe_DMD, height = 1, width = 22)      
         self.textbox_filename.place(x=120,y=190)
-
-
+        """
+        
+        """
         button_load_slits = tk.Button(labelframe_DMD,
                        text = "Load Slit Grid",
                        command = self.LoadSlits)
@@ -3164,25 +3237,401 @@ class MainPage(tk.Frame):
         self.str_filename_slits = tk.StringVar() 
         self.textbox_filename_slits = tk.Text(labelframe_DMD, height = 1, width = 22)      
         self.textbox_filename_slits.place(x=120,y=250)
+        """
 
-
-        
+        """
         button_save_slittable = tk.Button(labelframe_DMD,
                        text = "Save Slit Table",
                        command = self.Save_slittable)
-        button_save_slittable.place(x=4,y=302)
-
-        label_filename_slittable = tk.Label(labelframe_DMD, text="Save Slit Table")
-        label_filename_slittable.place(x=4,y=330)
+        button_save_slittable.place(x=4,y=282)
+        
+        label_filename_slittable = tk.Label(labelframe_DMD, text="Saved Slit Table")
+        label_filename_slittable.place(x=4,y=310)
         self.str_filename_slittable = tk.StringVar() 
         self.textbox_filename_slittable= tk.Text(labelframe_DMD, height = 1, width = 22)      
-        self.textbox_filename_slittable.place(x=120,y=330)
+        self.textbox_filename_slittable.place(x=120,y=310)
+        """
+
+
+        
+        """   
+# =============================================================================
+#         
+#  #    DMD Handler Label Frame
+#         
+# =============================================================================
+        """        
+        self.frame1r = tk.Frame(self)#, width=400, height=800)
+        self.frame1r.place(x=900, y=5, anchor="nw", width=360, height=800)
+ 
+# =============================================================================         
+#  #    RADEC module
+# =============================================================================
+        labelframe_Sky =  tk.LabelFrame(self.frame1r, 
+                                        text="Sky (RA,Dec) regions", 
+                                        font=("Arial", 20), bg="#8AA7A9")
+        labelframe_Sky.pack(fill="both", expand="yes")
+        
+        button_load_regfile_RADEC = tk.Button(labelframe_Sky,
+                                         text = "load (RA,Dec) regions from astropy .reg file", 
+                                         command = self.load_regfile_RADEC)
+        button_load_regfile_RADEC.place(x=4,y=4)
+        
+        label_filename_regfile_RADEC = tk.Label(labelframe_Sky, 
+                                         text="Loaded Region File in RADEC units:", 
+                                         bg="#8AA7A9")
+        label_filename_regfile_RADEC.place(x=4,y=34)
+        self.str_filename_regfile_RADEC = tk.StringVar() 
+        self.textbox_filename_regfile_RADEC= tk.Text(labelframe_Sky, height = 1, width = 48)      
+        self.textbox_filename_regfile_RADEC.place(x=4,y=55)
+
+        button_push_RADEC = tk.Button(labelframe_Sky,
+                                          text = "get center/point (RA,Dec) from filename",
+                                          command = self.push_RADEC)
+        button_push_RADEC.place(x=54,y=90)
+
+        label_workflow = tk.Label(labelframe_Sky, text="Point, take an image and twirl WCS from GAIA...", bg="#8AA7A9")
+        label_workflow.place(x=4,y=130)
+
+        button_regions_RADEC2pixel = tk.Button(labelframe_Sky,
+                                           text = "convert (RA,Dec) regions -> (x,y) regions",
+                                           command = self.convert_regions_RADEC2xy)
+        button_regions_RADEC2pixel.place(x=4,y=151)
+
+        button_regions_RADEC_save= tk.Button(labelframe_Sky,
+                                            text = "save (RA,Dec) regions -> astropy RADEC.reg file",
+                                            command = self.save_RADECregions_AstropyRADECRegFile)
+        button_regions_RADEC_save.place(x=4,y=181)
+
+        """
+        button_regions_RADEC_save= tk.Button(labelframe_Sky,
+                                            text = "save (RA,Dec) regions -> astropy XY.reg file",
+                        command = self.save_RADECregions_AstropyXYRegFile)
+        button_regions_RADEC_save.place(x=4,y=211)
+        """
+ # =============================================================================         
+ #  #    CCD  module
+ # =============================================================================
+        labelframe_CCD =  tk.LabelFrame(self.frame1r, 
+                                        text="CCD (x,y) regions", font=("Arial", 20), bg="#00CED1")
+        labelframe_CCD.pack(fill="both", expand="yes")
+         
+        button_load_regfile_xyAP = tk.Button(labelframe_CCD,
+                                        text = "load (x,y) regions from .reg file", 
+                                        command = self.load_regfile_xyAP)
+        button_load_regfile_xyAP.place(x=4,y=4)
+         
+        label_filename_regfile_xyAP = tk.Label(labelframe_CCD, 
+                                        text="Loaded Region File in CCD units:", 
+                                        bg="#00CED1")
+        label_filename_regfile_xyAP.place(x=4,y=34)
+        self.str_filename_regfile_xyAP = tk.StringVar() 
+        self.textbox_filename_regfile_xyAP= tk.Text(labelframe_CCD, height = 1, width = 48)      
+        self.textbox_filename_regfile_xyAP.place(x=4,y=55)
+
+        """
+        button_push_CCD = tk.Button(labelframe_CCD,
+                        text = "get pointing RA,DEC from filename",
+                        command = self.push_CCD)
+        button_push_CCD.place(x=54,y=90)
+        """
         
         """
-        # =============================================================================
-         # DONE WITH THE FIELDS
-        # =============================================================================
+        label_workflow = tk.Label(labelframe_CCD, text="Point, take an image and twirl WCS from GAIA...", bg="#00CED1")
+        label_workflow.place(x=4,y=130)
         """
+        
+        button_regions_CCD2RADEC = tk.Button(labelframe_CCD,
+                                        text = "convert (x,y) regions -> (RA,Dec) regions",
+                                        command = self.convert_regions_xy2RADEC)
+        button_regions_CCD2RADEC.place(x=4,y=121)
+
+        
+        """
+        button_regions_CCD2pixel = tk.Button(labelframe_CCD,
+                                        text = "convert (x,y) regions -> slits",
+                                        command = self.convert_regions_xyAP2xyGA)
+        button_regions_CCD2pixel.place(x=4,y=151)
+        """
+        
+        button_regions_draw = tk.Button(labelframe_CCD,
+                                        text = "DRAW",
+                                        command = self.draw_slits)
+        button_regions_draw.place(x=250,y=151)
+
+        button_regions_CCD_save= tk.Button(labelframe_CCD,
+                                        text = "save (x,y) regions -> astropy .reg file",
+                                        command = self.save_regions_xy2xyfile)
+        button_regions_CCD_save.place(x=4,y=181)
+       
+ # =============================================================================         
+ #  #    DMD  module
+ # =============================================================================
+        labelframe_DMD =  tk.LabelFrame(self.frame1r, text="DMD slits", font=("Arial", 20), bg="#20B2AA")
+        labelframe_DMD.pack(fill="both", expand="yes")
+         
+        """
+        button_load_regfile_DMD = tk.Button(labelframe_DMD,
+                        text = "load targets DMD from .reg file", 
+                        command = self.load_regfile_DMD)
+        button_load_regfile_DMD.place(x=4,y=4)
+        
+        label_filename_regfile_DMD = tk.Label(labelframe_DMD, text="Loaded Region File in DMD units:", bg="#20B2AA")
+        label_filename_regfile_DMD.place(x=4,y=34)
+        self.str_filename_regfile_DMD = tk.StringVar() 
+        self.textbox_filename_regfile_DMD= tk.Text(labelframe_DMD, height = 1, width = 48)      
+        self.textbox_filename_regfile_DMD.place(x=4,y=55)
+
+        button_push_DMD = tk.Button(labelframe_DMD,
+                        text = "get pointing RA,DEC from filename",
+                        command = self.push_DMD)
+        button_push_DMD.place(x=54,y=90)
+
+        label_workflow = tk.Label(labelframe_DMD, text="Point, take an image and twirl WCS from GAIA...", bg="#20B2AA")
+        label_workflow.place(x=4,y=130)
+        """
+        button_load_slits = tk.Button(labelframe_DMD,
+                       text = "Load Slit .csv table",
+                       command = self.load_regfile_csv)
+        button_load_slits.place(x=4,y=4)
+
+        label_filename_slits = tk.Label(labelframe_DMD, text="Current Slit Grid", bg="#20B2AA")
+        label_filename_slits.place(x=4,y=34)
+        self.str_filename_slits = tk.StringVar() 
+        self.textbox_filename_slits = tk.Text(labelframe_DMD, height = 1, width = 22)      
+        self.textbox_filename_slits.place(x=120,y=34)
+
+        
+        button_regions_DMD2pixel = tk.Button(labelframe_DMD,
+                                            text = "convert slits -> (x,y) pixels",
+                        command = self.convert_regions_slit2xyAP)
+        button_regions_DMD2pixel.place(x=4,y=84)
+
+        """
+        button_regions_DMD_save= tk.Button(labelframe_DMD,
+                                             text = "save Regions RA,DEC -> astropy .reg file",
+                         command = self.save_regions_DMD_AstropyReg)
+        button_regions_DMD_save.place(x=4,y=181)
+        """
+        button_push_slits =  tk.Button(labelframe_DMD, text="Slits -> DMD", bd=3, font=("Arial", 24),  relief=tk.RAISED, 
+                                       command=self.push_slits)
+        button_push_slits.place(x=80,y=125)
+
+        
+        button_save_slittable = tk.Button(labelframe_DMD,
+                       text = "Save Slit .csv table",
+                       command = self.Save_slittable)
+        button_save_slittable.place(x=4,y=181)
+        
+        label_filename_slittable = tk.Label(labelframe_DMD, text="Saved Slit .csv table")
+        label_filename_slittable.place(x=4,y=210)
+        self.str_filename_slittable = tk.StringVar() 
+        self.textbox_filename_slittable= tk.Text(labelframe_DMD, height = 1, width = 22)      
+        self.textbox_filename_slittable.place(x=120,y=210)
+
+        
+        
+       
+
+     
+# =============================================================================
+#
+# Load AP Region file in RADEC
+#
+# =============================================================================
+    def save_regions_DMD_AstropyReg(self): 
+        pass
+    
+ 
+    def push_DMD(self):
+        pass
+
+    def load_regfile_csv(self):
+        pass
+
+    def save_regions_xy2xyfile(self):
+        print("saving (x,y) Astropy Regions to .reg file")
+        file = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")], 
+                                        defaultextension = ".reg",
+                                        initialdir=local_dir+"/SAMOS_regions/pixels")
+        #1. Collect all
+        self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
+        #2. convert to Astropy, pixels
+        self.RRR_xyAP = self.convert_regions_xyGA2xyAP()
+        #3. Write astropy regions, pixels
+        self.RRR_xyAP.write(file.name, overwrite=True)
+        print("(x,y) Astropy Regions to .reg file:\n",file.name)
+
+    def push_CCD(self):
+        pass
+        
+        
+    def save_RADECregions_AstropyRADECRegFile(self): 
+        if "RRR_RADec" not in dir(self):
+            print("There are no (RA,Dec) regions to be written on file")
+            return
+        else:
+            print("saving (RA,DEC) Astropy Regions to .reg file")
+            file = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")], 
+                                        defaultextension = ".reg",
+                                        initialdir=local_dir+"/SAMOS_regions/RADEC")
+        #we want to scoop all objects on the canvas
+        #obj_all = CM.CompoundMixin.get_objects(self.canvas)
+            self.RRR_RADec = self.convert_regions_xy2RADEC()
+            self.RRR_RADec.write(file.name, overwrite=True)
+            print("saved  (RA,DEC) Astropy Regions to .reg file:\n",file.name)
+
+
+    """
+    def save_RADECregions_AstropyXYRegFile(self): 
+        print("saving (x,y) Astropy Regions to .reg file")
+        self.convert_regions_RADEC2xyAP()
+        file = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")], 
+                                        defaultextension = ".reg",
+                                        initialdir=local_dir+"/SAMOS_regions/pixels")
+        self.RRR_xyAP.write(file.name, overwrite=True)
+    """    
+
+
+    def convert_regions_RADEC2xy(self): 
+        print("converting (RA,DEC) Astropy Regions to (x,y) Astropy Regions")
+        #requires wcs: class AStrometry
+        if 'wcs' not in dir(self): 
+            print("missing self.wcs. No operation performed \n")
+            return
+        self.RRR_xyAP  = Astrometry.APRegion_RAD2pix(self.filename_regfile_RADEC,self.wcs)
+        self.RRR_xyGA = self.convert_regions_xyAP2xyGA()
+        print("RADec regions converted to xy regions\nRRR_xyAP created")
+        #return self.RRR_xyAP
+  
+    def convert_regions_xy2RADEC(self):
+        print("converting (x,y) Astropy Regions to (RA,DEC) Astropy Regions")
+        #requires wcs: class AStrometry
+        if 'wcs' not in dir(self): 
+            print("missing self.wcs. No operation performed \n")
+            return
+        #1. Collect all
+        self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
+        #2. convert to Astropy, pixels
+        self.RRR_xyAP = self.convert_regions_xyGA2xyAP()
+        #3. convert to RADEC using wcs
+        self.RRR_RADec = Astrometry.APRegion_pix2RAD(self.RRR_xyAP,self.wcs)
+        print("(x,y) Astropy regions converted to (RA,DEC) Astropy regions")
+        return self.RRR_RADec
+
+    def draw_slits(self):
+        [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
+        all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
+        #color in RED all the regions loaded from .reg file
+        CM.CompoundMixin.set_attr_all(self.canvas,color="red")
+    
+    """
+    def convert_regions_xyAP2slit(self):
+        [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
+        all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
+        #color in RED all the regions loaded from .reg file
+        #requires Dana wcs
+        #returns .csv map file 
+        pass
+    """
+
+    def convert_regions_slit2xyAP(self):
+        #requires Dana wcs
+        #returns RRR_xyAP
+        pass
+    
+    def convert_regions_xyAP2xyGA(self):
+        print("converting (x,y) Astropy Regions to (x,y) Ginga Regions")
+        [CM.CompoundMixin.add_object(self.canvas,r2g(reg)) for reg in self.RRR_xyAP]
+        #uses r2g
+        self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
+        print("(x,y) Astropy regions converted to (x,y) Ginga regions\nRRR_xyGA created")
+        return self.RRR_xyGA
+        #self.RRR_xyGA is a self.canvas.objects
+       
+     
+    def convert_regions_xyGA2xyAP(self):
+        print("converting (x,y) Ginga Regions to (x,y) Astropy Regions")
+        all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
+        list_all_ginga_objects = list(all_ginga_objects)
+        if len(list_all_ginga_objects) != 0:
+            self.RRR_xyAP=Regions([g2r(list_all_ginga_objects[0])])
+            for i in range(1,len(list_all_ginga_objects)):
+                self.RRR_xyAP.append(g2r(list_all_ginga_objects[i]))
+        return self.RRR_xyAP
+        print("(x,y) Ginga regions converted to (x,y) Astropy regions")
+        
+
+    def push_RADEC(self):
+        self.string_RA  = tk.StringVar(self,self.RA_regCNTR)
+        self.string_DEC  = tk.StringVar(self,self.DEC_regCNTR)
+        self.entry_RA.delete(0, tk.END)
+        self.entry_DEC.delete(0, tk.END)
+        self.entry_RA.insert(0, self.RA_regCNTR)
+        self.entry_DEC.insert(0, self.DEC_regCNTR)
+        print("RADEC loaded")
+
+    def load_regfile_RADEC(self):
+        print("reading (RA,DEC) Regions from .reg file")        
+        self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
+#        self.textbox_filename_slits.delete('1.0', tk.END)
+        self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir = local_dir +"/SAMOS_regions/RADEC",
+                                        title = "Select a File",
+                                        filetypes = (("Text files",
+                                                      "*.reg"),
+                                                     ("all files",
+                                                      "*.*")))
+        #First read the file and set the regions in original RADEC units
+        self.RRR_RADec = Regions.read(self.filename_regfile_RADEC, format='ds9')
+        #
+        #Then extract the clean filename to get RA and DEC of the central point
+        head, tail = os.path.split(self.filename_regfile_RADEC)
+        self.textbox_filename_regfile_RADEC.insert(tk.END, tail)
+        #the filename must carry the RADEC coordinates are "RADEC_". Find this string...
+        s=re.search(r'RADEC=',tail)
+        #extract RADEC
+        RADEC = tail[s.end():-4]
+        RA_cut=(re.findall('.*-',RADEC))
+        #and RA, DEC as strings at disposal 
+        self.RA_regCNTR = RA_cut[0][:-1]
+        self.DEC_regCNTR = (re.findall('-.*',RADEC))[0]
+        #we return the filename
+        print("(RA,DEC) Regions loaded from .reg file")        
+        return self.filename_regfile_RADEC
+        
+    def load_regfile_xyAP(self):
+        print("reading (x,y) Astropy Regions from .reg file")                
+        reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
+                                         initialdir=local_dir+'/SAMOS_regions/pixels')
+        print("reading (x,y) Astropy region file")
+        if isinstance(reg, tuple):
+            regfileName = reg[0]
+        else:
+            regfileName = str(reg)
+        #if len(regfileName) != 0:
+        
+        #Then extract the clean filename to get RA and DEC of the central point
+        head, tail = os.path.split(regfileName)
+        self.textbox_filename_regfile_xyAP.insert(tk.END, tail)
+            
+        self.RRR_xyAP = Regions.read(regfileName, format='ds9')
+        
+        self.RRR_xyGA = self.convert_regions_xyAP2xyGA()
+        #self.display_region_file()
+        print("(x,y) Astropy Regions loaded from .reg file")        
+        #regfile = open(regfileName, "r")
+        
+    """
+    def display_region_file(self):
+        [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
+        #color in RED all the regions loaded from .reg file
+        CM.CompoundMixin.set_attr_all(self.canvas,color="red")
+    """    
+    """
+# =============================================================================
+# DONE WITH THE FIELDS
+# =============================================================================
+    """
 
     def regfname_handle_focus_out(self,_):
         
@@ -3219,7 +3668,12 @@ class MainPage(tk.Frame):
         pattern_path = created_patterns_path / Path(pattern_name)
         
         #create astropy regions and save them after checking that there is something to save...
+        """
         slits = CM.CompoundMixin.get_objects_by_kind(self.canvas,'rectangle')
+        """
+        slits = CM.CompoundMixin.get_objects_by_kind(self.canvas,'box')
+        
+        
         list_slits = list(slits)
         if len(list_slits) != 0:
             RRR=Regions([g2r(list_slits[0])])
@@ -3228,24 +3682,6 @@ class MainPage(tk.Frame):
         RRR.write(str(pattern_path)+'.reg', overwrite=True)
         print("\nSlits written to region file\n")
 
-    def read_slits(self):
-        reg = tk.askopenfilename(filetypes=[("region files", "*.reg")],initialdir=local_dir+'/Astropy Regions')
-        print("trying to read region file")
-        if isinstance(reg, tuple):
-            regfileName = reg[0]
-        else:
-            regfileName = str(reg)
-        if len(regfileName) != 0:
-            self.display_region_file(regfileName)
-        pass
-    
-
-    def display_region_file(self, regfileName):
-        regfile = open(regfileName, "r")
-        
-        loaded_regions = Regions.read(regfileName, format='ds9')
-        [ap_region.add_region(self.canvas, reg) for reg in loaded_regions]
-        pass
 
     
     
@@ -3255,7 +3691,7 @@ class MainPage(tk.Frame):
         #1. list of ginga objects
         objects = CM.CompoundMixin.get_objects(self.canvas)
         #counter = 0
-        slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
         for obj in objects:
             ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
             x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
@@ -3269,10 +3705,10 @@ class MainPage(tk.Frame):
             #x2 = round(dmd_corners[2][0])
             #y2 = round(dmd_corners[2][1])+400
         #3 load the slit pattern   
-            slit_shape[x1:x2,y1:y2]=0
+            self.slit_shape[x1:x2,y1:y2]=0
         DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
         DMD._open()
-        DMD.apply_shape(slit_shape)  
+        DMD.apply_shape(self.slit_shape)  
         #DMD.apply_invert()   
        
         print("check")
@@ -3336,7 +3772,7 @@ class MainPage(tk.Frame):
        
         
         self.extra_header_params+=1
-        entry_string = param_entry_format.format(self.extra_header_params,'String','GRISM',
+        entry_string = tk.param_entry_format.format(self.extra_header_params,'String','GRISM',
                                                   i_selected,'Grism position')
         self.header_entry_string+=entry_string
         
@@ -3367,8 +3803,8 @@ class MainPage(tk.Frame):
         #self.canvas.save_all_objects()
 
     def clear_canvas(self):
-#        CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
-        self.canvas.delete_all_objects()
+        #CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
+        self.canvas.delete_all_objects(redraw=True)
 
 #ConvertSIlly courtesy of C. Loomis
     def convertSIlly(self,fname, outname=None):
@@ -3727,19 +4163,19 @@ class MainPage(tk.Frame):
         regs = Regions(regions)
         for reg in regs:
             obj = r2g(reg)
-        #add_region(self.canvas, obj, tag="twirlstars", redraw=True)
+        #add_region(self.canvas, obj, tag="twirlstars", draw=True)
             self.canvas.add(obj)
         
         # we can now compute the WCS
         gaias = twirl.gaia_radecs(center, fov, limit=25)
-        wcs = twirl._compute_wcs(stars, gaias)
+        self.wcs = twirl._compute_wcs(stars, gaias)
         
         
         # Lets check the WCS solution 
         
 #        plt.figure(figsize=(8,8))
         radius_pix = 25
-        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(wcs)).T
+        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.wcs)).T
         regions_gaia = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
                 for x, y in gaia_pixel]  #[(1, 2), (3, 4)]]
         regs_gaia = Regions(regions_gaia)
@@ -3749,8 +4185,8 @@ class MainPage(tk.Frame):
         #add_region(self.canvas, obj, tag="twirlstars", redraw=True)
             self.canvas.add(obj)
         
-        print(wcs)
-        hdu_wcs = wcs.to_fits()
+        print(self.wcs)
+        hdu_wcs = self.wcs.to_fits()
         self.wcs_filename = "./SAMOS_Astrometry_dev/" + "WCS_"+ra+"_"+dec+".fits"
         hdu_wcs[0].writeto(self.wcs_filename,overwrite=True)
         #
@@ -3805,7 +4241,7 @@ class MainPage(tk.Frame):
         self.root.title(self.fullpath_FITSfilename)
 
     def open_file(self):
-        filename = askopenfilename(filetypes=[("allfiles", "*"),
+        filename = filedialog.askopenfilename(filetypes=[("allfiles", "*"),
                                               ("fitsfiles", "*.fits")])
         self.load_file(filename)
 
@@ -3872,7 +4308,7 @@ class MainPage(tk.Frame):
         self.canvas.objects   #check that the points are gone
            
         #we can remove both points and boxes
-        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas,['point','box','circle'])
+        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas,['point','circle'])
         list_points=list(points)
         CM.CompoundMixin.delete_objects(self.canvas,list_points)
         self.canvas.objects   #check that the points are gone
@@ -3943,7 +4379,7 @@ class MainPage(tk.Frame):
         DMD._open()
         
         #create initial DMD slit mask
-        slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
         
         regions = Regions.read('my_regions.reg')
 
@@ -3966,8 +4402,8 @@ class MainPage(tk.Frame):
             #x2 = round(dmd_corners[2][0])
             #y2 = round(dmd_corners[2][1])+400
         #3 load the slit pattern   
-            slit_shape[x1:x2,y1:y2]=0
-        DMD.apply_shape(slit_shape)  
+            self.slit_shape[x1:x2,y1:y2]=0
+        DMD.apply_shape(self.slit_shape)  
         #DMD.apply_invert()   
 
         
@@ -4048,7 +4484,7 @@ class MainPage(tk.Frame):
         if self.vslit.get() != 0 and kind == 'point':
             true_kind='Slit'
             print("It is a slit")
-            print("Handle the rectangle as a slit")
+#            print("Handle the rectangle as a slit")
             if self.SlitTabView is None:
                 self.SlitTabView = STView() 
                 
@@ -4068,14 +4504,18 @@ class MainPage(tk.Frame):
         r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)),
                                         width=40, height=40,
                                         angle = 0*u.deg)
-        # and we convert it to ginga...
+        # and we convert it to ginga.
+        #Note: r as an Astropy region is a RECTANGLE
+        #      obj is a Ginga region type BOX
         obj = r2g(r)
         #this retuns a Box object 
         self.canvas.add(obj)
-        print("check")
         data_box = self.AstroImage.cutout_shape(obj)
         
-  #      obj = self.canvas.get_draw_class('rectangle')
+        #we can now remove the "pointer" object
+        CM.CompoundMixin.delete_object(self.canvas,obj)
+
+    #      obj = self.canvas.get_draw_class('rectangle')
   #      obj(x1=x_c-20,y1=y_c-20,x2=x_c+20,y2=y_c+20,
   #                      width=100,
   #                      height=30,
@@ -4121,16 +4561,30 @@ class MainPage(tk.Frame):
         print("the RADEC of the fitted centroid are, in decimal degrees:")
         print(self.AstroImage.pixtoradec(objs[0].objx,objs[0].objy))
         slit_box = self.canvas.get_draw_class('rectangle')
-        slit_h=3
-        slit_w=7
-        self.canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
-                        width=100,
-                        height=30,
-                        angle = 0*u.deg))
+        slit_w=3
+#        slit_l=9
+#        self.canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
+#                        width=100,
+#                        height=30,
+#                        angle = 0*u.deg))
+        
+        slit_box = self.canvas.get_draw_class('box')
+        xradius = self.slit_l.get() * 0.5 * self.PAR.scale_DMD2PIXEL
+        yradius = self.slit_w.get() * 0.5 * self.PAR.scale_DMD2PIXEL
+        obj.fill = 1
+        self.canvas.add(slit_box(x=objs[0].objx+x1, 
+                                 y=objs[0].objy+y1, 
+                                 xradius = xradius,
+                                 yradius = yradius,
+                                 color = 'red',
+                                 alpha = 0.8,
+                                 fill = True))
+
         self.SlitTabView.add_slit_obj(r, self.fitsimage)
         print("slit added")
+
         #self.cleanup_kind('point')
-        #self.cleanup_kind('box')
+        #ssself.cleanup_kind('box')
 
 
     def pick_cb(self, obj, canvas, event, pt, ptype):
@@ -4345,8 +4799,6 @@ class MainPage(tk.Frame):
 
 
 
-
-
 # =============================================================================
 #
 # Load DMD map file
@@ -4356,7 +4808,7 @@ class MainPage(tk.Frame):
     def LoadMap(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = tk.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -4402,7 +4854,7 @@ class MainPage(tk.Frame):
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = tk.askopenfilename(initialdir = dir_DMD +"/DMD_maps_csv",
+        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD +"/DMD_maps_csv",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -4418,12 +4870,12 @@ class MainPage(tk.Frame):
         y2 = (round(table['x'])+np.ceil(table['dx2'])).astype(int) + yoffset
         x1 = (round(table['y'])-np.floor(table['dy1'])).astype(int) + xoffset
         x2 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
-        slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
         for i in table.index:
-           slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
+           self.slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
         DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
         DMD._open()
-        DMD.apply_shape(slit_shape)
+        DMD.apply_shape(self.slit_shape)
         
         # Create a photoimage object of the image in the path
         #Load the image
@@ -4437,8 +4889,17 @@ class MainPage(tk.Frame):
 
 
     def Save_slittable(self):
-        print("TO BE DONE")
-        pass
+        if "slit_shape" not in dir(self):
+            print("No DMD pattern has been created yet.")
+            return
+        file = filedialog.asksaveasfile(filetypes = [("csv file", ".csv")], 
+                                        defaultextension = ".csv",
+                                        initialdir=local_dir+"/SAMOS_DMD_dev/DMD_csv/slits",
+                                        initialfile = self.filename_regfile_RADEC[0:-4]+".csv")
+        pandas_slit_shape = pd.DataFrame(self.slit_shape)
+        pandas_slit_shape.to_csv(file.name)
+        
+        
     
     """
     Generic File Writer
@@ -4453,13 +4914,14 @@ class MainPage(tk.Frame):
             files == ('Text Document', '*.txt')
         elif file_type == 'csv':   
             files == ('DMD grid', '*.csv')
-        file = tk.asksaveasfile(filetypes = files, defaultextension = files)
+        file = filedialog.asksaveasfile(filetypes = files, defaultextension = files)
       
         #btn = ttk.Button(self, text = 'Save', command = lambda : save())        
         
 
     def create_menubar(self, parent):
         parent.geometry("1280x900")
+#        parent.geometry("1680x900")
         parent.title("SAMOS Main Page")
         self.PAR = SAMOS_Parameters()
 
@@ -4525,6 +4987,8 @@ class SAMOS_Parameters():
 
         self.inoutvar=tk.StringVar()
         self.inoutvar.set("outside") 
+        
+        self.scale_DMD2PIXEL = 0.892   #mirros to pixel as per e-mail by RB  Jan 207, 2023
 
 
 if __name__ == "__main__":
