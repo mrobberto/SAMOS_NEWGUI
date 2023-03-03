@@ -34,7 +34,7 @@ dmd.initialize()
 
 # There are two builtin states for the device, all white (ones) all black (zeros)
 dmd._open()
-dmd._close()
+#dmd._close()
 #dmd.apply_checkerboard()
 #dmd.apply_blackout()
 #dmd.apply_whiteout()
@@ -123,30 +123,31 @@ dmd.apply_slits(slits)
 #dmd.apply_invert()    
 
 
-"""
+
 # =============================================================================
 # RANDOM SET OF CUSTOM SLITS
 # =============================================================================
 # =============================================================================
-slit1 = {"index": 1, "x1":435, "x2": 600, "y1":600, "y2":640}
-slit2 = {"index": 2, "x1":535, "x2": 550, "y1":700, "y2":740}
-slit3 = {"index": 3, "x1":635, "x2": 650, "y1":800, "y2":840}
-slit4 = {"index": 4, "x1":735, "x2": 750, "y1":700, "y2":740}
-slit5 = {"index": 5, "x1":835, "x2": 850, "y1":800, "y2":840}
-slit6 = {"index": 6, "x1":935, "x2": 950, "y1":900, "y2":940}
-slit7 = {"index": 7, 'x1': 609, 'x2': 615, 'y1': 521, 'y2': 527}
-slit8 = {"index": 8, 'x1': 619, 'x2': 625, 'y1': 621, 'y2': 627}
-slit9 = {"index": 9, 'x1': 629, 'x2': 635, 'y1': 721, 'y2': 727}
-slit10 = {"index": 10, 'x1': 639, 'x2': 645, 'y1': 821, 'y2': 827}
+slit0 = {"index": 1, "x1":440, "x2": 640, "y1":1014, "y2":1034}
+#slit1 = {"index": 1, "x1":435, "x2": 600, "y1":620, "y2":640}
+#slit2 = {"index": 2, "x1":535, "x2": 550, "y1":700, "y2":740}
+#slit3 = {"index": 3, "x1":635, "x2": 650, "y1":800, "y2":840}
+#slit4 = {"index": 4, "x1":735, "x2": 750, "y1":700, "y2":740}
+#slit5 = {"index": 5, "x1":835, "x2": 850, "y1":800, "y2":840}
+#slit6 = {"index": 6, "x1":935, "x2": 950, "y1":900, "y2":940}
+#slit7 = {"index": 7, 'x1': 609, 'x2': 615, 'y1': 521, 'y2': 527}
+#slit8 = {"index": 8, 'x1': 619, 'x2': 625, 'y1': 621, 'y2': 627}
+#slit9 = {"index": 9, 'x1': 629, 'x2': 635, 'y1': 721, 'y2': 727}
+#slit10 = {"index": 10, 'x1': 639, 'x2': 645, 'y1': 821, 'y2': 827}
 # # =============================================================================
-slit11 = {"index": 11, 'x1': 649, 'x2': 665, 'y1': 921, 'y2': 927}
-slit12 = {"index": 12, 'x1': 409, 'x2': 575, 'y1': 1021, 'y2': 1027}
-slits = [slit1,slit2,slit3,slit4,slit5,slit6,slit7,slit8,slit9,slit10,slit11,slit12]
+#slit11 = {"index": 11, 'x1': 649, 'x2': 665, 'y1': 921, 'y2': 927}
+#slit12 = {"index": 12, 'x1': 409, 'x2': 575, 'y1': 1021, 'y2': 1027}
+slits = [slit0]#[slit1,slit2,slit3,slit4,slit5,slit6,slit7,slit8,slit9,slit10,slit11,slit12]
 # #slits=[slit1,slit11,slit12]
 # #slits=[slit1]
 #print(slits)
 dmd.apply_slits(slits)
-"""
+
 
 
 
@@ -257,7 +258,7 @@ dmd.apply_invert()
 
 
 #A GRID OF 1 MIRROR PINHOLES
-
+"""
 # =============================================================================
 test_shape = np.ones((1080,2048)) # This is the size of the DC2K
 for l in [762,117]:
@@ -277,5 +278,6 @@ dmd.apply_shape(test_shape)
 #dmd.apply_invert()    
 #pd_array_11x11x1 = pd.DataFrame(test_shape)
 #pd_array_11x11x1.to_csv("Grid 11x11x1.csv")
+"""
 
 
