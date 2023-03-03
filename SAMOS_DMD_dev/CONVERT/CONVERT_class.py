@@ -30,7 +30,7 @@ class CONVERT():
 
     def CCD2DMD(self, ccd_x, ccd_y):
         #fits_x, fits_y = ccd_x + 1, ccd_y + 1    
-        fits_x, fits_y = ccd_x + 1, ccd_y + 1    
+        fits_x, fits_y = ccd_x   , ccd_y     
         dmd_x, dmd_y = self.ccd2dmd_wcs.all_pix2world(fits_x,fits_y,0)
         return (dmd_x*3600., dmd_y*3600.+self.yoffset)
         
@@ -43,6 +43,7 @@ class CONVERT():
         dmd_sx, dmd_sy = dmd_skycoord.ra.deg , dmd_skycoord.dec.deg
         
         ccd_x, ccd_y = self.ccd2dmd_wcs.all_world2pix(dmd_sx, dmd_sy, 0)
-        return ccd_x-1,ccd_y-1
+        return ccd_x-1,ccd_y-1 
+        """-1 REALLY? """
         #pass
 

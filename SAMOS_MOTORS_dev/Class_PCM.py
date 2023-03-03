@@ -1042,14 +1042,14 @@ class Class_PCM():
             print('send FW2')
             self.move_FW_pos_wheel('B1')    
             
-        if filter == 'O[III]':
+        if filter == 'OIII':
             print('send FW1')
             self.move_FW_pos_wheel('A4')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
             self.move_FW_pos_wheel('B2')    
             
-        if filter == 'S[II[':
+        if filter == 'SII':
             print('send FW1')
             self.move_FW_pos_wheel('A4')
             print('\n >>> FW1 arrived \n') 

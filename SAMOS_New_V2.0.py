@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Feb 25 13:21:00 2023
-
-03.91.2023 - V1.1
+03.03.203- V2.0
+    - added the capability of drawing generic shapes, 
+03.01.2023 - V1.1
     - Major redesign of the SLit handling part, created the 3 color column on the right side
       following the data flow. 
     - Minor reorg, but notice the new structure of the .csv maps/slit pattern under DMD_dev
@@ -214,9 +215,8 @@ from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera as CCD
 from SAMOS_MOTORS_dev.SAMOS_MOTORS_GUI_dev  import Window as SM_GUI
 """
 from SAMOS_MOTORS_dev.Class_PCM  import Class_PCM 
-"""
 Motors  = Class_PCM()
-
+"""
 from SAMOS_DMD_dev.SAMOS_DMD_GUI_dev import GUI_DMD 
 #from SAMOS_DMD_dev.Class_DMD import DigitalMicroMirrorDevice as DMD
 from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
@@ -238,9 +238,10 @@ from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 #from ginga.misc import widgets 
 #import PCM_module_GUI as Motors
 
+"""
 #text format for writing new info to header. Global var
 param_entry_format = '[Entry {}]\nType={}\nKeyword={}\nValue="{}"\nComment="{}\n"'
-"""
+
 
 
 class App(tk.Tk):
@@ -561,7 +562,9 @@ class ConfigPage(tk.Frame):
         SF.create_fits_folder()
         
         if self.PAR.IP_status_dict['IP_DMD'] == True:  
-            DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
+            IP = self.PAR.IP_dict['IP_DMD']
+            [host,port] = IP.split(":")
+            DMD.initialize(address=host, port=int(port))
             #PCM.power_on()
             #PCM.check_if_power_is_on()
         if self.PAR.IP_status_dict['IP_Motors'] == True:  
@@ -788,7 +791,9 @@ class ConfigPage(tk.Frame):
     def IP_echo(self):                   
 #MOTORS alive?
         print("\n Checking Motors status")
-        PCM.initialize(address=self.PAR.IP_dict['IP_Motors'][0:-5], port=int(self.PAR.IP_dict['IP_Motors'][-4:]))
+        IP = self.PAR.IP_dict['IP_Motors']
+        [host,port] = IP.split(":")
+        PCM.initialize(address=host, port=int(port))
         answer = PCM.echo_client()
         #print("\n Motors return:>", answer,"<")
         if answer != "no connection":
@@ -820,7 +825,9 @@ class ConfigPage(tk.Frame):
             
 #DMD alive?
         print("\n Checking DMD status")
-        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
+        IP = self.PAR.IP_dict['IP_DMD']
+        [host,port] = IP.split(":")
+        DMD.initialize(address=host, port=int(port))
         answer = DMD._open()
         if answer != "no DMD":
             print("\n DMD is on")
@@ -1060,7 +1067,9 @@ class DMDPage(tk.Frame):
 #
 # =============================================================================
     def dmd_initialize(self):
-        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
+        IP = self.PAR.IP_dict['IP_DMD']
+        [host,port] = IP.split(":")
+        DMD.initialize(address=host, port=int(port))
         DMD._open()
         image_map = Image.open(dir_DMD + "/current_dmd_state.png")
         test = ImageTk.PhotoImage(image_map)
@@ -2315,7 +2324,7 @@ class CCDPage(tk.Frame):
         
         url = f'http://alasky.u-strasbg.fr/hips-image-services/hips2fits?{urlencode(query_params)}' 
         hdul = fits.open(url)                                                                           
-        # Downloading http://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=DSS&object=%5BT64%5D++7&ra=243.58457533549102&dec=-19.113364937196987&fov=0.03333333333333333&width=500&height=500
+        # Downloading http://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=DSS&object=%5BT64%5D++7&ra=243.58457533549102&dec=-19.11336493196987&fov=0.03333333333333333&width=500&height=500
         #|==============================================================| 504k/504k (100.00%)         0s
         hdul.info()
         hdul.info()                                                                                     
@@ -2559,7 +2568,7 @@ class MainPage(tk.Frame):
 #        label_FW1.place(x=4,y=10)
 
         all_dirs = SF.read_dir_user()
-        filter_data= ascii.read(local_dir+all_dirs['dir_Motors']+'/IDG_Filter_positions.txt')
+        filter_data= ascii.read(local_dir+all_dirs['dir_system']+'/SAMOS_Filter_positions.txt')
         filter_names = list(filter_data[0:9]['Filter'])
         #print(filter_names)
 
@@ -2640,7 +2649,7 @@ class MainPage(tk.Frame):
 #        labelframe_Grating.place(x=4, y=10)
          
         all_dirs = SF.read_dir_user()
-        Grating_data= ascii.read(local_dir+all_dirs['dir_Motors']+'/IDG_Filter_positions.txt')
+        Grating_data= ascii.read(local_dir+all_dirs['dir_system']+'/SAMOS_Filter_positions.txt')
         self.Grating_names = list(Grating_data[14:18]['Filter'])
         self.Grating_positions= list(Grating_data[14:18]['Position'])
 #        print(Grating_names)
@@ -3693,7 +3702,99 @@ class MainPage(tk.Frame):
         #counter = 0
         self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
         for obj in objects:
+     
             ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
+                
+             
+            if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
+                x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
+                x1,y1 = int(np.round(x1)), int(np.round(y1))
+                self.slit_shape[x1,y1]=0
+            elif  self.vslit.get() != 0 and obj.kind == 'point':
+                x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
+                x1,y1 = int(np.floor(x1)), int(np.floor(y1))
+                x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
+                x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
+            else:
+                print("generic aperture")
+                """
+                x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
+                x1,y1 = int(np.floor(x1)), int(np.floor(y1))
+                x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
+                x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
+                
+                #dmd_corners[:][1] = corners[:][1]+500
+                ####   
+                #x1 = round(dmd_corners[0][0])
+                #y1 = round(dmd_corners[0][1])+400
+                #x2 = round(dmd_corners[2][0])
+                #y2 = round(dmd_corners[2][1])+400
+                """      
+                #3 load the slit pattern  
+                data_box=self.AstroImage.cutout_shape(obj)
+                good_box = data_box.nonzero()
+                good_box_x = good_box[1]
+                good_box_y = good_box[0]
+                print(len(good_box[0]),len(good_box[1]))
+                """ paint black the vertical columns, avoids rounding error in the pixel->dmd sub-int conversion"""
+                for i in np.unique(good_box_x):  #scanning multiple rows means each steps moves up along the y axis
+                    iy = np.where(good_box_x == i) #the indices of the y values pertinent to that x 
+                    iymin = min(iy[0])   #the smallest y index 
+                    iymax = max(iy[0])   #last largest y index
+                    cx0 = ccd_x0 + i     #so for this x position
+                    cy0 = ccd_y0 + good_box_y[iymin] # we have these CCD columns limits, counted on the x axis
+                    cy1 = ccd_y0 + good_box_y[iymax]
+                    x1,y1 = convert.CCD2DMD(cx0,cy0)    #get the lower value of the column at the x position, 
+                    x1,y1 = int(np.round(x1)), int(np.round(y1))  
+                    x2,y2 = convert.CCD2DMD(cx0,cy1)    # and the higher
+                    x2,y2 = int(np.round(x2)), int(np.round(y2))
+                    print(x1,x2,y1,y2)
+                    self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
+                    self.slit_shape[x1-2:x1,y1-2:y2+1] = 1                    
+#                    self.slit_shape[y1:y2+1,x1:x2+1] = 0
+                """ paint black the horizontal columns, avoids rounding error in the pixel->dmd sub-int conversion"""
+                for i in np.unique(good_box_y):  #scanning multiple rows means each steps moves up along the y axis
+                    ix = np.where(good_box_y == i) #the indices of the y values pertinent to that x 
+                    ixmin = min(ix[0])   #the smallest y index 
+                    ixmax = max(ix[0])   #last largest y index
+                    cy0 = ccd_y0 + i     #so for this x position
+                    cx0 = ccd_x0 + good_box_x[ixmin] # we have these CCD columns limits, counted on the x axis
+                    cx1 = ccd_x0 + good_box_x[ixmax]
+                    x1,y1 = convert.CCD2DMD(cx0,cy0)    #get the lower value of the column at the x position, 
+                    x1,y1 = int(np.round(x1)), int(np.round(y1))  
+                    x2,y2 = convert.CCD2DMD(cx1,cy0)    # and the higher
+                    x2,y2 = int(np.round(x2)), int(np.round(y2))
+                    print(x1,x2,y1,y2)
+                    self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
+                    self.slit_shape[x1-2:x1,y1-2:y1] = 1                    
+                """
+                for i in range(len(good_box[0])):
+                x = ccd_x0 + good_box[i]
+                y = ccd_y0 + good_box[i]
+                x1,y1 = convert.CCD2DMD(x,y)
+                self.slit_shape[x1,y1]=0
+                """
+       #     self.slit_shape[x1:x2,y1:y2]=0
+        IP = self.PAR.IP_dict['IP_DMD']
+        [host,port] = IP.split(":")
+        DMD.initialize(address=host, port=int(port))
+        DMD._open()
+        DMD.apply_shape(self.slit_shape)  
+        #DMD.apply_invert()   
+       
+        print("check")
+            
+    """
+    def push_slits(self):
+        # push selected slits to DMD pattern
+        #Export all Ginga objects to Astropy region
+        #1. list of ginga objects
+        objects = CM.CompoundMixin.get_objects(self.canvas)
+        #counter = 0
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        for obj in objects:
+            ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
+    
             x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
             x1,y1 = int(np.floor(x1)), int(np.floor(y1))
             x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
@@ -3706,14 +3807,18 @@ class MainPage(tk.Frame):
             #y2 = round(dmd_corners[2][1])+400
         #3 load the slit pattern   
             self.slit_shape[x1:x2,y1:y2]=0
-        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
+        IP = self.PAR.IP_dict['IP_DMD']
+        [host,port] = IP.split(":")
+        DMD.initialize(address=host, port=int(port))
+
+#        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
         DMD._open()
         DMD.apply_shape(self.slit_shape)  
         #DMD.apply_invert()   
        
         print("check")
+    
  
-    """
     def get_IP(self,device='DMD'): 
         v=pd.read_csv("SAMOS_system_dev/IP_addresses_default.csv",header=None)
         if device == 'DMD':
@@ -3737,7 +3842,7 @@ class MainPage(tk.Frame):
 #        self.Current_Filter.set(self.FW1_filter.get())
         filter = self.FW1_filter.get()
         print(filter)
-        t = Motors.move_filter_wheel(filter)
+        t = PCM.move_filter_wheel(filter)
         #self.Echo_String.set(t)
         print(t)
  
@@ -3745,7 +3850,7 @@ class MainPage(tk.Frame):
         self.Label_Current_Filter.insert(tk.END,self.FW1_filter.get())
         
         self.extra_header_params+=1
-        entry_string = tk.param_entry_format.format(self.extra_header_params,'String','FILTER',
+        entry_string = param_entry_format.format(self.extra_header_params,'String','FILTER',
                                                  filter,'Selected filter')
         self.header_entry_string+=entry_string
         
@@ -3760,10 +3865,10 @@ class MainPage(tk.Frame):
 #        self.Current_Filter.set(self.FW1_filter.get())
 #        grating = str(Grating_Position_Optioned)
 #        print(grating)
-#        t = Motors.move_grism_rails(grating)
+#        t = PCM.move_grism_rails(grating)
 #        GR_pos = self.selected_GR_pos.get()
 #        print(type(GR_pos),type(str(GR_pos)),type("GR_B1")) 
-        t = Motors.move_grism_rails(GR_pos)
+        t = PCM.move_grism_rails(GR_pos)
 #        self.Echo_String.set(t)
         print(t)
         #self.Label_Current_Filter.insert(tk.END,"",#self.FW1_Filter)
@@ -3772,7 +3877,7 @@ class MainPage(tk.Frame):
        
         
         self.extra_header_params+=1
-        entry_string = tk.param_entry_format.format(self.extra_header_params,'String','GRISM',
+        entry_string = param_entry_format.format(self.extra_header_params,'String','GRISM',
                                                   i_selected,'Grism position')
         self.header_entry_string+=entry_string
         
@@ -4025,7 +4130,10 @@ class MainPage(tk.Frame):
         self.this_param_file.write(self.header_entry_string)
         self.this_param_file.close()
         #Expose
-        Camera.expose(self.PAR.IP_dict['IP_CCD'][0:-5], port=int(self.PAR.IP_dict['IP_CCD'][-4:]))
+        IP = self.PAR.IP_dict['IP_CCD']
+        [host,port] = IP.split(":")
+#        PCM.initialize(address=host, port=int(port))
+        Camera.expose(host, port=int(port))
         
         #Fix the fit header from U16 to I16, creating a new image
         #create proper working directory
@@ -4308,7 +4416,10 @@ class MainPage(tk.Frame):
         self.canvas.objects   #check that the points are gone
            
         #we can remove both points and boxes
-        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas,['point','circle'])
+        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas,['point','circle',
+                                                                    'rectangle', 'polygon', 
+                                                                    'triangle', 'righttriangle', 
+                                                                    'ellipse', 'square'])
         list_points=list(points)
         CM.CompoundMixin.delete_objects(self.canvas,list_points)
         self.canvas.objects   #check that the points are gone
@@ -4578,7 +4689,8 @@ class MainPage(tk.Frame):
                                  yradius = yradius,
                                  color = 'red',
                                  alpha = 0.8,
-                                 fill = True))
+                                 fill = True,
+                                 angle=5*u.deg))
 
         self.SlitTabView.add_slit_obj(r, self.fitsimage)
         print("slit added")
@@ -4873,7 +4985,9 @@ class MainPage(tk.Frame):
         self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
         for i in table.index:
            self.slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
-        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
+        IP = self.PAR.IP_dict['IP_DMD']
+        [host,port] = IP.split(":")
+        DMD.initialize(address=host, port=int(port))
         DMD._open()
         DMD.apply_shape(self.slit_shape)
         
@@ -4971,19 +5085,32 @@ class SAMOS_Parameters():
                          'dir_system': '/SAMOS_system_dev',
                         }
         
-        self.IP_dict =  {'IP_Motors': '128.220.146.254:8889',
-                         'IP_CCD'   : '128.220.146.254:8900',
-                         'IP_DMD'   : '128.220.146.254:8888',
-                         'IP_SOAR'  : 'TBD',
-                         'IP_SAMI'  : 'TBD',
-                        } 
-        
+        """ Default IP address imported for all forms"""
+        ip_file_default = dir_SYSTEM + "/IP_addresses_default.csv"           
+        with open(ip_file_default, mode='r') as inp:
+            reader = csv.reader(inp)
+            dict_from_csv = {rows[0]:rows[1] for rows in reader}
+        self.IP_dict = {}
+        self.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
+        self.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']
+        self.IP_dict['IP_DMD']=dict_from_csv['IP_DMD']
+        self.IP_dict['IP_SOAR']=dict_from_csv['IP_SOAR']
+        self.IP_dict['IP_SAMI']=dict_from_csv['IP_SAMI']
+
         self.IP_status_dict = {'IP_Motors':False,
                                'IP_CCD'   :False,
                                'IP_DMD'   :False,
                                'IP_SOAR'  :False,
                                'IP_SAMI'   :False,
                               }
+        """ REMOVED
+        self.IP_dict =  {'IP_Motors': '128.220.146.254:8889',
+                         'IP_CCD'   : '128.220.146.254:8900',
+                         'IP_DMD'   : '128.220.146.254:8888',
+                         'IP_SOAR'  : 'TBD',
+                         'IP_SAMI'  : 'TBD',
+                        } 
+        """
 
         self.inoutvar=tk.StringVar()
         self.inoutvar.set("outside") 
