@@ -74,6 +74,8 @@ class SlitTableView(tk.Tk):
         #Creation of init_window
         self.geometry("700x407")
         
+        self.slit_obj_tags= []
+        
         slitDF = pd.DataFrame(columns=["object","RA","DEC","image_xc","image_yc",
                                        "image_x0", "image_y0", "image_x1", 
                                        "image_y1","dmd_xc","dmd_yc","dmd_x0",
@@ -88,14 +90,18 @@ class SlitTableView(tk.Tk):
         vbox.place(x=4, y=4, anchor="nw", width=700, height=400)
         self.vbox = vbox
         stab = tksheet.Sheet(vbox,width=700,height=400,)
+        stab.enable_bindings('row_select')
         stab.headers(newheaders = slitDF.columns.values, index = None, reset_col_positions = False, 
                      show_headers_if_not_sheet = True, redraw = False)
 
         stab.grid()
         #stab.insert_row(values=list(range(0,15)),redraw=True)
+        #stab.highlight_cells(row=0,column=0,bg='cyan')
+        #stab.highlight_rows(rows=[0],bg='red')
         self.stab = stab
 
-            
+        
+        
     def add_slit_obj(self, obj, viewer):
         """
     
@@ -113,12 +119,12 @@ class SlitTableView(tk.Tk):
 
         """
         
-      
+        print('adding slit obj')
         obj_num = len(self.slitDF.index.values)+1
         
         x, y = obj.center.x, obj.center.y
         width, height = obj.width, obj.height
-        
+        print(width, height)
         halfw = width/2
         halfh = height/2
         
@@ -164,8 +170,10 @@ class SlitTableView(tk.Tk):
         self.slitDF.loc[obj_num-1] = new_slitrow
         
         self.stab.insert_row(values=list(new_slitrow.values),redraw=True)
-    
-     
+        print(self.slitDF)
+        #self.stab.highlight_rows(rows=[obj_num-1],bg='cyan',end_of_screen=True)
+        #self.stab.highlight_cells(row=obj_num-1,cells=['object'],
+        #                          bg='cyan')
     def save_slit_table(self,filename):
         print(self.stab)
         pass
