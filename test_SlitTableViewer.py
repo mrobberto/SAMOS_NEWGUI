@@ -92,7 +92,7 @@ class FitsViewer(object):
 
         canvas = Tkinter.Canvas(vbox, bg="grey", height=512, width=512)
         canvas.pack(side=Tkinter.TOP, fill=Tkinter.BOTH, expand=1)
-
+        self.main_canvas = canvas
         fi = CanvasView(logger)
         fi.set_widget(canvas)
         #fi.set_redraw_lag(0.0)
@@ -182,7 +182,12 @@ class FitsViewer(object):
         btn2 = tk.Radiobutton(hbox1,text="Edit",padx=20,variable=self.setChecked,value="edit", command=self.set_mode_cb).pack(anchor=tk.SW)
         btn3 = tk.Radiobutton(hbox1,text="Pick",padx=20,variable=self.setChecked,value="pick", command=self.set_mode_cb).pack(anchor=tk.SW)
  
-
+        up_btn = Tkinter.Spinbox(hbox,text="+ width", command=self.up_width)
+        up_btn.pack(side=tk.TOP)
+        
+    def up_width(self):
+        print('up width pushed')
+        
     def get_widget(self):
         return self.root
 
@@ -260,6 +265,14 @@ class FitsViewer(object):
         mode = self.setChecked.get()
 #        self.logger.info("canvas mode changed (%s) %s" % (mode))
         self.logger.info("canvas mode changed (%s)" % (mode))
+        
+        try:
+            #put all objects back to default color
+            for obj in self.canvas.objects:
+                obj.color='blue'
+        except:
+            pass
+        
         self.canvas.set_draw_mode(mode)
         #print(mode)
         
@@ -303,7 +316,27 @@ class FitsViewer(object):
         self.logger.info("pick event '%s' with obj %s at (%.2f, %.2f)" % (
             ptype, obj.kind, pt[0], pt[1]))
         
+        
+        #self.canvas.tag_bind(obj.tag, lambda event, 
+       #                      tag=obj.tag: self.slit_picked(event, obj.tag))
+        try:
+            canvas.get_object_by_tag(self.selected_obj_tag).color='blue'
+            canvas.clear_selected()
+            print('unselect previous obj tag')
+        except:
+            pass
+        
         obj_ind = self.SlitTabView.slit_obj_tags.index(obj.tag)
+        canvas.select_add(obj.tag)
+        self.selected_obj_tag = obj.tag
+        obj.color = 'green'
+        
+        canvas.set_draw_mode('draw') #stupid but necessary to show 
+                                    # which object is selected
+        canvas.set_draw_mode('pick')
+        
+
+        
         if ptype=='up' or ptype=='down': 
 #            self.SlitTabView.stab.highlight_rows(rows=[obj_ind],
 #                                                 bg='cyan',redraw=True)
@@ -318,6 +351,11 @@ class FitsViewer(object):
         
         
         return True
+
+    def slit_picked(self, obj):
+        
+        print("object has been edited (not really)")
+        #self.canvas.itemconfigure(tag, outline='green')
     
     def edit_cb(self, obj):
         self.logger.info("object %s has been edited" % (obj.kind))

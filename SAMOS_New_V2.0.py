@@ -4576,6 +4576,12 @@ class MainPage(tk.Frame):
         mode = self.setChecked.get()
 #        self.logger.info("canvas mode changed (%s) %s" % (mode))
         self.logger.info("canvas mode changed (%s)" % (mode))
+        try:
+            for obj in self.canvas.objects:
+                obj.color='lightblue'
+        except:
+            pass
+        
         self.canvas.set_draw_mode(mode)
 
     def draw_cb(self, canvas, tag):
@@ -4592,13 +4598,18 @@ class MainPage(tk.Frame):
         #obj.add_callback('pick-key',self.delete_obj_cb, 'key')
         kind = self.wdrawtype.get()
         print("kind: ", kind)
+        if kind=="box":
+            if self.SlitTabView is None:
+                self.SlitTabView = STView() 
+            r = g2r(obj)
+            self.SlitTabView.add_slit_obj(r, self.fitsimage)
+            self.SlitTabView.slit_obj_tags.append(tag)
+            
         if self.vslit.get() != 0 and kind == 'point':
             true_kind='Slit'
             print("It is a slit")
 #            print("Handle the rectangle as a slit")
-            if self.SlitTabView is None:
-                self.SlitTabView = STView() 
-                
+            
             self.slit_handler(obj)
         
 
@@ -4671,7 +4682,7 @@ class MainPage(tk.Frame):
         x1, y1, x2, y2 = obj.get_llur()
         print("the RADEC of the fitted centroid are, in decimal degrees:")
         print(self.AstroImage.pixtoradec(objs[0].objx,objs[0].objy))
-        slit_box = self.canvas.get_draw_class('rectangle')
+        slit_box = self.canvas.get_draw_class('box')
         slit_w=3
 #        slit_l=9
 #        self.canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
@@ -4692,7 +4703,7 @@ class MainPage(tk.Frame):
                                  fill = True,
                                  angle=5*u.deg))
 
-        self.SlitTabView.add_slit_obj(r, self.fitsimage)
+        
         print("slit added")
 
         #self.cleanup_kind('point')
@@ -4706,11 +4717,40 @@ class MainPage(tk.Frame):
         self.logger.info("pick event '%s' with obj %s at (%.2f, %.2f)" % (
             ptype, obj.kind, pt[0], pt[1]))
         
+        
+        #self.canvas.tag_bind(obj.tag, lambda event, 
+       #                      tag=obj.tag: self.slit_picked(event, obj.tag))
         try:
-            if event.key=='d':
-                canvas.delete_object(obj)
+            canvas.get_object_by_tag(self.selected_obj_tag).color='lightblue'
+            canvas.clear_selected()
+            print('unselect previous obj tag')
         except:
             pass
+        
+        obj_ind = self.SlitTabView.slit_obj_tags.index(obj.tag)
+        canvas.select_add(obj.tag)
+        self.selected_obj_tag = obj.tag
+        obj.color = 'green'
+        
+        canvas.set_draw_mode('draw') #stupid but necessary to show 
+                                    # which object is selected
+        canvas.set_draw_mode('pick')
+        
+
+        
+        if ptype=='up' or ptype=='down': 
+#            self.SlitTabView.stab.highlight_rows(rows=[obj_ind],
+#                                                 bg='cyan',redraw=True)
+            self.SlitTabView.stab.select_row(row=obj_ind)
+        try:
+            if event.key=='d':
+                print(event.key)
+                canvas.delete_object(obj)
+                self.SlitTabView.stab.delete_row(obj_ind)
+        except:
+            pass
+        
+        
         return True
     
     def edit_cb(self, obj):

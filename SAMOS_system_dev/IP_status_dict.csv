@@ -1,5 +1,5 @@
-IP_Motors,True
-IP_CCD,True
-IP_DMD,True
+IP_Motors,False
+IP_CCD,False
+IP_DMD,False
 IP_SOAR,False
 IP_SAMI,False
