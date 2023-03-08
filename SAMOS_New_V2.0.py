@@ -226,6 +226,8 @@ convert = CONVERT()
 
 from SlitTableViewer import SlitTableView as STView
 
+import WriteFITSHead as WFH
+
 
 """
 DMD = DigitalMicroMirrorDevice()#config_id='pass') 
@@ -268,6 +270,8 @@ class App(tk.Tk):
         self.Motors = Motors
         self.CCDPage = CCDPage
         self.MainPage = MainPage
+        
+        
 
         ## Defining Frames and Packing it
         for F in {ConfigPage, DMDPage, Motors, CCDPage, MainPage}:
@@ -1598,6 +1602,7 @@ class Motors(tk.Frame):
         FW_pos = self.selected_FW_pos.get()
         t = PCM.move_FW_pos_wheel(FW_pos)
         self.Echo_String.set(t)
+        #self.fits_header.set_param("filterpos", FW_pos)
         print(t)
         
     def FW_move_to_filter(self):       
@@ -1605,6 +1610,7 @@ class Motors(tk.Frame):
         filter = self.selected_filter.get()
         t = PCM.move_filter_wheel(filter)
         self.Echo_String.set(t)
+        #self.fits_header.set_param("filters", filter)
         print(t)
 
     def GR_move_to_position(self):       
@@ -1612,6 +1618,7 @@ class Motors(tk.Frame):
         GR_pos = self.selected_GR_pos.get()
         t = PCM.move_grism_rails(GR_pos)
         self.Echo_String.set(t)
+        
         print(t)
 
     def enter_command(self):       
@@ -2547,7 +2554,8 @@ class MainPage(tk.Frame):
         # will be used to write "OtherParameters.txt" 
         self.extra_header_params = 0
         self.header_entry_string = '' #keep string of entries to write to a file after acquisition.
-
+        self.fits_header = WFH.FITSHead()
+        self.fits_header.create_main_params_dict()
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
         self.SlitTabView = None
@@ -3859,6 +3867,7 @@ class MainPage(tk.Frame):
         print('moving to filter:',self.FW1_filter.get()) 
 #        self.Current_Filter.set(self.FW1_filter.get())
         filter = self.FW1_filter.get()
+        self.fits_header.set_param("filter1", filter)
         print(filter)
         t = PCM.move_filter_wheel(filter)
         #self.Echo_String.set(t)
@@ -3879,6 +3888,7 @@ class MainPage(tk.Frame):
 #        Grating_Position_Optioned 
         GR_pos = self.Grating_positions[i_selected]
         print(GR_pos)
+        self.fits_header.set_param("grating", GR_pos)
  #       print('moving to grating',Grating_Position_Optioned) 
 #        self.Current_Filter.set(self.FW1_filter.get())
 #        grating = str(Grating_Position_Optioned)
@@ -3967,6 +3977,7 @@ class MainPage(tk.Frame):
         self.expose(params)
 #        self.combine_files()
         self.handle_light()
+        self.fits_header.set_param("expTime", self.Light_ExpT.get())
         print("science file created")
 
 # =============================================================================
@@ -3995,6 +4006,7 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
         self.handle_dark()
+        self.fits_header.set_param("expTime", self.Dark_ExpT.get())
         print("Superdark file created")
 
 
@@ -4009,6 +4021,7 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
         self.handle_flat()
+        self.fits_header.set_param("expTime", self.Flat_ExpT.get())
         print("Superflat file created")
         #Camera= CCD(dict_params=params)
 
@@ -4152,6 +4165,10 @@ class MainPage(tk.Frame):
         [host,port] = IP.split(":")
 #        PCM.initialize(address=host, port=int(port))
         Camera.expose(host, port=int(port))
+        expTime = params['Exposure Time']/1000
+        self.fits_header.set_param("expTime", expTime)
+        self.fits_header.set_param("filter1", self.FW1_filter.get())
+        
         
         #Fix the fit header from U16 to I16, creating a new image
         #create proper working directory
@@ -4160,13 +4177,17 @@ class MainPage(tk.Frame):
         ##fits_image = "/Users/robberto/Box/@Massimo/_Python/SAMOS_GUI_dev/fits_image/newimage_fixed.fit"
         #fits_image = "{}/fits_image/newimage_fixed.fit".format(work_dir)
         self.fits_image = "{}/fits_image/newimage.fit".format(work_dir)
-        fits_image_converted = local_dir+"/fits_image/newimage_fixed.fit"                     
+        fits_image_converted = local_dir+"/fits_image/newimage_fixed.fit"   
+        self.fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
+        self.fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
         #fits_image_converted = "{}/fits_image/newimage_fixed.fit".format(work_dir)                       
         self.convertSIlly(self.fits_image,fits_image_converted)
         
         #copy the cleaned file to newimage.fit
         shutil.copy(fits_image_converted,self.fits_image)
-        
+        input_header = fits.open(self.fits_image)[0].header
+        self.fits_header.create_fits_header(input_header)
+        print(self.fits_header.output_header)
         self.Display(fits_image_converted)
         
         #To do: cancel the original image.= If the canera is active; otherwise leave it.
