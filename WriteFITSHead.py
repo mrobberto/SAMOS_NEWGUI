@@ -122,9 +122,7 @@ class FITSHead(object):
         # including params for spec side for completeness
         
         
-        self.filters = None
-        self.filter1 = None
-        self.filter2 = None
+        self.filter = None
         self.filtpos = None
         self.grating = None
         self.dmdReg = None # region file of slits in in celestial coords
@@ -193,10 +191,8 @@ class FITSHead(object):
                 'CD2_1': self.cd21,
                 'CDELT1': self.cdelt1,
                 'CDELT2': self.cdelt2,
-                'FILTERS': (self.filters, 'Names of filter wheels in A and B'),
-                'FILTER1': (self.filter1, 'Name of filter wheel A'),
-                'FILTER2': (self.filter2, 'Name of filter wheel B'),
-                'FILTPOS': (self.filtpos, 'Filter positions A and B'),
+                'FILTER': (self.filter1, 'Name of filter'),
+                'FILTPOS': (self.filtpos, 'Filter position'),
                 'GRATING' : (self.grating, 'VPH grating name'),
                 'DMDREG' : (self.dmdReg, 'Name of corresponding DMD .reg file')}
         

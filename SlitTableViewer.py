@@ -168,9 +168,7 @@ class SlitTableView(tk.Tk):
         y0 = np.round(y0, 2)
         x1 = np.round(x1, 2)
         y1 = np.round(y1, 2)
-        new_slitrow = pd.Series(np.array([int(obj_num), ra, dec, x, y, x0, y0,
-                                 x1, y1, int(dmd_x), int(dmd_y), int(dmd_x0), int(dmd_y0),
-                                 int(dmd_x1), int(dmd_y1)]))
+        
         
         new_slitrow = [int(obj_num), ra, dec, x, y, x0, y0,
                                  x1, y1, int(dmd_x), int(dmd_y), int(dmd_x0), int(dmd_y0),
