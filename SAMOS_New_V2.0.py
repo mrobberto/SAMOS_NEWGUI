@@ -3149,6 +3149,7 @@ class MainPage(tk.Frame):
         self.frame_SlitConf.place(x=400, y=600, anchor="nw", width=360, height=150)
         labelframe_SlitConf =  tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration", font=("Arial", 24))
         labelframe_SlitConf.pack(fill="both", expand="yes")
+        
 
 # =============================================================================
 #  #    SLIT WIDTH in mirrors, dispersion direction (affects Resolving power)
@@ -3157,7 +3158,17 @@ class MainPage(tk.Frame):
         label_slit_w.place(x=4,y=4)
         self.slit_w = tk.IntVar(value=3) 
         self.textbox_slit_w = tk.Entry(labelframe_SlitConf, textvariable=self.slit_w, width = 4)      
-        self.textbox_slit_w.place(x=130,y=5)
+        #self.textbox_slit_w.place(x=130,y=5)
+        
+        width_adjust_btn = tk.Spinbox(labelframe_SlitConf, 
+                                       command=self.slit_width_length_adjust,increment=1,
+                                       textvariable=self.slit_w, width=5,
+                                       from_=0,to=1080)
+        width_adjust_btn.place(x=130,y=4)
+        #width_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
+        self.width_adjust_btn = width_adjust_btn
+        
+        
 
 # =============================================================================
 #  #    SLIT LENGTH in mirror, cross-dispersion (affets sky subtraction) 
@@ -3167,14 +3178,21 @@ class MainPage(tk.Frame):
         self.slit_l = tk.IntVar() 
         self.slit_l.set(9)
         self.textbox_slit_l = tk.Entry(labelframe_SlitConf, textvariable=self.slit_l, width = 4)      
-        self.textbox_slit_l.place(x=130,y=30)
+        #self.textbox_slit_l.place(x=130,y=30)
+        
+        length_adjust_btn = tk.Spinbox(labelframe_SlitConf, 
+                                       command=self.slit_width_length_adjust,increment=1,
+                                       textvariable=self.slit_l, width=5,
+                                       from_=0, to=1080)
+        length_adjust_btn.place(x=130,y=30)
+        self.length_adjust_btn = length_adjust_btn
 
 # =============================================================================
 #  #    SLIT POINTER ENABLED
 # =============================================================================        
         self.vslit = tk.IntVar()
         wslit = tk.Checkbutton(labelframe_SlitConf, text="Slit Pointer", variable=self.vslit)
-        wslit.place(x=180, y=4)
+        wslit.place(x=220, y=20)
         
         """
 # =============================================================================
@@ -4602,7 +4620,7 @@ class MainPage(tk.Frame):
             if self.SlitTabView is None:
                 self.SlitTabView = STView() 
             r = g2r(obj)
-            self.SlitTabView.add_slit_obj(r, self.fitsimage)
+            self.SlitTabView.add_slit_obj(r, tag, self.fitsimage)
             self.SlitTabView.slit_obj_tags.append(tag)
             
         if self.vslit.get() != 0 and kind == 'point':
@@ -4708,6 +4726,86 @@ class MainPage(tk.Frame):
 
         #self.cleanup_kind('point')
         #ssself.cleanup_kind('box')
+    
+    def get_dmd_coords_of_picked_slit(self, picked_slit):
+        x0,y0,x1,y1 = picked_slit.get_llur()
+        fits_x0 = x0+1
+        fits_y0 = y0+1
+        fits_x1 = x1+1
+        fits_y1 = y1+1
+        
+        fits_xc, fits_yc = picked_slit.get_center_pt()+1
+        
+        dmd_xc, dmd_yc = convert.CCD2DMD(fits_xc, fits_yc)
+        dmd_x0, dmd_y0 = convert.CCD2DMD(fits_x0, fits_y0)
+        dmd_x1, dmd_y1 = convert.CCD2DMD(fits_x1, fits_y1)
+        
+        dmd_width = int(np.ceil(dmd_y1-dmd_y0))
+        dmd_length = int(np.ceil(dmd_x1-dmd_x0))
+        
+        return dmd_xc, dmd_yc, dmd_x0, dmd_y0, dmd_x1, dmd_y1, dmd_width, dmd_length
+    
+
+    
+    def slit_width_length_adjust(self):
+        
+        try:
+            picked_slit = self.canvas.get_object_by_tag(self.selected_obj_tag)
+            
+            current_dmd_width = self.width_adjust_btn.get()
+            current_dmd_length = self.length_adjust_btn.get()
+            
+            half_current_dmd_width = int(current_dmd_width)/2
+            half_current_dmd_length = int(current_dmd_length)/2
+            
+                
+            fits_xc, fits_yc = picked_slit.get_center_pt()
+            dmd_xc, dmd_yc = convert.CCD2DMD(fits_xc+1, fits_yc+1)
+            
+            dmd_x0 = dmd_xc-half_current_dmd_length
+            dmd_y0 = dmd_yc-half_current_dmd_width
+            dmd_x1 = dmd_xc+half_current_dmd_length
+            dmd_y1 = dmd_yc+half_current_dmd_width
+            
+            fits_x0, fits_y0 = convert.DMD2CCD(dmd_x0-1, dmd_y0-1)
+            fits_x1, fits_y1 = convert.DMD2CCD(dmd_x1-1, dmd_y1-1)
+            
+            fits_width = np.ceil(fits_y1-fits_y0)
+            fits_length = np.ceil(fits_x1-fits_x0)
+            
+            picked_slit.xradius = fits_length/2
+            picked_slit.yradius = fits_width/2
+            
+            self.canvas.set_draw_mode('draw') #stupid but necessary to show 
+                                        # which object is selected
+            self.canvas.set_draw_mode('pick')
+            
+            # update the cells in the table.
+            obj_ind = self.SlitTabView.slit_obj_tags.index(self.selected_obj_tag)
+            
+            imcoords_txt_fmt = "{:.2f}"
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=5,redraw=True,
+                                                value=imcoords_txt_fmt.format(fits_x0))
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=6,redraw=True,
+                                                value=imcoords_txt_fmt.format(fits_y0))
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=7,redraw=True,
+                                                value=imcoords_txt_fmt.format(fits_x1))
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=8,redraw=True,
+                                                value=imcoords_txt_fmt.format(fits_y1))
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=11,redraw=True,
+                                                value=int(dmd_x0))
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=12,redraw=True,
+                                                value=int(dmd_y0))
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=13,redraw=True,
+                                                value=int(dmd_x1))
+            self.SlitTabView.stab.set_cell_data(r=obj_ind,c=14,redraw=True,
+                                                value=int(dmd_y1))
+            
+            
+        except AttributeError:
+            print("Must first pick a slit to adjust width/length!!")
+        pass
+    
 
 
     def pick_cb(self, obj, canvas, event, pt, ptype):
@@ -4717,9 +4815,7 @@ class MainPage(tk.Frame):
         self.logger.info("pick event '%s' with obj %s at (%.2f, %.2f)" % (
             ptype, obj.kind, pt[0], pt[1]))
         
-        
-        #self.canvas.tag_bind(obj.tag, lambda event, 
-       #                      tag=obj.tag: self.slit_picked(event, obj.tag))
+
         try:
             canvas.get_object_by_tag(self.selected_obj_tag).color='lightblue'
             canvas.clear_selected()
@@ -4734,22 +4830,27 @@ class MainPage(tk.Frame):
         
         canvas.set_draw_mode('draw') #stupid but necessary to show 
                                     # which object is selected
-        canvas.set_draw_mode('pick')
+        canvas.set_draw_mode('pick') # this took me a solid 3 hours to figure out
         
-
+        dmd_xc, dmd_yc,dmd_x0, dmd_y0, dmd_x1, dmd_y1, dmd_width, dmd_length = \
+                        self.get_dmd_coords_of_picked_slit(obj)
+        
+        self.slit_w.set(dmd_width)
+        self.slit_l.set(dmd_length)
         
         if ptype=='up' or ptype=='down': 
-#            self.SlitTabView.stab.highlight_rows(rows=[obj_ind],
-#                                                 bg='cyan',redraw=True)
+
             self.SlitTabView.stab.select_row(row=obj_ind)
         try:
             if event.key=='d':
-                print(event.key)
+                #print(event.key)
                 canvas.delete_object(obj)
                 self.SlitTabView.stab.delete_row(obj_ind)
+                self.SlitTabView.slitDF = self.SlitTabView.slitDF.drop(index=obj_ind)
+                del self.SlitTabView.slit_obj_tags[obj_ind]
+                canvas.clear_selected()
         except:
             pass
-        
         
         return True
     

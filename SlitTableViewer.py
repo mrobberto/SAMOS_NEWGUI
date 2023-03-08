@@ -102,7 +102,7 @@ class SlitTableView(tk.Tk):
 
         
         
-    def add_slit_obj(self, obj, viewer):
+    def add_slit_obj(self, obj, tag, viewer):
         """
     
 
@@ -120,7 +120,7 @@ class SlitTableView(tk.Tk):
         """
         
         print('adding slit obj')
-        obj_num = len(self.slitDF.index.values)+1
+        obj_num = int(tag.strip("@"))#len(self.slitDF.index.values)+1
         
         x, y = obj.center.x, obj.center.y
         width, height = obj.width, obj.height
@@ -162,15 +162,26 @@ class SlitTableView(tk.Tk):
             #    str(e)))
             ra = np.nan
             dec = np.nan
+        x = np.round(x, 2)
+        y = np.round(y, 2)
+        x0 = np.round(x0, 2)
+        y0 = np.round(y0, 2)
+        x1 = np.round(x1, 2)
+        y1 = np.round(y1, 2)
+        new_slitrow = pd.Series(np.array([int(obj_num), ra, dec, x, y, x0, y0,
+                                 x1, y1, int(dmd_x), int(dmd_y), int(dmd_x0), int(dmd_y0),
+                                 int(dmd_x1), int(dmd_y1)]))
         
-        new_slitrow = pd.Series(np.array([obj_num, ra, dec, x, y, x0, y0,
-                                 x1, y1, dmd_x, dmd_y, dmd_x0, dmd_y0,
-                                 dmd_x1, dmd_y1]))
+        new_slitrow = [int(obj_num), ra, dec, x, y, x0, y0,
+                                 x1, y1, int(dmd_x), int(dmd_y), int(dmd_x0), int(dmd_y0),
+                                 int(dmd_x1), int(dmd_y1)]
+        self.slitDF.loc[obj_num-1] = pd.Series(np.array(new_slitrow))
         
-        self.slitDF.loc[obj_num-1] = new_slitrow
+        self.stab.insert_row(values=new_slitrow,redraw=True)
+        self.stab.row_index(0)
         
-        self.stab.insert_row(values=list(new_slitrow.values),redraw=True)
-        print(self.slitDF)
+        print('added row')
+        #print(self.slitDF)
         #self.stab.highlight_rows(rows=[obj_num-1],bg='cyan',end_of_screen=True)
         #self.stab.highlight_cells(row=obj_num-1,cells=['object'],
         #                          bg='cyan')
