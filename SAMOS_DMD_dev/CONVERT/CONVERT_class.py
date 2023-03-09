@@ -43,7 +43,7 @@ class CONVERT():
         dmd_sx, dmd_sy = dmd_skycoord.ra.deg , dmd_skycoord.dec.deg
         
         ccd_x, ccd_y = self.ccd2dmd_wcs.all_world2pix(dmd_sx, dmd_sy, 0)
-        return ccd_x-1,ccd_y-1 
-        """-1 REALLY? """
+        return ccd_x,ccd_y 
+        
         #pass
 

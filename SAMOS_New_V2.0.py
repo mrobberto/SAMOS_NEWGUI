@@ -3555,7 +3555,15 @@ class MainPage(tk.Frame):
         return self.RRR_RADec
 
     def draw_slits(self):
-        [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
+        
+        try:
+            #len(self.SlitTabView.slit_obj_tags) !=0:
+            
+            [ap_region.add_region(self.canvas, self.RRR_xyAP[reg], 
+                tag=self.SlitTabView.slit_obj_tags[reg]) for reg in range(len(self.RRR_xyAP))]
+        except:    
+            [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
+        
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         #color in RED all the regions loaded from .reg file
         CM.CompoundMixin.set_attr_all(self.canvas,color="red")
@@ -3631,7 +3639,14 @@ class MainPage(tk.Frame):
         self.RA_regCNTR = RA_cut[0][:-1]
         self.DEC_regCNTR = (re.findall('-.*',RADEC))[0]
         #we return the filename
-        print("(RA,DEC) Regions loaded from .reg file")        
+        print("(RA,DEC) Regions loaded from .reg file")    
+        
+        if self.SlitTabView is None:
+            self.SlitTabView = STView()
+        
+        self.SlitTabView.load_table_from_regfile_RADEC(self.filename_regfile_RADEC)
+        # right now uses the default test WCS in the SlitTableViewer file
+        
         return self.filename_regfile_RADEC
         
     def load_regfile_xyAP(self):
@@ -4334,6 +4349,7 @@ class MainPage(tk.Frame):
         
         print(self.wcs)
         hdu_wcs = self.wcs.to_fits()
+        hdu_wcs[0].data = data # add data to fits file
         self.wcs_filename = "./SAMOS_Astrometry_dev/" + "WCS_"+ra+"_"+dec+".fits"
         hdu_wcs[0].writeto(self.wcs_filename,overwrite=True)
         #
@@ -4862,6 +4878,7 @@ class MainPage(tk.Frame):
         if ptype=='up' or ptype=='down': 
 
             self.SlitTabView.stab.select_row(row=obj_ind)
+            print("picked object with tag {}".format(obj.tag))
         try:
             if event.key=='d':
                 #print(event.key)

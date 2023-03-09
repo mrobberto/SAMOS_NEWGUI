@@ -185,6 +185,18 @@ class FitsViewer(object):
         up_btn = Tkinter.Spinbox(hbox,text="+ width", command=self.up_width)
         up_btn.pack(side=tk.TOP)
         
+        load_RADEC_regs_btn = tk.Button(hbox, text="test load RADEC regs",
+                                        command=self.show_RADEC_regs_in_table)
+        load_RADEC_regs_btn.pack(side=tk.RIGHT)
+        #load_RADEC_regs_btn.place(x=180,y=100)
+    
+    def show_RADEC_regs_in_table(self):
+        
+        if self.SlitTabView is None:
+            self.SlitTabView = STView()
+        
+        self.SlitTabView.load_table_from_regfile_RADEC()
+        
     def up_width(self):
         print('up width pushed')
         
