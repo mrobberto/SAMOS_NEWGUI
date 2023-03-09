@@ -3556,17 +3556,29 @@ class MainPage(tk.Frame):
 
     def draw_slits(self):
         
-        try:
-            #len(self.SlitTabView.slit_obj_tags) !=0:
+        if len(self.SlitTabView.slit_obj_tags) > 0:
             
-            [ap_region.add_region(self.canvas, self.RRR_xyAP[reg], 
-                tag=self.SlitTabView.slit_obj_tags[reg]) for reg in range(len(self.RRR_xyAP))]
-        except:    
+            for reg in range(len(self.RRR_xyAP)):
+                this_tag = self.SlitTabView.slit_obj_tags[reg]
+                
+                if this_tag not in list(self.canvas.tags.keys()):
+                    this_reg = self.RRR_xyAP[reg]
+                    this_obj = r2g(this_reg)
+                    this_obj.add_callback('pick-down', self.pick_cb, 'down')
+                    this_obj.add_callback('pick-up', self.pick_cb, 'up')
+
+                    this_obj.add_callback('pick-key', self.pick_cb, 'key')
+                    self.canvas.add(this_obj, tag=this_tag)
+                    
+                #    ap_region.add_region(self.canvas, self.RRR_xyAP[reg],
+                #                         tag = this_tag)   
+                    #print(self.canvas.get_object_by_tag(this_tag))
+        else:    
             [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
         
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         #color in RED all the regions loaded from .reg file
-        CM.CompoundMixin.set_attr_all(self.canvas,color="red")
+        CM.CompoundMixin.set_attr_all(self.canvas,color="red", pickable=True)
     
     """
     def convert_regions_xyAP2slit(self):
@@ -3644,7 +3656,9 @@ class MainPage(tk.Frame):
         if self.SlitTabView is None:
             self.SlitTabView = STView()
         
-        self.SlitTabView.load_table_from_regfile_RADEC(self.filename_regfile_RADEC)
+        canvas_tags = list(self.canvas.tags.keys())
+        self.SlitTabView.load_table_from_regfile_RADEC(current_canvas_tags=canvas_tags, 
+                                            regfile_RADEC=self.filename_regfile_RADEC)
         # right now uses the default test WCS in the SlitTableViewer file
         
         return self.filename_regfile_RADEC
@@ -4233,6 +4247,9 @@ class MainPage(tk.Frame):
         # passes the image to the viewer through the set_image() method
         self.fitsimage.set_image(self.AstroImage)
         self.root.title(self.fullpath_FITSfilename)
+        
+        if self.AstroImage.wcs.wcs.has_celestial:
+            self.wcs = self.AstroImage.wcs.wcs
 
 
     """ 
@@ -4402,11 +4419,18 @@ class MainPage(tk.Frame):
         self.AstroImage = load_data(self.fullpath_FITSfilename, logger=self.logger)
         self.canvas.set_image(self.AstroImage)
         self.root.title(self.fullpath_FITSfilename)
+        
+        #self.wcs = 
 
     def open_file(self):
         filename = filedialog.askopenfilename(filetypes=[("allfiles", "*"),
                                               ("fitsfiles", "*.fits")])
-        self.load_file(filename)
+        #self.load_file(filename)
+        self.AstroImage = load_data(filename, logger=self.logger)
+        self.fitsimage.set_image(self.AstroImage)
+        
+        if self.AstroImage.wcs.wcs.has_celestial:
+            self.wcs = self.AstroImage.wcs.wcs
 
     def run_code(self):
         """
@@ -4852,7 +4876,7 @@ class MainPage(tk.Frame):
         self.logger.info("pick event '%s' with obj %s at (%.2f, %.2f)" % (
             ptype, obj.kind, pt[0], pt[1]))
         
-
+        
         try:
             canvas.get_object_by_tag(self.selected_obj_tag).color='lightblue'
             canvas.clear_selected()
