@@ -3867,7 +3867,7 @@ class MainPage(tk.Frame):
         print('moving to filter:',self.FW1_filter.get()) 
 #        self.Current_Filter.set(self.FW1_filter.get())
         filter = self.FW1_filter.get()
-        self.fits_header.set_param("filter1", filter)
+        self.fits_header.set_param("filter", filter)
         print(filter)
         t = PCM.move_filter_wheel(filter)
         #self.Echo_String.set(t)
@@ -4167,7 +4167,7 @@ class MainPage(tk.Frame):
         Camera.expose(host, port=int(port))
         expTime = params['Exposure Time']/1000
         self.fits_header.set_param("expTime", expTime)
-        self.fits_header.set_param("filter1", self.FW1_filter.get())
+        self.fits_header.set_param("filter", self.FW1_filter.get())
         
         
         #Fix the fit header from U16 to I16, creating a new image
