@@ -3574,8 +3574,17 @@ class MainPage(tk.Frame):
                 #                         tag = this_tag)   
                     #print(self.canvas.get_object_by_tag(this_tag))
         else:    
-            [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
-        
+            #[ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
+            #making the above line more explicit to add callbacks
+            for reg in range(len(self.RRR_xyAP)):
+                this_reg = self.RRR_xyAP
+                this_obj = r2g(this_reg)
+                this_obj.add_callback('pick-down', self.pick_cb, 'down')
+                this_obj.add_callback('pick-up', self.pick_cb, 'up')
+
+                this_obj.add_callback('pick-key', self.pick_cb, 'key')
+                self.canvas.add(this_obj)
+                
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         #color in RED all the regions loaded from .reg file
         CM.CompoundMixin.set_attr_all(self.canvas,color="red", pickable=True)
@@ -3598,6 +3607,7 @@ class MainPage(tk.Frame):
     def convert_regions_xyAP2xyGA(self):
         print("converting (x,y) Astropy Regions to (x,y) Ginga Regions")
         [CM.CompoundMixin.add_object(self.canvas,r2g(reg)) for reg in self.RRR_xyAP]
+        
         #uses r2g
         self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
         print("(x,y) Astropy regions converted to (x,y) Ginga regions\nRRR_xyGA created")
