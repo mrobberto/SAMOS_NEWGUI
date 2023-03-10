@@ -3104,7 +3104,7 @@ class MainPage(tk.Frame):
 
         wdrawcolor = ttk.Combobox(hbox, values=self.drawcolors)#,
         #                           command=self.set_drawparams)
-        index = self.drawcolors.index('lightblue')
+        index = self.drawcolors.index('red')
         wdrawcolor.current(index)
         wdrawcolor.bind("<<ComboboxSelected>>", self.set_drawparams)
         #wdrawcolor = tk.Entry(hbox, width=12)
@@ -3556,7 +3556,7 @@ class MainPage(tk.Frame):
 
     def draw_slits(self):
         
-        
+        """
         #[ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
         #making the above line more explicit to add callbacks
         for reg in range(10):#range(len(self.RRR_xyAP)):
@@ -3570,10 +3570,11 @@ class MainPage(tk.Frame):
              #ap_region.add_region(self.canvas, this_reg)
              print("reg number {} tag: {}".format(reg,this_obj.tag))
              self.SlitTabView.slit_obj_tags.append(this_obj.tag)
-            
+         """   
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         #color in RED all the regions loaded from .reg file
         CM.CompoundMixin.set_attr_all(self.canvas,color="red")
+        #[print("draw-slits obj tags ", obj.tag) for obj in all_ginga_objects]
     
     """
     def convert_regions_xyAP2slit(self):
@@ -3592,7 +3593,20 @@ class MainPage(tk.Frame):
     
     def convert_regions_xyAP2xyGA(self):
         print("converting (x,y) Astropy Regions to (x,y) Ginga Regions")
-        [CM.CompoundMixin.add_object(self.canvas,r2g(reg)) for reg in self.RRR_xyAP]
+        #[CM.CompoundMixin.add_object(self.canvas,r2g(reg)) for reg in self.RRR_xyAP]
+        for reg in range(len(self.RRR_xyAP)):
+             this_reg = self.RRR_xyAP[reg]
+             this_obj = r2g(this_reg)
+             this_obj.pickable = True
+             this_obj.add_callback('pick-down', self.pick_cb, 'down')
+             this_obj.add_callback('pick-up', self.pick_cb, 'up')
+        
+             this_obj.add_callback('pick-key', self.pick_cb, 'key')
+             self.canvas.add(this_obj)
+             #ap_region.add_region(self.canvas, this_reg)
+             print("reg number {} tag: {}".format(reg,this_obj.tag))
+             self.SlitTabView.slit_obj_tags.append(this_obj.tag)
+        #[print("cm object tags", obj.tag) for obj in self.canvas.get_objects()]
         #uses r2g
         self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
         print("(x,y) Astropy regions converted to (x,y) Ginga regions\nRRR_xyGA created")
@@ -4644,7 +4658,7 @@ class MainPage(tk.Frame):
         self.logger.info("canvas mode changed (%s)" % (mode))
         try:
             for obj in self.canvas.objects:
-                obj.color='lightblue'
+                obj.color='red'
         except:
             pass
         
@@ -4865,7 +4879,7 @@ class MainPage(tk.Frame):
         
         canvas.clear_selected()
         try:
-            canvas.get_object_by_tag(self.selected_obj_tag).color='lightblue'
+            canvas.get_object_by_tag(self.selected_obj_tag).color='red'
             canvas.clear_selected()
             print('unselect previous obj tag')
         except:
