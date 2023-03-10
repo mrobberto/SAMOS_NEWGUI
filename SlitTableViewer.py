@@ -59,10 +59,22 @@ from regions import PixCoord, RectanglePixelRegion, PointPixelRegion, RegionVisu
 from SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT 
 convert = CONVERT()
 
+from astropy.wcs import WCS
+from astropy.coordinates import SkyCoord
+import astropy.units as u 
+
+
 # popup window for Main_V7 that shows the slit setup
 # when the user drops a slit somewhere, it will show up here
 # user can see the slit parameters in pixel, DMD, and world coordinates.
 # when user selects a slit on the canvas, it should highlight that row.
+
+
+
+test_img_twirled = fits.open("SAMOS_Astrometry_dev/WCS_150.1679077_-54.7886346.fits")
+test_wcs = WCS(test_img_twirled[0].header)
+
+test_regf = "SAMOS_regions/RADEC/NGC3105_V2.RADEC=150.1679077-54.7886346.reg"
 
 class SlitTableView(tk.Tk):
     
@@ -183,6 +195,66 @@ class SlitTableView(tk.Tk):
         #self.stab.highlight_rows(rows=[obj_num-1],bg='cyan',end_of_screen=True)
         #self.stab.highlight_cells(row=obj_num-1,cells=['object'],
         #                          bg='cyan')
+        
+        
+    def load_table_from_regfile_RADEC(self, regfile_RADEC=test_regf, img_wcs=test_wcs):
+        
+        regs_RADEC = Regions.read(regfile_RADEC)
+        
+        
+        
+        obj_tag_fmt = '@{}'
+        
+        regs_CCD = []
+        
+        obj_num = self.stab.total_rows()
+        
+        for reg_rect in regs_RADEC:
+            obj_num += 1
+            
+            obj_tag = obj_tag_fmt.format(obj_num)
+            #self.slit_obj_tags.append(obj_tag) # tags from this don't do anything yet
+            
+            ra = reg_rect.center.ra.degree
+            dec = reg_rect.center.dec.degree
+            
+            pix_rect = reg_rect.to_pixel(img_wcs)
+            regs_CCD.append(pix_rect)
+            dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs)
+            
+            pix_w, pix_h = pix_rect.width, pix_rect.height
+            dmd_w, dmd_h = dmd_rect.width.value, dmd_rect.height.value 
+            # dmd rectangle region width and height are returned in arcsec
+            
+            
+            
+            pix_xc, pix_yc = pix_rect.center.x, pix_rect.center.y
+            pix_x0, pix_y0 = pix_xc - pix_w/2, pix_yc - pix_h/2
+            pix_x1, pix_y1 = pix_xc + pix_w/2, pix_yc + pix_h/2
+            
+            dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + convert.yoffset
+            # dmd center points of region returned in deg. Must also apply y offset
+            dmd_x0, dmd_y0 = dmd_xc - dmd_w/2, dmd_yc - dmd_h/2
+            dmd_x1, dmd_y1 = dmd_xc + dmd_w/2, dmd_yc + dmd_h/2
+            
+            new_slitrow = [obj_num, np.round(ra,6), np.round(dec,6), 
+                           np.round(pix_xc,2), np.round(pix_yc,2), 
+                           np.round(pix_x0,2), np.round(pix_y0,2), 
+                           np.round(pix_x1,2), np.round(pix_y1,2),
+                           int(dmd_xc), int(dmd_yc), int(dmd_x0), 
+                           int(dmd_y0), int(dmd_x1), int(dmd_y1)]
+            
+            
+            self.stab.insert_row(values=new_slitrow,redraw=True)
+            self.stab.row_index(0)
+            
+        print('added regions to table')
+        return 
+    
+    def load_table_from_regfile_CCD(self):
+        
+        pass
+        
     def save_slit_table(self,filename):
         print(self.stab)
         pass
