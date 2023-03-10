@@ -1069,10 +1069,31 @@ class DMDPage(tk.Frame):
 #       Display Patterns
 # =============================================================================
 
-#        self.Hadamard_frame = tk.Frame(self, width = 300, height = 270, bg="dark gray") 
-#        self.Hadamard_frame.place(x=605,y=4)
-        self.Hadamard_LabelFrame = tk.LabelFrame(self, width = 300, height = 270, bg="dark gray", text="Hadamard") 
-        self.Hadamard_LabelFrame.place(x=605,y=4)
+        self.Hadamard_frame = tk.Frame(self, width = 308, height = 278, bg="dark gray") 
+        self.Hadamard_frame.place(x=605,y=4)
+        self.HadamardConf_LabelFrame = tk.LabelFrame(self.Hadamard_frame, width = 300, height = 270, bg="dark gray", text="Hadamard Configuration") 
+        self.HadamardConf_LabelFrame.place(x=4,y=4)
+        
+        """ Type of Matrix: S or H?"""
+        self.HMatrix_Checked = tk.StringVar(None,"S Matrix")
+        btn1 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="S Matrix",padx=20,variable=self.HMatrix_Checked,value="S_Matrix", command=self.set_HTS_matrix)
+        btn2 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="H Matrix",padx=20,variable=self.HMatrix_Checked,value="H_Matrix", command=self.set_HTS_matrix)
+        btn1.place(x=4,y=20)
+        btn2.place(x=150, y=20)
+        
+        label_Order =  tk.Label(self.HadamardConf_LabelFrame, text="Order")#, font=("Arial", 24))
+        label_Order.place(x=4, y=50)
+        orders = (3,7,11,15,19,23,31,35,43,47,63,71,79,83,103,127,255)
+        self.order = tk.IntVar() 
+        self.order.set(orders[2])
+        # Create Dropdown menu
+        self.order_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.order, *orders)
+        self.order_menu.place(x=150, y=50)
+        #&&&          
+                  
+        
+    def set_HTS_matrix(self):
+        pass
 # =============================================================================
 # 
 #         # Exit
