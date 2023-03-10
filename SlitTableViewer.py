@@ -197,28 +197,29 @@ class SlitTableView(tk.Tk):
         #                          bg='cyan')
         
         
-    def load_table_from_regfile_RADEC(self, current_canvas_tags, regfile_RADEC=test_regf, img_wcs=test_wcs):
+    def load_table_from_regfile_RADEC(self, regfile_RADEC=test_regf, img_wcs=test_wcs):
         
         regs_RADEC = Regions.read(regfile_RADEC)
         
-        if len(current_canvas_tags)>0:
-            obj_num = int(current_canvas_tags[-1].strip('@'))
-        else:
-            obj_num = 0
+        
         
         obj_tag_fmt = '@{}'
         
+        regs_CCD = []
+        
+        obj_num = self.stab.total_rows()
         
         for reg_rect in regs_RADEC:
             obj_num += 1
             
             obj_tag = obj_tag_fmt.format(obj_num)
-            self.slit_obj_tags.append(obj_tag) # tags from this don't do anything yet
+            #self.slit_obj_tags.append(obj_tag) # tags from this don't do anything yet
             
             ra = reg_rect.center.ra.degree
             dec = reg_rect.center.dec.degree
             
             pix_rect = reg_rect.to_pixel(img_wcs)
+            regs_CCD.append(pix_rect)
             dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs)
             
             pix_w, pix_h = pix_rect.width, pix_rect.height

@@ -574,7 +574,7 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         # Convert pixel coordinates to world coordinates.
         # The second argument is "origin" -- in this case we're declaring we
         # have 0-based (Numpy-like) coordinates.    
-        world = w.wcs_pix2world(pixcrd, 0)
+        world = wcs.wcs_pix2world(pixcrd, 0)
         print(world)
  
         # Convert the same coordinates back to pixel coordinates.
