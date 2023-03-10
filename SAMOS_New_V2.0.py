@@ -151,7 +151,7 @@ from matplotlib import pyplot as plt
 import twirl
 
 
-#import aplpy
+import aplpy
 #from astropy.nddata import block_reduce
 
 #import regions
@@ -607,7 +607,8 @@ class ConfigPage(tk.Frame):
         with open(dir_SYSTEM + "/dirlist_default.csv", mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
-
+        inp.close()
+        
         self.dir_Motors.set(dict_from_csv['dir_Motors'])
         self.dir_CCD.set(dict_from_csv['dir_CCD'])
         self.dir_DMD.set(dict_from_csv['dir_DMD'])
@@ -637,7 +638,8 @@ class ConfigPage(tk.Frame):
         with open(dir_SYSTEM + "/dirlist_user.csv", mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
-
+        inp.close()
+        
         self.dir_Motors.set(dict_from_csv['dir_Motors'])
         self.dir_CCD.set(dict_from_csv['dir_CCD'])
         self.dir_DMD.set(dict_from_csv['dir_DMD'])
@@ -676,9 +678,11 @@ class ConfigPage(tk.Frame):
         self.PAR.dir_dict['dir_system'] = self.dir_system.get()
         
         # open file for writing, "w" is writing
-        w = csv.writer(open(dir_SYSTEM + "/dirlist_user.csv", "w"))
+        file_dirlist = open(dir_SYSTEM + "/dirlist_user.csv", "w")
+        w = csv.writer(file_dirlist)
         print(dir_SYSTEM + "/dirlist_user.csv")
-
+        file_dirlist.close()
+        
         # loop over dictionary keys and values
         for key, val in self.PAR.dir_dict.items():
 
@@ -697,6 +701,7 @@ class ConfigPage(tk.Frame):
         with open(ip_file, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
+        inp.close()
 
         self.PAR.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
         self.PAR.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']
@@ -737,15 +742,16 @@ class ConfigPage(tk.Frame):
         ip_file_default = dir_SYSTEM + "/IP_addresses_default.csv"    
         os.system('cp {} {}'.format(ip_file,ip_file_default))  
         
-        w = csv.writer(open(ip_file, "w"))
         print(ip_file)
+        w = csv.writer(open(ip_file, "w"))
 
         # loop over dictionary keys and values
         for key, val in self.PAR.IP_dict.items():
 
             # write every key and value to file
             w.writerow([key, val])            
- 
+        w.close()
+
         self.save_IP_status()    
         
         
@@ -763,7 +769,8 @@ class ConfigPage(tk.Frame):
         with open(ip_file_default, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
-
+        inp.close()
+        
         self.PAR.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
         self.PAR.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']
         self.PAR.IP_dict['IP_DMD']=dict_from_csv['IP_DMD']
@@ -782,14 +789,15 @@ class ConfigPage(tk.Frame):
 
 
     def save_IP_status(self):
-
-        w = csv.writer(open(dir_SYSTEM + "/IP_status_dict.csv", "w"))
+        file_IPstatus = open(dir_SYSTEM + "/IP_status_dict.csv" , "w")
+        w = csv.writer(file_IPstatus)
 
         # loop over dictionary keys and values
         for key, val in self.PAR.IP_status_dict.items():
 
             # write every key and value to file
-            w.writerow([key, val])               
+            w.writerow([key, val])   
+        file_IPstatus.close()
 
 
     def IP_echo(self):                   
@@ -1081,7 +1089,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
-              
+        image_map.close()      
         
     def dmd_blackout(self):
         DMD.apply_blackout()
@@ -1092,6 +1100,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
 
     def dmd_whiteout(self):
         DMD.apply_whiteout()
@@ -1102,6 +1111,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
 
     def dmd_checkerboard(self):
         DMD.apply_checkerboard()
@@ -1114,6 +1124,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
 
     def dmd_invert(self):
         DMD.apply_invert()
@@ -1130,7 +1141,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
-
+        image_map.close()
              
 #        # global img
 #        img= ImageTk.PhotoImage(Image.open(local_dir + "/current_dmd_state.png"))
@@ -1145,9 +1156,10 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
             
     def browseFiles(self):
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
                                           title = "Select a File",
                                           filetypes = (("Text files",
                                                         "*.csv"),
@@ -1165,7 +1177,7 @@ class DMDPage(tk.Frame):
     def LoadMap(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -1180,7 +1192,8 @@ class DMDPage(tk.Frame):
             myFile = csv.reader(file)
             for row in myFile:
                 myList.append(row)
-        #print(myList)         
+        #print(myList)       
+        file.close()
         
         for i in range(len(myList)):
             print("Row " + str(i) + ": " + str(myList[i]))
@@ -1199,7 +1212,7 @@ class DMDPage(tk.Frame):
 
         print('img =', self.img)
         self.canvas.create_image(104,128,image=self.img)
-
+        image_map.close()
         
 # =============================================================================
 #
@@ -1210,7 +1223,7 @@ class DMDPage(tk.Frame):
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/slits",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -1244,7 +1257,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
-
+        image_map.close()
 
     def save_slittable(self):
         pass
@@ -2363,7 +2376,7 @@ class CCDPage(tk.Frame):
         # HISTORY From HiPS CDS/P/DSS2/NIR (DSS2 NIR (XI+IS))    
         self.image = hdul                                    
         hdul.writeto('./newtable.fits',overwrite=True)
-        
+        hdul.close()
     
                 
         gc = aplpy.FITSFigure(hdul)                                                                     
@@ -3867,7 +3880,7 @@ class MainPage(tk.Frame):
         print('moving to filter:',self.FW1_filter.get()) 
 #        self.Current_Filter.set(self.FW1_filter.get())
         filter = self.FW1_filter.get()
-        self.fits_header.set_param("filter1", filter)
+        self.fits_header.set_param("filter", filter)
         print(filter)
         t = PCM.move_filter_wheel(filter)
         #self.Echo_String.set(t)
@@ -3951,7 +3964,8 @@ class MainPage(tk.Frame):
     
         with open(fname, "rb") as in_f:
             buf = in_f.read()
-
+        in_f.close()
+        
     # Two fixes:
     # Header cards:
         buf = buf.replace(b'SIMPLE  =                    F', b'SIMPLE  =                    T')
@@ -3965,7 +3979,8 @@ class MainPage(tk.Frame):
     
         with open(outname, "wb+") as out_f:
             out_f.write(buf)
-
+        out_f.close()
+        
 # =============================================================================
 # # Expose_light
 # 
@@ -4046,6 +4061,7 @@ class MainPage(tk.Frame):
                     os.rename(files[i],local_dir+"/fits_image/"+self.image_type+"_"+str(i)+".fits")
                 else: 
                     os.remove(files[i])
+            hdu.close()        
         superfile = superfile_cube.mean(axis=2)        
         superfile_header = hdu[0].header
         fits.writeto(local_dir+"/fits_image/super"+self.image_type+".fits",superfile,superfile_header,overwrite=True)
@@ -4058,19 +4074,22 @@ class MainPage(tk.Frame):
         
     def handle_dark(self):
         dark_file = local_dir+"/fits_image/superdark.fits"
-        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_dark = fits.open(dark_file)
         dark = hdu_dark[0].data
+        hdr = hdu_dark[0].header
+        exptime = hdr['PARAM2']
+        hdu_dark.close()
+
+        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
+        hdu_bias.close()
         
         if self.subtract_Bias.get() == 1:
             dark_bias = dark-bias
         else:    
             dark_bias = dark
         
-        hdr = hdu_dark[0].header
-        exptime = hdr['PARAM2']
         dark_sec = dark_bias / exptime
         hdr_out = hdr
         hdr_out['PARAM2']=1
@@ -4078,21 +4097,27 @@ class MainPage(tk.Frame):
 
     def handle_flat(self):
         flat_file = local_dir+"/fits_image/superflat.fits"
-        dark_s_file = local_dir+"/fits_image/superdark_s.fits"
-        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_flat = fits.open(flat_file)
         flat = hdu_flat[0].data
+        hdr = hdu_flat[0].header
+        exptime = hdr['PARAM2']
+        hdu_flat.close()
+
+        dark_s_file = local_dir+"/fits_image/superdark_s.fits"
+        hdu_dark_s = fits.open(dark_s_file)
+        dark_s = hdu_dark_s[0].data
+        hdu_dark_s.close()
+        
+        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
+        hdu_bias.close()
+        
         if self.subtract_Bias.get() == 1:
             flat_bias = flat-bias
         else:    
             flat_bias = flat
 
-        hdr = hdu_flat[0].header
-        exptime = hdr['PARAM2']
-        hdu_dark_s = fits.open(dark_s_file)
-        dark_s = hdu_dark_s[0].data
         dark = dark_s * exptime
         if self.subtract_Dark.get() == 1:
             flat_dark = flat-dark
@@ -4110,16 +4135,20 @@ class MainPage(tk.Frame):
         
         hdu_light = fits.open(light_file)
         light = hdu_light[0].data
+        hdu_light.close()
         
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
+        hdu_bias.close()
         
         hdu_dark_s = fits.open(dark_s_file)
         dark_s = hdu_dark_s[0].data
+        hdu_dark_s.close()
         
         hdu_flat = fits.open(flat_file)
         flat = hdu_flat[0].data
-
+        hdu_flat.close()
+        
         hdr = hdu_light[0].header
         exptime = hdr['PARAM2']
 
@@ -4167,7 +4196,7 @@ class MainPage(tk.Frame):
         Camera.expose(host, port=int(port))
         expTime = params['Exposure Time']/1000
         self.fits_header.set_param("expTime", expTime)
-        self.fits_header.set_param("filter1", self.FW1_filter.get())
+        self.fits_header.set_param("filter", self.FW1_filter.get())
         
         
         #Fix the fit header from U16 to I16, creating a new image
@@ -4185,10 +4214,12 @@ class MainPage(tk.Frame):
         
         #copy the cleaned file to newimage.fit
         shutil.copy(fits_image_converted,self.fits_image)
-        input_header = fits.open(self.fits_image)[0].header
+        hdul  = fits.open(self.fits_image)
+        input_header = hdul[0].header
         self.fits_header.create_fits_header(input_header)
         print(self.fits_header.output_header)
         self.Display(fits_image_converted)
+        hdul.close()
         
         #To do: cancel the original image.= If the canera is active; otherwise leave it.
         #Hence, we need a general switch to activate if the camera is running.
@@ -4217,7 +4248,7 @@ class MainPage(tk.Frame):
         
         # passes the image to the viewer through the set_image() method
         self.fitsimage.set_image(self.AstroImage)
-        self.root.title(self.fullpath_FITSfilename)
+        #self.root.title(self.fullpath_FITSfilename)
 
 
     """ 
@@ -4252,6 +4283,7 @@ class MainPage(tk.Frame):
             img.load_hdu(self.hdu_res)       
 
             self.fitsimage.set_image(img)
+        hdu_in.close()
         
         #self.root.title(filepath)
     
@@ -4274,9 +4306,9 @@ class MainPage(tk.Frame):
         #self.load_file()   #for ging
         
         hdu=fits.open(self.fits_image_ff)[0]  #for this function to work
-        
         header = hdu.header 
         data = hdu.data
+        hdu.close()
         
         ra, dec = header["RA"], header["DEC"]
         center = SkyCoord(ra, dec, unit=["deg", "deg"])
@@ -5082,7 +5114,7 @@ class MainPage(tk.Frame):
     def LoadMap(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -5117,7 +5149,7 @@ class MainPage(tk.Frame):
 
         print('img =', self.img)
         self.canvas.create_image(104,128,image=self.img)
-
+        image_map.close()
         
 # =============================================================================
 #
@@ -5128,7 +5160,7 @@ class MainPage(tk.Frame):
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD +"/DMD_maps_csv",
+        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD +"/DMD_csv/slits",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -5162,6 +5194,7 @@ class MainPage(tk.Frame):
         #Add image to the Canvas Items
         print('img =', self.img)
         self.canvas.create_image(104,128,image=self.img)
+        
 
 
     def Save_slittable(self):
@@ -5252,6 +5285,7 @@ class SAMOS_Parameters():
         with open(ip_file_default, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
+        inp.close()    
         self.IP_dict = {}
         self.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
         self.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']

@@ -191,7 +191,7 @@ class FITSHead(object):
                 'CD2_1': self.cd21,
                 'CDELT1': self.cdelt1,
                 'CDELT2': self.cdelt2,
-                'FILTER': (self.filter1, 'Name of filter'),
+                'FILTER': (self.filter, 'Name of filter'),
                 'FILTPOS': (self.filtpos, 'Filter position'),
                 'GRATING' : (self.grating, 'VPH grating name'),
                 'DMDREG' : (self.dmdReg, 'Name of corresponding DMD .reg file')}

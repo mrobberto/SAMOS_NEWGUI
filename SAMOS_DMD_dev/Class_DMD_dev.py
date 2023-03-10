@@ -816,8 +816,14 @@ class DigitalMicroMirrorDevice():
     def send_smart_message(self):
         pass
 
-
     def apply_slits(self, slits, dm_num=1):
+        dm_shape= np.ones((1080,2048))
+        for slit in slits:
+            print(slit)
+            dm_shape[slit['x1']:slit['x2']+1,slit['y1']:slit['y2']+1] = 0
+        self.apply_shape(dm_shape, dm_num=1)
+
+    def apply_slits_old(self, slits, dm_num=1):
         """ Function to apply a shape to the DMD. The DMD controller can set a
         row and repeat said row. The logic here to optimize does the following :
         
