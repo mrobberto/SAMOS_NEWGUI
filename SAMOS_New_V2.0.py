@@ -1075,22 +1075,29 @@ class DMDPage(tk.Frame):
         self.HadamardConf_LabelFrame.place(x=4,y=4)
         
         """ Type of Matrix: S or H?"""
-        self.HMatrix_Checked = tk.StringVar(None,"S Matrix")
-        btn1 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="S Matrix",padx=20,variable=self.HMatrix_Checked,value="S_Matrix", command=self.set_HTS_matrix)
-        btn2 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="H Matrix",padx=20,variable=self.HMatrix_Checked,value="H_Matrix", command=self.set_HTS_matrix)
+        self.HMatrix_Checked = tk.StringVar(None,"S")
+        btn1 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="S Matrix",padx=20,variable=self.HMatrix_Checked,value="S", command=self.set_HTS_matrix)
+        btn2 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="H Matrix",padx=20,variable=self.HMatrix_Checked,value="H", command=self.set_HTS_matrix)
         btn1.place(x=4,y=5)
         btn2.place(x=4, y=30)#150, y=20)
         
         """ Order of S Matrix?"""
         label_order =  tk.Label(self.HadamardConf_LabelFrame, text="Order: ",bd=4)#, font=("Arial", 24))
-        label_order.place(x=140, y=3)
-        self.orders = (3,7,11,15,19,23,31,35,43,47,63,71,79,83,103,127,255)
-        self.order = tk.IntVar() 
-        self.order.set(self.orders[1])
-        self.order_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.order, *self.orders)
-        self.order_menu.place(x=190, y=4)
-        #&&&          
+        label_order.place(x=140, y=14)
+        self.Sorders = (3,7,11,15,19,23,31,35,43,47,63,71,79,83,103,127,255)
+        self.Sorder = tk.IntVar() 
+        self.Sorder.set(self.Sorders[1])
+        self.order = self.Sorder.get()
+        self.Sorder_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.Sorder, *self.Sorders)
+        self.Sorder_menu.place(x=190, y=15)       
                   
+        """ Order of H Matrix?"""
+        self.Horders = (2,4,8,16,32,64,128,256,512,1024)
+        self.Horder = tk.IntVar() 
+        self.Horder.set(self.Horders[1])
+        self.Horder_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.Horder, *self.Horders)
+        self.Horder_menu.place(x=1090, y=29)       
+
         """ Slit Width?"""
         label_width =  tk.Label(self.HadamardConf_LabelFrame, text="Slit Width: ",bd=4)#, font=("Arial", 24))
         label_width.place(x=4, y=74)
@@ -1120,8 +1127,8 @@ class DMDPage(tk.Frame):
         """ Slit With?"""
         label_width =  tk.Label(self.HadamardConf_LabelFrame, text="Width:",bd=4)#, font=("Arial", 24))
         label_width.place(x=4, y=148)
-        #self.width_ = tk.StringVar() 
-        #self.width_.set("21")
+        self.width_ = tk.StringVar() 
+        self.width_.set("21")
         self.textbox_width = tk.Text(self.HadamardConf_LabelFrame,  height=1, width = 4, bg="red", fg="white",font=("Arial", 14))
         self.textbox_width.place(x=50,y=150)
         self.textbox_width.insert(tk.INSERT,"21")
@@ -1134,7 +1141,7 @@ class DMDPage(tk.Frame):
         """ Check # ?"""
         label_check =  tk.Label(self.HadamardConf_LabelFrame, text="ChecK Mask Nr.: ",bd=4)#, font=("Arial", 24))
         label_check.place(x=4, y=220)
-        mask_arrays = range(self.order.get())
+        mask_arrays = range(self.order)
         self.mask_checked = tk.StringVar() 
         self.mask_checked.set(0)
         self.mask_check_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.mask_checked, *mask_arrays)
@@ -1146,10 +1153,79 @@ class DMDPage(tk.Frame):
                                             command = self.save_masks_file)
         button_save_masks.place(x=4,y=251)
         
+        """ Load Masks?"""
+        button_load_masks= tk.Button(self.HadamardConf_LabelFrame,
+                                            text = "Load masks:",
+                                            command = self.load_masks_file)
+        button_load_masks.place(x=4,y=281)
+        label_filename_masks = tk.Label(self.HadamardConf_LabelFrame, text="Current Mask Set:")
+        label_filename_masks.place(x=4,y=309)
+        self.str_filename_masks = tk.StringVar() 
+        self.textbox_filename_masks = tk.Text(self.HadamardConf_LabelFrame, height = 1, width = 22)      
+        self.textbox_filename_masks.place(x=130,y=310)
+        
+        
+        #&&&   
+
+    def load_masks_file(self):
+        
+        self.textbox_filename_masks.delete('1.0', tk.END)
+        filename_masks = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/slits",
+                                        title = "Select a File",
+                                        filetypes = (("Text files",
+                                                      "*.csv"),
+                                                     ("all files",
+                                                      "*.*")))
+        head, tail = os.path.split(filename_masks)
+        self.textbox_filename_masks.insert(tk.END, tail)
+        """
+        table = pd.read_csv(filename_masks)
+        xoffset = 0
+        yoffset = np.full(len(table.index),int(2048/4))
+        y1 = (round(table['x'])-np.floor(table['dx1'])).astype(int) + yoffset
+        y2 = (round(table['x'])+np.ceil(table['dx2'])).astype(int) + yoffset
+        x1 = (round(table['y'])-np.floor(table['dy1'])).astype(int) + xoffset
+        x2 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        for i in table.index:
+           self.slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
+        DMD.apply_shape(self.slit_shape)
+        
+        # Create a photoimage object of the image in the path
+        #Load the image
+        # global img
+        #self.img = None
+#        image_map = Image.open(local_dir + "/current_dmd_state.png")
+#        self.img= ImageTk.PhotoImage(image_map)
+#         image_map.close()
+        image_map = Image.open(dir_DMD + "/current_dmd_state.png")        
+        test = ImageTk.PhotoImage(image_map)
+        label1 = tk.Label(self.canvas,image=test)
+        label1.image = test
+        # Position image
+        label1.place(x=-100, y=0)
+        image_map.close()
+        """
+        pass
+
     def save_masks_file(self):
+        filename_masks = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")], 
+                                        defaultextension = ".reg",
+                                        initialdir=local_dir+"/SAMOS_regions/pixels")
+        self.textbox_filename_masks.delete('1.0', tk.END)
+        head, tail = os.path.split(filename_masks)
+        self.textbox_filename_masks.insert(tk.END, tail)
         pass
 
     def set_HTS_matrix(self):
+        if self.HMatrix_Checked.get() == "S":
+            self.Sorder_menu.place(x=190, y=15)
+            self.Horder_menu.place(x=1090, y=15)
+            self.order = self.Sorder.get()
+        else:
+            self.Horder_menu.place(x=190, y=15)
+            self.Sorder_menu.place(x=1090, y=15) 
+            self.order = self.Horder.get()
         pass
     
     def HTS_generate(self):
@@ -4397,7 +4473,7 @@ class MainPage(tk.Frame):
         hdu=fits.open(self.fits_image_ff)[0]  #for this function to work
         header = hdu.header 
         data = hdu.data
-        hdu.close()
+        
         
         ra, dec = header["RA"], header["DEC"]
         center = SkyCoord(ra, dec, unit=["deg", "deg"])
