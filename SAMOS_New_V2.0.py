@@ -1065,12 +1065,20 @@ class DMDPage(tk.Frame):
         self.canvas = tk.Canvas(self, width = 300, height = 270, bg="dark gray") 
         self.canvas.place(x=300,y=4)
 
+# ==========================================================================
+#       Display Patterns
+# =============================================================================
+
+#        self.Hadamard_frame = tk.Frame(self, width = 300, height = 270, bg="dark gray") 
+#        self.Hadamard_frame.place(x=605,y=4)
+        self.Hadamard_LabelFrame = tk.LabelFrame(self, width = 300, height = 270, bg="dark gray", text="Hadamard") 
+        self.Hadamard_LabelFrame.place(x=605,y=4)
 # =============================================================================
 # 
 #         # Exit
 # =============================================================================
-        quitButton = tk.Button(self, text="Exit",command=self.client_exit)
-        quitButton.place(x=180, y=350)
+#        quitButton = tk.Button(self, text="Exit",command=self.client_exit)
+#        quitButton.place(x=180, y=350)
 
 
 # =============================================================================
@@ -1272,12 +1280,12 @@ class DMDPage(tk.Frame):
         self.Echo_String.set(t)
         print(t)
         
-    def client_exit(self):
-        print("destroy")
-        self.destroy()         
+#    def client_exit(self):
+#        print("destroy")
+#        self.destroy()         
 
     def create_menubar(self, parent):
-        parent.geometry("610x407")
+        parent.geometry("910x407")
         parent.title("SAMOS DMD Controller")
         self.PAR = SAMOS_Parameters()
         
