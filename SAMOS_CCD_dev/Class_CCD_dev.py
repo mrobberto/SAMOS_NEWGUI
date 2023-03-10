@@ -319,7 +319,8 @@ class Class_Camera(object):
         print("Collected {} images in {:.3f} seconds.".format(collected_images,time() - startTime))
         print("Longest image collection cycle was {:.3f} seconds.".format(longest_cycle))
         print("Read %u bytes in %.3f seconds (%.3f MB/s average)." % (total_read_bytes,total_read_time,(total_read_bytes/(1000000 * total_read_time))))
-        
+        return "CCD: Exposure Completed"
+    
     def write_fitsfile(self):
         fits_dir = SF.read_fits_folder()
         print(fits_dir)

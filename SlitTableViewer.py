@@ -202,17 +202,24 @@ class SlitTableView(tk.Tk):
         regs_RADEC = Regions.read(regfile_RADEC)
         
         
-        obj_num = 0
+        
+        obj_tag_fmt = '@{}'
+        
+        regs_CCD = []
+        
+        obj_num = self.stab.total_rows()
+        
         for reg_rect in regs_RADEC:
             obj_num += 1
             
-            obj_tag = '@{}'.format(obj_num)
-            self.slit_obj_tags.append(obj_tag) # tags from this don't do anything yet
+            obj_tag = obj_tag_fmt.format(obj_num)
+            #self.slit_obj_tags.append(obj_tag) # tags from this don't do anything yet
             
             ra = reg_rect.center.ra.degree
             dec = reg_rect.center.dec.degree
             
             pix_rect = reg_rect.to_pixel(img_wcs)
+            regs_CCD.append(pix_rect)
             dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs)
             
             pix_w, pix_h = pix_rect.width, pix_rect.height
