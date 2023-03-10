@@ -2266,7 +2266,17 @@ class CCDPage(tk.Frame):
 
 
     def clear_canvas(self):
+        obj_tags = list(self.canvas.tags.keys())
+        print(obj_tags)
+        for tag in obj_tags:
+            if self.SlitTabView is not None:
+                if tag in self.SlitTabView.slit_obj_tags:
+                    obj_ind = self.SlitTabView.slit_obj_tags.index(tag)
+                    self.SlitTabView.stab.delete_row(obj_ind)
+                    del self.SlitTabView.slit_obj_tags[obj_ind]
+                    
         self.canvas.delete_all_objects(redraw=True)
+        
 
 #    
     def return_from_astrometry(self):
@@ -2556,6 +2566,7 @@ class MainPage(tk.Frame):
         self.header_entry_string = '' #keep string of entries to write to a file after acquisition.
         self.fits_header = WFH.FITSHead()
         self.fits_header.create_main_params_dict()
+        self.wcs = None
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
         self.SlitTabView = None
@@ -3604,7 +3615,8 @@ class MainPage(tk.Frame):
              this_obj.add_callback('pick-key', self.pick_cb, 'key')
              self.canvas.add(this_obj)
              #ap_region.add_region(self.canvas, this_reg)
-             print("reg number {} tag: {}".format(reg,this_obj.tag))
+             if reg<10 or reg==len(self.RRR_xyAP)-1:
+                 print("reg number {} tag: {}".format(reg,this_obj.tag))
              self.SlitTabView.slit_obj_tags.append(this_obj.tag)
         #[print("cm object tags", obj.tag) for obj in self.canvas.get_objects()]
         #uses r2g
@@ -3647,6 +3659,12 @@ class MainPage(tk.Frame):
                                                       "*.*")))
         #First read the file and set the regions in original RADEC units
         self.RRR_RADec = Regions.read(self.filename_regfile_RADEC, format='ds9')
+        filtered_duplicates_regions = []
+        for reg in self.RRR_RADec:
+            if reg not in filtered_duplicates_regions:
+                filtered_duplicates_regions.append(reg)
+        
+        self.RRR_RADec = filtered_duplicates_regions
         #
         #Then extract the clean filename to get RA and DEC of the central point
         head, tail = os.path.split(self.filename_regfile_RADEC)
@@ -3665,7 +3683,7 @@ class MainPage(tk.Frame):
         if self.SlitTabView is None:
             self.SlitTabView = STView()
         
-        self.SlitTabView.load_table_from_regfile_RADEC(regfile_RADEC=self.filename_regfile_RADEC,
+        self.SlitTabView.load_table_from_regfile_RADEC(regs_RADEC=self.RRR_RADec,
                                                         img_wcs=self.wcs)        # right now uses the default test WCS in the SlitTableViewer file
         
         return self.filename_regfile_RADEC
@@ -3686,11 +3704,33 @@ class MainPage(tk.Frame):
         self.textbox_filename_regfile_xyAP.insert(tk.END, tail)
             
         self.RRR_xyAP = Regions.read(regfileName, format='ds9')
+        filtered_duplicates_regions = []
+        for reg in self.RRR_xyAP:
+            if reg not in filtered_duplicates_regions:
+                filtered_duplicates_regions.append(reg)
+        
+        self.RRR_xyAP = filtered_duplicates_regions
+        
+        if self.SlitTabView is None:
+            self.SlitTabView = STView()
+            
+        self.SlitTabView.load_table_from_regfile_CCD(regs_CCD=self.RRR_xyAP,
+                                                        img_wcs=self.wcs)
+        # if the image has a wcs, it will be used to get sky coords
+        
         
         self.RRR_xyGA = self.convert_regions_xyAP2xyGA()
+        #[print("first 10 xyAP obj tags ", obj.tag) for obj in self.canvas.get_objects()[:10]]
+        
+        #[print("last 10 xyAP obj tags ", obj.tag) for obj in self.canvas.get_objects()[-10:]]
+        print("how many objects? ", len(self.canvas.get_objects()))
         #self.display_region_file()
         print("(x,y) Astropy Regions loaded from .reg file")        
         #regfile = open(regfileName, "r")
+        
+        
+        
+        
         
     """
     def display_region_file(self):
@@ -3973,6 +4013,14 @@ class MainPage(tk.Frame):
 
     def clear_canvas(self):
         #CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
+        obj_tags = list(self.canvas.tags.keys())
+        #print(obj_tags)
+        for tag in obj_tags:
+            if self.SlitTabView is not None:
+                if tag in self.SlitTabView.slit_obj_tags:
+                    obj_ind = self.SlitTabView.slit_obj_tags.index(tag)
+                    self.SlitTabView.stab.delete_row(obj_ind)
+                    del self.SlitTabView.slit_obj_tags[obj_ind]
         self.canvas.delete_all_objects(redraw=True)
 
 #ConvertSIlly courtesy of C. Loomis
@@ -4877,7 +4925,7 @@ class MainPage(tk.Frame):
         self.logger.info("pick event '%s' with obj %s at (%.2f, %.2f)" % (
             ptype, obj.kind, pt[0], pt[1]))
         
-        canvas.clear_selected()
+        #canvas.clear_selected()
         try:
             canvas.get_object_by_tag(self.selected_obj_tag).color='red'
             canvas.clear_selected()
