@@ -1069,10 +1069,91 @@ class DMDPage(tk.Frame):
 #       Display Patterns
 # =============================================================================
 
-#        self.Hadamard_frame = tk.Frame(self, width = 300, height = 270, bg="dark gray") 
-#        self.Hadamard_frame.place(x=605,y=4)
-        self.Hadamard_LabelFrame = tk.LabelFrame(self, width = 300, height = 270, bg="dark gray", text="Hadamard") 
-        self.Hadamard_LabelFrame.place(x=605,y=4)
+        self.Hadamard_frame = tk.Frame(self, width = 300, height = 400, bg="gray") 
+        self.Hadamard_frame.place(x=605,y=4)
+        self.HadamardConf_LabelFrame = tk.LabelFrame(self.Hadamard_frame, width = 292, height = 392, text="Hadamard Configuration") 
+        self.HadamardConf_LabelFrame.place(x=4,y=4)
+        
+        """ Type of Matrix: S or H?"""
+        self.HMatrix_Checked = tk.StringVar(None,"S Matrix")
+        btn1 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="S Matrix",padx=20,variable=self.HMatrix_Checked,value="S_Matrix", command=self.set_HTS_matrix)
+        btn2 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="H Matrix",padx=20,variable=self.HMatrix_Checked,value="H_Matrix", command=self.set_HTS_matrix)
+        btn1.place(x=4,y=5)
+        btn2.place(x=4, y=30)#150, y=20)
+        
+        """ Order of S Matrix?"""
+        label_order =  tk.Label(self.HadamardConf_LabelFrame, text="Order: ",bd=4)#, font=("Arial", 24))
+        label_order.place(x=140, y=3)
+        self.orders = (3,7,11,15,19,23,31,35,43,47,63,71,79,83,103,127,255)
+        self.order = tk.IntVar() 
+        self.order.set(self.orders[1])
+        self.order_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.order, *self.orders)
+        self.order_menu.place(x=190, y=4)
+        #&&&          
+                  
+        """ Slit Width?"""
+        label_width =  tk.Label(self.HadamardConf_LabelFrame, text="Slit Width: ",bd=4)#, font=("Arial", 24))
+        label_width.place(x=4, y=74)
+        self.entrybox_width = tk.Entry(self.HadamardConf_LabelFrame, width = 3)
+        self.entrybox_width.insert(0, "3")
+        self.entrybox_width.place(x=80,y=73)
+        
+        """ Slit Length?"""
+        label_Length =  tk.Label(self.HadamardConf_LabelFrame, text="Length:",bd=4)#, font=("Arial", 24))
+        label_Length.place(x=154, y=74)
+        self.entrybox_Length = tk.Entry(self.HadamardConf_LabelFrame, width = 4)
+        self.entrybox_Length.insert(0, "256")
+        self.entrybox_Length.place(x=230,y=73)
+
+        """ Center Field?"""
+        label_center_x =  tk.Label(self.HadamardConf_LabelFrame, text="Center: Xo",bd=4)#, font=("Arial", 24))
+        label_center_x.place(x=4, y=111)
+        self.entrybox_center_x = tk.Entry(self.HadamardConf_LabelFrame, width = 4)
+        self.entrybox_center_x.insert(0, "540")
+        self.entrybox_center_x.place(x=80,y=110)
+        label_center_y =  tk.Label(self.HadamardConf_LabelFrame, text="Center: Yo", bd=4)#, font=("Arial", 24))
+        label_center_y.place(x=154, y=111)
+        self.entrybox_center_y = tk.Entry(self.HadamardConf_LabelFrame, width = 5)
+        self.entrybox_center_y.insert(0, "1024")
+        self.entrybox_center_y.place(x=230,y=110)
+
+        """ Slit With?"""
+        label_width =  tk.Label(self.HadamardConf_LabelFrame, text="Width:",bd=4)#, font=("Arial", 24))
+        label_width.place(x=4, y=148)
+        #self.width_ = tk.StringVar() 
+        #self.width_.set("21")
+        self.textbox_width = tk.Text(self.HadamardConf_LabelFrame,  height=1, width = 4, bg="red", fg="white",font=("Arial", 14))
+        self.textbox_width.place(x=50,y=150)
+        self.textbox_width.insert(tk.INSERT,"21")
+ 
+        """ GENERATE """
+        self.button_Generate =  tk.Button(self.HadamardConf_LabelFrame, text="GENERATE", bd=3, bg='#A877BA',font=("Arial", 24),
+                                      command=self.HTS_generate)
+        self.button_Generate.place(x=80,y=180)
+    
+        """ Check # ?"""
+        label_check =  tk.Label(self.HadamardConf_LabelFrame, text="ChecK Mask Nr.: ",bd=4)#, font=("Arial", 24))
+        label_check.place(x=4, y=220)
+        mask_arrays = range(self.order.get())
+        self.mask_checked = tk.StringVar() 
+        self.mask_checked.set(0)
+        self.mask_check_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.mask_checked, *mask_arrays)
+        self.mask_check_menu.place(x=120, y=221)
+        
+        """ Save Masks as?"""
+        button_save_masks= tk.Button(self.HadamardConf_LabelFrame,
+                                            text = "Save masks as:",
+                                            command = self.save_masks_file)
+        button_save_masks.place(x=4,y=251)
+        
+    def save_masks_file(self):
+        pass
+
+    def set_HTS_matrix(self):
+        pass
+    
+    def HTS_generate(self):
+        pass
 # =============================================================================
 # 
 #         # Exit
