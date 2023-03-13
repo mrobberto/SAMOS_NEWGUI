@@ -102,17 +102,17 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
                 row_a[j] = 1 
     
         x1,x2 = Xo-(mask_size/2), Xo+(mask_size/2) # Coordinates for the mask center
-        y1,y2 = np.int(Yo-(mask_size/2)),np.int(Yo+(mask_size/2)) # Coordinates for the mask center
+        y1,y2 = int(Yo-(mask_size/2)),int(Yo+(mask_size/2)) # Coordinates for the mask center
     
         """For  horizontal slits, spectra along the DMD """
         for j in range (y1, y2):    # Insert the matrices into the DMD mask array
-            DMD_mask_a[j, np.int(x1):np.int(x2)]= row_a
-            DMD_mask_b[j, np.int(x1):np.int(x2)]= row_b
+            DMD_mask_a[j, int(x1):int(x2)]= row_a
+            DMD_mask_b[j, int(x1):int(x2)]= row_b
 
         """For  vertical slits, spectra across the DMD """        
-        for j in range (int(x1), ind(x2)):    # Insert the matrices into the DMD mask array
-            DMD_mask_a[y1:y2, j] = row_a
-            DMD_mask_b[y1:y2, j]= row_b
+        #for j in range (int(x1), int(x2)):    # Insert the matrices into the DMD mask array
+        #    DMD_mask_a[y1:y2, j] = row_a
+        #    DMD_mask_b[y1:y2, j]= row_b
 
 
         mask_set_a[:,:,i]= DMD_mask_a
@@ -137,7 +137,7 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
 
 DMD_size = (1080,2048) #(1024,2048) #(768, 1024) # XGA or DC2K DMD array size
 matrix_type = 'S' # Two options, H or S
-order = 83 # Order of the hadamard matrix (or S matrix)
+order = 15 # Order of the hadamard matrix (or S matrix)
 Xo, Yo = DMD_size[1]/2, DMD_size[0]/2   # Coordinates on the DMD to center the Hadamard matrix around
 
 slit_width = 4 # Slit width in number of micromirrors 
@@ -155,7 +155,9 @@ plt.title(str(matrix_type)+'-matrix, n= '+str(order))
 
 #%% Open a file and check that the code worked
 #name = 'H128_3w_mask_a1.bmp'
-name = 'S83_4w_mask_34.bmp'
+#name = 'H16_4w_mask_a1.bmp'
+#name = 'S83_4w_mask_34.bmp'
+name = 'S15_4w_mask_12.bmp'
 im =np.asarray(Image.open(folder+name), dtype='int')
 plt.imshow(im, cmap='gray')
 
