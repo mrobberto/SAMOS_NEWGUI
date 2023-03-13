@@ -151,7 +151,7 @@ from matplotlib import pyplot as plt
 import twirl
 
 
-#import aplpy
+import aplpy
 #from astropy.nddata import block_reduce
 
 #import regions
