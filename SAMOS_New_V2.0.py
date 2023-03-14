@@ -26,7 +26,7 @@ Created on Tue Feb 25 13:21:00 2023
 TO DO: "Run Code" erases everything, should leave the slits untouched.
 
 02.26.2023 First committ to share with Dana
-=======
+#===#====
 - V7. Created a button for saving the Stil Table made by Dana, to be completeed.
       moved folder "asset" to archive
       Fixed when Convertsilly correction is done, overwrites newimage.fit
@@ -83,10 +83,10 @@ local_dir = str(path.absolute())
 parent_dir = str(path.parent)   
 sys.path.append(parent_dir)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # Import classes
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #load the functions
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 
@@ -167,14 +167,14 @@ import re #re module of the standard library handles strings, e.g. use re.search
 #import sewpy   #to run sextractor wrapper
 
 STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcName)s) | %(message)s'
-# =============================d================================================
+# #===#===#===#===#===#===#===#===#=====d#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===
 # 
 # from Astrometry import tk_class_astrometry
 # Astrometry = tk_class_astrometry
 # 
 # Astrometry.return_from_astrometry()
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
 #from pathlib import Path
 ##define the local directory, absolute so it is not messed up when this is called
@@ -367,11 +367,11 @@ class ConfigPage(tk.Frame):
         self.frame0l.place(x=0, y=0)#, anchor="nw", width=20, height=145)
         
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    Directories
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.labelframe_Servers =  tk.LabelFrame(self.frame0l, text="Directories", font=("Arial", 24))
         self.labelframe_Servers.place(x=4, y=4, anchor="nw", width=592, height=225)
   
@@ -436,11 +436,11 @@ class ConfigPage(tk.Frame):
         Button_dir_Load= tk.Button(self.labelframe_Servers, text ="Load Default", relief="raised", command = self.load_dir_default, font=("Arial", 24))
         Button_dir_Load.place(x=380, y=90)
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    Servers
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.labelframe_Servers =  tk.LabelFrame(self.frame0l, text="Servers", font=("Arial", 24))
         self.labelframe_Servers.place(x=4, y=234, anchor="nw", width=592, height=200)
         
@@ -520,11 +520,11 @@ class ConfigPage(tk.Frame):
        # Button_IP_Load_Default = tk.Button(self.labelframe_Servers, text ="Load Default", relief="raised", command = self.load_IP_default, font=("Arial", 24))
        # Button_IP_Load_Default.place(x=380, y=90)
  
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    OTHER INFO
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame0r = tk.Frame(self,background="dark gray", width=400, height=500)
         self.frame0r.place(x=585, y=0)#, anchor="nw", width=20, height=145)
  
@@ -542,23 +542,23 @@ class ConfigPage(tk.Frame):
 
  
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    Initialize
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.Initialize_frame =  tk.Frame(self.frame0l)
         self.Initialize_frame.place(x=4, y=440, anchor="nw", width=592, height=48)
         Initialize_Button = tk.Button(self.Initialize_frame, text ="Initialize", relief="raised", command = self.startup, font=("Arial",24)) 
         Initialize_Button.place(x=230, y=5)
 
-# =============================================================================
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #   FUNCTIONS ....
 #         
-# =============================================================================
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def startup(self):
         print("CONFIG_GUI: entering startup()\n")
         self.load_IP_default()
@@ -577,9 +577,9 @@ class ConfigPage(tk.Frame):
         print("\n*** CONFIG_GUI: exiting startup() ***\n")
         
     
-    # =============================================================================
+    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     # create directoy to store the data
-    # =============================================================================
+    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         def create_fits_folder(self) :       
     
             today = datetime.now()
@@ -725,14 +725,14 @@ class ConfigPage(tk.Frame):
  #       dict = {'IP_Motors' : self.IP_Motors.get(), 'IP_CCD' :  self.IP_CCD.get(), 'IP_DMD' :  self.IP_DMD.get(), 'IP_SOAR':  self.IP_SOAR.get(), 'IP_SAMI': self.IP_SAMI.get()}
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         self.PAR.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
 #         self.PAR.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']
 #         self.PAR.IP_dict['IP_DMD']=dict_from_csv['IP_DMD']
 #         self.PAR.IP_dict['IP_SOAR']=dict_from_csv['IP_SOAR']
 #         self.PAR.IP_dict['IP_SAMI']=dict_from_csv['IP__SOAR_SAMI']
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # open file for writing, "w" is writing
        
         if self.PAR.inoutvar.get() == 'inside':
@@ -995,24 +995,24 @@ class DMDPage(tk.Frame):
         #self.Echo_String = StringVar()         
         #self.check_if_power_is_on()
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    Startup Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_startup = tk.Frame(self,background="light gray")
         self.frame_startup.place(x=4, y=4, anchor="nw", width=290, height=400)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       DMD Initialize
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         #dmd.initialize()
         button_Initialize =  tk.Button(self.frame_startup, text="Initialize", bd=3, bg='#0052cc',command=self.dmd_initialize)
         button_Initialize.place(x=4,y=4)
 
-# ==========================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       Load Basic Patterns
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_Blackout =  tk.Button(self.frame_startup, text="Blackout", bd=3, bg='#0052cc',command=self.dmd_blackout)
         button_Blackout.place(x=4,y=34)
         button_Whiteout =  tk.Button(self.frame_startup, text="Whiteout", bd=3, bg='#0052cc',command=self.dmd_whiteout)
@@ -1025,9 +1025,9 @@ class DMDPage(tk.Frame):
         button_antInvert =  tk.Button(self.frame_startup, text="AntInvert", bd=3, bg='#0052cc',command=self.dmd_antinvert)
         button_antInvert.place(x=140,y=124)
   
-# ==========================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       Load Custom Patterns
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     
         button_edit = tk.Button(self.frame_startup,
                         text = "Edit DMD File",
@@ -1058,37 +1058,56 @@ class DMDPage(tk.Frame):
 
    
 
-# ==========================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       Display Patterns
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         self.canvas = tk.Canvas(self, width = 300, height = 270, bg="dark gray") 
         self.canvas.place(x=300,y=4)
-
-# ==========================================================================
-#       Display Patterns
-# =============================================================================
-
+        """
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#       HADAMARD Patterns
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        """
         self.Hadamard_frame = tk.Frame(self, width = 300, height = 400, bg="gray") 
         self.Hadamard_frame.place(x=605,y=4)
         self.HadamardConf_LabelFrame = tk.LabelFrame(self.Hadamard_frame, width = 292, height = 392, text="Hadamard Configuration") 
         self.HadamardConf_LabelFrame.place(x=4,y=4)
         
         """ Type of Matrix: S or H?"""
+##<<<#<<<< Updated upstream
         self.HMatrix_Checked = tk.StringVar(None,"S")
         btn1 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="S Matrix",padx=20,variable=self.HMatrix_Checked,value="S", command=self.set_HTS_matrix)
         btn2 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="H Matrix",padx=20,variable=self.HMatrix_Checked,value="H", command=self.set_HTS_matrix)
+##===#====
+        self.SHMatrix_Checked = tk.StringVar(None,"S")
+        btn1 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="S Matrix",padx=20,variable=self.SHMatrix_Checked,value="S", command=self.set_SH_matrix)
+        btn2 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="H Matrix",padx=20,variable=self.SHMatrix_Checked,value="H", command=self.set_SH_matrix)
+##>>>>>>> Stashed changes
         btn1.place(x=4,y=5)
         btn2.place(x=4, y=30)#150, y=20)
         
-        """ Order of S Matrix?"""
+        """ Order of H Matrix?"""
         label_order =  tk.Label(self.HadamardConf_LabelFrame, text="Order: ",bd=4)#, font=("Arial", 24))
+##<<<#<<<< Updated upstream
         label_order.place(x=140, y=14)
+##===#====
+        label_order.place(x=140, y=20)
+        self.Horders = (2,4,8,16,32,64,128,256,512,1024)
+        self.Horder = tk.IntVar() 
+        self.Horder.set(self.Horders[1])
+        self.Horder_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.Horder, *self.Horders)
+        self.Horder_menu.place(x=190, y=19)
+        #&&&          
+
+        """ Order of S Matrix?"""
+##>>>>>>> Stashed changes
         self.Sorders = (3,7,11,15,19,23,31,35,43,47,63,71,79,83,103,127,255)
         self.Sorder = tk.IntVar() 
         self.Sorder.set(self.Sorders[1])
         self.order = self.Sorder.get()
         self.Sorder_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.Sorder, *self.Sorders)
+#<<<#<<<< Updated upstream
         self.Sorder_menu.place(x=190, y=15)       
                   
         """ Order of H Matrix?"""
@@ -1097,20 +1116,27 @@ class DMDPage(tk.Frame):
         self.Horder.set(self.Horders[1])
         self.Horder_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.Horder, *self.Horders)
         self.Horder_menu.place(x=1090, y=29)       
+##=======
+        self.Sorder_menu.place(x=190, y=19)
+        #&&&          
+                 
+#>>>>>>> Stashed changes
 
         """ Slit Width?"""
         label_width =  tk.Label(self.HadamardConf_LabelFrame, text="Slit Width: ",bd=4)#, font=("Arial", 24))
         label_width.place(x=4, y=74)
         self.entrybox_width = tk.Entry(self.HadamardConf_LabelFrame, width = 3)
+        self.entrybox_width.bind("<Return>", self.calculate_slit_width)
         self.entrybox_width.insert(0, "3")
         self.entrybox_width.place(x=80,y=73)
         
         """ Slit Length?"""
-        label_Length =  tk.Label(self.HadamardConf_LabelFrame, text="Length:",bd=4)#, font=("Arial", 24))
-        label_Length.place(x=154, y=74)
-        self.entrybox_Length = tk.Entry(self.HadamardConf_LabelFrame, width = 4)
-        self.entrybox_Length.insert(0, "256")
-        self.entrybox_Length.place(x=230,y=73)
+        label_length =  tk.Label(self.HadamardConf_LabelFrame, text="Length:",bd=4)#, font=("Arial", 24))
+        label_length.place(x=154, y=74)
+        self.entrybox_length = tk.Entry(self.HadamardConf_LabelFrame, width = 4)
+        self.entrybox_length.bind("<Return>", self.calculate_slit_width)
+        self.entrybox_length.insert(0, "256")
+        self.entrybox_length.place(x=230,y=73)
 
         """ Center Field?"""
         label_center_x =  tk.Label(self.HadamardConf_LabelFrame, text="Center: Xo",bd=4)#, font=("Arial", 24))
@@ -1141,7 +1167,11 @@ class DMDPage(tk.Frame):
         """ Check # ?"""
         label_check =  tk.Label(self.HadamardConf_LabelFrame, text="ChecK Mask Nr.: ",bd=4)#, font=("Arial", 24))
         label_check.place(x=4, y=220)
+#<<<#<<<< Updated upstream
         mask_arrays = range(self.order)
+#===#====
+        mask_arrays = range(self.Sorder.get())
+#>>>>>>> Stashed changes
         self.mask_checked = tk.StringVar() 
         self.mask_checked.set(0)
         self.mask_check_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.mask_checked, *mask_arrays)
@@ -1217,6 +1247,7 @@ class DMDPage(tk.Frame):
         self.textbox_filename_masks.insert(tk.END, tail)
         pass
 
+#<<<#<<<< Updated upstream
     def set_HTS_matrix(self):
         if self.HMatrix_Checked.get() == "S":
             self.Sorder_menu.place(x=190, y=15)
@@ -1227,22 +1258,39 @@ class DMDPage(tk.Frame):
             self.Sorder_menu.place(x=1090, y=15) 
             self.order = self.Horder.get()
         pass
+#===#====
+    def calculate_slit_width(self,event=None):
+        self.textbox_width.delete(0, tk.END)
+        self.slit_width = int(self.entrybox_width.get()) * self.order
+        self.textbox_width.insert(tk.INSERT,str(self.slit_width))
+        
+    def set_SH_matrix(self):
+        if self.SHMatrix_Checked.get() == "S":
+            self.Sorder_menu.place(x=190, y=19)
+            self.Horder_menu.place(x=1900, y=19)
+            self.order = self.Sorder.get()
+        else:
+            self.Sorder_menu.place(x=1900, y=19)
+            self.Horder_menu.place(x=190, y=19)
+            self.order = self.Horder.get()
+        print(self.order)
+#>>>>>>> Stashed changes
     
     def HTS_generate(self):
         pass
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # 
 #         # Exit
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #        quitButton = tk.Button(self, text="Exit",command=self.client_exit)
 #        quitButton.place(x=180, y=350)
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # echo client()
 #
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def dmd_initialize(self):
         IP = self.PAR.IP_dict['IP_DMD']
         [host,port] = IP.split(":")
@@ -1333,11 +1381,11 @@ class DMDPage(tk.Frame):
         subprocess.call(['open', '-a','TextEdit', filename])
         
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # Load DMD map file
 #
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
     def LoadMap(self):
         self.textbox_filename.delete('1.0', tk.END)
@@ -1379,11 +1427,11 @@ class DMDPage(tk.Frame):
         self.canvas.create_image(104,128,image=self.img)
         image_map.close()
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # Load Slit file
 #
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
@@ -1497,10 +1545,10 @@ class Motors(tk.Frame):
         self.Echo_String = tk.StringVar()         
         #self.check_if_power_is_on()
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #         #Get echo from Server 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         Button_Echo_From_Server = tk.Button(self, text="Echo from server",command=self.call_echo_PCM, relief=tk.RAISED)
         # placing the button on my window
         Button_Echo_From_Server.place(x=10,y=10)
@@ -1508,10 +1556,10 @@ class Motors(tk.Frame):
         Label_Echo_Text = tk.Label(self,textvariable=self.Echo_String,width=15,bg='white')
         Label_Echo_Text.place(x=160,y=13)
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #        # Power on/odd 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.is_on = False
         if self.is_on == False:
             text = "Turn power ON"
@@ -1522,15 +1570,15 @@ class Motors(tk.Frame):
         self.Button_Power_OnOff = tk.Button(self, text=text,command=self.power_switch, relief=tk.RAISED,fg = color)
         self.Button_Power_OnOff.place(x=10,y=40)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         All port statusPower on/odd 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.Button_All_Ports_Status = tk.Button(self, text="All ports status",command=self.all_ports_status, relief=tk.RAISED)
         self.Button_All_Ports_Status.place(x=200,y=40)
   
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         Select FW or GR    
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.r1_v = tk.IntVar()
         
         r1 = tk.Radiobutton(self, text='FW1', variable=self.r1_v, value=1, command=self.Choose_FWorGR)
@@ -1548,29 +1596,29 @@ class Motors(tk.Frame):
         #start with FW1 
         self.r1_v.set(1)
         self.Choose_FWorGR()
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       home
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.Button_home = tk.Button(self, text="send to home",command=self.home, relief=tk.RAISED)
         self.Button_home.place(x=10,y=100)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #        Initialize
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.Button_Initialize = tk.Button(self, text="Initialize Filter Wheels",command=self.FW_initialize, relief=tk.RAISED)
         self.Button_Initialize.place(x=200,y=100)
   
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #        Query current step counts
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.Button_Initialize = tk.Button(self, text="Current steps",command=self.query_current_step_counts, relief=tk.RAISED)
         self.Button_Initialize.place(x=10,y=130)
 
     
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #         #Move to step.... 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         Button_Move_to_step = tk.Button(self, text="Move to step",command=self.move_to_step, relief=tk.RAISED)
         Button_Move_to_step.place(x=10,y=160)
         self.Target_step = tk.StringVar()        
@@ -1579,10 +1627,10 @@ class Motors(tk.Frame):
         Button_Stop = tk.Button(self, text="Stop",command=self.stop, relief=tk.RAISED)
         Button_Stop.place(x=260,y=160)
     
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #         #Move to FW_position.... 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         FW_pos_options = [
              "A1",
              "A2",
@@ -1610,10 +1658,10 @@ class Motors(tk.Frame):
         Button_Move_to_FW_pos = tk.Button(self, text="FW Position",command=self.FW_move_to_position, relief=tk.RAISED)
         Button_Move_to_FW_pos.place(x=10,y=190)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #         #Move to Filter.... 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         filter_options = [
              "open",
              "SLOAN-g",
@@ -1637,10 +1685,10 @@ class Motors(tk.Frame):
         Button_Move_to_filter = tk.Button(self, text="Filter",command=self.FW_move_to_filter, relief=tk.RAISED)
         Button_Move_to_filter.place(x=230,y=190)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #         #Move to GR_position.... 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         GR_pos_options = [
              "GR_A1",
              "GR_A2",
@@ -1657,10 +1705,10 @@ class Motors(tk.Frame):
         Button_Move_to_GR_pos = tk.Button(self, text="GR Position",command=self.GR_move_to_position, relief=tk.RAISED)
         Button_Move_to_GR_pos.place(x=10,y=220)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #         #Enter command
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         Button_Enter_Command = tk.Button(self, text="Enter Command: ",command=self.enter_command, relief=tk.RAISED)
         Button_Enter_Command.place(x=10,y=250)
         self.Command_string = tk.StringVar()        
@@ -1672,10 +1720,10 @@ class Motors(tk.Frame):
         Label_Command_string_Example.place(x=165,y=280)
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # 
 #         # Exit
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         quitButton = tk.Button(self, text="Exit",command=self.client_exit)
         quitButton.place(x=280, y=300)
         
@@ -1865,20 +1913,20 @@ class CCDPage(tk.Frame):
         self.frame0l = tk.Frame(self,background="cyan")#, width=300, height=300)
         self.frame0l.place(x=0, y=0, anchor="nw", width=950, height=590)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    ACQUIRE IMAGE Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self.frame0l,background="dark turquoise")#, width=400, height=800)
         self.frame2l.place(x=4, y=4, anchor="nw", width=420, height=400)
         
         
   
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       CONTROL OF SCIENCE AND REFERENCE FILES
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
 #        root = tk.Tk()
 #        root.title("Tab Widget")
@@ -1897,9 +1945,9 @@ class CCDPage(tk.Frame):
         tabControl.add(tab5, text ='Buffer')
         tabControl.pack(expand = 1, fill ="both")
   
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      SCIENCE
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         labelframe_Acquire =  tk.LabelFrame(tab1, text="Acquire Image", font=("Arial", 24))
         labelframe_Acquire.pack(fill="both", expand="yes")
@@ -1928,9 +1976,9 @@ class CCDPage(tk.Frame):
         button_ExpStart.place(x=50,y=75)
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      BIAS
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Bias =  tk.LabelFrame(tab2, text="Bias", 
                                                      width=300, height=170,
                                                      font=("Arial", 24))
@@ -1970,9 +2018,9 @@ class CCDPage(tk.Frame):
 
 
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Dark
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Dark =  tk.LabelFrame(tab3, text="Dark", 
                                                      width=300, height=170,
                                                      font=("Arial", 24))
@@ -2005,9 +2053,9 @@ class CCDPage(tk.Frame):
 #                                          command=expose)
         button_ExpStart.place(x=75,y=95)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Flat
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Flat =  tk.LabelFrame(tab4, text="Flat", 
                                                      width=300, height=170,
                                                      font=("Arial", 24))
@@ -2057,9 +2105,9 @@ class CCDPage(tk.Frame):
         check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=subtract_Buffer, onvalue=1, offvalue=0)
         check_Buffer.place(x=180,y=140)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Buffer
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Buffer =  tk.LabelFrame(tab5, text="Buffer", 
                                                      width=300, height=170,
                                                      font=("Arial", 24))
@@ -2109,10 +2157,10 @@ class CCDPage(tk.Frame):
         check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=subtract_Buffer, onvalue=1, offvalue=0)
         check_Buffer.place(x=180,y=140)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      CCD Setup panel
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         self.frame2r = tk.Frame(self.frame0l,background="#4A7A8C")#, width=400, height=800)
         self.frame2r.place(x=430, y=4, anchor="nw", width=360, height=400)
@@ -2128,7 +2176,7 @@ class CCDPage(tk.Frame):
                                                         #command = open_close_camera)
 #        button_cooler_on.place(x=4, y=124)
         
- #=========#=========#=========#=========#=========#=========#=========       
+ ##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===       
         # CAMERA ON/OFF SWITCH
         self.camera_is_on = False
         self.label_camera_ON = tk.Label(labelframe_Setup,
@@ -2144,7 +2192,7 @@ class CCDPage(tk.Frame):
                                                         #command = open_close_camera)
         self.button_open_camera.place(x=180, y=0)
 
- #=========#=========#=========#=========#=========#=========#=========       
+ ##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===       
         # COOLER ON/OFF SWITCH
         self.cooler_is_on = False
         self.label_cooler_ON = tk.Label(labelframe_Setup,
@@ -2157,7 +2205,7 @@ class CCDPage(tk.Frame):
         self.button_open_cooler= tk.Button(labelframe_Setup, image=self.off_png, bd=0, command=self.turn_cooler_ON)
                                                         #command = open_close_camera)
         self.button_open_cooler.place(x=180, y=50)
- #=========#=========#=========#=========#=========#=========#=========       
+ ##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===       
         # COOLER TEMPERATURE SETUP AND VALUE
         label_Tset =  tk.Label(labelframe_Setup, text="CCD Temperature Sepoint (C)")
         label_Tset.place(x=4,y=98)
@@ -2182,7 +2230,7 @@ class CCDPage(tk.Frame):
         label_show_Tdet.place(x=200,y=126)
         self.Tdet.set(273)
             
- #=========#=========#=========#=========#=========#=========#=========       
+ ##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===       
     def turn_camera_ON(self):
         #global camera_is_on
          
@@ -2196,7 +2244,7 @@ class CCDPage(tk.Frame):
             self.label_camera_ON.config(text = "The Camera is On", fg = "green")
             self.camera_is_on = True
 
- #=========#=========#=========#=========#=========#=========#=========       
+ ##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===##===#===#===       
     def turn_cooler_ON(self):
         #global camera_is_on
          
@@ -2234,10 +2282,10 @@ class CCDPage(tk.Frame):
  
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      SHOW SIMBAD IMAGE
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
     def Show_Simbad(self):
             self.frame_DisplaySimbad = tk.Frame(self.frame0l,background="pink")#, width=400, height=800)
@@ -2311,12 +2359,12 @@ class CCDPage(tk.Frame):
      
 
      
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #             self.readout_Simbad = tk.Label(self.frame0l, text='tbd')
 # #            self.readout_Simbad.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
 #             self.readout_Simbad.place(x=0,y=530)
 #      
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
 
             self.drawtypes = fi.get_drawtypes()
@@ -2357,13 +2405,13 @@ class CCDPage(tk.Frame):
                       wfill, wdrawcolor, wdrawtype):#, wopen):
                 w.pack(side=tk.RIGHT)
             
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         top = fv.get_widget()
 # 
 #         if len(args) > 0:
 #            fv.load_file(args[0])
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
     def cursor_cb(self, viewer, button, data_x, data_y):
         """This gets called when the data position relative to the cursor
@@ -2403,11 +2451,11 @@ class CCDPage(tk.Frame):
         self.readout_Simbad.config(text=text)
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         labelframe_SolveAstrometry =  tk.LabelFrame(self.frame0l, text="Solve Astrometry", font=("Arial", 24))
 #         labelframe_SolveAstrometry.pack(fill="both", expand="yes")
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def load_file(self):
         image = load_data('./newtable.fits', logger=self.logger)
 #        image = load_data(filepath, logger=self.logger)
@@ -2496,10 +2544,10 @@ class CCDPage(tk.Frame):
         query_results = Simbad.query_region(coord)                                                      
         print(query_results)
     
-    # =============================================================================
+    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     # Download an image centered on the coordinates passed by the main window
     # 
-    # =============================================================================
+    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         #object_main_id = query_results[0]['MAIN_ID']#.decode('ascii')
         object_coords = SkyCoord(ra=query_results['RA'], dec=query_results['DEC'], 
                                  unit=(u.hourangle, u.deg), frame='icrs')
@@ -2520,7 +2568,7 @@ class CCDPage(tk.Frame):
         url = f'http://alasky.u-strasbg.fr/hips-image-services/hips2fits?{urlencode(query_params)}' 
         hdul = fits.open(url)                                                                           
         # Downloading http://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=DSS&object=%5BT64%5D++7&ra=243.58457533549102&dec=-19.11336493196987&fov=0.03333333333333333&width=500&height=500
-        #|==============================================================| 504k/504k (100.00%)         0s
+        #|#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====| 504k/504k (100.00%)         0s
         hdul.info()
         hdul.info()                                                                                     
         #Filename: /path/to/.astropy/cache/download/py3/ef660443b43c65e573ab96af03510e19
@@ -2556,10 +2604,10 @@ class CCDPage(tk.Frame):
                 
         gc = aplpy.FITSFigure(hdul)                                                                     
         gc.show_grayscale()                                                                             
-    # =============================================================================
+    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     # INFO: Auto-setting vmin to  2.560e+03 [aplpy.core]
     # INFO: Auto-setting vmax to  1.513e+04 [aplpy.core]
-    # =============================================================================
+    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         gc.show_markers(object_coords.ra, object_coords.dec, edgecolor='red',
                      marker='s', s=50**2)         
         gc.save('plot.png')
@@ -2596,14 +2644,14 @@ class CCDPage(tk.Frame):
 
             
     def plot_gaia(self,x_Gaia,y_Gaia):
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         viewer=self.fitsimage
 #         if image is None:
 #                 # No image loaded
 #             return
 #         x_Gaia, y_Gaia = image.radectopix(RA, DEC, format='str', coords='fits')
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         # create crosshair
         tag = '_$pan_mark'
         radius = 10
@@ -2749,11 +2797,11 @@ class MainPage(tk.Frame):
         self.drawcolors = colors.get_colors()
         self.SlitTabView = None
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    FILTER STATUS Label Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame0l = tk.Frame(self,background="cyan")#, width=400, height=800)
         self.frame0l.place(x=4, y=0, anchor="nw", width=220, height=110)
  
@@ -2787,16 +2835,16 @@ class MainPage(tk.Frame):
 
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         entry_FW1 = tk.Entry(labelframe_Filters, width=11,  bd =3)
 #         entry_FW1.place(x=100, y=10)
-# # =============================================================================
-# =============================================================================
+# # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         label_FW1_template =  tk.Label(labelframe_Filters, text="HH:MM:SS.xx")
 #         label_FW1_template.place(x=200,y=10)
 #         
-# =============================================================================
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         label_FW2 =  tk.Label(labelframe_Filters, text="FW 2")
 #         label_FW2.place(x=4,y=40)
 #         # Dropdown menu options
@@ -2817,27 +2865,27 @@ class MainPage(tk.Frame):
 #         button_SetFW2 =  tk.Button(labelframe_Filters, text="Set FW2", bd=3)
 #         button_SetFW2.place(x=125,y=34)
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         entry_FW2 = tk.Entry(labelframe_Filters, width=11, bd =3)
 #         entry_FW2.place(x=100, y=40)
-# # =============================================================================
-# =============================================================================
+# # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         label_FW1_template =  tk.Label(labelframe_Filters, text="2213DD:MM:SS.xx")
 #         label_FW1_template.place(x=200,y=10)
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #        button_HomeFW1 =  tk.Button(labelframe_Filters, text="Home FW1", bd=3)
 #        button_HomeFW1.place(x=4,y=70)
 #        button_HomeFW2 =  tk.Button(labelframe_Filters, text="Home FW2", bd=3)
 #        button_HomeFW2.place(x=105,y=70)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    GRISM STATUS Label Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame1l = tk.Frame(self,background="cyan")#, width=400, height=800)
         self.frame1l.place(x=4, y=120, anchor="nw", width=220, height=110)
 
@@ -2862,7 +2910,7 @@ class MainPage(tk.Frame):
         button_SetGR.place(x=110,y=4)
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         self.Grating_int = tk.IntVar() 
 #         self.Grating_int.set(2)  
 #         self.optionmenu_GR = tk.OptionMenu(labelframe_Grating, self.Grating_int, *self.Grating_names)
@@ -2870,14 +2918,14 @@ class MainPage(tk.Frame):
 #         button_SetGR =  tk.Button(labelframe_Grating, text="Set Grating", bd=3, command=self.set_grating)
 #         button_SetGR.place(x=110,y=4)
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.Label_Current_Grating = tk.Text(labelframe_Grating,font=('Georgia 20'),width=8,height=1,bg='white', fg='green')
         #self.Label_Current_Filter.insert(tk.END,"",#self.FW1_Filter)
         self.Label_Current_Grating.insert(tk.END,self.Grating_names[index])
         self.Label_Current_Grating.place(x=30,y=45)
 
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         # Dropdown menu options
 #         options = [
 #             "Low Blue",
@@ -2896,10 +2944,10 @@ class MainPage(tk.Frame):
 #         button_HomeGrating=  tk.Button(labelframe_Grating, text="Home Grating", bd=3)
 #         button_HomeGrating.place(x=4,y=35)
 # 
-# =============================================================================
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         label_FW1 =  tk.Label(labelframe_Filters, text="Grism")
 #         label_FW1.place(x=4,y=10)
 #         entry_FW1 = tk.Entry(labelframe_Filters, width=5,  bd =3)
@@ -2914,21 +2962,21 @@ class MainPage(tk.Frame):
 #         button_HomeFW2 =  tk.Button(labelframe_Filters, text="Home FW2", bd=3)
 #         button_HomeFW2.place(x=105,y=70)
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         self.frame0r = tk.Frame(self,background="cyan")#, width=400, height=800)
 #         self.frame0r.place(x=601, y=0, anchor="nw", width=500, height=800)
 #         
 #         
 #         vbox = tk.Frame(self.frame0l, relief=tk.RAISED, borderwidth=1)
 #         vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    ACQUIRE IMAGE Label Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self,background="cyan")#, width=400, height=800)
         self.frame2l.place(x=0, y=240, anchor="nw", width=370, height=280)
 
@@ -2947,9 +2995,9 @@ class MainPage(tk.Frame):
         tabControl.add(tab4, text ='Flat')
         tabControl.pack(expand = 1, fill ="both")
   
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      SCIENCE
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         labelframe_Acquire =  tk.LabelFrame(tab1, text="Acquire Image", font=("Arial", 24))
         labelframe_Acquire.pack(fill="both", expand="yes")
@@ -2989,9 +3037,9 @@ class MainPage(tk.Frame):
         check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=self.subtract_Flat, onvalue=1, offvalue=0)
         check_Flat.place(x=120,y=155)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      BIAS
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Bias =  tk.LabelFrame(tab2, text="Bias", 
                                                      width=300, height=170,
                                                      font=("Arial", 24))
@@ -3031,9 +3079,9 @@ class MainPage(tk.Frame):
 
 
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Dark
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Dark =  tk.LabelFrame(tab3, text="Dark", 
                                                      width=300, height=170,
                                                      font=("Arial", 24))
@@ -3066,9 +3114,9 @@ class MainPage(tk.Frame):
                                           command=self.expose_dark)
         button_ExpStart.place(x=75,y=95)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Flat
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Flat =  tk.LabelFrame(tab4, text="Flat", 
                                                      width=300, height=170,
                                                      font=("Arial", 24))
@@ -3105,18 +3153,18 @@ class MainPage(tk.Frame):
 
         
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    FITS manager
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_FITSmanager = tk.Frame(self,background="pink")#, width=400, height=800)
         self.frame_FITSmanager.place(x=0, y=500, anchor="nw", width=400, height=250)
 
         labelframe_FITSmanager =  tk.LabelFrame(self.frame_FITSmanager, text="FITS manager", font=("Arial", 24))
         labelframe_FITSmanager.pack(fill="both", expand="yes")
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # 
 #          
 # 
@@ -3129,7 +3177,7 @@ class MainPage(tk.Frame):
 #         entry_FW2 = tk.Entry(labelframe_Filters, width=5, bd =3)
 #         entry_FW2.place(x=100, y=40)
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
  
         button_FITS_Load =  tk.Button(labelframe_FITSmanager, text="FITS Load", bd=3, 
                                            command=self.load_last_file)
@@ -3177,14 +3225,14 @@ class MainPage(tk.Frame):
                                            command=self.check_for_file_existence)#start_the_loop)
         button_FITS_start.place(x=0,y=50)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_Astrometry =  tk.Button(labelframe_FITSmanager, text="Astrometry", bd=3, 
 #                                            command=Astrometry)
                                             command=self.load_Astrometry)
         button_Astrometry.place(x=0,y=110)
 
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_run_Sextractor =  tk.Button(labelframe_FITSmanager, text="run DaoFind", bd=3, 
                                             command=self.run_DaoFind)
         button_run_Sextractor.place(x=0,y=80)
@@ -3197,17 +3245,17 @@ class MainPage(tk.Frame):
 
 
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_show_slits =  tk.Button(labelframe_FITSmanager, text="Show slits", bd=3, 
 #                                            command=Astrometry)
                                             command=self.show_slits)
         button_show_slits.place(x=0,y=140)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # GINGA DISPLAY
 #
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         vbox = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
 #        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
@@ -3337,20 +3385,20 @@ class MainPage(tk.Frame):
         btn2 = tk.Radiobutton(hbox1,text="Edit",padx=20,variable=self.setChecked,value="edit", command=self.set_mode_cb).pack(anchor=tk.SW)
         btn3 = tk.Radiobutton(hbox1,text="Pick",padx=20,variable=self.setChecked,value="pick", command=self.set_mode_cb).pack(anchor=tk.SW)
  
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    SLIT Configuration Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_SlitConf = tk.Frame(self,background="gray")#, width=400, height=800)
         self.frame_SlitConf.place(x=400, y=600, anchor="nw", width=360, height=150)
         labelframe_SlitConf =  tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration", font=("Arial", 24))
         labelframe_SlitConf.pack(fill="both", expand="yes")
         
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT WIDTH in mirrors, dispersion direction (affects Resolving power)
-# =============================================================================        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
         label_slit_w = tk.Label(labelframe_SlitConf, text="Slit width (mirrors)")
         label_slit_w.place(x=4,y=4)
         self.slit_w = tk.IntVar(value=3) 
@@ -3367,9 +3415,9 @@ class MainPage(tk.Frame):
         
         
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT LENGTH in mirror, cross-dispersion (affets sky subtraction) 
-# =============================================================================        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
         label_slit_l = tk.Label(labelframe_SlitConf, text="Slit length (mirrors)")
         label_slit_l.place(x=4,y=29)
         self.slit_l = tk.IntVar() 
@@ -3384,19 +3432,19 @@ class MainPage(tk.Frame):
         length_adjust_btn.place(x=130,y=30)
         self.length_adjust_btn = length_adjust_btn
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT POINTER ENABLED
-# =============================================================================        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
         self.vslit = tk.IntVar()
         wslit = tk.Checkbutton(labelframe_SlitConf, text="Slit Pointer", variable=self.vslit)
         wslit.place(x=220, y=20)
         
         """
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    DMD Handler Label Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame0r = tk.Frame(self,background="cyan")#, width=400, height=800)
         self.frame0r.place(x=1270, y=10, anchor="nw", width=360, height=120)
  
@@ -3412,9 +3460,9 @@ class MainPage(tk.Frame):
          #7) analyze point source
          #8) remove slit
  
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
          #3) write slit pattern
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         regfname_entry = tk.Entry(labelframe_DMD)
         regfname_entry.place(x=0,y=25, width=150)
         regfname_entry.config(fg='grey',bg='white') # default text is greyed out
@@ -3434,9 +3482,9 @@ class MainPage(tk.Frame):
         button_push_slits.place(x=80,y=85)
         """
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
          #4)# LOAD BUTTONS
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         """
         button_load_map = tk.Button(labelframe_DMD,
                         text = "Load DMD Map",
@@ -3479,18 +3527,18 @@ class MainPage(tk.Frame):
 
         
         """   
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    DMD Handler Label Frame
 #         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         """        
         self.frame1r = tk.Frame(self)#, width=400, height=800)
         self.frame1r.place(x=900, y=5, anchor="nw", width=360, height=800)
  
-# =============================================================================         
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====         
 #  #    RADEC module
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Sky =  tk.LabelFrame(self.frame1r, 
                                         text="Sky (RA,Dec) regions", 
                                         font=("Arial", 20), bg="#8AA7A9")
@@ -3533,9 +3581,9 @@ class MainPage(tk.Frame):
                         command = self.save_RADECregions_AstropyXYRegFile)
         button_regions_RADEC_save.place(x=4,y=211)
         """
- # =============================================================================         
+ # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====         
  #  #    CCD  module
- # =============================================================================
+ # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_CCD =  tk.LabelFrame(self.frame1r, 
                                         text="CCD (x,y) regions", font=("Arial", 20), bg="#00CED1")
         labelframe_CCD.pack(fill="both", expand="yes")
@@ -3588,9 +3636,9 @@ class MainPage(tk.Frame):
                                         command = self.save_regions_xy2xyfile)
         button_regions_CCD_save.place(x=4,y=181)
        
- # =============================================================================         
+ # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====         
  #  #    DMD  module
- # =============================================================================
+ # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_DMD =  tk.LabelFrame(self.frame1r, text="DMD slits", font=("Arial", 20), bg="#20B2AA")
         labelframe_DMD.pack(fill="both", expand="yes")
          
@@ -3658,11 +3706,11 @@ class MainPage(tk.Frame):
        
 
      
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # Load AP Region file in RADEC
 #
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def save_regions_DMD_AstropyReg(self): 
         pass
     
@@ -3902,9 +3950,9 @@ class MainPage(tk.Frame):
         CM.CompoundMixin.set_attr_all(self.canvas,color="red")
     """    
     """
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # DONE WITH THE FIELDS
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     """
 
     def regfname_handle_focus_out(self,_):
@@ -4092,14 +4140,14 @@ class MainPage(tk.Frame):
         IPs = Config.load_IP_user(self)
         #print(IPs)
     """    
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #     def open_Astrometry(self):
 #         btn = tk.Button(master,
 #              text ="Click to open a new window",
 #              command = openNewWindow)
 #         btn.pack(pady = 10)ƒ
 #         return self.Astrometry(master)
-# ============================================================================= 
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===== 
 
     def set_filter(self):
         print(self.FW1_filter.get())
@@ -4213,10 +4261,10 @@ class MainPage(tk.Frame):
         with open(outname, "wb+") as out_f:
             out_f.write(buf)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose_light
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def expose_light(self):
         self.image_type = "science"
         ExpTime_ms = float(self.Light_ExpT.get())*1000
@@ -4227,10 +4275,10 @@ class MainPage(tk.Frame):
         self.fits_header.set_param("expTime", self.Light_ExpT.get())
         print("science file created")
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose_bias
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def expose_bias(self):
         self.image_type = "bias"
         ExpTime_ms = float(self.Bias_ExpT.get())*1000
@@ -4242,10 +4290,10 @@ class MainPage(tk.Frame):
         print("Superbias file created")
         
                        
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose_dark
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def expose_dark(self):
         self.image_type = "dark"
         ExpTime_ms = float(self.Dark_ExpT.get())*1000
@@ -4257,10 +4305,10 @@ class MainPage(tk.Frame):
         print("Superdark file created")
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose_flat
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def expose_flat(self):
         self.image_type = "flat"
         ExpTime_ms = float(self.Flat_ExpT.get())*1000
@@ -4272,10 +4320,10 @@ class MainPage(tk.Frame):
         print("Superflat file created")
         #Camera= CCD(dict_params=params)
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Handle files: sets or single?
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def combine_files(self):
         #this procedure runs after the CCD.expose()
         #to handle the decision of saving all single files or just the averages
@@ -4403,10 +4451,10 @@ class MainPage(tk.Frame):
         self.Display(fits_image)
        
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
     def expose(self,params):
         
@@ -4614,7 +4662,7 @@ class MainPage(tk.Frame):
         
 
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #     def start_the_loop(self):
 #         while self.stop_it == 0:
 #             threading.Timer(1.0, self.load_manager_last_file).start() 
@@ -4627,7 +4675,7 @@ class MainPage(tk.Frame):
 #     def stop_the_loop(self):
 #         self.stop_it == 1
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def check_for_file_existence(self):
         FITSfiledir = './fits_image/'
         while len(os.listdir(FITSfiledir)) == 0:
@@ -4638,12 +4686,12 @@ class MainPage(tk.Frame):
         print('and move fits file')
         
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         image = load_data(self.fullpath_FITSfilename, logger=self.logger)
 #         self.fitsimage.set_image(image)
 #         self.root.title(self.fullpath_FITSfilename)
 # 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
 
 
@@ -4743,7 +4791,7 @@ class MainPage(tk.Frame):
         CM.CompoundMixin.draw(self.canvas,self.canvas.viewer)
         
         END OF THE COMPOUNDMIXING EXCERCISE
-        #=====================================        
+        ##===#===#===#===#===#===#===#===#===#===#===#====        
 
         # region = 'fk5;circle(290.96388,14.019167,843.31194")'
         # astropy_region = pyregion.parse(region)
@@ -5247,9 +5295,9 @@ class MainPage(tk.Frame):
             sources[col].info.format = '%.8g'  # for consistent table output
         print(sources)  
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         self.display_Daofind(sources)
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
         #### back to ginga
         self.fitsimage.set_image(self.AstroImage)
@@ -5342,11 +5390,11 @@ class MainPage(tk.Frame):
 
 
 
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # Load DMD map file
 #
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
     def LoadMap(self):
         self.textbox_filename.delete('1.0', tk.END)
@@ -5389,11 +5437,11 @@ class MainPage(tk.Frame):
         image_map.close()
 
         
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # Load Slit file
 #
-# =============================================================================
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
