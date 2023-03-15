@@ -105,14 +105,14 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
         y1,y2 = int(Yo-(mask_size/2)),int(Yo+(mask_size/2)) # Coordinates for the mask center
     
         """For  horizontal slits, spectra along the DMD """
-        for j in range (y1, y2):    # Insert the matrices into the DMD mask array
-            DMD_mask_a[j, int(x1):int(x2)]= row_a
-            DMD_mask_b[j, int(x1):int(x2)]= row_b
+        #for j in range (y1, y2):    # Insert the matrices into the DMD mask array
+        #    DMD_mask_a[j, int(x1):int(x2)]= row_a
+        #    DMD_mask_b[j, int(x1):int(x2)]= row_b
 
         """For  vertical slits, spectra across the DMD """        
-        #for j in range (int(x1), int(x2)):    # Insert the matrices into the DMD mask array
-        #    DMD_mask_a[y1:y2, j] = row_a
-        #    DMD_mask_b[y1:y2, j]= row_b
+        for j in range (int(x1), int(x2)):    # Insert the matrices into the DMD mask array
+            DMD_mask_a[y1:y2, j] = row_a
+            DMD_mask_b[y1:y2, j]= row_b
 
 
         mask_set_a[:,:,i]= DMD_mask_a
@@ -133,57 +133,3 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
         
         return mask_set_a, mask_set_b, matrix
 
-#%%   List of possible S-matrix orders: 3,7,11,15,19,23,31,35,43,47,63,71,79,83,103,127,255
-
-DMD_size = (1080,2048) #(1024,2048) #(768, 1024) # XGA or DC2K DMD array size
-matrix_type = 'S' # Two options, H or S
-order = 15 # Order of the hadamard matrix (or S matrix)
-Xo, Yo = DMD_size[1]/2, DMD_size[0]/2   # Coordinates on the DMD to center the Hadamard matrix around
-
-slit_width = 4 # Slit width in number of micromirrors 
-#folder = 'C:/Users/Kate/Documents/hadamard/mask_sets/' # Change path to fit user needs
-folder = os.path.join(path.parent,'Hadamard/mask_sets/')
-if matrix_type == 'S':
-    mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
-if matrix_type == 'H':
-    mask_set_a,mask_set_b, matrix = make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
-
-plt.imshow(matrix, cmap='gray')
-plt.axis('off')
-plt.title(str(matrix_type)+'-matrix, n= '+str(order))    
-
-
-#%% Open a file and check that the code worked
-#name = 'H128_3w_mask_a1.bmp'
-#name = 'H16_4w_mask_a1.bmp'
-#name = 'S83_4w_mask_34.bmp'
-name = 'S15_4w_mask_12.bmp'
-im =np.asarray(Image.open(folder+name), dtype='int')
-plt.imshow(im, cmap='gray')
-
-dmd.initialize()
-dmd.apply_shape(im)
-dmd.apply_invert()
-#%% Pseudo code for SAMOS
-'''    
-    Input paramaters: 
-        - drive location for the desired DMD mask images
-        - exposure time (for spectral CCD)
-        - filter selection
-        - grism selection
-    
-    For all dmd mask images in specified drive location:
-        1. Open dmd mask image and send/load to DMD
-        2. Capture spectral camera image with specified exposure time. 
-            - Additional header info for images will include:
-                a. mask type (a string 'H' or 'S')
-                b. mask order (an integer)
-                c. mask label (a string e.g '112b')
-            This info can be taken right from the DMD mask file image name
-        3. Capture imaging camera image for specified exposyre time (? might not be necessary)
-        
-    
-    
-    
-    
-'''
