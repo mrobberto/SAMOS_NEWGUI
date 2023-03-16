@@ -1197,7 +1197,7 @@ class DMDPage(tk.Frame):
         button_save_masks.place(x=4, y=243)
         self.entrybox_newmasknames = tk.Entry(
             self.HadamardConf_LabelFrame, width=25)
-        self.entrybox_newmasknames.bind("<Return>", self.save_masks_file)
+        self.entrybox_newmasknames.bind("<Return>", self.rename_masks_file)
         self.entrybox_newmasknames.place(x=90, y=245)
 
         """ Check mask # ?"""
@@ -1249,14 +1249,14 @@ class DMDPage(tk.Frame):
         # im =np.asarray(Image.open(local_dir+"/Hadamard/mask_sets/" + maskfile_bmp), dtype='int')
         pass
 
-    def save_masks_file(self, event=None):
+    def rename_masks_file(self, event=None):
         print("inside")
         oldfilename_masks = self.textbox_masknames.get("1.0", tk.END)
         old = str(oldfilename_masks[0:oldfilename_masks.rfind("_")])
         new = self.entrybox_newmasknames.get()
         file_names = local_dir+"/Hadamard/mask_sets/"+old+"*.bmp"
         files = sorted(glob.glob(file_names))
-        head, tail = os.path.split(oldfilename_masks)
+        #head, tail = os.path.split(oldfilename_masks)
         for ifile in range(len(files)):
             os.rename(files[ifile], files[ifile].replace(old, new))
         self.textbox_masknames.delete("1.0", tk.END)
@@ -1301,12 +1301,14 @@ class DMDPage(tk.Frame):
             self.Sorder_menu.place(x=190, y=19)
             self.Horder_menu.place(x=1900, y=19)
             self.order = self.Sorder.get()
+            self.mask_arrays = np.arange(0,self.order)
         else:
             self.Sorder_menu.place(x=1900, y=19)
             self.Horder_menu.place(x=190, y=19)
             self.order = self.Horder.get()
+            a = tuple(['a'+str(i),'b'+str(i)] for i in range(1, 4))
+            self.mask_arrays=[inner for outer in zip(*a) for inner in outer]
         self.calculate_field_width()    
-        self.mask_arrays = np.arange(0,self.order)
         print(self.order)
         print(self.mask_arrays)
         self.mask_check_menu['values'] = list(self.mask_arrays)
@@ -1330,7 +1332,7 @@ class DMDPage(tk.Frame):
             name = 'S'+str(order)+'_'+str(slit_width)+'w_mask_1-'+str(order)+'.bmp'
         if matrix_type == 'H':
             mask_set_a,mask_set_b, matrix = make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
-            name = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_a/b_1'+str(order)+'.bmp'
+            name = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_ab1-'+str(order)+'.bmp'
         self.textbox_masknames.delete("1.0", tk.END)
         self.textbox_masknames.insert(tk.INSERT,str(name))
         self.entrybox_newmasknames.delete(0, tk.END)
@@ -4402,10 +4404,10 @@ class MainPage(tk.Frame):
                     os.rename(files[i],local_dir+"/fits_image/"+self.image_type+"_"+str(i)+".fits")
                 else: 
                     os.remove(files[i])
-                hdu.close()
         superfile = superfile_cube.mean(axis=2)        
         superfile_header = hdu[0].header
         fits.writeto(local_dir+"/fits_image/super"+self.image_type+".fits",superfile,superfile_header,overwrite=True)
+        hdu.close()
         
     def cleanup_files(self):
         file_names = local_dir+"/fits_image/"+self.image_type+"_*.fits"

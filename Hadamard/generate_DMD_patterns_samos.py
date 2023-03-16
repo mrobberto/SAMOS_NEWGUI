@@ -131,5 +131,5 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
         imageio.imwrite(folder+name_a, mask_a)
         imageio.imwrite(folder+name_b, mask_b)
         
-        return mask_set_a, mask_set_b, matrix
+    return mask_set_a, mask_set_b, matrix
 

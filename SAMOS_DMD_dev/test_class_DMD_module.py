@@ -34,7 +34,7 @@ dmd.initialize()
 
 # There are two builtin states for the device, all white (ones) all black (zeros)
 dmd._open()
-dmd.flush()
+#dmd.flush()
 #dmd._close()
 #dmd.apply_checkerboard()
 #dmd.apply_blackout()
@@ -147,7 +147,7 @@ slits = [slit0]#[slit1,slit2,slit3,slit4,slit5,slit6,slit7,slit8,slit9,slit10,sl
 # #slits=[slit1,slit11,slit12]
 # #slits=[slit1]
 #print(slits)
-#dmd.apply_slits(slits)
+dmd.apply_slits(slits)
 
 
 
