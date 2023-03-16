@@ -4201,8 +4201,9 @@ class MainPage(tk.Frame):
         objects = CM.CompoundMixin.get_objects(self.canvas)
         #counter = 0
         self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
-        for obj in objects:
-     
+        for obj in objects[:10]:
+            
+            #print(obj.get_llur())
             ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
                 
              

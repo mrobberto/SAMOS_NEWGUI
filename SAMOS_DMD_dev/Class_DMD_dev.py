@@ -172,9 +172,14 @@ class DigitalMicroMirrorDevice():
         timeout_in_seconds = 2
         import select
         ready = select.select([instrument], [], [], timeout_in_seconds)
+        
         if ready[0]:
             data = instrument.recv(4096)
-        
+            print("instrument is ready", ready)
+        else:
+            print("not ready?")
+            print(instrument)
+            
         
         response = data.decode('ascii')
         print('response: ',response)
