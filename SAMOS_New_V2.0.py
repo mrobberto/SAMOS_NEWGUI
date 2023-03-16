@@ -3837,6 +3837,13 @@ class MainPage(tk.Frame):
         self.RRR_xyAP  = Astrometry.APRegion_RAD2pix(self.filename_regfile_RADEC,self.wcs)
         self.RRR_xyGA = self.convert_regions_xyAP2xyGA()
         print("RADec regions converted to xy regions\nRRR_xyAP created")
+        
+        if self.SlitTabView is None:
+            self.SlitTabView = STView()
+        
+        self.SlitTabView.load_table_from_regfile_RADEC(regs_RADEC=self.RRR_RADec,
+                                                        img_wcs=self.wcs)        # right now uses the default test WCS in the SlitTableViewer file
+        
         # return self.RRR_xyAP
   
     def convert_regions_xy2RADEC(self):
@@ -3878,6 +3885,8 @@ class MainPage(tk.Frame):
     
     def convert_regions_xyAP2xyGA(self):
         print("converting (x,y) Astropy Regions to (x,y) Ginga Regions")
+        if self.SlitTabView is None:
+            self.SlitTabView = STView()
         # [CM.CompoundMixin.add_object(self.canvas,r2g(reg)) for reg in self.RRR_xyAP]
         for reg in range(len(self.RRR_xyAP)):
              this_reg = self.RRR_xyAP[reg]
@@ -3954,11 +3963,11 @@ class MainPage(tk.Frame):
         # we return the filename
         print("(RA,DEC) Regions loaded from .reg file")    
         
-        if self.SlitTabView is None:
-            self.SlitTabView = STView()
+        #if self.SlitTabView is None:
+        #    self.SlitTabView = STView()
         
-        self.SlitTabView.load_table_from_regfile_RADEC(regs_RADEC=self.RRR_RADec,
-                                                        img_wcs=self.wcs)        # right now uses the default test WCS in the SlitTableViewer file
+        #self.SlitTabView.load_table_from_regfile_RADEC(regs_RADEC=self.RRR_RADec,
+        #                                                img_wcs=self.wcs)        # right now uses the default test WCS in the SlitTableViewer file
         
         return self.filename_regfile_RADEC
         
@@ -4078,7 +4087,7 @@ class MainPage(tk.Frame):
         # counter = 0
         self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
         for obj in objects:
-     
+            print(obj) 
             ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
                 
              

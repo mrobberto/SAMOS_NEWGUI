@@ -197,9 +197,9 @@ class SlitTableView(tk.Tk):
         #                          bg='cyan')
         
         
-    def load_table_from_regfile_RADEC(self, regfile_RADEC=test_regf, img_wcs=test_wcs):
+    def load_table_from_regfile_RADEC(self, regs_RADEC=test_regf, img_wcs=None):
         
-        regs_RADEC = Regions.read(regfile_RADEC)
+        #regs_RADEC = Regions.read(regfile_RADEC)
         
         
         
@@ -218,25 +218,41 @@ class SlitTableView(tk.Tk):
             ra = reg_rect.center.ra.degree
             dec = reg_rect.center.dec.degree
             
-            pix_rect = reg_rect.to_pixel(img_wcs)
-            regs_CCD.append(pix_rect)
-            dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs)
+            if img_wcs is not None:
+                pix_rect = reg_rect.to_pixel(img_wcs)
+                regs_CCD.append(pix_rect)
+                dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs)
+                
+                pix_w, pix_h = pix_rect.width, pix_rect.height
+                dmd_w, dmd_h = dmd_rect.width.value, dmd_rect.height.value 
+                # dmd rectangle region width and height are returned in arcsec
+                
+                
+                
+                pix_xc, pix_yc = pix_rect.center.x, pix_rect.center.y
+                pix_x0, pix_y0 = pix_xc - pix_w/2, pix_yc - pix_h/2
+                pix_x1, pix_y1 = pix_xc + pix_w/2, pix_yc + pix_h/2
+                
+                dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + convert.yoffset
+                # dmd center points of region returned in deg. Must also apply y offset
+                dmd_x0, dmd_y0 = dmd_xc - dmd_w/2, dmd_yc - dmd_h/2
+                dmd_x1, dmd_y1 = dmd_xc + dmd_w/2, dmd_yc + dmd_h/2
             
-            pix_w, pix_h = pix_rect.width, pix_rect.height
-            dmd_w, dmd_h = dmd_rect.width.value, dmd_rect.height.value 
-            # dmd rectangle region width and height are returned in arcsec
-            
-            
-            
-            pix_xc, pix_yc = pix_rect.center.x, pix_rect.center.y
-            pix_x0, pix_y0 = pix_xc - pix_w/2, pix_yc - pix_h/2
-            pix_x1, pix_y1 = pix_xc + pix_w/2, pix_yc + pix_h/2
-            
-            dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + convert.yoffset
-            # dmd center points of region returned in deg. Must also apply y offset
-            dmd_x0, dmd_y0 = dmd_xc - dmd_w/2, dmd_yc - dmd_h/2
-            dmd_x1, dmd_y1 = dmd_xc + dmd_w/2, dmd_yc + dmd_h/2
-            
+            else:
+                
+                pix_xc = 0
+                pix_yc = 0
+                pix_x0 = 0
+                pix_y0 = 0
+                pix_x1 = 0
+                pix_y1 = 0
+                dmd_xc = 0
+                dmd_yc = 0
+                dmd_x0 = 0
+                dmd_y0 = 0
+                dmd_x1 = 0
+                dmd_y1 = 0
+                
             new_slitrow = [obj_num, np.round(ra,6), np.round(dec,6), 
                            np.round(pix_xc,2), np.round(pix_yc,2), 
                            np.round(pix_x0,2), np.round(pix_y0,2), 
@@ -249,9 +265,9 @@ class SlitTableView(tk.Tk):
             self.stab.row_index(0)
             
         print('added regions to table')
-        return 
+         
     
-    def load_table_from_regfile_RADEC(self, regs_RADEC, img_wcs=test_wcs):
+    def load_table_from_regfile_CCD(self, regs_RADEC, img_wcs=test_wcs):
 
         #regs_RADEC = Regions.read(regfile_RADEC)
 
