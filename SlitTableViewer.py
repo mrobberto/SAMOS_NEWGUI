@@ -266,51 +266,7 @@ class SlitTableView(tk.Tk):
             
         print('added regions to table')
          
-    
-    def load_table_from_regfile_CCD(self, regs_RADEC, img_wcs=test_wcs):
 
-        #regs_RADEC = Regions.read(regfile_RADEC)
-
-        obj_num = self.stab.total_rows()
-
-        for sky_rect in regs_RADEC:
-            obj_num += 1
-            
-            
-            ra = sky_rect.center.ra.degree
-            dec = sky_rect.center.dec.degree
-
-            pix_rect = sky_rect.to_pixel(img_wcs)
-            dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs)
-
-            pix_w, pix_h = pix_rect.width, pix_rect.height
-            dmd_w, dmd_h = dmd_rect.width.value, dmd_rect.height.value 
-            # dmd rectangle region width and height are returned in arcsec
-            
-            
-            
-            pix_xc, pix_yc = pix_rect.center.x, pix_rect.center.y
-            pix_x0, pix_y0 = pix_xc - pix_w/2, pix_yc - pix_h/2
-            pix_x1, pix_y1 = pix_xc + pix_w/2, pix_yc + pix_h/2
-            
-            dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + convert.yoffset
-            # dmd center points of region returned in deg. Must also apply y offset
-            dmd_x0, dmd_y0 = dmd_xc - dmd_w/2, dmd_yc - dmd_h/2
-            dmd_x1, dmd_y1 = dmd_xc + dmd_w/2, dmd_yc + dmd_h/2
-            
-            new_slitrow = [obj_num, np.round(ra,6), np.round(dec,6), 
-                           np.round(pix_xc,2), np.round(pix_yc,2), 
-                           np.round(pix_x0,2), np.round(pix_y0,2), 
-                           np.round(pix_x1,2), np.round(pix_y1,2),
-                           int(dmd_xc), int(dmd_yc), int(dmd_x0), 
-                           int(dmd_y0), int(dmd_x1), int(dmd_y1)]
-            
-            
-            self.stab.insert_row(values=new_slitrow,redraw=True)
-            self.stab.row_index(0)
-            
-        print('added regions to table')
-        return 
     def load_table_from_regfile_CCD(self, regs_CCD, img_wcs=None):
         
 
