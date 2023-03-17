@@ -95,6 +95,7 @@ PCM = Class_PCM()
 
 #at the moment the Class Camera must be called with a few parameters...
 from  SAMOS_CCD_dev.Class_CCD import Class_Camera
+global params
 params = {'Exposure Time':0,'CCD Temperature':2300,'Trigger Mode': 4}
         #Trigger Mode = 4: light
         #Trigger Mode = 5: dark
@@ -267,6 +268,7 @@ class App(tk.Tk):
         self.frames = {}
         self.ConfigPage = ConfigPage
         self.DMDPage = DMDPage
+        self.CCD2DMD_RecalPage = CCD2DMD_RecalPage
         self.Motors = Motors
         self.CCDPage = CCDPage
         self.MainPage = MainPage
@@ -274,7 +276,7 @@ class App(tk.Tk):
         
 
         ## Defining Frames and Packing it
-        for F in {ConfigPage, DMDPage, Motors, CCDPage, MainPage}:
+        for F in {ConfigPage, DMDPage, CCD2DMD_RecalPage, Motors, CCDPage, MainPage}:
             frame = F(self, container)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")    
@@ -607,7 +609,8 @@ class ConfigPage(tk.Frame):
         with open(dir_SYSTEM + "/dirlist_default.csv", mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
-
+        inp.close()
+        
         self.dir_Motors.set(dict_from_csv['dir_Motors'])
         self.dir_CCD.set(dict_from_csv['dir_CCD'])
         self.dir_DMD.set(dict_from_csv['dir_DMD'])
@@ -637,7 +640,8 @@ class ConfigPage(tk.Frame):
         with open(dir_SYSTEM + "/dirlist_user.csv", mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
-
+            
+        inp.close()
         self.dir_Motors.set(dict_from_csv['dir_Motors'])
         self.dir_CCD.set(dict_from_csv['dir_CCD'])
         self.dir_DMD.set(dict_from_csv['dir_DMD'])
@@ -676,9 +680,11 @@ class ConfigPage(tk.Frame):
         self.PAR.dir_dict['dir_system'] = self.dir_system.get()
         
         # open file for writing, "w" is writing
-        w = csv.writer(open(dir_SYSTEM + "/dirlist_user.csv", "w"))
+        file_dirlist = open(dir_SYSTEM + "/dirlist_user.csv", "w")
+        w = csv.writer(file_dirlist)
         print(dir_SYSTEM + "/dirlist_user.csv")
-
+        file_dirlist.close()
+        
         # loop over dictionary keys and values
         for key, val in self.PAR.dir_dict.items():
 
@@ -697,7 +703,8 @@ class ConfigPage(tk.Frame):
         with open(ip_file, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
-
+        inp.close()    
+        
         self.PAR.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
         self.PAR.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']
         self.PAR.IP_dict['IP_DMD']=dict_from_csv['IP_DMD']
@@ -737,14 +744,16 @@ class ConfigPage(tk.Frame):
         ip_file_default = dir_SYSTEM + "/IP_addresses_default.csv"    
         os.system('cp {} {}'.format(ip_file,ip_file_default))  
         
-        w = csv.writer(open(ip_file, "w"))
         print(ip_file)
+        w = csv.writer(open(ip_file, "w"))
+        
 
         # loop over dictionary keys and values
         for key, val in self.PAR.IP_dict.items():
 
             # write every key and value to file
-            w.writerow([key, val])            
+            w.writerow([key, val])     
+        w.close()
  
         self.save_IP_status()    
         
@@ -763,7 +772,8 @@ class ConfigPage(tk.Frame):
         with open(ip_file_default, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
-
+        inp.close()
+        
         self.PAR.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
         self.PAR.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']
         self.PAR.IP_dict['IP_DMD']=dict_from_csv['IP_DMD']
@@ -780,16 +790,16 @@ class ConfigPage(tk.Frame):
         #self.IP_echo()
         
 
-
     def save_IP_status(self):
-
-        w = csv.writer(open(dir_SYSTEM + "/IP_status_dict.csv", "w"))
+        file_IPstatus = open(dir_SYSTEM + "/IP_status_dict.csv" , "w")
+        w = csv.writer(file_IPstatus)
 
         # loop over dictionary keys and values
         for key, val in self.PAR.IP_status_dict.items():
 
             # write every key and value to file
-            w.writerow([key, val])               
+            w.writerow([key, val])   
+        file_IPstatus.close()              
 
 
     def IP_echo(self):                   
@@ -925,6 +935,7 @@ class ConfigPage(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
@@ -1057,12 +1068,179 @@ class DMDPage(tk.Frame):
         self.canvas = tk.Canvas(self, width = 300, height = 270, bg="dark gray") 
         self.canvas.place(x=300,y=4)
 
+# ==========================================================================
+#       Display Patterns
+# =============================================================================
+
+        self.Hadamard_frame = tk.Frame(self, width = 300, height = 400, bg="gray") 
+        self.Hadamard_frame.place(x=605,y=4)
+        self.HadamardConf_LabelFrame = tk.LabelFrame(self.Hadamard_frame, width = 292, height = 392, text="Hadamard Configuration") 
+        self.HadamardConf_LabelFrame.place(x=4,y=4)
+        
+        """ Type of Matrix: S or H?"""
+        self.HMatrix_Checked = tk.StringVar(None,"S")
+        btn1 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="S Matrix",padx=20,variable=self.HMatrix_Checked,value="S", command=self.set_HTS_matrix)
+        btn2 = tk.Radiobutton(self.HadamardConf_LabelFrame,text="H Matrix",padx=20,variable=self.HMatrix_Checked,value="H", command=self.set_HTS_matrix)
+        btn1.place(x=4,y=5)
+        btn2.place(x=4, y=30)#150, y=20)
+        
+        """ Order of S Matrix?"""
+        label_order =  tk.Label(self.HadamardConf_LabelFrame, text="Order: ",bd=4)#, font=("Arial", 24))
+        label_order.place(x=140, y=14)
+        self.Sorders = (3,7,11,15,19,23,31,35,43,47,63,71,79,83,103,127,255)
+        self.Sorder = tk.IntVar() 
+        self.Sorder.set(self.Sorders[1])
+        self.order = self.Sorder.get()
+        self.Sorder_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.Sorder, *self.Sorders)
+        self.Sorder_menu.place(x=190, y=15)       
+                  
+        """ Order of H Matrix?"""
+        self.Horders = (2,4,8,16,32,64,128,256,512,1024)
+        self.Horder = tk.IntVar() 
+        self.Horder.set(self.Horders[1])
+        self.Horder_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.Horder, *self.Horders)
+        self.Horder_menu.place(x=1090, y=29)       
+
+        """ Slit Width?"""
+        label_width =  tk.Label(self.HadamardConf_LabelFrame, text="Slit Width: ",bd=4)#, font=("Arial", 24))
+        label_width.place(x=4, y=74)
+        self.entrybox_width = tk.Entry(self.HadamardConf_LabelFrame, width = 3)
+        self.entrybox_width.insert(0, "3")
+        self.entrybox_width.place(x=80,y=73)
+        
+        """ Slit Length?"""
+        label_Length =  tk.Label(self.HadamardConf_LabelFrame, text="Length:",bd=4)#, font=("Arial", 24))
+        label_Length.place(x=154, y=74)
+        self.entrybox_Length = tk.Entry(self.HadamardConf_LabelFrame, width = 4)
+        self.entrybox_Length.insert(0, "256")
+        self.entrybox_Length.place(x=230,y=73)
+
+        """ Center Field?"""
+        label_center_x =  tk.Label(self.HadamardConf_LabelFrame, text="Center: Xo",bd=4)#, font=("Arial", 24))
+        label_center_x.place(x=4, y=111)
+        self.entrybox_center_x = tk.Entry(self.HadamardConf_LabelFrame, width = 4)
+        self.entrybox_center_x.insert(0, "540")
+        self.entrybox_center_x.place(x=80,y=110)
+        label_center_y =  tk.Label(self.HadamardConf_LabelFrame, text="Center: Yo", bd=4)#, font=("Arial", 24))
+        label_center_y.place(x=154, y=111)
+        self.entrybox_center_y = tk.Entry(self.HadamardConf_LabelFrame, width = 5)
+        self.entrybox_center_y.insert(0, "1024")
+        self.entrybox_center_y.place(x=230,y=110)
+
+        """ Slit With?"""
+        label_width =  tk.Label(self.HadamardConf_LabelFrame, text="Width:",bd=4)#, font=("Arial", 24))
+        label_width.place(x=4, y=148)
+        self.width_ = tk.StringVar() 
+        self.width_.set("21")
+        self.textbox_width = tk.Text(self.HadamardConf_LabelFrame,  height=1, width = 4, bg="red", fg="white",font=("Arial", 14))
+        self.textbox_width.place(x=50,y=150)
+        self.textbox_width.insert(tk.INSERT,"21")
+ 
+        """ GENERATE """
+        self.button_Generate =  tk.Button(self.HadamardConf_LabelFrame, text="GENERATE", bd=3, bg='#A877BA',font=("Arial", 24),
+                                      command=self.HTS_generate)
+        self.button_Generate.place(x=80,y=180)
+    
+        """ Check # ?"""
+        label_check =  tk.Label(self.HadamardConf_LabelFrame, text="ChecK Mask Nr.: ",bd=4)#, font=("Arial", 24))
+        label_check.place(x=4, y=220)
+        mask_arrays = range(self.order)
+        self.mask_checked = tk.StringVar() 
+        self.mask_checked.set(0)
+        self.mask_check_menu = tk.OptionMenu(self.HadamardConf_LabelFrame, self.mask_checked, *mask_arrays)
+        self.mask_check_menu.place(x=120, y=221)
+        
+        """ Save Masks as?"""
+        button_save_masks= tk.Button(self.HadamardConf_LabelFrame,
+                                            text = "Save masks as:",
+                                            command = self.save_masks_file)
+        button_save_masks.place(x=4,y=251)
+        
+        """ Load Masks?"""
+        button_load_masks= tk.Button(self.HadamardConf_LabelFrame,
+                                            text = "Load masks:",
+                                            command = self.load_masks_file)
+        button_load_masks.place(x=4,y=281)
+        label_filename_masks = tk.Label(self.HadamardConf_LabelFrame, text="Current Mask Set:")
+        label_filename_masks.place(x=4,y=309)
+        self.str_filename_masks = tk.StringVar() 
+        self.textbox_filename_masks = tk.Text(self.HadamardConf_LabelFrame, height = 1, width = 22)      
+        self.textbox_filename_masks.place(x=130,y=310)
+        
+        
+        #&&&   
+
+    def load_masks_file(self):
+        
+        self.textbox_filename_masks.delete('1.0', tk.END)
+        filename_masks = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/slits",
+                                        title = "Select a File",
+                                        filetypes = (("Text files",
+                                                      "*.csv"),
+                                                     ("all files",
+                                                      "*.*")))
+        head, tail = os.path.split(filename_masks)
+        self.textbox_filename_masks.insert(tk.END, tail)
+        self.mask_filename = head
+        self.fits_header.set_param('gridfname', head)
+        """
+        table = pd.read_csv(filename_masks)
+        xoffset = 0
+        yoffset = np.full(len(table.index),int(2048/4))
+        y1 = (round(table['x'])-np.floor(table['dx1'])).astype(int) + yoffset
+        y2 = (round(table['x'])+np.ceil(table['dx2'])).astype(int) + yoffset
+        x1 = (round(table['y'])-np.floor(table['dy1'])).astype(int) + xoffset
+        x2 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        for i in table.index:
+           self.slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
+        DMD.apply_shape(self.slit_shape)
+        
+        # Create a photoimage object of the image in the path
+        #Load the image
+        # global img
+        #self.img = None
+#        image_map = Image.open(local_dir + "/current_dmd_state.png")
+#        self.img= ImageTk.PhotoImage(image_map)
+#         image_map.close()
+        image_map = Image.open(dir_DMD + "/current_dmd_state.png")        
+        test = ImageTk.PhotoImage(image_map)
+        label1 = tk.Label(self.canvas,image=test)
+        label1.image = test
+        # Position image
+        label1.place(x=-100, y=0)
+        image_map.close()
+        """
+        pass
+
+    def save_masks_file(self):
+        filename_masks = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")], 
+                                        defaultextension = ".reg",
+                                        initialdir=local_dir+"/SAMOS_regions/pixels")
+        self.textbox_filename_masks.delete('1.0', tk.END)
+        head, tail = os.path.split(filename_masks)
+        self.textbox_filename_masks.insert(tk.END, tail)
+        pass
+
+    def set_HTS_matrix(self):
+        if self.HMatrix_Checked.get() == "S":
+            self.Sorder_menu.place(x=190, y=15)
+            self.Horder_menu.place(x=1090, y=15)
+            self.order = self.Sorder.get()
+        else:
+            self.Horder_menu.place(x=190, y=15)
+            self.Sorder_menu.place(x=1090, y=15) 
+            self.order = self.Horder.get()
+        pass
+    
+    def HTS_generate(self):
+        pass
 # =============================================================================
 # 
 #         # Exit
 # =============================================================================
-        quitButton = tk.Button(self, text="Exit",command=self.client_exit)
-        quitButton.place(x=180, y=350)
+#        quitButton = tk.Button(self, text="Exit",command=self.client_exit)
+#        quitButton.place(x=180, y=350)
 
 
 # =============================================================================
@@ -1081,8 +1259,8 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close() 
               
-        
     def dmd_blackout(self):
         DMD.apply_blackout()
         # global img
@@ -1092,6 +1270,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
 
     def dmd_whiteout(self):
         DMD.apply_whiteout()
@@ -1102,6 +1281,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
 
     def dmd_checkerboard(self):
         DMD.apply_checkerboard()
@@ -1114,6 +1294,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
 
     def dmd_invert(self):
         DMD.apply_invert()
@@ -1130,8 +1311,8 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
 
-             
 #        # global img
 #        img= ImageTk.PhotoImage(Image.open(local_dir + "/current_dmd_state.png"))
 #        #Add image to the Canvas Items
@@ -1145,9 +1326,10 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
+        image_map.close()
             
     def browseFiles(self):
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
                                           title = "Select a File",
                                           filetypes = (("Text files",
                                                         "*.csv"),
@@ -1180,8 +1362,9 @@ class DMDPage(tk.Frame):
             myFile = csv.reader(file)
             for row in myFile:
                 myList.append(row)
-        #print(myList)         
-        
+        #print(myList) 
+        file.close()        
+        params["mapfnam"] = head
         for i in range(len(myList)):
             print("Row " + str(i) + ": " + str(myList[i]))
         
@@ -1199,7 +1382,7 @@ class DMDPage(tk.Frame):
 
         print('img =', self.img)
         self.canvas.create_image(104,128,image=self.img)
-
+        image_map.close()
         
 # =============================================================================
 #
@@ -1210,7 +1393,7 @@ class DMDPage(tk.Frame):
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/slits",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -1230,7 +1413,7 @@ class DMDPage(tk.Frame):
         for i in table.index:
            self.slit_shape[x1[i]:x2[i],y1[i]:y2[i]]=0
         DMD.apply_shape(self.slit_shape)
-        
+        params["gridfnam"] = tail
         # Create a photoimage object of the image in the path
         #Load the image
         # global img
@@ -1244,7 +1427,7 @@ class DMDPage(tk.Frame):
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
-
+        image_map.close()
 
     def save_slittable(self):
         pass
@@ -1259,12 +1442,12 @@ class DMDPage(tk.Frame):
         self.Echo_String.set(t)
         print(t)
         
-    def client_exit(self):
-        print("destroy")
-        self.destroy()         
+#    def client_exit(self):
+#        print("destroy")
+#        self.destroy()         
 
     def create_menubar(self, parent):
-        parent.geometry("610x407")
+        parent.geometry("910x407")
         parent.title("SAMOS DMD Controller")
         self.PAR = SAMOS_Parameters()
         
@@ -1275,6 +1458,7 @@ class DMDPage(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))        
@@ -1643,6 +1827,7 @@ class Motors(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
@@ -2373,7 +2558,7 @@ class CCDPage(tk.Frame):
         # HISTORY From HiPS CDS/P/DSS2/NIR (DSS2 NIR (XI+IS))    
         self.image = hdul                                    
         hdul.writeto('./newtable.fits',overwrite=True)
-        
+        hdul.close()
     
                 
         gc = aplpy.FITSFigure(hdul)                                                                     
@@ -2517,6 +2702,7 @@ class CCDPage(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
@@ -2543,6 +2729,230 @@ class CCDPage(tk.Frame):
 """
 #############################################################################################################################################
 #
+#---------------------------------------- REDO Pix <-> DMD Mapping  ------------------------------------------------------------------------
+#
+#############################################################################################################################################
+
+Coordinate transformation from DMD to Pixels (and vice versa) may need to be recalculated 
+User will have to take an exposure of a grid pattern, then go through steps to create a 
+new FITS file with the "WCS" transformation, which will be used in the CONVERT class
+"""
+from SAMOS_DMD_dev.DMD_get_pixel_mapping_GUI_dana import Coord_Transform_Helpers as CTH
+#will rename/relocate the CTH class once this works
+class CCD2DMD_RecalPage(tk.Frame):
+    def __init__(self, parent, container):
+        super().__init__(container)
+
+    # =============================================================================
+    #         
+    #  #    FITS Files Label Frame
+    #         
+    # =============================================================================
+        self.fits_hdu = None
+        self.sources_table = None
+        self.dmd_table = None
+        self.DMD_PIX_df = None
+        self.afftest = None
+        self.coord_text = None
+ 
+        logger = log.get_logger("example2", options=None)
+        self.logger = logger
+        vbox_l = tk.Frame(self,relief=tk.RAISED)
+        vbox_l.pack(side=tk.LEFT)
+        vbox_l.place(x=5,y=0,anchor="nw",width=220,height=550)
+        self.vb_l = vbox_l
+        
+        self.frame0l = tk.Frame(self.vb_l,background="#9D76A4",relief=tk.RAISED)#, width=400, height=800)
+        self.frame0l.place(x=4, y=0, anchor="nw", width=220, height=250)
+        
+        
+        self.wdir = "./"
+        filelist = os.listdir(self.wdir)
+        
+        self.file_browse_button = tk.Button(self.frame0l,text="Open Grid FITS File",
+                                            bg="#9D76A4",command=self.browse_grid_fits_files)
+        #browse_files.pack(side=tk.TOP)
+        self.file_browse_button.pack()
+        
+
+        
+        vbox = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
+#        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        vbox.pack(side=tk.TOP)
+        vbox.place(x=250, y=0, anchor="nw")#, width=500, height=800)
+        #self.vb = vbox
+
+#        canvas = tk.Canvas(vbox, bg="grey", height=514, width=522)
+        canvas = tk.Canvas(vbox, bg="grey", height=516, width=528)
+        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        fi = CanvasView(logger) #=> ImageViewTk -- a backend for Ginga using a Tk canvas widget
+        fi.set_widget(canvas)  #=> Call this method with the Tkinter canvas that will be used for the display.
+        #fi.set_redraw_lag(0.0)
+        fi.enable_autocuts('on')
+        fi.set_autocut_params('zscale')
+        fi.enable_autozoom('on')
+        #fi.enable_draw(False)
+        # tk seems to not take focus with a click
+        fi.set_enter_focus(True)
+        #fi.set_callback('cursor-changed', self.cursor_cb)
+        fi.set_bg(0.2, 0.2, 0.2)
+        fi.ui_set_active(True)
+        fi.show_pan_mark(True)
+        # add little mode indicator that shows keyboard modal states
+        fi.show_mode_indicator(True, corner = 'ur')
+        self.fitsimage = fi
+
+        bd = fi.get_bindings()
+        bd.enable_all(True)
+        
+        
+        self.dmd_pattern_text = " "
+        self.dmd_pattern_label = tk.Label(self,text=self.dmd_pattern_text)
+        self.dmd_pattern_label.pack()
+        self.dmd_pattern_label.place(x=520,y=545,anchor="s")
+        
+        vbox_c = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
+#        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        vbox_c.pack(side=tk.BOTTOM)
+        vbox_c.place(x=250, y=545, anchor="nw")#, width=500, height=800)
+        import tksheet
+        
+        tk_sources_table = tksheet.Sheet(vbox_c, width=535, height=200)
+        #tk_sources_table.headers()
+        tk_sources_table.grid()
+        
+ # =============================================================================
+ #         
+ #  #    Buttions for Source Extraction
+ #      -Enter in number of sources to find in image.
+ #      -Enter in approx FWHM for sources.
+ #      -Initialize Coordinate transformation.
+ #      -Enter SIP value and run coordinate WCS fit.
+ #         
+ # =============================================================================       
+
+        
+        self.source_find_button = tk.Button(self.frame0l,text="Run IRAFStarFinder",
+                                            bg="#9D76A4",state="disabled", command=self.irafstarfind)
+        #self.source_find_button.place(x=4)
+        #self.frame1l.create_window(102,120,window=self.source_find_button)
+        self.source_find_button.pack(anchor="n",padx=4,pady=15)
+        #self.source_find_button.place(x=4, y=20)
+        
+        self.run_coord_transf_button = tk.Button(self.frame0l,text="Initialize Coord Transform",bg="#9D76A4",state="disabled",
+                                                 command=self.run_coord_transf)
+        self.run_coord_transf_button.pack(padx=15,pady=5)
+        #self.run_coord_transf_button.place(x=4, y=40)
+        
+    def cursor_cb(self, event):
+        if self.fits_hdu is None:
+            return
+        
+        x, y = event.xdata, event.ydata
+        
+        self.coord_text = '({},{})'.format(x,y)
+        self.coord_label["text"] = (self.coord_text)
+        
+
+    
+    def browse_grid_fits_files(self):
+        
+        filename = tk.filedialog.askopenfilename(initialdir = "./fits_image/",filetypes=[("FITS files","*fits")], 
+                            title = "Select a FITS File",parent=self.frame0l)
+        
+        
+        #self.load_file()
+        self.AstroImage = load_data(filename, logger=self.logger)
+        self.fitsimage.set_image(self.AstroImage)
+       
+        
+        #self.source_find_button["state"] = "active"
+        #self.source_fwhm_entry["state"] = "normal"
+        #self.source_find_entry["state"] = "normal"
+        
+        self.fits_header = self.AstroImage.as_hdu().header
+        self.grid_pattern_name = self.fits_header["gridfnam"]
+        dmd_pattern_text = "DMD Pattern: {}".format(self.grid_pattern_name)
+        self.dmd_pattern_label["text"] = dmd_pattern_text
+        
+        self.grid_pattern_fullPath = "SAMOS_DMD_dev/DMD_csv/slits/{}".format(self.grid_pattern_name)
+        dmd_table = pd.read_csv(self.grid_pattern_fullPath)
+        self.dmd_table = dmd_table
+        
+        self.source_find_button["state"] = "active"
+        self.run_coord_transf_button["state"] = "active"
+        
+
+
+    def irafstarfind(self):#expected_sources=53**2,fwhm=5):
+        
+        fwhm = 5 #float(self.source_fwhm_entry.get())
+        
+        ccd = self.AstroImage.as_nddata().data
+
+        #print(ccd.header)
+        mean_ccd, median_ccd, std_ccd = sigma_clipped_stats(ccd, sigma=4.0)
+        
+        expected_sources = self.dmd_table.shape[0]
+        #print(std_ccd)
+
+        sources_table, unsorted_sources = CTH.iraf_gridsource_find(ccd,expected_sources=expected_sources,fwhm=fwhm,
+                                                                   threshold=3*std_ccd)
+
+        iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
+        
+        self.sources_table = sources_table
+        
+        DMD_PIX_df = pd.concat((self.dmd_table,self.sources_table),axis=1)
+        
+        print(DMD_PIX_df)
+        print(DMD_PIX_df.columns)
+       
+    def run_coord_transf(self):
+        
+        pass
+    
+    def create_menubar(self, parent):
+        parent.geometry("910x650")
+        parent.title("SAMOS Recalibrate CCD2DMD Transformation")
+        self.PAR = SAMOS_Parameters()
+        
+        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
+
+        ## Filemenu
+        filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, activebackground="#026AA9")
+        menubar.add_cascade(label="File", menu=filemenu)
+        filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
+        filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
+        filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
+        filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
+        filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))        
+        filemenu.add_command(label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
+        filemenu.add_separator()
+        filemenu.add_command(label="Exit", command=parent.quit)  
+
+        """
+        ## proccessing menu
+        processing_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Validation", menu=processing_menu)
+        processing_menu.add_command(label="validate")
+        processing_menu.add_separator()
+        """
+        
+        ## help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=U.about)
+        help_menu.add_separator()
+
+        return menubar
+    
+
+"""
+#############################################################################################################################################
+#
 #---------------------------------------- MAIN PAGE FRAME / CONTAINER ------------------------------------------------------------------------
 #
 #############################################################################################################################################
@@ -2562,7 +2972,10 @@ class MainPage(tk.Frame):
 
         # keep track of the entry number for header keys that need to be added
         # will be used to write "OtherParameters.txt" 
+        other_params_file = open("{}/Parameters.txt".format(os.getcwd()), "r")
         self.extra_header_params = 0
+        
+        
         self.header_entry_string = '' #keep string of entries to write to a file after acquisition.
         self.fits_header = WFH.FITSHead()
         self.fits_header.create_main_params_dict()
@@ -3566,22 +3979,7 @@ class MainPage(tk.Frame):
         return self.RRR_RADec
 
     def draw_slits(self):
-        
-        """
-        #[ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
-        #making the above line more explicit to add callbacks
-        for reg in range(10):#range(len(self.RRR_xyAP)):
-             this_reg = self.RRR_xyAP[reg]
-             this_obj = r2g(this_reg)
-             this_obj.add_callback('pick-down', self.pick_cb, 'down')
-             this_obj.add_callback('pick-up', self.pick_cb, 'up')
-        
-             this_obj.add_callback('pick-key', self.pick_cb, 'key')
-             self.canvas.add(this_obj)
-             #ap_region.add_region(self.canvas, this_reg)
-             print("reg number {} tag: {}".format(reg,this_obj.tag))
-             self.SlitTabView.slit_obj_tags.append(this_obj.tag)
-         """   
+         
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         #color in RED all the regions loaded from .reg file
         CM.CompoundMixin.set_attr_all(self.canvas,color="red")
@@ -3803,8 +4201,9 @@ class MainPage(tk.Frame):
         objects = CM.CompoundMixin.get_objects(self.canvas)
         #counter = 0
         self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
-        for obj in objects:
-     
+        for obj in objects[:10]:
+            
+            #print(obj.get_llur())
             ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
                 
              
@@ -4035,7 +4434,7 @@ class MainPage(tk.Frame):
     
         with open(fname, "rb") as in_f:
             buf = in_f.read()
-
+        in_f.close()
     # Two fixes:
     # Header cards:
         buf = buf.replace(b'SIMPLE  =                    F', b'SIMPLE  =                    T')
@@ -4057,11 +4456,16 @@ class MainPage(tk.Frame):
     def expose_light(self):
         self.image_type = "science"
         ExpTime_ms = float(self.Light_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': 1}
+        #params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': 1}
+        params["Exposure Time"] = ExpTime_ms
+        params["CCD Temperature"] = 2300
+        params["Trigger Mode"] = 4
+        params["NofFrames"] = 1
+        
         self.expose(params)
 #        self.combine_files()
         self.handle_light()
-        self.fits_header.set_param("expTime", self.Light_ExpT.get())
+        #self.fits_header.set_param("exptime", self.Light_ExpT.get())
         print("science file created")
 
 # =============================================================================
@@ -4071,7 +4475,11 @@ class MainPage(tk.Frame):
     def expose_bias(self):
         self.image_type = "bias"
         ExpTime_ms = float(self.Bias_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 5, 'NofFrames': int(self.Bias_NofFrames.get())}
+        #params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 5, 'NofFrames': int(self.Bias_NofFrames.get())}
+        params["Exposure Time"] = ExpTime_ms
+        params["CCD Temperature"] = 2300
+        params["Trigger Mode"] = 4
+        params["NofFrames"] = 1
         #cleanup the directory to remove setimage_ files that may be refreshed
         self.cleanup_files()
         self.expose(params)
@@ -4086,11 +4494,15 @@ class MainPage(tk.Frame):
     def expose_dark(self):
         self.image_type = "dark"
         ExpTime_ms = float(self.Dark_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 5, 'NofFrames': int(self.Dark_NofFrames.get())}
+        #params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 5, 'NofFrames': int(self.Dark_NofFrames.get())}
+        params["Exposure Time"] = ExpTime_ms
+        params["CCD Temperature"] = 2300
+        params["Trigger Mode"] = 4
+        params["NofFrames"] = 1
         self.expose(params)
         self.combine_files()
         self.handle_dark()
-        self.fits_header.set_param("expTime", self.Dark_ExpT.get())
+        #self.fits_header.set_param("exptime", self.Dark_ExpT.get())
         print("Superdark file created")
 
 
@@ -4101,11 +4513,15 @@ class MainPage(tk.Frame):
     def expose_flat(self):
         self.image_type = "flat"
         ExpTime_ms = float(self.Flat_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
+        #params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
+        params["Exposure Time"] = ExpTime_ms
+        params["CCD Temperature"] = 2300
+        params["Trigger Mode"] = 4
+        params["NofFrames"] = 1
         self.expose(params)
         self.combine_files()
         self.handle_flat()
-        self.fits_header.set_param("expTime", self.Flat_ExpT.get())
+        #self.fits_header.set_param("exptime", self.Flat_ExpT.get())
         print("Superflat file created")
         #Camera= CCD(dict_params=params)
 
@@ -4130,10 +4546,11 @@ class MainPage(tk.Frame):
                     os.rename(files[i],local_dir+"/fits_image/"+self.image_type+"_"+str(i)+".fits")
                 else: 
                     os.remove(files[i])
+                hdu.close()
         superfile = superfile_cube.mean(axis=2)        
         superfile_header = hdu[0].header
         fits.writeto(local_dir+"/fits_image/super"+self.image_type+".fits",superfile,superfile_header,overwrite=True)
-            
+        
     def cleanup_files(self):
         file_names = local_dir+"/fits_image/"+self.image_type+"_*.fits"
         files = glob.glob(file_names)
@@ -4142,19 +4559,22 @@ class MainPage(tk.Frame):
         
     def handle_dark(self):
         dark_file = local_dir+"/fits_image/superdark.fits"
-        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_dark = fits.open(dark_file)
         dark = hdu_dark[0].data
+        hdr = hdu_dark[0].header
+        exptime = hdr['PARAM2']
+        hdu_dark.close()
+
+        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
+        hdu_bias.close()
         
         if self.subtract_Bias.get() == 1:
             dark_bias = dark-bias
         else:    
             dark_bias = dark
         
-        hdr = hdu_dark[0].header
-        exptime = hdr['PARAM2']
         dark_sec = dark_bias / exptime
         hdr_out = hdr
         hdr_out['PARAM2']=1
@@ -4162,21 +4582,27 @@ class MainPage(tk.Frame):
 
     def handle_flat(self):
         flat_file = local_dir+"/fits_image/superflat.fits"
-        dark_s_file = local_dir+"/fits_image/superdark_s.fits"
-        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_flat = fits.open(flat_file)
         flat = hdu_flat[0].data
+        hdr = hdu_flat[0].header
+        exptime = hdr['PARAM2']
+        hdu_flat.close()
+
+        dark_s_file = local_dir+"/fits_image/superdark_s.fits"
+        hdu_dark_s = fits.open(dark_s_file)
+        dark_s = hdu_dark_s[0].data
+        hdu_dark_s.close()
+        
+        bias_file = local_dir+"/fits_image/superbias.fits"
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
+        hdu_bias.close()
+        
         if self.subtract_Bias.get() == 1:
             flat_bias = flat-bias
         else:    
             flat_bias = flat
 
-        hdr = hdu_flat[0].header
-        exptime = hdr['PARAM2']
-        hdu_dark_s = fits.open(dark_s_file)
-        dark_s = hdu_dark_s[0].data
         dark = dark_s * exptime
         if self.subtract_Dark.get() == 1:
             flat_dark = flat-dark
@@ -4194,15 +4620,19 @@ class MainPage(tk.Frame):
         
         hdu_light = fits.open(light_file)
         light = hdu_light[0].data
+        hdu_light.close()
         
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
+        hdu_bias.close()
         
         hdu_dark_s = fits.open(dark_s_file)
         dark_s = hdu_dark_s[0].data
+        hdu_dark_s.close()
         
         hdu_flat = fits.open(flat_file)
         flat = hdu_flat[0].data
+        hdu_flat.close()
 
         hdr = hdu_light[0].header
         exptime = hdr['PARAM2']
@@ -4221,8 +4651,14 @@ class MainPage(tk.Frame):
             light_dark_bias = np.divide(light_dark, flat) 
         else:    
             light_dark_bias = light_dark
-        fits_image = local_dir+"/fits_image/newimage_ff.fits"    
-        fits.writeto(fits_image,light_dark_bias,hdr,overwrite=True)
+        
+        
+        self.fits_header.create_fits_header(hdr)
+        
+        fits_image = local_dir+"/fits_image/newimage_ff.fits"  
+        
+        fits.writeto(fits_image,light_dark_bias,
+                     self.fits_header.output_header,overwrite=True)
         self.Display(fits_image)
        
 
@@ -4238,6 +4674,7 @@ class MainPage(tk.Frame):
         #params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4}
         
         #Camera= CCD(dict_params=params)
+        print(params)
         Camera = Class_Camera(dict_params=params)
         
         self.this_param_file = open("{}/Parameters.txt".format(os.getcwd()),"w")
@@ -4250,10 +4687,13 @@ class MainPage(tk.Frame):
 #        PCM.initialize(address=host, port=int(port))
         Camera.expose(host, port=int(port))
         expTime = params['Exposure Time']/1000
-        self.fits_header.set_param("expTime", expTime)
+        self.fits_header.set_param("exptime", expTime)
         self.fits_header.set_param("filter", self.FW1_filter.get())
-        
-        
+        try:
+            self.fits_header.set_param("gridfnam", params["gridfnam"])
+        except:
+            print("no slit grid loaded")
+
         #Fix the fit header from U16 to I16, creating a new image
         #create proper working directory
         work_dir = os.getcwd()
@@ -4261,18 +4701,20 @@ class MainPage(tk.Frame):
         ##fits_image = "/Users/robberto/Box/@Massimo/_Python/SAMOS_GUI_dev/fits_image/newimage_fixed.fit"
         #fits_image = "{}/fits_image/newimage_fixed.fit".format(work_dir)
         self.fits_image = "{}/fits_image/newimage.fit".format(work_dir)
-        fits_image_converted = local_dir+"/fits_image/newimage_fixed.fit"   
+        
+        fits_image_converted = local_dir+"/fits_image/newimage_fixed.fits"   
         self.fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
-        self.fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
+        self.fits_header.set_param("filedir", os.path.split(fits_image_converted)[0]) 
+        
         #fits_image_converted = "{}/fits_image/newimage_fixed.fit".format(work_dir)                       
         self.convertSIlly(self.fits_image,fits_image_converted)
         
         #copy the cleaned file to newimage.fit
         shutil.copy(fits_image_converted,self.fits_image)
-        input_header = fits.open(self.fits_image)[0].header
-        self.fits_header.create_fits_header(input_header)
-        print(self.fits_header.output_header)
+        
+        
         self.Display(fits_image_converted)
+        
         
         #To do: cancel the original image.= If the canera is active; otherwise leave it.
         #Hence, we need a general switch to activate if the camera is running.
@@ -4301,7 +4743,7 @@ class MainPage(tk.Frame):
         
         # passes the image to the viewer through the set_image() method
         self.fitsimage.set_image(self.AstroImage)
-        self.root.title(self.fullpath_FITSfilename)
+#        self.root.title(self.fullpath_FITSfilename)
 
 
     """ 
@@ -4336,6 +4778,7 @@ class MainPage(tk.Frame):
             img.load_hdu(self.hdu_res)       
 
             self.fitsimage.set_image(img)
+        hdu_in.close()
         
         #self.root.title(filepath)
     
@@ -4925,7 +5368,6 @@ class MainPage(tk.Frame):
         self.logger.info("pick event '%s' with obj %s at (%.2f, %.2f)" % (
             ptype, obj.kind, pt[0], pt[1]))
         
-        #canvas.clear_selected()
         try:
             canvas.get_object_by_tag(self.selected_obj_tag).color='red'
             canvas.clear_selected()
@@ -5172,7 +5614,7 @@ class MainPage(tk.Frame):
     def LoadMap(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -5207,6 +5649,7 @@ class MainPage(tk.Frame):
 
         print('img =', self.img)
         self.canvas.create_image(104,128,image=self.img)
+        image_map.close()
 
         
 # =============================================================================
@@ -5218,7 +5661,7 @@ class MainPage(tk.Frame):
     def LoadSlits(self):
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD +"/DMD_maps_csv",
+        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD +"/DMD_csv/slits",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -5298,6 +5741,7 @@ class MainPage(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
@@ -5342,6 +5786,7 @@ class SAMOS_Parameters():
         with open(ip_file_default, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
+        inp.close()
         self.IP_dict = {}
         self.IP_dict['IP_Motors']=dict_from_csv['IP_Motors']
         self.IP_dict['IP_CCD']=dict_from_csv['IP_CCD']

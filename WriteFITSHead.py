@@ -65,10 +65,11 @@ class FITSHead(object):
         
         self.filename = None # base filename e.g. 'NGC1976_83.819696	-5.390333'
         self.filedir = None # main directory to which output FITS are saved.
+        self.gridfnam = None # if image is grid, name of grid pattern file .csv
         
-        self.expTime = None
-        self.objName = None # 'OBJECT' name of object e.g. ABELL S1101
-        self.obsType = None# 'OBSTYPE' type of observation e.g. BIAS, FLAT, OBJ...
+        self.exptime = None
+        self.objname = None # 'OBJECT' name of object e.g. ABELL S1101
+        self.obstype = None# 'OBSTYPE' type of observation e.g. BIAS, FLAT, OBJ...
         self.radecSys = 'FK5' # prob won't change
         self.radecEq = 2000# prob won't change
         self.ra = None
@@ -161,9 +162,10 @@ class FITSHead(object):
         #TODO: Put these in a better order
         
         self.main_dict = {'FILENAME' : self.filename,
-                'EXPTIME': (self.expTime, 'Exposure time (s)'),
-                'OBJECT': (self.objName,'User-defined name of object'),
-                'OBSTYPE': (self.obsType, 'Type of observation'),
+                'GRIDFNAM' : (self.gridfnam, 'Grid pattern filename'),
+                'EXPTIME': (self.exptime, 'Exposure time (s)'),
+                'OBJECT': (self.objname,'User-defined name of object'),
+                'OBSTYPE': (self.obstype, 'Type of observation'),
                 'RADECSYS': (self.radecSys, 'Default coordinate system'),
                 'RADECEQ': (self.radecEq, 'Default equinox'),
                 'RA': (self.ra,'RA of object (hr)'), 
@@ -227,6 +229,7 @@ class FITSHead(object):
                 output_header.set(key, value)
             
         self.output_header = output_header
+        
         
        
     def write_fits(self, imdata):

@@ -86,7 +86,7 @@ def iraf_gridsource_find(ccd,expected_sources,**kwargs):
 
     iraffind = IRAFStarFinder(brightest=expected_sources,**kwargs)
 
-    irafsources = iraffind(ccd.data)
+    irafsources = iraffind(ccd)
 
     for col in irafsources.colnames:
 
