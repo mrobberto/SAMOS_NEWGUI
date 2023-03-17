@@ -67,7 +67,7 @@ class FITSHead(object):
         self.filedir = None # main directory to which output FITS are saved.
         self.gridfnam = None # if image is grid, name of grid pattern file .csv
         
-        self.exptime = None
+        self.expTime = None
         self.objname = None # 'OBJECT' name of object e.g. ABELL S1101
         self.obstype = None# 'OBSTYPE' type of observation e.g. BIAS, FLAT, OBJ...
         self.radecSys = 'FK5' # prob won't change
@@ -163,7 +163,7 @@ class FITSHead(object):
         
         self.main_dict = {'FILENAME' : self.filename,
                 'GRIDFNAM' : (self.gridfnam, 'Grid pattern filename'),
-                'EXPTIME': (self.exptime, 'Exposure time (s)'),
+                'EXPTIME': (self.expTime, 'Exposure time (s)'),
                 'OBJECT': (self.objname,'User-defined name of object'),
                 'OBSTYPE': (self.obstype, 'Type of observation'),
                 'RADECSYS': (self.radecSys, 'Default coordinate system'),
