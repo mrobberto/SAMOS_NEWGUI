@@ -137,6 +137,8 @@ CCD = Class_Camera(dict_params=params)
 DMD = DigitalMicroMirrorDevice()  # config_id='pass')
 
 
+
+
 """
 import tkinter as tk
 from tkinter import ttk
@@ -262,12 +264,13 @@ class App(tk.Tk):
         self.frames = {}
         self.ConfigPage = ConfigPage
         self.DMDPage = DMDPage
+        self.CCD2DMD_RecalPage = CCD2DMD_RecalPage
         self.Motors = Motors
         self.CCDPage = CCDPage
         self.MainPage = MainPage
 
         # Defining Frames and Packing it
-        for F in {ConfigPage, DMDPage, Motors, CCDPage, MainPage}:
+        for F in {ConfigPage, DMDPage, CCD2DMD_RecalPage, Motors, CCDPage, MainPage}:
             frame = F(self, container)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
@@ -936,14 +939,16 @@ class ConfigPage(tk.Frame):
         menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
                           activebackground="#80B9DC")
 
-        # Filemenu
-        filemenu = tk.Menu(menubar, tearoff=0,
-                           relief=tk.RAISED, activebackground="#026AA9")
+        ## Filemenu
+        filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, 
+                           activebackground="#026AA9")
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(
             label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(
             label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(
+            label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(
             label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(
@@ -953,7 +958,7 @@ class ConfigPage(tk.Frame):
         filemenu.add_command(
             label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_separator()
-        filemenu.add_command(label="Exit", command=parent.quit)
+        filemenu.add_command(label="Exit", command=parent.quit)  
 
         """
         # proccessing menu
@@ -1564,6 +1569,7 @@ class DMDPage(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))        
@@ -1932,6 +1938,7 @@ class Motors(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))        
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
@@ -2806,6 +2813,7 @@ class CCDPage(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))        
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
@@ -2832,6 +2840,230 @@ class CCDPage(tk.Frame):
 """
 #############################################################################################################################################
 #
+#---------------------------------------- REDO Pix <-> DMD Mapping  ------------------------------------------------------------------------
+#
+#############################################################################################################################################
+
+Coordinate transformation from DMD to Pixels (and vice versa) may need to be recalculated 
+User will have to take an exposure of a grid pattern, then go through steps to create a 
+new FITS file with the "WCS" transformation, which will be used in the CONVERT class
+"""
+from SAMOS_DMD_dev.DMD_get_pixel_mapping_GUI_dana import Coord_Transform_Helpers as CTH
+#will rename/relocate the CTH class once this works
+class CCD2DMD_RecalPage(tk.Frame):
+    def __init__(self, parent, container):
+        super().__init__(container)
+
+    # =============================================================================
+    #         
+    #  #    FITS Files Label Frame
+    #         
+    # =============================================================================
+        self.fits_hdu = None
+        self.sources_table = None
+        self.dmd_table = None
+        self.DMD_PIX_df = None
+        self.afftest = None
+        self.coord_text = None
+ 
+        logger = log.get_logger("example2", options=None)
+        self.logger = logger
+        vbox_l = tk.Frame(self,relief=tk.RAISED)
+        vbox_l.pack(side=tk.LEFT)
+        vbox_l.place(x=5,y=0,anchor="nw",width=220,height=550)
+        self.vb_l = vbox_l
+        
+        self.frame0l = tk.Frame(self.vb_l,background="#9D76A4",relief=tk.RAISED)#, width=400, height=800)
+        self.frame0l.place(x=4, y=0, anchor="nw", width=220, height=250)
+        
+        
+        self.wdir = "./"
+        filelist = os.listdir(self.wdir)
+        
+        self.file_browse_button = tk.Button(self.frame0l,text="Open Grid FITS File",
+                                            bg="#9D76A4",command=self.browse_grid_fits_files)
+        #browse_files.pack(side=tk.TOP)
+        self.file_browse_button.pack()
+        
+
+        
+        vbox = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
+#        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        vbox.pack(side=tk.TOP)
+        vbox.place(x=250, y=0, anchor="nw")#, width=500, height=800)
+        #self.vb = vbox
+
+#        canvas = tk.Canvas(vbox, bg="grey", height=514, width=522)
+        canvas = tk.Canvas(vbox, bg="grey", height=516, width=528)
+        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        fi = CanvasView(logger) #=> ImageViewTk -- a backend for Ginga using a Tk canvas widget
+        fi.set_widget(canvas)  #=> Call this method with the Tkinter canvas that will be used for the display.
+        #fi.set_redraw_lag(0.0)
+        fi.enable_autocuts('on')
+        fi.set_autocut_params('zscale')
+        fi.enable_autozoom('on')
+        #fi.enable_draw(False)
+        # tk seems to not take focus with a click
+        fi.set_enter_focus(True)
+        #fi.set_callback('cursor-changed', self.cursor_cb)
+        fi.set_bg(0.2, 0.2, 0.2)
+        fi.ui_set_active(True)
+        fi.show_pan_mark(True)
+        # add little mode indicator that shows keyboard modal states
+        fi.show_mode_indicator(True, corner = 'ur')
+        self.fitsimage = fi
+
+        bd = fi.get_bindings()
+        bd.enable_all(True)
+        
+        
+        self.dmd_pattern_text = " "
+        self.dmd_pattern_label = tk.Label(self,text=self.dmd_pattern_text)
+        self.dmd_pattern_label.pack()
+        self.dmd_pattern_label.place(x=520,y=545,anchor="s")
+        
+        vbox_c = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
+#        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        vbox_c.pack(side=tk.BOTTOM)
+        vbox_c.place(x=250, y=545, anchor="nw")#, width=500, height=800)
+        import tksheet
+        
+        tk_sources_table = tksheet.Sheet(vbox_c, width=535, height=200)
+        #tk_sources_table.headers()
+        tk_sources_table.grid()
+        
+ # =============================================================================
+ #         
+ #  #    Buttions for Source Extraction
+ #      -Enter in number of sources to find in image.
+ #      -Enter in approx FWHM for sources.
+ #      -Initialize Coordinate transformation.
+ #      -Enter SIP value and run coordinate WCS fit.
+ #         
+ # =============================================================================       
+
+        
+        self.source_find_button = tk.Button(self.frame0l,text="Run IRAFStarFinder",
+                                            bg="#9D76A4",state="disabled", command=self.irafstarfind)
+        #self.source_find_button.place(x=4)
+        #self.frame1l.create_window(102,120,window=self.source_find_button)
+        self.source_find_button.pack(anchor="n",padx=4,pady=15)
+        #self.source_find_button.place(x=4, y=20)
+        
+        self.run_coord_transf_button = tk.Button(self.frame0l,text="Initialize Coord Transform",bg="#9D76A4",state="disabled",
+                                                 command=self.run_coord_transf)
+        self.run_coord_transf_button.pack(padx=15,pady=5)
+        #self.run_coord_transf_button.place(x=4, y=40)
+        
+    def cursor_cb(self, event):
+        if self.fits_hdu is None:
+            return
+        
+        x, y = event.xdata, event.ydata
+        
+        self.coord_text = '({},{})'.format(x,y)
+        self.coord_label["text"] = (self.coord_text)
+        
+
+    
+    def browse_grid_fits_files(self):
+        
+        filename = tk.filedialog.askopenfilename(initialdir = "./fits_image/",filetypes=[("FITS files","*fits")], 
+                            title = "Select a FITS File",parent=self.frame0l)
+        
+        
+        #self.load_file()
+        self.AstroImage = load_data(filename, logger=self.logger)
+        self.fitsimage.set_image(self.AstroImage)
+       
+        
+        #self.source_find_button["state"] = "active"
+        #self.source_fwhm_entry["state"] = "normal"
+        #self.source_find_entry["state"] = "normal"
+        
+        self.fits_header = self.AstroImage.as_hdu().header
+        self.grid_pattern_name = self.fits_header["gridfnam"]
+        dmd_pattern_text = "DMD Pattern: {}".format(self.grid_pattern_name)
+        self.dmd_pattern_label["text"] = dmd_pattern_text
+        
+        self.grid_pattern_fullPath = "SAMOS_DMD_dev/DMD_csv/slits/{}".format(self.grid_pattern_name)
+        dmd_table = pd.read_csv(self.grid_pattern_fullPath)
+        self.dmd_table = dmd_table
+        
+        self.source_find_button["state"] = "active"
+        self.run_coord_transf_button["state"] = "active"
+        
+
+
+    def irafstarfind(self):#expected_sources=53**2,fwhm=5):
+        
+        fwhm = 5 #float(self.source_fwhm_entry.get())
+        
+        ccd = self.AstroImage.as_nddata().data
+
+        #print(ccd.header)
+        mean_ccd, median_ccd, std_ccd = sigma_clipped_stats(ccd, sigma=4.0)
+        
+        expected_sources = self.dmd_table.shape[0]
+        #print(std_ccd)
+
+        sources_table, unsorted_sources = CTH.iraf_gridsource_find(ccd,expected_sources=expected_sources,fwhm=fwhm,
+                                                                   threshold=3*std_ccd)
+
+        iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
+        
+        self.sources_table = sources_table
+        
+        DMD_PIX_df = pd.concat((self.dmd_table,self.sources_table),axis=1)
+        
+        print(DMD_PIX_df)
+        print(DMD_PIX_df.columns)
+       
+    def run_coord_transf(self):
+        
+        pass
+    
+    def create_menubar(self, parent):
+        parent.geometry("910x650")
+        parent.title("SAMOS Recalibrate CCD2DMD Transformation")
+        self.PAR = SAMOS_Parameters()
+        
+        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
+
+        ## Filemenu
+        filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, activebackground="#026AA9")
+        menubar.add_cascade(label="File", menu=filemenu)
+        filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
+        filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
+        filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
+        filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
+        filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))        
+        filemenu.add_command(label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
+        filemenu.add_separator()
+        filemenu.add_command(label="Exit", command=parent.quit)  
+
+        """
+        ## proccessing menu
+        processing_menu = Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Validation", menu=processing_menu)
+        processing_menu.add_command(label="validate")
+        processing_menu.add_separator()
+        """
+        
+        ## help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=U.about)
+        help_menu.add_separator()
+
+        return menubar
+
+
+"""
+#############################################################################################################################################
+#
 # ---------------------------------------- MAIN PAGE FRAME / CONTAINER ------------------------------------------------------------------------
 #
 #############################################################################################################################################
@@ -2850,7 +3082,7 @@ class MainPage(tk.Frame):
         # ADD CODE HERE TO DESIGN THIS PAGE
 
         # keep track of the entry number for header keys that need to be added
-        # will be used to write "OtherParameters.txt" 
+        # will be used to write "OtherParameters.txt"
         self.extra_header_params = 0
         self.header_entry_string = '' #keep string of entries to write to a file after acquisition.
         self.fits_header = WFH.FITSHead()
@@ -3963,12 +4195,6 @@ class MainPage(tk.Frame):
         # we return the filename
         print("(RA,DEC) Regions loaded from .reg file")    
         
-        #if self.SlitTabView is None:
-        #    self.SlitTabView = STView()
-        
-        #self.SlitTabView.load_table_from_regfile_RADEC(regs_RADEC=self.RRR_RADec,
-        #                                                img_wcs=self.wcs)        # right now uses the default test WCS in the SlitTableViewer file
-        
         return self.filename_regfile_RADEC
         
     def load_regfile_xyAP(self):
@@ -4518,8 +4744,11 @@ class MainPage(tk.Frame):
             light_dark_bias = np.divide(light_dark, flat) 
         else:    
             light_dark_bias = light_dark
-        fits_image = local_dir+"/fits_image/newimage_ff.fits"    
-        fits.writeto(fits_image,light_dark_bias,hdr,overwrite=True)
+            
+        self.fits_header.create_fits_header(hdr)
+        fits_image = local_dir+"/fits_image/newimage_ff.fits"  
+        fits.writeto(fits_image,light_dark_bias,
+                     self.fits_header.output_header,overwrite=True)
         self.Display(fits_image)
        
 
@@ -4535,6 +4764,7 @@ class MainPage(tk.Frame):
         # params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4}
         
         # Camera= CCD(dict_params=params)
+        
         Camera = Class_Camera(dict_params=params)
         
         self.this_param_file = open("{}/Parameters.txt".format(os.getcwd()),"w")
@@ -4549,7 +4779,10 @@ class MainPage(tk.Frame):
         expTime = params['Exposure Time']/1000
         self.fits_header.set_param("expTime", expTime)
         self.fits_header.set_param("filter", self.FW1_filter.get())
-        
+        try:
+            self.fits_header.set_param("gridfnam", params["gridfnam"])
+        except:
+            print("no slit grid loaded")
         
         # Fix the fit header from U16 to I16, creating a new image
         # create proper working directory
@@ -5598,6 +5831,7 @@ class MainPage(tk.Frame):
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
         filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
         filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
         filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
