@@ -74,14 +74,14 @@ dmd._open()
 
 #pinhole at the center
 # =============================================================================
-"""
+
 test_shape = np.ones((1080,2048)) # This is the size of the DC2K
 xc = 540
 yc = 1024
 test_shape[xc:xc+1,yc:yc+1] = 0
 dmd.apply_shape(test_shape)
 dmd.apply_invert()    
-"""
+
 # 
 #test_shape[xc-1:xc+1,yc-1:yc+1] = 0
 # # > CCD:515,488 = DMD:540,1024

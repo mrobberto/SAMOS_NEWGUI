@@ -4806,6 +4806,8 @@ class MainPage(tk.Frame):
         self.Display(fits_image_converted)
         hdul.close()
         
+        self.fullpath_FITSfilename = self.fits_image
+        
         # To do: cancel the original image.= If the canera is active; otherwise leave it.
         # Hence, we need a general switch to activate if the camera is running.
         # Hence, we may need a general login window.
@@ -4825,6 +4827,14 @@ class MainPage(tk.Frame):
         
 
     def load_last_file(self):
+        """
+        This function load the last .fits file acquired by the system, either READ or from SkyMaper
+        > Creates self.fullpath_FITSfilename
+        Returns
+        -------
+        None.
+
+        """
         FITSfiledir = './fits_image/'
         self.fullpath_FITSfilename = FITSfiledir + (os.listdir(FITSfiledir))[0] 
             # './fits_image/cutout_rebined_resized.fits'
@@ -4833,6 +4843,7 @@ class MainPage(tk.Frame):
         
         # passes the image to the viewer through the set_image() method
         self.fitsimage.set_image(self.AstroImage)
+
 #        self.root.title(self.fullpath_FITSfilename)
 
 
@@ -5567,6 +5578,15 @@ class MainPage(tk.Frame):
 ######
 # from https://sewpy.readthedocs.io/en/latest/
     def run_DaoFind(self):
+        """
+        This function runs DaoFind on the active fits file "self.fullpath_FITSfilename"
+        Needs work and may be superseeded by twirl
+        
+        Returns
+        -------
+        None.
+
+        """
         self.fullpath_FITSfilename
         # here is the daophot part of the procedure
         hdu = fits.open(self.fullpath_FITSfilename, logger=self.logger)
