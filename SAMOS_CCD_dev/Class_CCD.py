@@ -32,7 +32,7 @@ class Class_Camera(object):
         self.ExpTime = dict_params['Exposure Time']
         self.DetTemp = dict_params['CCD Temperature']
         self.TriggerMode = dict_params['Trigger Mode']
- 
+        self.NofFrames = dict_params['NofFrames']
         
     def getch(char_width=1):
         '''get a fixed number of typed characters from the terminal. 
@@ -145,7 +145,7 @@ class Class_Camera(object):
     		iterations=sys.argv[2]
     		iterations=int(iterations)
     	else:
-    		iterations=1
+    		iterations=self.NofFrames
     	target='http://'+target+'/'
 
     	print("URI=%s" % target)

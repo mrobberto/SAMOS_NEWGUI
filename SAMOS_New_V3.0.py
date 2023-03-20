@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Feb 25 13:21:00 2023
-03.03.203- V2.0
+03.21.2023 - V3.0
+    - fixed run Daofind (but we may eliminated it, twirl looks ok)
+    - fixed slit orientation, exchanged xyradius in slit_handler()
+    - added "Show Traces Button", created show_traces() to handle it. Traces are rectangles, not boxes, for display only
+03.03.2023 - V2.0
     - added the capability of drawing generic shapes,
 03.01.2023 - V1.1
     - Major redesign of the SLit handling part, created the 3 color column on the right side
@@ -20,7 +24,7 @@ Created on Tue Feb 25 13:21:00 2023
     - region file in RADEC must be copieed to directory /regions/RADEC
     - putton "load .red RADEC" allows to lod the region file in RADEC. File name format is rather rigid
     - coordinates of the center are extracted searching filename between "RADEC="  and ".reg"
-    - observations is assumed to be done at this point: use sSkyMapper Query for test
+    - observations is assumed to be done at this point: use SkyMapper Query for test
     - after twirl vs. GAIA and WCS header created, convert the RADEC region file to a pixel region file
     - the regions (slits) appear on the display!
 TO DO: "Run Code" erases everything, should leave the slits untouched.
@@ -73,6 +77,7 @@ from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
 from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
 from SAMOS_CCD_dev.Class_CCD import Class_Camera
+#from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 import subprocess
 import pandas as pd
@@ -2234,7 +2239,7 @@ class CCDPage(tk.Frame):
 
         self.frame2r = tk.Frame(self.frame0l,background="#4A7A8C")#, width=400, height=800)
         self.frame2r.place(x=430, y=4, anchor="nw", width=360, height=400)
-        labelframe_Setup =  tk.LabelFrame(self.frame2r, text="Camera Seup", font=("Arial", 24))
+        labelframe_Setup =  tk.LabelFrame(self.frame2r, text="Camera Setup", font=("Arial", 24))
         labelframe_Setup.pack(fill="both", expand="yes")
         
 #        #camera_is_open = tk.IntVar()
@@ -2969,7 +2974,7 @@ class CCD2DMD_RecalPage(tk.Frame):
     
     def browse_grid_fits_files(self):
         
-        filename = tk.filedialog.askopenfilename(initialdir = "./fits_image/",filetypes=[("FITS files","*fits")], 
+        filename = tk.filedialog.askopenfilename(initialdir = local_dir+"/fits_image/",filetypes=[("FITS files","*fits")], 
                             title = "Select a FITS File",parent=self.frame0l)
         
         
@@ -3474,10 +3479,11 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
  
-        button_FITS_Load =  tk.Button(labelframe_FITSmanager, text="FITS Load", bd=3, 
+        button_FITS_Load =  tk.Button(labelframe_FITSmanager, text="Load last file", bd=3, 
                                            command=self.load_last_file)
         button_FITS_Load.place(x=0,y=25)
         
+        """ RA Entry box""" 
         self.string_RA = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA.set("150.17110")  #NGC 3105
@@ -3486,6 +3492,7 @@ class MainPage(tk.Frame):
         label_RA.place(x=190,y=5)
         self.entry_RA.place(x=230,y=5)
         
+        """ DEC Entry box""" 
         self.string_DEC = tk.StringVar()
 #        self.string_DEC.set("-11.62305")#Sombrero
         self.string_DEC.set("-54.79004") #NGC 3105
@@ -3494,6 +3501,7 @@ class MainPage(tk.Frame):
         label_DEC.place(x=290,y=30)
         self.entry_DEC.place(x=230,y=30)
         
+        """ Filter Entry box""" 
         self.string_Filter = tk.StringVar()
         self.string_Filter.set("i")
         label_Filter = tk.Label(labelframe_FITSmanager, text='Filter:',  bd =3)
@@ -3501,6 +3509,7 @@ class MainPage(tk.Frame):
         label_Filter.place(x=190,y=55)
         entry_Filter.place(x=230,y=55)
 
+        """ SkyMapper Query """ 
         button_skymapper_query =  tk.Button(labelframe_FITSmanager, text="SkyMapper Query", bd=3, 
                                            command=self.SkyMapper_query)
         button_skymapper_query.place(x=190,y=80)
@@ -3510,7 +3519,6 @@ class MainPage(tk.Frame):
         button_skymapper_save.place(x=190,y=105)
         
         button_twirl_Astrometry =  tk.Button(labelframe_FITSmanager, text="twirl_Astrometry", bd=3, 
-#                                            command=Astrometry)
                                             command=self.twirl_Astrometry)
         button_twirl_Astrometry.place(x=190,y=130)
         
@@ -3734,6 +3742,12 @@ class MainPage(tk.Frame):
         wslit = tk.Checkbutton(labelframe_SlitConf, text="Slit Pointer", variable=self.vslit)
         wslit.place(x=220, y=20)
         
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#  #    SHOW TRACES ENABLED
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
+        self.traces = tk.IntVar()
+        traces_button= tk.Button(labelframe_SlitConf, text="Show Traces", command=self.show_traces)
+        traces_button.place(x=220, y=50)
         """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -4806,6 +4820,7 @@ class MainPage(tk.Frame):
         self.Display(fits_image_converted)
         hdul.close()
         
+        self.fullpath_FITSfilename = self.fits_image
         # To do: cancel the original image.= If the canera is active; otherwise leave it.
         # Hence, we need a general switch to activate if the camera is running.
         # Hence, we may need a general login window.
@@ -4825,9 +4840,9 @@ class MainPage(tk.Frame):
         
 
     def load_last_file(self):
-        FITSfiledir = './fits_image/'
+        FITSfiledir = local_dir+"/fits_image/"
         self.fullpath_FITSfilename = FITSfiledir + (os.listdir(FITSfiledir))[0] 
-            # './fits_image/cutout_rebined_resized.fits'
+            # './fits_image/newimage_ff.fits'
         self.AstroImage = load_data(self.fullpath_FITSfilename, logger=self.logger)
         # AstroImage object of ginga.AstroImage module
         
@@ -4868,6 +4883,8 @@ class MainPage(tk.Frame):
             img.load_hdu(self.hdu_res)       
 
             self.fitsimage.set_image(img)
+            self.AstroImage = img
+            self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
         
         # self.root.title(filepath)
@@ -4982,7 +4999,7 @@ class MainPage(tk.Frame):
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def check_for_file_existence(self):
-        FITSfiledir = './fits_image/'
+        FITSfiledir = local_dir+"/fits_image/"
         while len(os.listdir(FITSfiledir)) == 0:
             print('nothing here')
             time.sleep(1)
@@ -5344,7 +5361,7 @@ class MainPage(tk.Frame):
         print("the RADEC of the fitted centroid are, in decimal degrees:")
         print(self.AstroImage.pixtoradec(objs[0].objx,objs[0].objy))
         slit_box = self.canvas.get_draw_class('box')
-        slit_w=3
+#        slit_w=3
 #        slit_l=9
 #        self.canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
 #                        width=100,
@@ -5352,8 +5369,8 @@ class MainPage(tk.Frame):
 #                        angle = 0*u.deg))
         
         slit_box = self.canvas.get_draw_class('box')
-        xradius = self.slit_l.get() * 0.5 * self.PAR.scale_DMD2PIXEL
-        yradius = self.slit_w.get() * 0.5 * self.PAR.scale_DMD2PIXEL
+        xradius = self.slit_w.get() * 0.5 * self.PAR.scale_DMD2PIXEL
+        yradius = self.slit_l.get() * 0.5 * self.PAR.scale_DMD2PIXEL
         obj.fill = 1
         self.canvas.add(slit_box(x=objs[0].objx+x1, 
                                  y=objs[0].objy+y1, 
@@ -5369,6 +5386,37 @@ class MainPage(tk.Frame):
 
         # self.cleanup_kind('point')
         # ssself.cleanup_kind('box')
+        
+    def show_traces(self):
+        #if self.traces == 1:
+            img_data = self.AstroImage.get_data()
+            #remove points
+            points = CM.CompoundMixin.get_objects_by_kind(self.canvas,'point')
+            list_point=list(points)
+            CM.CompoundMixin.delete_objects(self.canvas,list_point)
+            self.canvas.objects   #check that the points are gone
+            #we should hanve only boxes/slits 
+            objects=CM.CompoundMixin.get_objects(self.canvas)
+            for i in range(len(objects)):
+                o0=objects[i]
+                x_c = o0.x#really needed?
+                y_c = o0.y
+                height_ = 2*o0.yradius
+                width_ = 1024
+                alpha_ = 0.3
+                color_='green'
+            # create area to search, using astropy instead of ginga (still unclear how you do it with ginga)
+                Rectangle = self.canvas.get_draw_class('rectangle')
+#                r = Rectangle(center=PixCoord(x=round(x_c), y=round(y_c)),
+#                                            width=width_, height=height_, 
+#                                            angle = 0*u.deg)
+                r = Rectangle(x1=round(x_c)-1024, y1=round(y_c)-o0.yradius,x2=round(x_c)+1024, y2=round(y_c)+o0.yradius,
+                                            angle = 0*u.deg,color='yellow',fill=1,fillalpha=0.5)
+                self.canvas.add(r)
+                CM.CompoundMixin.draw(self.canvas,self.canvas.viewer)
+            # create box
+          
+            
     
     def get_dmd_coords_of_picked_slit(self, picked_slit):
         x0,y0,x1,y1 = picked_slit.get_llur()
@@ -5567,13 +5615,13 @@ class MainPage(tk.Frame):
 ######
 # from https://sewpy.readthedocs.io/en/latest/
     def run_DaoFind(self):
-        self.fullpath_FITSfilename
+        #self.fullpath_FITSfilename
         # here is the daophot part of the procedure
         hdu = fits.open(self.fullpath_FITSfilename, logger=self.logger)
 
         # read the wcs to get radec from the pixels
         # see https://docs.astropy.org/en/stable/api/astropy.wcs.WCS.html#astropy.wcs.WCS.pixel_to_world_values
-        w = wcs.WCS(hdu[('sci',1)].header, hdu)
+        w = wcs.WCS(hdu[0].header, hdu)
 
         data = hdu[0].data
         hdu.close()   #good practice
@@ -5612,9 +5660,9 @@ class MainPage(tk.Frame):
         viewer=self.fitsimage#.set_image(image)   #ImageViewCanvas object of ginga.tkw.ImageViewTk module
         canvas = viewer.get_private_canvas() #ImageViewCanvas object of ginga.tkw.ImageViewTk module
         canvas.delete_all_objects(redraw=True)
-        canvas.show_pan_mark(True)
-        x = sources['xcentroid']
-        y = sources['ycentroid']
+        #canvas.show_pan_mark(True)
+        x = sources['xcentroid'] / 375 * 994#1032
+        y = sources['ycentroid'] / 385 * 1072#1056
         
         # get radec
         # see https://docs.astropy.org/en/stable/api/astropy.wcs.WCS.html#astropy.wcs.WCS.pixel_to_world_values
@@ -5639,10 +5687,11 @@ class MainPage(tk.Frame):
 #            canvas.add(Point(x[i]/2.-258, y[i]/2-264, radius, style='plus', color=color,                             
 #            canvas.add(Point( (x[i]/2.-264)*1.01, (y[i]/2-258)*1.01, radius, style='plus', color=color,                             
 #            canvas.add(Point( (x[i]/2.-264.5), (y[i]/2-258.5), radius, style='plus', color=color,                             
-            canvas.add(Point( (x[i]-526)/2., (y[i]-514)/2., radius, style='plus', color=color,                             
+#            canvas.add(Point( (x[i]-526)/2., (y[i]-514)/2., radius, style='plus', color=color,                             
+            canvas.add(Point( (x[i]-508)/2., (y[i]-518)/2., radius, style='plus', color=color,                             
                              coord='cartesian'),
                        redraw=True)#False)
-            print(x[i], y[i],x[i]/2.-264, y[i]/2.-258)
+            print(x[i], y[i],x[i]/2.-260, y[i]/2.-258)
 #            print(x[i], y[i],x[i]/2.-258, y[i]/2.2-258)
         canvas.update_canvas(whence=3)
         print('done')

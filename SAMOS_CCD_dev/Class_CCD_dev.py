@@ -39,7 +39,7 @@ class Class_Camera(object):
         self.ExpTime = dict_params['Exposure Time']
         self.DetTemp = dict_params['CCD Temperature']
         self.TriggerMode = dict_params['Trigger Mode']
-        self.NofFrames = dict_params['NofFrames']
+        
  
         
     def getch(char_width=1):

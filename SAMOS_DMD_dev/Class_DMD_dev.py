@@ -166,19 +166,19 @@ class DigitalMicroMirrorDevice():
 #        response = str(instrument.recv(30))
         
         """OLD"""
-        #data = instrument.recv(300)
+        data = instrument.recv(300)
         """NEW"""
-        instrument.setblocking(0)
-        timeout_in_seconds = 2
-        import select
-        ready = select.select([instrument], [], [], timeout_in_seconds)
+        #instrument.setblocking(0)
+        #timeout_in_seconds = 2
+        #import select
+        #ready = select.select([instrument], [], [], timeout_in_seconds)
         
-        if ready[0]:
-            data = instrument.recv(4096)
-            print("instrument is ready", ready)
-        else:
-            print("not ready?")
-            print(instrument)
+        #if ready[0]:
+        #    data = instrument.recv(4096)
+        #    print("instrument is ready", ready)
+        #else:
+        #    print("not ready?")
+        #    print(instrument)
             
         
         response = data.decode('ascii')
