@@ -111,12 +111,12 @@ class Class_PCM():
         self.FW2_counts_pos4 = data['Counts'][9]
         self.FW2_counts_pos5 = data['Counts'][10]
         self.FW2_counts_pos6 = data['Counts'][11]
-        self.GR1_counts_home = data['Counts'][12]
-        self.GR2_counts_home = data['Counts'][13]
-        self.GR1_counts_pos1 = data['Counts'][14]
-        self.GR1_counts_pos2 = data['Counts'][15]
-        self.GR2_counts_pos1 = data['Counts'][16]
-        self.GR2_counts_pos2 = data['Counts'][17]
+        self.GR_A_counts_home = data['Counts'][12]
+        self.GR_B_counts_home = data['Counts'][13]
+        self.GR_A_counts_pos1 = data['Counts'][14]
+        self.GR_A_counts_pos2 = data['Counts'][15]
+        self.GR_B_counts_pos1 = data['Counts'][16]
+        self.GR_B_counts_pos2 = data['Counts'][17]
  
 # =============================================================================
 #     def echo_server():
@@ -984,8 +984,8 @@ class Class_PCM():
 # FW_B4 0      open 
 # FW_B5 15555  TBD1
 # FW_B6 31111  TBD2
-# GR_H1 5      GR1_Home
-# GR_H2 7      GR2_Home 
+# GR_H1 5      GR_A_Home
+# GR_H2 7      GR_B_Home 
 # GR_A1 70600  TBD-[69800-71400]
 # GR_A2 105300  TBD-[104500-106100]
 # GR_B1 173200  TBD-[172499-174000]
@@ -1319,14 +1319,14 @@ class Class_PCM():
                #1.1 Query position of the other grism B rail
                current_steps = self.GR_query_current_step_counts('GR_B')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('1. current_steps GR_B:',current_steps,'should be around', self.GR2_counts_home)
+               print('1. current_steps GR_B:',current_steps,'should be around', self.GR_B_counts_home)
                current_sensor = self.GR_sensor_status('GR_B')
                #current_sensor = self.extract_sensorcode_from_return_string(current_sensor)
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('1.1 home_sensor GR_B:',bits[1],'should be exactly: 0')
                #
                #1.2 SEND GR B home if not at home...
-               if (abs(int(current_steps) - (self.GR2_counts_home)) > 10) or (bits[1] != '0') :
+               if (abs(int(current_steps) - (self.GR_B_counts_home)) > 10) or (bits[1] != '0') :
                    print('\n   sending GR_B at home...')
                    time.sleep(1)
                    #fast move to home
@@ -1334,47 +1334,47 @@ class Class_PCM():
                    current_steps = self.GR_query_current_step_counts('GR_B')
                    current_steps = self.extract_steps_from_return_string(current_steps)
                    #monitor loop
-                   print('1.2 current_steps GR_B:',current_steps,'should be around', self.GR2_counts_home)
-                   while (abs(int(current_steps) - (self.GR2_counts_home)) > 10) and (bits[1] != '0') :
+                   print('1.2 current_steps GR_B:',current_steps,'should be around', self.GR_B_counts_home)
+                   while (abs(int(current_steps) - (self.GR_B_counts_home)) > 10) and (bits[1] != '0') :
                          time.sleep(1)
                          #fast move to home
                          s.sendall(b'~@,9600_8N1T2000,/4e10R\n')
                          current_steps = self.GR_query_current_step_counts('GR_B')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('1.3 current_steps GR_B:',current_steps,'should be around', self.GR2_counts_home)
+                         print('1.3 current_steps GR_B:',current_steps,'should be around', self.GR_B_counts_home)
                     #check if the sensor concurs we are at home
                          current_sensor = self.GR_sensor_status('GR_B')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                #at home according to the stepper motor; check the sensor...          
 #               print('\n2. current_sensor GR_B:', bits[1],'expected: 0')
-               if (abs(int(current_steps) - (self.GR2_counts_home)) < 10) and (bits[1] == '0') :
+               if (abs(int(current_steps) - (self.GR_B_counts_home)) < 10) and (bits[1] == '0') :
                     print('\nGR_B is at home\n')
                # 
                # 1.3 move the grism rail at postion
                # is it already there?
                current_steps = self.GR_query_current_step_counts('GR_A')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('3. current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos1)
+               print('3. current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos1)
                current_sensor = self.GR_sensor_status('GR_A')
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('4. position_sensor GR_A:',bits[3],'should be on beam at: 0')
-               if (abs(int(current_steps) - self.GR1_counts_pos1)>10) and (bits[2] == '0'): 
+               if (abs(int(current_steps) - self.GR_A_counts_pos1)>10):# and (bits[2] == '0'): 
                    time.sleep(1)
                    s.sendall(b'~@,9600_8N1T2000,/3e1R\n')
                    current_steps = self.GR_query_current_step_counts('GR_A')
                    current_steps = self.extract_steps_from_return_string(current_steps)
-                   print('4.1 current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos1)
-                   while current_steps != str(self.GR1_counts_pos1):
+                   print('4.1 current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos1)
+                   while current_steps != str(self.GR_A_counts_pos1):
                          time.sleep(1)
                          s.sendall(b'~@,9600_8N1T2000,/3e1R\n')
                          current_steps = self.GR_query_current_step_counts('GR_A')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('4.2 current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos1)
+                         print('4.2 current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos1)
                      #check if the sensor concurs we are at home
                          current_sensor = self.GR_sensor_status('GR_A')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                print('5 current_sensor GR_A:',bits[3],'should be on beam at: 0')
-               if (abs(int(current_steps) - (self.GR1_counts_pos1)) < 10) and (str(bits[3]) == '0') :
+               if (abs(int(current_steps) - (self.GR_A_counts_pos1)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_A is at position 1\n')
                #self.write_status()          
                return position,current_steps
@@ -1385,38 +1385,38 @@ class Class_PCM():
 #                #1.1 Query position of th other grism rail
 #                current_steps = self.GR_query_current_step_counts('GR_B')
 #                current_steps = self.extract_steps_from_return_string(current_steps)
-#                print('1. current_steps GR_B:',current_steps,'should be', self.GR2_counts_home)
+#                print('1. current_steps GR_B:',current_steps,'should be', self.GR_B_counts_home)
 #                #1.2 if the other grism rail is not at home, send it at home
-#                if current_steps != str(self.GR2_counts_home):
+#                if current_steps != str(self.GR_B_counts_home):
 #                    time.sleep(1)
 #                    #fast move to home
 #                    s.sendall(b'~@,9600_8N1T2000,/4e10R\n')
 #                    current_steps = self.GR_query_current_step_counts('GR_B')
 #                    current_steps = self.extract_steps_from_return_string(current_steps)
-#                    print('2. current_steps GR_B:',current_steps,'should be', self.GR2_counts_home)
-#                    while current_steps != str(self.GR2_counts_home):
+#                    print('2. current_steps GR_B:',current_steps,'should be', self.GR_B_counts_home)
+#                    while current_steps != str(self.GR_B_counts_home):
 #                          time.sleep(1)
 #                          #fast move to home
 #                          s.sendall(b'~@,9600_8N1T2000,/4e10R\n')
 #                          current_steps = self.GR_query_current_step_counts('GR_B')
 #                          current_steps = self.extract_steps_from_return_string(current_steps)
-#                          print('3. current_steps GR_B:',current_steps,'should be', self.GR2_counts_home)
+#                          print('3. current_steps GR_B:',current_steps,'should be', self.GR_B_counts_home)
 #                # 1.3 move the grism rail at postion
 #                current_steps = self.GR_query_current_step_counts('GR_A')
 #                current_steps = self.extract_steps_from_return_string(current_steps)
-#                print('4. current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos1)
-#                if current_steps != str(self.GR1_counts_pos1):
+#                print('4. current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos1)
+#                if current_steps != str(self.GR_A_counts_pos1):
 #                    time.sleep(1)
 #                    s.sendall(b'~@,9600_8N1T2000,/3e1R\n')
 #                    current_steps = self.GR_query_current_step_counts('GR_A')
 #                    current_steps = self.extract_steps_from_return_string(current_steps)
-#                    print('5. current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos1)
-#                    while current_steps != str(self.GR1_counts_pos1):
+#                    print('5. current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos1)
+#                    while current_steps != str(self.GR_A_counts_pos1):
 #                          time.sleep(1)
 #                          s.sendall(b'~@,9600_8N1T2000,/3e1R\n')
 #                          current_steps = self.GR_query_current_step_counts('GR_A')
 #                          current_steps = self.extract_steps_from_return_string(current_steps)
-#                          print('6. current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos1)
+#                          print('6. current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos1)
 #                self.write_status()          
 #                return position,current_steps
 #            
@@ -1427,62 +1427,62 @@ class Class_PCM():
                #1.1 Query position of the other grism B rail
                current_steps = self.GR_query_current_step_counts('GR_B')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('1. current_steps GR_B:',current_steps,'should be around', self.GR2_counts_home)
+               print('1. current_steps GR_B:',current_steps,'should be around', self.GR_B_counts_home)
                current_sensor = self.GR_sensor_status('GR_B')
                #current_sensor = self.extract_sensorcode_from_return_string(current_sensor)
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('1.1 home_sensor GR_B:',bits[1],'should be exactly: 0')
                #
                #1.2 SEND GR B home if needed
-               if (abs(int(current_steps) - (self.GR2_counts_home)) > 10) or (bits[1]!= '0') :
+               if (abs(int(current_steps) - (self.GR_B_counts_home)) > 10) or (bits[1]!= '0') :
                    time.sleep(1)
                    #fast move to home
                    s.sendall(b'~@,9600_8N1T2000,/4e10R\n')
                    current_steps = self.GR_query_current_step_counts('GR_B')
                    current_steps = self.extract_steps_from_return_string(current_steps)
                    #monitor loop
-                   print('1.2 current_steps GR_B:',current_steps,'should be around', self.GR2_counts_home)
-                   while (abs(int(current_steps) - (self.GR2_counts_home)) > 10) and (bits[1] != '0') :
+                   print('1.2 current_steps GR_B:',current_steps,'should be around', self.GR_B_counts_home)
+                   while (abs(int(current_steps) - (self.GR_B_counts_home)) > 10) and (bits[1] != '0') :
                          time.sleep(1)
                          #fast move to home
                          s.sendall(b'~@,9600_8N1T2000,/4e10R\n')
                          current_steps = self.GR_query_current_step_counts('GR_B')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('1.3 current_steps GR_B:',current_steps,'should be around', self.GR2_counts_home)
+                         print('1.3 current_steps GR_B:',current_steps,'should be around', self.GR_B_counts_home)
                     #check if the sensor concurs we are at home
                          current_sensor = self.GR_sensor_status('GR_B')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                #at home according to the stepper motor; check the sensor...          
                print('\n2. current_sensor GR_B:', bits[1],'expected: 0')
-               if (abs(int(current_steps) - (self.GR2_counts_home)) < 10) and (bits[1] == '0') :
+               if (abs(int(current_steps) - (self.GR_B_counts_home)) < 10) and (bits[1] == '0') :
                     print('\nGR_B is at home\n')
                # 
                # 1.3 move the grism rail at postion
                # is it already there?
                current_steps = self.GR_query_current_step_counts('GR_A')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('3. current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos2)
+               print('3. current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos2)
                current_sensor = self.GR_sensor_status('GR_A')
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('4. position_sensor GR_A:',bits[3],'should be on beam at: 0')
                #check if it ok to move
-               if (abs(int(current_steps) - self.GR1_counts_pos2)>10) and (bits[2] ==  '0'): 
+               if (abs(int(current_steps) - self.GR_A_counts_pos2)>10):# and (bits[2] ==  '0'): 
                    time.sleep(1)
                    s.sendall(b'~@,9600_8N1T2000,/3e2R\n')
                    current_steps = self.GR_query_current_step_counts('GR_A')
                    current_steps = self.extract_steps_from_return_string(current_steps)
-                   print('4.1 current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos2)
-                   while current_steps != str(self.GR1_counts_pos2):
+                   print('4.1 current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos2)
+                   while current_steps != str(self.GR_A_counts_pos2):
                          time.sleep(1)
                          s.sendall(b'~@,9600_8N1T2000,/3e2R\n')
                          current_steps = self.GR_query_current_step_counts('GR_A')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('4.2 current_steps GR_A:',current_steps,'should be', self.GR1_counts_pos2)
+                         print('4.2 current_steps GR_A:',current_steps,'should be', self.GR_A_counts_pos2)
                      #check if the sensor concurs we are at home
                          current_sensor = self.GR_sensor_status('GR_A')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                print('5 current_sensor GR_A:',bits[3],'should be on beam at: 0')
-               if (abs(int(current_steps) - (self.GR1_counts_pos2)) < 10) and (str(bits[3]) == '0') :
+               if (abs(int(current_steps) - (self.GR_A_counts_pos2)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_A is at position 2\n')
                #self.write_status()          
                return position,current_steps
@@ -1498,61 +1498,64 @@ class Class_PCM():
                #1.1 Query position of the other grism B rail
                current_steps = self.GR_query_current_step_counts('GR_A')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('1. current_steps GR_A:',current_steps,'should be around', self.GR1_counts_home)
+               print('\n\n1. current_steps GR_A:',current_steps,'should be around', self.GR_A_counts_home)
                current_sensor = self.GR_sensor_status('GR_A')
                #current_sensor = self.extract_sensorcode_from_return_string(current_sensor)
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('1.1 home_sensor GR_A:',bits[1],'should be exactly: 0')
                #
-               #1.2 SEND GR B home if needed
-               if (abs(int(current_steps) - (self.GR1_counts_home)) > 10) or (bits[1] != '0') :
+               #1.2 SEND GR A home if needed
+               if (abs(int(current_steps) - (self.GR_A_counts_home)) > 10) or (bits[1] != '0') :
+                   print('\n   sending GR_A at home...')
                    time.sleep(1)
                    #fast move to home
                    s.sendall(b'~@,9600_8N1T2000,/3e10R\n')
                    current_steps = self.GR_query_current_step_counts('GR_A')
                    current_steps = self.extract_steps_from_return_string(current_steps)
                    #monitor loop
-                   print('1.2 current_steps GR_A:',current_steps,'should be around', self.GR1_counts_home)
-                   while (abs(int(current_steps) - (self.GR1_counts_home)) > 10) and (bits[1] != '0') :
-                         time.sleep(1)
+                   print('1.2 current_steps GR_A:',current_steps,'should be around', self.GR_A_counts_home)
+                   while (abs(int(current_steps) - (self.GR_A_counts_home)) > 10) and (bits[1] != '0') :
+                         time.sleep(.1)
                          #fast move to home
                          s.sendall(b'~@,9600_8N1T2000,/3e10R\n')
                          current_steps = self.GR_query_current_step_counts('GR_A')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('1.3 current_steps GR_A:',current_steps,'should be around', self.GR1_counts_home)
+                         print('1.3 current_steps GR_A:',current_steps,'should be around', self.GR_A_counts_home)
                     #check if the sensor concurs we are at home
+                         time.sleep(.5)
                          current_sensor = self.GR_sensor_status('GR_A')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                #at home according to the stepper motor; check the sensor...          
-               print('\n2. current_sensor GR_A:', bits[1],'expected: 0')
-               if (abs(int(current_steps) - (self.GR1_counts_home)) < 10) and (bits[1] == '0') :
+               #print('1.3 current_steps GR_A:',current_steps,'should be around', self.GR_A_counts_home)
+               #print('2. current_sensor GR_A:', GR_A_bits[1],'expected: 0')
+               if (abs(int(current_steps) - (self.GR_A_counts_home)) < 10) and (bits[1] == '0') :
                     print('\nGR_A is at home\n')
                # 
                # 1.3 move the grism rail at postion
                # is it already there?
                current_steps = self.GR_query_current_step_counts('GR_B')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('3. current_steps GR_B:',current_steps,'should be', self.GR2_counts_pos1)
+               print('\n\n3. current_steps GR_B:',current_steps,'should be', self.GR_B_counts_pos1)
                current_sensor = self.GR_sensor_status('GR_B')
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('4. position_sensor GR_B:',bits[3],'should be on beam at: 0')
-               if (abs(int(current_steps) - self.GR2_counts_pos1)>10) and (bits[2] == '0'): 
+               if (abs(int(current_steps) - self.GR_B_counts_pos1)>10):# and (bits[2] == '0'): 
                    time.sleep(1)
                    s.sendall(b'~@,9600_8N1T2000,/4e1R\n')
                    current_steps = self.GR_query_current_step_counts('GR_B')
                    current_steps = self.extract_steps_from_return_string(current_steps)
-                   print('4.1 current_steps GR_B:',current_steps,'should be', self.GR2_counts_pos1)
-                   while current_steps != str(self.GR2_counts_pos1):
+                   print('4.1 current_steps GR_B:',current_steps,'should be', self.GR_B_counts_pos1)
+                   while current_steps != str(self.GR_B_counts_pos1):
                          time.sleep(1)
                          s.sendall(b'~@,9600_8N1T2000,/4e1R\n')
                          current_steps = self.GR_query_current_step_counts('GR_B')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('4.2 current_steps GR_B:',current_steps,'should be', self.GR2_counts_pos1)
+                         print('4.2 current_steps GR_B:',current_steps,'should be', self.GR_B_counts_pos1)
                      #check if the sensor concurs we are at home
                          current_sensor = self.GR_sensor_status('GR_B')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                print('5 current_sensor GR_B:',bits[3],'should be on beam at: 0')
-               if (abs(int(current_steps) - (self.GR2_counts_pos1)) < 10) and (str(bits[3]) == '0') :
+               if (abs(int(current_steps) - (self.GR_B_counts_pos1)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_B is at position 1\n')
                #self.write_status()          
                return position,current_steps
@@ -1568,61 +1571,61 @@ class Class_PCM():
                 #1.1 Query position of th other grism rail
                current_steps = self.GR_query_current_step_counts('GR_A')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('1. current_steps GR_A:',current_steps,'should be around', self.GR1_counts_home)
+               print('1. current_steps GR_A:',current_steps,'should be around', self.GR_A_counts_home)
                current_sensor = self.GR_sensor_status('GR_A')
                #current_sensor = self.extract_sensorcode_from_return_string(current_sensor)
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('1.1 home_sensor GR_A:',bits[1],'should be exactly: 0')
                #
                #1.2 SEND GR B home if needed
-               if (abs(int(current_steps) - (self.GR1_counts_home)) > 10) or (bits[1] != '0') :
+               if (abs(int(current_steps) - (self.GR_A_counts_home)) > 10) or (bits[1] != '0') :
                    time.sleep(1)
                    #fast move to home
                    s.sendall(b'~@,9600_8N1T2000,/3e10R\n')
                    current_steps = self.GR_query_current_step_counts('GR_A')
                    current_steps = self.extract_steps_from_return_string(current_steps)
                    #monitor loop
-                   print('1.2 current_steps GR_A:',current_steps,'should be around', self.GR1_counts_home)
-                   while (abs(int(current_steps) - self.GR1_counts_home) > 10) and (bits[1] != '0') :
+                   print('1.2 current_steps GR_A:',current_steps,'should be around', self.GR_A_counts_home)
+                   while (abs(int(current_steps) - self.GR_A_counts_home) > 10) and (bits[1] != '0') :
                          time.sleep(1)
                          #fast move to home
                          s.sendall(b'~@,9600_8N1T2000,/3e10R\n')
                          current_steps = self.GR_query_current_step_counts('GR_A')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('1.3 current_steps GR_A:',current_steps,'should be around', self.GR1_counts_home)
+                         print('1.3 current_steps GR_A:',current_steps,'should be around', self.GR_A_counts_home)
                     #check if the sensor concurs we are at home
                          current_sensor = self.GR_sensor_status('GR_A')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                #at home according to the stepper motor; check the sensor...          
                print('\n2. current_sensor GR_A:', bits[1],'expected: 0')
-               if (abs(int(current_steps) - (self.GR1_counts_home)) < 10) and (bits[1] == '0') :
+               if (abs(int(current_steps) - (self.GR_A_counts_home)) < 10) and (bits[1] == '0') :
                     print('\nGR_A is at home\n')
                # 
                # 1.3 move the grism rail at postion
                # is it already there?
                current_steps = self.GR_query_current_step_counts('GR_B')
                current_steps = self.extract_steps_from_return_string(current_steps)
-               print('3. current_steps GR_B:',current_steps,'should be', self.GR2_counts_pos2)
+               print('3. current_steps GR_B:',current_steps,'should be', self.GR_B_counts_pos2)
                current_sensor = self.GR_sensor_status('GR_B')
                bits = self.extract_sensorcode_from_return_string(current_sensor)
                print('4. position_sensor GR_B:',bits[3],'should be on beam at: 0')
-               if (abs(int(current_steps) - self.GR2_counts_pos2)>10) and (bits[2] == '0'): 
+               if (abs(int(current_steps) - self.GR_B_counts_pos2)>10):# and (bits[2] == '0'): 
                    time.sleep(1)
                    s.sendall(b'~@,9600_8N1T2000,/4e2R\n')
                    current_steps = self.GR_query_current_step_counts('GR_B')
                    current_steps = self.extract_steps_from_return_string(current_steps)
-                   print('4.1 current_steps GR_B:',current_steps,'should be', self.GR2_counts_pos2)
-                   while current_steps != str(self.GR2_counts_pos2):
+                   print('4.1 current_steps GR_B:',current_steps,'should be', self.GR_B_counts_pos2)
+                   while current_steps != str(self.GR_B_counts_pos2):
                          time.sleep(1)
                          s.sendall(b'~@,9600_8N1T2000,/4e2R\n')
                          current_steps = self.GR_query_current_step_counts('GR_B')
                          current_steps = self.extract_steps_from_return_string(current_steps)
-                         print('4.2 current_steps GR_B:',current_steps,'should be', self.GR2_counts_pos2)
+                         print('4.2 current_steps GR_B:',current_steps,'should be', self.GR_B_counts_pos2)
                      #check if the sensor concurs we are at home
                          current_sensor = self.GR_sensor_status('GR_B')
                          bits = self.extract_sensorcode_from_return_string(current_sensor) 
                print('5 current_sensor GR_B:',bits[3],'should be on beam at: 0')
-               if (abs(int(current_steps) - (self.GR2_counts_pos2)) < 10) and (str(bits[3]) == '0') :
+               if (abs(int(current_steps) - (self.GR_B_counts_pos2)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_B is at position 2\n')
                #self.write_status()          
                return position,current_steps

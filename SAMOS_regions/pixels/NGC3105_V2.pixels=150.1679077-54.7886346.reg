@@ -1,9 +1,5 @@
 # Region file format: DS9 astropy/regions
-<<<<<<< Updated upstream
-global width=1 edit=1 include=1 color=red
-=======
-global include=1 edit=1 width=1 color=red
->>>>>>> Stashed changes
+global include=1 color=red edit=1 width=1
 image
 box(486.19013062,499.66021135,9.18062573,3.06020858,1.42239954)
 box(504.28505646,506.18228301,9.18062611,3.06020870,1.42113192)

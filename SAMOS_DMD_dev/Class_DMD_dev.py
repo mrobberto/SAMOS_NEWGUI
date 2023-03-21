@@ -4,7 +4,7 @@ import socket
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+import time
 
 import codecs
 #from catkit.interfaces.DeformableMirrorController import DeformableMirrorController
@@ -164,7 +164,23 @@ class DigitalMicroMirrorDevice():
 #        instrument.sendall(command.encode())
         instrument.sendall(codecs.encode(command,'utf-8'))
 #        response = str(instrument.recv(30))
+        
+        """OLD"""
         data = instrument.recv(300)
+        """NEW"""
+        #instrument.setblocking(0)
+        #timeout_in_seconds = 2
+        #import select
+        #ready = select.select([instrument], [], [], timeout_in_seconds)
+        
+        #if ready[0]:
+        #    data = instrument.recv(4096)
+        #    print("instrument is ready", ready)
+        #else:
+        #    print("not ready?")
+        #    print(instrument)
+            
+        
         response = data.decode('ascii')
         print('response: ',response)
         # Make sure we successfully send the command, and the message type matches
@@ -1011,3 +1027,15 @@ class DigitalMicroMirrorDevice():
 #     else:
 #            print(f'Shape perfectly matches {pre_shape.__name__} preset.')
 
+    def flush(self):
+        i=0
+        try:
+            while True:
+                    self.apply_blackout()
+                    time.sleep(0.2)
+                    self.apply_whiteout()
+                    print(i, "Flush loop")
+                    time.sleep(0.2)
+                    i = i+1
+        except KeyboardInterrupt:
+            pass

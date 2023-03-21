@@ -617,9 +617,16 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
 #        for i in range(len(regions)):
 #            RRR_pix.append(regions[i].to_pixel(WCS))
 #        print("looped")    
-        RRR_pix=Regions([regions[0].to_pixel(WCS)])
+        RRR_pix = Regions([regions[0].to_pixel(WCS)])
+        print(len(regions))
         for i in range(1,len(regions)):
-            RRR_pix.append(regions[i].to_pixel(WCS))
+            checking_region = regions[i].to_pixel(WCS)
+            x0 = checking_region.center.x
+            y0 = checking_region.center.y
+            if ( (x0 < 0) or (x0 > 1055) or (y0 < 0) or (y0 > 1031)):
+                continue
+            print(i,x0,y0)
+            RRR_pix.append(checking_region)
 
         APregionfile_pixel = APRegionfile.replace("RADEC","pixels")
         RRR_pix.write(APregionfile_pixel, overwrite=True)
