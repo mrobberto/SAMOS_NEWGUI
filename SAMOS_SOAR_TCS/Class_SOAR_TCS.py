@@ -17,15 +17,12 @@ from SAMOS_Functions import Class_SAMOS_Functions as SF
 
 class SOAR_TCS:
     def __init__(self):
-        """ This will need to be finalized once we are in the SOAR network"""
+
         all_IPs = SF.read_IP_default()
         i_columns=all_IPs['IP_SOAR'].find(':')        
         self.SOAR_TCS_IP = all_IPs['IP_SOAR'][0:i_columns]
         self.SOAR_TCS_port = int(all_IPs['IP_SOAR'][i_columns+1:])
         self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
-        
-        
-        
     
     def send_to_TCS(self,command):
         import socket
@@ -39,14 +36,13 @@ class SOAR_TCS:
                 s.connect((HOST, PORT))
                 msg = command.encode('ascii')  #need to append "\n" at the end? 
                 
-                """Coding the message to LabView
+               
+                """ Coding the message to LabView
                 From: https://forums.ni.com/t5/LabVIEW/TCP-to-Python-Encoding/td-p/4042297"""
-                #test
                 #msg = b"Hello, Python!" #<<<< using Byte array not native string
-                
                 length = np.ascontiguousarray(len(msg),dtype='>i4').tobytes()
                 s.sendall(length+msg) 
-                
+
                 """Receiving and decoding the message fromm LabView
                 From: https://forums.ni.com/t5/LabVIEW/TCP-to-Python-Encoding/td-p/4042297"""
                 messagelen = s.recv(4)
@@ -54,6 +50,7 @@ class SOAR_TCS:
                 msg = s.recv(length)
                 
                 
+
                 return msg
             except socket.error:
                 return("no connection")
@@ -107,7 +104,7 @@ class SOAR_TCS:
         return_string = self.send_to_TCS(command)  
         
     def whitespot(self,param):
-        """his command requests actions to the lamps associated with the white spot."""
+        """This command requests actions to the lamps associated with the white spot."""
         if param == "ON":
             command = "WHITESPOT ON "
         if param == "OFF":
@@ -366,6 +363,5 @@ class SOAR_TCS:
                    }
         return infoA_dict
         
-        
-
+     
         
