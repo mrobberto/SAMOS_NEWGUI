@@ -39,7 +39,7 @@ class Class_Camera(object):
         self.ExpTime = dict_params['Exposure Time']
         self.DetTemp = dict_params['CCD Temperature']
         self.TriggerMode = dict_params['Trigger Mode']
-        
+        self.NofFrames = dict_params['NofFrames']        
  
         
     def getch(char_width=1):
@@ -139,7 +139,7 @@ class Class_Camera(object):
 
 
     
-    def expose(self):
+    def expose(self,host='172.16.0.245',port=80):
         if 2<=len(sys.argv):
             target=sys.argv[1]
         else:

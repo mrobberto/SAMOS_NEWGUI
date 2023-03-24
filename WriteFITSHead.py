@@ -96,8 +96,8 @@ class FITSHead(object):
         ### SAMOS Imaging CCD parameters
         self.pixsize1 = 13
         self.pixsize2 = 13
-        self.pixscale1 = 0.17
-        self.pixscale2 = 0.17
+        self.pixscal1 = 0.17
+        self.pixscal2 = 0.17
         
         # matrix elements for astrometric solution
         
@@ -178,8 +178,8 @@ class FITSHead(object):
                 'DECPANGL': (self.decpangl, 'Position angle of the DEC axis (deg)'),
                 'PIXSIZE1': (self.pixsize1, 'Unbinned pixel size for axis 1 (microns)'),
                 'PIXSIZE2': (self.pixsize2, 'Unbinned pixel size for axis 2 (microns)'),
-                'PIXSCALE1': (self.pixscale1, 'Unbinned pixel scale for axis 1 (arcsec/pixel)'),
-                'PIXSCALE2': (self.pixscale2, 'Unbinned pixel scale for axis 2 (arcsec/pixel)'),
+                'PIXSCAL1': (self.pixscal1, 'Unbinned pixel scale for axis 1 (arcsec/pixel)'),
+                'PIXSCAL2': (self.pixscal2, 'Unbinned pixel scale for axis 2 (arcsec/pixel)'),
                 'WCSDIM': (self.wcsdim, 'WCS dimensionality'),
                 'CTYPE1': (self.ctype1, 'Coordinate type'),
                 'CTYPE2': (self.ctype2, 'Coordinate type'),

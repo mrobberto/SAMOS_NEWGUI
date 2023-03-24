@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Feb 25 13:21:00 2023
+03.24.2023 - V3.0
+    - restored Class_CCD_dev as it has the capability of handling multiple files.
+    - removed DAOFIND and other stuff superseeded by twirl
 03.21.2023 - V3.0
     - fixed run Daofind (but we may eliminated it, twirl looks ok)
     - fixed slit orientation, exchanged xyradius in slit_handler()
@@ -48,7 +51,6 @@ import re  # re module of the standard library handles strings, e.g. use re.sear
 # , PointPixelRegion, RegionVisual
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion
 from astroquery.simbad import Simbad
-from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 import time
 import WriteFITSHead as WFH
 from SlitTableViewer import SlitTableView as STView
@@ -76,7 +78,7 @@ from ginga.canvas import CompoundMixin as CM
 from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
 from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
-from SAMOS_CCD_dev.Class_CCD import Class_Camera
+from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 #from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 import subprocess
@@ -133,7 +135,7 @@ sys.path.append(parent_dir)
 PCM = Class_PCM()
 
 # at the moment the Class Camera must be called with a few parameters...
-params = {'Exposure Time': 0, 'CCD Temperature': 2300, 'Trigger Mode': 4}
+params = {'Exposure Time': 0, 'CCD Temperature': 2300, 'Trigger Mode': 4, 'NofFrames': 1}
         # Trigger Mode = 4: light
         # Trigger Mode = 5: dark
 CCD = Class_Camera(dict_params=params)
@@ -2357,137 +2359,6 @@ class CCDPage(tk.Frame):
  
 
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#      SHOW SIMBAD IMAGE
-# 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
-    def Show_Simbad(self):
-            self.frame_DisplaySimbad = tk.Frame(self.frame0l,background="pink")#, width=400, height=800)
-            self.frame_DisplaySimbad.place(x=310, y=5, anchor="nw", width=528, height=516) 
-            
-            # img = AstroImage()
-#            img = io_fits.load_file(self.image.filename())
-    
-            # ginga needs a logger.
-            # If you don't want to log anything you can create a null logger by
-            # using null=True in this call instead of log_stderr=True
-            # logger = log.get_logger("example1", log_stderr=True, level=40)
-            logger = log.get_logger("example1",log_stderr=True, level=40)
- 
-#            fv = FitsViewer()
-#            top = fv.get_widget()
-            
-#            ImageViewCanvas.fitsimage.set_image(img)
-            canvas = tk.Canvas(self.frame0l, bg="grey", height=516, width=528)
-#            canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-            canvas.place(x=310,y=5)
-                  
-            fi = CanvasView(logger)
-            fi.set_widget(canvas)
-#            fi.set_image(img) 
-#            self.fitsimage.set_image(img)
-
-            # fi.set_redraw_lag(0.0)
-            fi.enable_autocuts('on')
-            fi.set_autocut_params('zscale')
-            fi.enable_autozoom('on')
-            fi.enable_draw(False)
-            # tk seems to not take focus with a click
-            fi.set_enter_focus(True)
-            fi.set_callback('cursor-changed', self.cursor_cb)
-            
-            # 'button-press' is found in Mixins.py
-            fi.set_callback('button-press', self. button_click)  
-            
-            # 'drag-drop' is found in Mixins.py
-            # fi.set_callback('drag-drop', self. draw_cb)   
-
-           # fi.set_bg(0.2, 0.2, 0.2)
-            fi.ui_set_active(True)
-            fi.show_pan_mark(True)
-#            fi.set_image(img)
-            self.fitsimage = fi
-            
-            
-            bd = fi.get_bindings()
-            bd.enable_all(True)
-    
-            # canvas that we will draw on
-            DrawingCanvas = fi.getDrawClass('drawingcanvas')
-            canvas = DrawingCanvas()
-            canvas.enable_draw(True)
-            # canvas.enable_edit(True)
-            canvas.set_drawtype('rectangle', color='blue')
-            canvas.set_surface(fi)
-            self.canvas = canvas
-            # add canvas to view
-            fi.add(canvas)
-            canvas.ui_set_active(True)
-     
-            fi.configure(516,528)
-          #  fi.set_window_size(514,522)
-            
-            # self.fitsimage.set_image(img)
-#            self.root.title(filepath)
-            self.load_file()
-     
-
-     
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#             self.readout_Simbad = tk.Label(self.frame0l, text='tbd')
-# #            self.readout_Simbad.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
-#             self.readout_Simbad.place(x=0,y=530)
-#      
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
-
-            self.drawtypes = fi.get_drawtypes()
-            # wdrawtype = ttk.Combobox(self, values=self.drawtypes,
-            # command=self.set_drawparams)
-            # index = self.drawtypes.index('ruler')
-            # wdrawtype.current(index)
-            wdrawtype = tk.Entry(self.hbox, width=12)
-            wdrawtype.insert(0, 'rectangle')
-            wdrawtype.bind("<Return>", self.set_drawparams)
-            self.wdrawtype = wdrawtype
-     
-            # wdrawcolor = ttk.Combobox(self, values=self.drawcolors,
-            #                           command=self.set_drawparams)
-            # index = self.drawcolors.index('blue')
-            # wdrawcolor.current(index)
-            wdrawcolor = tk.Entry(self.hbox, width=12)
-            wdrawcolor.insert(0, 'blue')
-            wdrawcolor.bind("<Return>", self.set_drawparams)
-            self.wdrawcolor = wdrawcolor
-    
-            self.vfill = tk.IntVar()
-            wfill = tk.Checkbutton(self.hbox, text="Fill", variable=self.vfill)
-            self.wfill = wfill
-    
-            walpha = tk.Entry(self.hbox, width=12)
-            walpha.insert(0, '1.0')
-            walpha.bind("<Return>", self.set_drawparams)
-            self.walpha = walpha
-    
-            wclear = tk.Button(self.hbox, text="Clear Canvas",
-                                    command=self.clear_canvas)
-#            wopen = tk.Button(self.hbox, text="Open File",
-#                                   command=self.open_file)
-            wquit = tk.Button(self.hbox, text="Quit",
-                                   command=lambda: self.quit())
-            for w in (wquit, wclear, walpha, tk.Label(self.hbox, text='Alpha:'),
-                      wfill, wdrawcolor, wdrawtype):#, wopen):
-                w.pack(side=tk.RIGHT)
-            
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#         top = fv.get_widget()
-# 
-#         if len(args) > 0:
-#            fv.load_file(args[0])
-# 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
     def cursor_cb(self, viewer, button, data_x, data_y):
         """This gets called when the data position relative to the cursor
         changes.
@@ -2531,280 +2402,8 @@ class CCDPage(tk.Frame):
 #         labelframe_SolveAstrometry.pack(fill="both", expand="yes")
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-    def load_file(self):
-        image = load_data('./newtable.fits', logger=self.logger)
-#        image = load_data(filepath, logger=self.logger)
-        self.fitsimage.set_image(image)
 
 
-    def get_widget(self):
-       return self.root
-
-    # this is a function called by main to pass parameters 
-    def receive_radec(self,radec,radec_list,xy_list): 
-        self.string_RA_center.set(radec[0])
-        self.string_DEC_center.set(radec[1])
-        self.string_RA_list = radec_list[0]
-        self.string_DEC_list = radec_list[1]
-        self.xy = xy_list
-
-    def set_drawparams(self, evt):
-        kind = self.wdrawtype.get()
-        color = self.wdrawcolor.get()
-        alpha = float(self.walpha.get())
-        fill = self.vfill.get() != 0
-
-        params = {'color': color,
-                  'alpha': alpha,
-                  # 'cap': 'ball',
-                  }
-        if kind in ('circle', 'rectangle', 'polygon', 'triangle',
-                    'righttriangle', 'ellipse', 'square', 'box'):
-            params['fill'] = fill
-            params['fillalpha'] = alpha
-
-        self.canvas.set_drawtype(kind, **params)
-
-
-    def clear_canvas(self):
-        obj_tags = list(self.canvas.tags.keys())
-        print(obj_tags)
-        for tag in obj_tags:
-            if self.SlitTabView is not None:
-                if tag in self.SlitTabView.slit_obj_tags:
-                    obj_ind = self.SlitTabView.slit_obj_tags.index(tag)
-                    self.SlitTabView.stab.delete_row(obj_ind)
-                    del self.SlitTabView.slit_obj_tags[obj_ind]
-                    
-        self.canvas.delete_all_objects(redraw=True)
-        
-
-#    
-    def return_from_astrometry(self):
-        return "voila"
-
-    def button_click(self, viewer, button, data_x, data_y):
-        print('pass', data_x, data_y)
-        value = viewer.get_data(int(data_x + viewer.data_off),
-                                int(data_y + viewer.data_off))
-        print(value)
-        # create crosshair
-        tag = '_$nonpan_mark'
-        radius = 10
-        tf = 'True'
-        color='red'
-        canvas = viewer.get_private_canvas()
-        try:
-            mark = canvas.get_object_by_tag(tag)
-            if not tf:
-                canvas.delete_object_by_tag(tag)
-            else:
-                mark.color = color
-    
-        except KeyError:
-            if tf:
-                Point = canvas.get_draw_class('point')
-                canvas.add(Point(data_x-264, data_y-258, radius, style='plus', color=color,
-                                 coord='cartesian'),
-                           redraw=True)#False)
-    
-        canvas.update_canvas(whence=3)
-
-#        value = viewer.pick_hover(self, event, data_x, data_y, viewerpass)
-        # If button is clicked, run this method and open window 2
-            
-    def Query_Simbad(self):
-        coord = SkyCoord(self.string_RA_center.get()+'  '+self.string_DEC_center.get(),unit=(u.hourangle, u.deg), frame='fk5') 
-#        coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5') 
-        query_results = Simbad.query_region(coord)                                                      
-        print(query_results)
-    
-    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-    # Download an image centered on the coordinates passed by the main window
-    # 
-    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        # object_main_id = query_results[0]['MAIN_ID']#.decode('ascii')
-        object_coords = SkyCoord(ra=query_results['RA'], dec=query_results['DEC'], 
-                                 unit=(u.hourangle, u.deg), frame='icrs')
-        c = SkyCoord(self.string_RA_center.get(),self.string_DEC_center.get(), unit=(u.hourangle, u.deg))
-        query_params = { 
-             'hips': self.Survey_selected.get(), #'DSS', #
-             # 'object': object_main_id, 
-             # Download an image centef on the first object in the results 
-             # 'ra': object_coords[0].ra.value, 
-             # 'dec': object_coords[0].dec.value, 
-             'ra': c.ra.value, 
-             'dec': c.dec.value,
-             'fov': (3.5 * u.arcmin).to(u.deg).value, 
-             'width': 528, 
-             'height': 516 
-             }                                                                                               
-        
-        url = f'http://alasky.u-strasbg.fr/hips-image-services/hips2fits?{urlencode(query_params)}' 
-        hdul = fits.open(url)                                                                           
-        # Downloading http://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=DSS&object=%5BT64%5D++7&ra=243.58457533549102&dec=-19.11336493196987&fov=0.03333333333333333&width=500&height=500
-        # |#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====| 504k/504k (100.00%)         0s
-        hdul.info()
-        hdul.info()                                                                                     
-        # Filename: /path/to/.astropy/cache/download/py3/ef660443b43c65e573ab96af03510e19
-        # No.    Name      Ver    Type      Cards   Dimensions   Format
-        #  0  PRIMARY       1 PrimaryHDU      22   (500, 500)   int16   
-        print(hdul[0].header)                                                                                  
-        # SIMPLE  =                    T / conforms to FITS standard                      
-        # BITPIX  =                   16 / array data type                                
-        # NAXIS   =                    2 / number of array dimensions                     
-        # NAXIS1  =                  500                                                  
-        # NAXIS2  =                  500                                                  
-        # WCSAXES =                    2 / Number of coordinate axes                      
-        # CRPIX1  =                250.0 / Pixel coordinate of reference point            
-        # CRPIX2  =                250.0 / Pixel coordinate of reference point            
-        # CDELT1  = -6.6666668547014E-05 / [deg] Coordinate increment at reference point  
-        # CDELT2  =  6.6666668547014E-05 / [deg] Coordinate increment at reference point  
-        # CUNIT1  = 'deg'                / Units of coordinate increment and value        
-        # CUNIT2  = 'deg'                / Units of coordinate increment and value        
-        # CTYPE1  = 'RA---TAN'           / Right ascension, gnomonic projection           
-        # CTYPE2  = 'DEC--TAN'           / Declination, gnomonic projection               
-        # CRVAL1  =           243.584534 / [deg] Coordinate value at reference point      
-        # CRVAL2  =         -19.11335065 / [deg] Coordinate value at reference point      
-        # LONPOLE =                180.0 / [deg] Native longitude of celestial pole       
-        # LATPOLE =         -19.11335065 / [deg] Native latitude of celestial pole        
-        # RADESYS = 'ICRS'               / Equatorial coordinate system                   
-        # HISTORY Generated by CDS hips2fits service - See http://alasky.u-strasbg.fr/hips
-        # HISTORY -image-services/hips2fits for details                                   
-        # HISTORY From HiPS CDS/P/DSS2/NIR (DSS2 NIR (XI+IS))    
-        self.image = hdul                                    
-        hdul.writeto('./newtable.fits',overwrite=True)
-        hdul.close()
-    
-                
-        gc = aplpy.FITSFigure(hdul)                                                                     
-        gc.show_grayscale()                                                                             
-    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-    # INFO: Auto-setting vmin to  2.560e+03 [aplpy.core]
-    # INFO: Auto-setting vmax to  1.513e+04 [aplpy.core]
-    # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        gc.show_markers(object_coords.ra, object_coords.dec, edgecolor='red',
-                     marker='s', s=50**2)         
-        gc.save('plot.png')
-        
-        
-    def Query_Gaia(self):
-        # Gaia coords are 2016.0
-
-        coord = SkyCoord(ra=self.string_RA_center.get(), dec=self.string_DEC_center.get(), unit=(u.hourangle, u.deg), frame='icrs')
-        width = u.Quantity(0.1, u.deg)
-        height = u.Quantity(0.1, u.deg)
-        Gaia.ROW_LIMIT=200
-        r = Gaia.query_object_async(coordinate=coord, width=width, height=height)
-        r.pprint()
-        self.ra_Gaia = r['ra']
-        self.dec_Gaia = r['dec']
-        mag_Gaia = r['phot_g_mean_mag']
-        print(self.ra_Gaia,self.dec_Gaia,mag_Gaia)
-        print(len(self.ra_Gaia))
-        self.Gaia_RADECtoXY(self.ra_Gaia,self.dec_Gaia)
-
-    def Gaia_RADECtoXY(self, ra_Gaia, dec_Gaia):
-        viewer=self.fitsimage
-        image = viewer.get_image()
-        x_Gaia = [] 
-        y_Gaia = []
-        i=0
-        for i in range(len(ra_Gaia)):
-            x, y = image.radectopix(ra_Gaia[i], dec_Gaia[i], format='str', coords='fits')
-            x_Gaia.append(x)
-            y_Gaia.append(y)
-        print("GAIA: Converted RADEC to XY for display")    
-        self.plot_gaia(x_Gaia, y_Gaia)
-
-            
-    def plot_gaia(self,x_Gaia,y_Gaia):
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        viewer=self.fitsimage
-#         if image is None:
-#                 # No image loaded
-#             return
-#         x_Gaia, y_Gaia = image.radectopix(RA, DEC, format='str', coords='fits')
-# 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        # create crosshair
-        tag = '_$pan_mark'
-        radius = 10
-        color='red'
-        canvas = viewer.get_private_canvas()
-        print(x_Gaia, y_Gaia)
-        mark = canvas.get_object_by_tag(tag)
-        mark.color = color  
-        Point = canvas.get_draw_class('point')
-        i=0
-        for i in range(len(x_Gaia)):
-            canvas.add(Point(x_Gaia[i]-264, y_Gaia[i]-258, radius, style='plus', color=color,
-                             coord='cartesian'),
-                       redraw=True)#False)
-    
-        canvas.update_canvas(whence=3)
-        print('plotted all', len(x_Gaia), 'sources')
-        print(self.string_RA_list,self.string_DEC_list)
-        self.Cross_Match()
-        
-    def Cross_Match(self):
-        print(self.ra_Gaia,self.dec_Gaia,self.string_RA_list,self.string_DEC_list)
-        # ----------
-        # from https://mail.python.org/pipermail/astropy/2012-May/001761.html
-        h = htm.HTM()
-        maxrad=5.0/3600.0 
-        m1,m2,radius = h.match( np.array(self.ra_Gaia), np.array(self.dec_Gaia), np.array(self.string_RA_list),np.array(self.string_DEC_list), maxrad)
-        # ----------
-        print(m1,m2)
-        print((np.array(self.ra_Gaia)[m1]-np.array(self.string_RA_list)[m2])*3600)
-        print((np.array(self.dec_Gaia)[m1]-np.array(self.string_DEC_list)[m2])*3600)
-        g = [np.array(self.ra_Gaia)[m1],np.array(self.dec_Gaia)[m1]]
-        # s = [np.array(self.string_RA_list)[m2],np.array(self.string_DEC_list)[m2]]
-        # Gaia_pairs = np.reshape(g,(2,44))
-        src = []
-        for i in range(len(g[0])):
-            src.append([g[0][i],g[1][i]])
-            
-        # ----------
-        # create wcs
-        # FROM https://docs.astropy.org/en/stable/api/astropy.wcs.utils.fit_wcs_from_points.html
-        # xy   #   x & y pixel coordinates  (numpy.ndarray, numpy.ndarray) tuple
-        # coords = g
-        # These come from Gaia, epoch 2015.5
-        world_coords  = SkyCoord(src, frame=FK4, unit=(u.deg, u.deg), obstime="J2015.5")  
-        xy  = ( (self.xy[0])[m2], (self.xy[1])[m2] ) 
-        wcs = fit_wcs_from_points( xy, world_coords, proj_point='center',projection='TAN',sip_degree=3) 
-        # ----------
-        # update fits file header
-        # from https://docs.astropy.org/en/stable/wcs/example_create_imaging.html
-        
-        # Three pixel coordinates of interest.
-        # The pixel coordinates are pairs of [X, Y].
-        # The "origin" argument indicates whether the input coordinates
-        # are 0-based (as in Numpy arrays) or
-        # 1-based (as in the FITS convention, for example coordinates
-        # coming from DS9).
-        pixcrd = np.array([[0, 0], [24, 38], [45, 98]], dtype=np.float64)
-        
-        # Convert pixel coordinates to world coordinates.
-        # The second argument is "origin" -- in this case we're declaring we
-        # have 0-based (Numpy-like) coordinates.    
-        world = wcs.wcs_pix2world(pixcrd, 0)
-        print(world)
- 
-        # Convert the same coordinates back to pixel coordinates.
-        pixcrd2 = wcs.wcs_world2pix(world, 0)
-        print(pixcrd2)
- 
-        # Now, write out the WCS object as a FITS header
-        header = wcs.to_header()    
-
-        # header is an astropy.io.fits.Header object.  We can use it to create a new
-        # PrimaryHDU and write it to a file.
-        hdu = fits.PrimaryHDU(header=header)
-
-        # Save to FITS file
-        hdu.writeto('test.fits')
 
     def create_menubar(self, parent):
         parent.geometry("900x600")
@@ -3514,9 +3113,12 @@ class MainPage(tk.Frame):
                                            command=self.SkyMapper_query)
         button_skymapper_query.place(x=190,y=80)
         
+        """removed on 03.24.2023"""
+        """
         button_skymapper_save =  tk.Button(labelframe_FITSmanager, text="SkyMapper Save", bd=3, 
                                            command=self.SkyMapper_save)
         button_skymapper_save.place(x=190,y=105)
+        """
         
         button_twirl_Astrometry =  tk.Button(labelframe_FITSmanager, text="twirl_Astrometry", bd=3, 
                                             command=self.twirl_Astrometry)
@@ -3524,9 +3126,6 @@ class MainPage(tk.Frame):
         
         # self.stop_it = 0
         
-        button_FITS_start =  tk.Button(labelframe_FITSmanager, text="FITS start", bd=3, 
-                                           command=self.check_for_file_existence)#start_the_loop)
-        button_FITS_start.place(x=0,y=50)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_Astrometry =  tk.Button(labelframe_FITSmanager, text="Astrometry", bd=3, 
@@ -3536,9 +3135,47 @@ class MainPage(tk.Frame):
 
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        button_run_Sextractor =  tk.Button(labelframe_FITSmanager, text="run DaoFind", bd=3, 
-                                            command=self.run_DaoFind)
-        button_run_Sextractor.place(x=0,y=80)
+# =============================================================================
+#      QUERY SIMBAD
+# 
+# =============================================================================
+        labelframe_Query_Simbad =  tk.LabelFrame(labelframe_FITSmanager, text="Query Simbad", 
+                                                     width=0,height=140,
+                                                     font=("Arial", 24))
+        labelframe_Query_Simbad.place(x=5, y=130)
+
+        button_Query_Simbad =  tk.Button(labelframe_Query_Simbad, text="Query Simbad", bd=3, command=self.Query_Simbad)
+        button_Query_Simbad.place(x=5, y=35)
+
+        
+        button_Show_Simbad =  tk.Button(labelframe_Query_Simbad, text="Show Simbad", bd=3, command=self.Show_Simbad)
+        button_Show_Simbad.place(x=5, y=65)
+
+
+        self.label_SelectSurvey = tk.Label(labelframe_Query_Simbad, text="Survey")
+        self.label_SelectSurvey.place(x=5, y=5)
+#        # Dropdown menu options
+        Survey_options = [
+             "DSS",
+             "DSS2/red",
+             "CDS/P/AKARI/FIS/N160",
+             "PanSTARRS/DR1/z",
+             "2MASS/J",
+             "GALEX",
+             "AllWISE/W3"]
+#        # datatype of menu text
+        self.Survey_selected = tk.StringVar()
+#        # initial menu text
+        self.Survey_selected.set(Survey_options[0])
+#        # Create Dropdown menu
+        self.menu_Survey = tk.OptionMenu(labelframe_Query_Simbad, self.Survey_selected ,  *Survey_options)
+        self.menu_Survey.place(x=65, y=5)
+
+        print(self.Survey_selected.get())
+
+        
+        self.readout_Simbad = tk.Label(self.frame0l, text='')
+
         label_sigma =  tk.Label(labelframe_FITSmanager, text="sigma")
         label_sigma.place(x=120,y=82)
         self.sigma=tk.StringVar()
@@ -3546,13 +3183,15 @@ class MainPage(tk.Frame):
         entry_sigma.place(x=160, y=80)
         self.sigma.set('25')
 
-
+        """ ELIMNIATED ON 3.24.2023"""
+        """
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_show_slits =  tk.Button(labelframe_FITSmanager, text="Show slits", bd=3, 
 #                                            command=Astrometry)
                                             command=self.show_slits)
         button_show_slits.place(x=0,y=140)
+        """
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -4840,12 +4479,16 @@ class MainPage(tk.Frame):
         
 
     def load_last_file(self):
-        FITSfiledir = local_dir+"/fits_image/"
-        self.fullpath_FITSfilename = FITSfiledir + (os.listdir(FITSfiledir))[0] 
-            # './fits_image/newimage_ff.fits'
-        self.AstroImage = load_data(self.fullpath_FITSfilename, logger=self.logger)
+        """ Load the last file, newimage_ff.fits
+        the image is passed to the Ginga Viewer through self.fitsimage.set_image() """
+        #FITSfiledir = local_dir+"/fits_image/"
+        #self.fullpath_FITSfilename = FITSfiledir + (os.listdir(FITSfiledir))[0] 
+        work_dir = os.getcwd()
+        self.fits_image_ff = "{}/fits_image/newimage_ff.fits".format(work_dir)
+        # './fits_image/newimage_ff.fits'
+        self.AstroImage = load_data(self.fits_image_ff, logger=self.logger)
         # AstroImage object of ginga.AstroImage module
-        
+        #&&&
         # passes the image to the viewer through the set_image() method
         self.fitsimage.set_image(self.AstroImage)
 #        self.root.title(self.fullpath_FITSfilename)
@@ -4864,6 +4507,7 @@ class MainPage(tk.Frame):
         Posx = self.string_RA.get()
         Posy = self.string_DEC.get()
         filt= self.string_Filter.get()
+        ### skymapper_interrogate is a function in \Astrometry, it specifies the field size...
         filepath = skymapper_interrogate(Posx, Posy, filt)       
         with fits.open(filepath.name) as hdu_in:
 #            img.load_hdu(hdu_in[0])
@@ -4886,15 +4530,21 @@ class MainPage(tk.Frame):
             self.AstroImage = img
             self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
-        
+        work_dir = os.getcwd()
+        self.fits_image_ff = "{}/fits_image/newimage_ff.fits".format(work_dir)
+        fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
+        print("SAVED:  ",self.fits_image_ff)
         # self.root.title(filepath)
     
+    """  REmoved on 3/24/2023 """
+    """
     def SkyMapper_save(self):
         from astropy.io import fits 
         work_dir = os.getcwd()
         self.fits_image_ff = "{}/fits_image/newimage_ff.fits".format(work_dir)
         fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
         print("SAVED:  ",self.fits_image_ff)
+    """
     
     def twirl_Astrometry(self):
         from astropy.io import fits
@@ -4971,7 +4621,6 @@ class MainPage(tk.Frame):
         hdu_wcs[0].data = data # add data to fits file
         self.wcs_filename = "./SAMOS_Astrometry_dev/" + "WCS_"+ra+"_"+dec+".fits"
         hdu_wcs[0].writeto(self.wcs_filename,overwrite=True)
-        #
         # > to read:
         # hdu = fits_open(self.wcs_filename)
         # hdr = hdu[0].header
@@ -4982,7 +4631,162 @@ class MainPage(tk.Frame):
  
         
         
+    def Query_Simbad(self):
+        from astroquery.simbad import Simbad                                                            
+        from astropy.coordinates import SkyCoord
+        from astropy import units as u
+        coord = SkyCoord(self.string_RA_center.get()+'  '+self.string_DEC_center.get(),unit=(u.hourangle, u.deg), frame='fk5') 
+#        coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5') 
+        query_results = Simbad.query_region(coord)                                                      
+        print(query_results)
+    
+    # =============================================================================
+    # Download an image centered on the coordinates passed by the main window
+    # 
+    # =============================================================================
+        from urllib.parse import urlencode
+        from astropy.io import fits
+        object_main_id = query_results[0]['MAIN_ID']#.decode('ascii')
+        object_coords = SkyCoord(ra=query_results['RA'], dec=query_results['DEC'], 
+                                 unit=(u.hourangle, u.deg), frame='icrs')
+        c = SkyCoord(self.string_RA_center.get(),self.string_DEC_center.get(), unit=(u.hourangle, u.deg))
+        query_params = { 
+             'hips': self.Survey_selected.get(), #'DSS', #
+             #'object': object_main_id, 
+             # Download an image centered on the first object in the results 
+             #'ra': object_coords[0].ra.value, 
+             #'dec': object_coords[0].dec.value, 
+             'ra': c.ra.value, 
+             'dec': c.dec.value,
+             'fov': (3.5 * u.arcmin).to(u.deg).value, 
+             'width': 528, 
+             'height': 516 
+             }                                                                                               
+        
+        url = f'http://alasky.u-strasbg.fr/hips-image-services/hips2fits?{urlencode(query_params)}' 
+        hdul = fits.open(url)                                                                           
+        # Downloading http://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=DSS&object=%5BT64%5D++7&ra=243.58457533549102&dec=-19.113364937196987&fov=0.03333333333333333&width=500&height=500
+        #|==============================================================| 504k/504k (100.00%)         0s
+        hdul.info()
+        hdul.info()                                                                                     
+        #Filename: /path/to/.astropy/cache/download/py3/ef660443b43c65e573ab96af03510e19
+        #No.    Name      Ver    Type      Cards   Dimensions   Format
+        #  0  PRIMARY       1 PrimaryHDU      22   (500, 500)   int16   
+        print(hdul[0].header)                                                                                  
+        # SIMPLE  =                    T / conforms to FITS standard                      
+        # BITPIX  =                   16 / array data type                                
+        # NAXIS   =                    2 / number of array dimensions                     
+        # NAXIS1  =                  500                                                  
+        # NAXIS2  =                  500                                                  
+        # WCSAXES =                    2 / Number of coordinate axes                      
+        # CRPIX1  =                250.0 / Pixel coordinate of reference point            
+        # CRPIX2  =                250.0 / Pixel coordinate of reference point            
+        # CDELT1  = -6.6666668547014E-05 / [deg] Coordinate increment at reference point  
+        # CDELT2  =  6.6666668547014E-05 / [deg] Coordinate increment at reference point  
+        # CUNIT1  = 'deg'                / Units of coordinate increment and value        
+        # CUNIT2  = 'deg'                / Units of coordinate increment and value        
+        # CTYPE1  = 'RA---TAN'           / Right ascension, gnomonic projection           
+        # CTYPE2  = 'DEC--TAN'           / Declination, gnomonic projection               
+        # CRVAL1  =           243.584534 / [deg] Coordinate value at reference point      
+        # CRVAL2  =         -19.11335065 / [deg] Coordinate value at reference point      
+        # LONPOLE =                180.0 / [deg] Native longitude of celestial pole       
+        # LATPOLE =         -19.11335065 / [deg] Native latitude of celestial pole        
+        # RADESYS = 'ICRS'               / Equatorial coordinate system                   
+        # HISTORY Generated by CDS hips2fits service - See http://alasky.u-strasbg.fr/hips
+        # HISTORY -image-services/hips2fits for details                                   
+        # HISTORY From HiPS CDS/P/DSS2/NIR (DSS2 NIR (XI+IS))    
+        self.image = hdul                                    
+        hdul.writeto('./newtable.fits',overwrite=True)
+        
+    
+                
+        import aplpy
+        from astropy.nddata import block_reduce
+        gc = aplpy.FITSFigure(hdul)                                                                     
+        gc.show_grayscale()                                                                             
+    # =============================================================================
+    # INFO: Auto-setting vmin to  2.560e+03 [aplpy.core]
+    # INFO: Auto-setting vmax to  1.513e+04 [aplpy.core]
+    # =============================================================================
+        gc.show_markers(object_coords.ra, object_coords.dec, edgecolor='red',
+                     marker='s', s=50**2)         
+        gc.save('plot.png')
 
+# =============================================================================
+#      SHOW SIMBAD IMAGE
+# 
+# =============================================================================
+
+    def Show_Simbad(self):
+            self.frame_DisplaySimbad = tk.Frame(self.frame0l,background="pink")#, width=400, height=800)
+            self.frame_DisplaySimbad.place(x=310, y=5, anchor="nw", width=528, height=516) 
+            
+            #img = AstroImage()
+#            img = io_fits.load_file(self.image.filename())
+    
+            # ginga needs a logger.
+            # If you don't want to log anything you can create a null logger by
+            # using null=True in this call instead of log_stderr=True
+            #logger = log.get_logger("example1", log_stderr=True, level=40)
+            logger = log.get_logger("example1",log_stderr=True, level=40)
+ 
+#            fv = FitsViewer()
+#            top = fv.get_widget()
+            
+#            ImageViewCanvas.fitsimage.set_image(img)
+            canvas = tk.Canvas(self.frame0l, bg="grey", height=516, width=528)
+#            canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            canvas.place(x=310,y=5)
+                  
+            fi = CanvasView(logger)
+            fi.set_widget(canvas)
+#            fi.set_image(img) 
+#            self.fitsimage.set_image(img)
+
+            #fi.set_redraw_lag(0.0)
+            fi.enable_autocuts('on')
+            fi.set_autocut_params('zscale')
+            fi.enable_autozoom('on')
+            fi.enable_draw(False)
+            # tk seems to not take focus with a click
+            fi.set_enter_focus(True)
+            fi.set_callback('cursor-changed', self.cursor_cb)
+            
+            #'button-press' is found in Mixins.py
+            fi.set_callback('button-press', self. button_click)  
+            
+            #'drag-drop' is found in Mixins.py
+            #fi.set_callback('drag-drop', self. draw_cb)   
+
+           # fi.set_bg(0.2, 0.2, 0.2)
+            fi.ui_set_active(True)
+            fi.show_pan_mark(True)
+#            fi.set_image(img)
+            self.fitsimage = fi
+            
+            
+            bd = fi.get_bindings()
+            bd.enable_all(True)
+    
+            # canvas that we will draw on
+            DrawingCanvas = fi.getDrawClass('drawingcanvas')
+            canvas = DrawingCanvas()
+            canvas.enable_draw(True)
+            #canvas.enable_edit(True)
+            canvas.set_drawtype('rectangle', color='blue')
+            canvas.set_surface(fi)
+            self.canvas = canvas
+            # add canvas to view
+            fi.add(canvas)
+            canvas.ui_set_active(True)
+     
+            fi.configure(516,528)
+          #  fi.set_window_size(514,522)
+            
+            #self.fitsimage.set_image(img)
+#            self.root.title(filepath)
+            self.load_file()
+     
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #     def start_the_loop(self):
@@ -4998,14 +4802,7 @@ class MainPage(tk.Frame):
 #         self.stop_it == 1
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-    def check_for_file_existence(self):
-        FITSfiledir = local_dir+"/fits_image/"
-        while len(os.listdir(FITSfiledir)) == 0:
-            print('nothing here')
-            time.sleep(1)
-        time.sleep(1) #one second to complete data transfer
-        self.load_last_file()
-        print('and move fits file')
+ 
         
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5612,136 +5409,6 @@ class MainPage(tk.Frame):
         # print(Config.load_IP_user(self))       
         pass
 
-######
-# from https://sewpy.readthedocs.io/en/latest/
-    def run_DaoFind(self):
-        #self.fullpath_FITSfilename
-        # here is the daophot part of the procedure
-        hdu = fits.open(self.fullpath_FITSfilename, logger=self.logger)
-
-        # read the wcs to get radec from the pixels
-        # see https://docs.astropy.org/en/stable/api/astropy.wcs.WCS.html#astropy.wcs.WCS.pixel_to_world_values
-        w = wcs.WCS(hdu[0].header, hdu)
-
-        data = hdu[0].data
-        hdu.close()   #good practice
-        
-        # 1d background estimate
-        sigma = float(self.sigma.get())
-        print(sigma)
-        mean, median, std = sigma_clipped_stats(data, sigma=sigma)
-        print((mean, median, std))  
-        
-        # 2d background estimate
-        # FROM https://photutils.readthedocs.io/en/stable/background.html
-        sigma_clip = SigmaClip(sigma=3.)
-        bkg_estimator = MedianBackground()
-        bkg = Background2D(data, (50, 50), filter_size=(3, 3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
-        median = bkg.background    
-
-        plt.imshow(bkg.background, origin='lower', cmap='Greys_r', interpolation='nearest')
-        
-        
-        daofind = DAOStarFinder(fwhm=3.0, threshold=3.*std)  
-        sources = daofind(data - median)  
-        for col in sources.colnames:  
-            sources[col].info.format = '%.8g'  # for consistent table output
-        print(sources)  
-        
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#         self.display_Daofind(sources)
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-        # back to ginga
-        self.fitsimage.set_image(self.AstroImage)
-            # passes the image to the viewer through the set_image() method
-
-#        image = load_data(self.fullpath_FITSfilename, logger=self.logger)
-        viewer=self.fitsimage#.set_image(image)   #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas = viewer.get_private_canvas() #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas.delete_all_objects(redraw=True)
-        #canvas.show_pan_mark(True)
-        x = sources['xcentroid'] / 375 * 994#1032
-        y = sources['ycentroid'] / 385 * 1072#1056
-        
-        # get radec
-        # see https://docs.astropy.org/en/stable/api/astropy.wcs.WCS.html#astropy.wcs.WCS.pixel_to_world_values
-        self.ra_list, self.dec_list = w.all_pix2world(x, y, 1)  # we send this to astrometry for cross-matching sources
-        self.xy_list = (x,y)   # we send this to astrometry to build the new wcs
-        #
-
-        # tag = '_$pan_mark'
-        radius = 10
-        color='green'
-#        canvas = viewer.get_private_canvas()
-#        viewer.initialize_private_canvas(canvas)
-#        mark = canvas.get_object_by_tag(tag)
-#        mark.color = color  
-        Point = canvas.get_draw_class('point')
- #       canvas.set.drawtype('cross',color='green')
-#        self.canvas.redraw(whence=3)
-        i=0
-        for i in range(len(x)):
- #           x[0]=886
-#            y[0]=938
-#            canvas.add(Point(x[i]/2.-258, y[i]/2-264, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264)*1.01, (y[i]/2-258)*1.01, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264.5), (y[i]/2-258.5), radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]-526)/2., (y[i]-514)/2., radius, style='plus', color=color,                             
-            canvas.add(Point( (x[i]-508)/2., (y[i]-518)/2., radius, style='plus', color=color,                             
-                             coord='cartesian'),
-                       redraw=True)#False)
-            print(x[i], y[i],x[i]/2.-260, y[i]/2.-258)
-#            print(x[i], y[i],x[i]/2.-258, y[i]/2.2-258)
-        canvas.update_canvas(whence=3)
-        print('done')
-
-    def show_slits(self):
-        # back to ginga
-        self.fitsimage.set_image(self.AstroImage)
-            # passes the image to the viewer through the set_image() method
-
-#        image = load_data(self.fullpath_FITSfilename, logger=self.logger)
-        viewer=self.fitsimage#.set_image(image)   #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas = viewer.get_private_canvas() #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas.delete_all_objects(redraw=True)
-        canvas.show_pan_mark(True)
-        x = [10,110,210,310,410,510,610,710]#sources['xcentroid']
-        y = [10,110,210,310,410,510,610,710]#)sources['ycentroid']
-        Dx = [7,7,  7,  7,  7,  7,  7,  7]
-        Dy = [3,3,  3,  3,  3,  3,  3,  3]
-        # tag = '_$pan_mark'
-        radius = 1
-        # color='green'
-#        canvas = viewer.get_private_canvas()
-#        viewer.initialize_private_canvas(canvas)
-#        mark = canvas.get_object_by_tag(tag)
-#        mark.color = color  
-        Point = canvas.get_draw_class('point')
- #       canvas.set.drawtype('cross',color='green')
-#        self.canvas.redraw(whence=3)
-        i=0
-        for i in range(len(x)):
-            x[0]=886
-            y[0]=938
-#            canvas.add(Point(x[i]/2.-258, y[i]/2-264, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264)*1.01, (y[i]/2-258)*1.01, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264.5), (y[i]/2-258.5), radius, style='plus', color=color,                             
-            for ix in range(Dx[i]):
-                for iy in range(Dy[i]):
-                    xp = ((x[i] + (ix-int(Dx[i]/2)))-526)/2.
-                    yp = ((y[i] + (iy-int(Dy[i]/2)))-514)/2.
-#                    canvas.add(Point( (x[i]-526)/2., (y[i]-514)/2., radius, style='square', color='black',                             
-                    canvas.add(Point( xp, yp, radius, style='square', color='black',                             
-                             coord='cartesian'),
-                       redraw=True)#False)
-            print(x[i], y[i],x[i]/2.-264, y[i]/2.-258)
-#            print(x[i], y[i],x[i]/2.-258, y[i]/2.2-258)
-        canvas.update_canvas(whence=3)
-        print('done')
-    
-
-
 
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5906,6 +5573,8 @@ class MainPage(tk.Frame):
 
 
 class SAMOS_Parameters():
+    """List of parameters that are assumed to remain (more or less) stable and are shared by the classes within the main script"""
+
     def __init__(self):
         
         self.Image_on = tk.PhotoImage(file=local_dir+"/Images/on.png")

@@ -3,6 +3,8 @@
 """
 Created on Tue Feb 25 13:21:00 2023
 03.03.203- V2.0
+    - added the directory ad class for the SOAR_TCS
+    - clean up of the astrometry, in progress
     - added the capability of drawing generic shapes,
 03.01.2023 - V1.1
     - Major redesign of the SLit handling part, created the 3 color column on the right side
