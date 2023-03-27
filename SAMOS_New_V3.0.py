@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Feb 25 13:21:00 2023
+03.27.2023
+    - resumed correct operations with Class_CCD_dev.py
 03.21.2023 - V3.0
     - fixed run Daofind (but we may eliminated it, twirl looks ok)
     - fixed slit orientation, exchanged xyradius in slit_handler()
@@ -76,7 +78,7 @@ from ginga.canvas import CompoundMixin as CM
 from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
 from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
-from SAMOS_CCD_dev.Class_CCD import Class_Camera
+from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 #from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 import subprocess
@@ -133,7 +135,7 @@ sys.path.append(parent_dir)
 PCM = Class_PCM()
 
 # at the moment the Class Camera must be called with a few parameters...
-params = {'Exposure Time': 0, 'CCD Temperature': 2300, 'Trigger Mode': 4}
+params = {'Exposure Time': 0, 'CCD Temperature': 2300, 'Trigger Mode': 4, 'NofFrames': 1}
         # Trigger Mode = 4: light
         # Trigger Mode = 5: dark
 CCD = Class_Camera(dict_params=params)
@@ -141,7 +143,7 @@ CCD = Class_Camera(dict_params=params)
 # Import the DMD class
 DMD = DigitalMicroMirrorDevice()  # config_id='pass')
 
-
+#
 
 
 """
@@ -994,6 +996,8 @@ class ConfigPage(tk.Frame):
 class DMDPage(tk.Frame):
     def __init__(self, parent, container):
         super().__init__(container)
+        
+        
 
         label = tk.Label(self, text="DMD Page", font=('Times', '20'))
         label.pack(pady=0, padx=0)
@@ -1038,56 +1042,102 @@ class DMDPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       Load Basic Patterns
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        button_Blackout = tk.Button(
-            self.frame_startup, text="Blackout", bd=3, bg='#0052cc', command=self.dmd_blackout)
-        button_Blackout.place(x=4, y=34)
         button_Whiteout = tk.Button(
             self.frame_startup, text="Whiteout", bd=3, bg='#0052cc', command=self.dmd_whiteout)
-        button_Whiteout.place(x=4, y=64)
+        button_Whiteout.place(x=4, y=34)
+        button_Blackout = tk.Button(
+            self.frame_startup, text="Blackout", bd=3, bg='#0052cc', command=self.dmd_blackout)
+        button_Blackout.place(x=140, y=34)
         button_Checkerboard = tk.Button(
             self.frame_startup, text="Checkerboard", bd=3, bg='#0052cc', command=self.dmd_checkerboard)
-        button_Checkerboard.place(x=4, y=94)
+        button_Checkerboard.place(x=4, y=64)
         button_Invert = tk.Button(
             self.frame_startup, text="Invert", bd=3, bg='#0052cc', command=self.dmd_invert)
-        button_Invert.place(x=4, y=124)
-
+        button_Invert.place(x=4, y=94)
         button_antInvert = tk.Button(
             self.frame_startup, text="AntInvert", bd=3, bg='#0052cc', command=self.dmd_antinvert)
-        button_antInvert.place(x=140, y=124)
+        button_antInvert.place(x=140, y=94)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       Load Custom Patterns
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         button_edit = tk.Button(self.frame_startup,
-                        text="Edit DMD File",
-                        command=self.browseFiles)
-        button_edit.place(x=4, y=164)
+                        text="Edit DMD Map",
+                        command=self.BrowseMapFiles)
+        button_edit.place(x=4, y=140)
 
         button_load_map = tk.Button(self.frame_startup,
                         text="Load DMD Map",
                         command=self.LoadMap)
-        button_load_map.place(x=4, y=212)
+        button_load_map.place(x=140, y=140)
 
         label_filename = tk.Label(self.frame_startup, text="Current DMD Map")
-        label_filename.place(x=4, y=240)
+        label_filename.place(x=4, y=170)
         self.str_filename = tk.StringVar()
         self.textbox_filename = tk.Text(self.frame_startup, height=1, width=22)
-        self.textbox_filename.place(x=120, y=240)
+        self.textbox_filename.place(x=120, y=170)
 
+
+        """ Define custom slit """
+
+        label_x0 = tk.Label(self.frame_startup, text="x0")
+        label_x0.place(x=5,y=230)
+        self.x0 = tk.IntVar()
+        self.x0.set(540)
+        self.entry_x0 = tk.Entry(self.frame_startup,width=4,textvariable=self.x0)
+        self.entry_x0.place(x=30,y=228)
+
+        label_y0 = tk.Label(self.frame_startup, text="y0")
+        label_y0.place(x=90,y=230)
+        self.y0 = tk.IntVar()
+        self.y0.set(1024)
+        entry_y0 = tk.Entry(self.frame_startup,width=4,textvariable=self.y0)
+        entry_y0.place(x=115,y=228)
+
+        label_x1 = tk.Label(self.frame_startup, text="x1")
+        label_x1.place(x=125,y=200)
+        self.x1 = tk.IntVar()
+        self.x1.set(540)
+        entry_x1 = tk.Entry(self.frame_startup,width=4,textvariable=self.x1)
+        entry_x1.place(x=150,y=198)
+
+
+        label_y1 = tk.Label(self.frame_startup, text="y1")
+        label_y1.place(x=210,y=200)
+        self.y1 = tk.IntVar()
+        self.y1.set(1024)
+        entry_y1 = tk.Entry(self.frame_startup,width=4,textvariable=self.y1)
+        entry_y1.place(x=235,y=198)
+
+        button_add_slit = tk.Button(self.frame_startup,
+                       text="Add",
+                       command=self.AddSlit)
+        button_add_slit.place(x=4, y=260)
+
+        button_push_slit = tk.Button(self.frame_startup,
+                       text="Push",
+                       command=self.PushCurrentMap)
+        button_push_slit.place(x=104, y=260)
+
+        button_save_map = tk.Button(self.frame_startup,
+                       text="Save",
+                       command=self.SaveMap)
+        button_save_map.place(x=204, y=260)
+
+        """ Load Slit Grid """
         button_load_slits = tk.Button(self.frame_startup,
                        text="Load Slit Grid",
                        command=self.LoadSlits)
-        button_load_slits.place(x=4, y=272)
+        button_load_slits.place(x=140, y=320)
 
         label_filename_slits = tk.Label(
             self.frame_startup, text="Current Slit Grid")
-        label_filename_slits.place(x=4, y=300)
+        label_filename_slits.place(x=4, y=350)
         self.str_filename_slits = tk.StringVar()
         self.textbox_filename_slits = tk.Text(
             self.frame_startup, height=1, width=22)
-        self.textbox_filename_slits.place(x=120, y=300)
-
+        self.textbox_filename_slits.place(x=120, y=350)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       Display Patterns
@@ -1145,7 +1195,7 @@ class DMDPage(tk.Frame):
         self.Horder_menu.place(x=1090, y=29)
 # =======
         self.Sorder_menu.place(x=190, y=19)
-        # &&&
+        # 
 
         """ Slit Width?"""
         label_width = tk.Label(self.HadamardConf_LabelFrame,
@@ -1240,7 +1290,7 @@ class DMDPage(tk.Frame):
         # &&&
 
     def load_masks_file(self):
-
+        """load_masks_file """
         self.textbox_filename_masks.delete('1.0', tk.END)
         filename_masks = filedialog.askopenfilename(initialdir=local_dir+"/Hadamard/mask_sets",
                                         title="Select a File",
@@ -1444,7 +1494,8 @@ class DMDPage(tk.Frame):
         label1.place(x=-100, y=0)
         image_map.close()
             
-    def browseFiles(self):
+    def BrowseMapFiles(self):
+        self.textbox_filename.delete('1.0', tk.END)
         filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
                                           title = "Select a File",
                                           filetypes = (("Text files",
@@ -1452,6 +1503,9 @@ class DMDPage(tk.Frame):
                                                        ("all files",
                                                         "*.*")))
         subprocess.call(['open', '-a','TextEdit', filename])
+        head, tail = os.path.split(filename)
+        self.textbox_filename.insert(tk.END, tail)
+        self.str_filename.set(tail)
         
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -1545,13 +1599,67 @@ class DMDPage(tk.Frame):
         label1.place(x=-100, y=0)
         image_map.close()
 
-    def save_slittable(self):
-        pass
 
         # Add image to the Canvas Items
         # print('img =', self.img)
         # self.canvas.create_image(104,128,image=self.img)
+        
+    def AddSlit(self):
+        #1. read the current filename
+        #2. open the .csv file
+        #3. add the slit
+        
+        #1. read the current filename
+        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_filename.get()
+        #2.
+        myList = []
+        with open (self.map_filename,'r') as file:
+            myFile = csv.reader(file)
+            for row in myFile:
+                myList.append(row)
+        file.close()        
+        #3
+        # set the four corners of the aperture
+        row = [str(int(self.x0.get())),str(int(self.y0.get())),str(int(self.x1.get())),str(int(self.y1.get())), "0"]
+        myList.append(row)
+        self.map=myList          
+ 
+    def SaveMap(self):
+        pandas_map = pd.DataFrame(self.map)
+        pandas_map.to_csv(self.map_filename,index=False, header=None)
+        
+    def PushCurrentMap(self):
+        """ Push to the DMD the file in Current DMD Map Textbox """
+        
+        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_filename.get()
+        
+        myList = []
+        with open (self.map_filename,'r') as file:
+            myFile = csv.reader(file)
+            for row in myFile:
+                myList.append(row)
+        file.close()
+        
+        #for i in range(len(myList)):
+        #    print("Row " + str(i) + ": " + str(myList[i]))
+        
+        test_shape = np.ones((1080,2048)) # This is the size of the DC2K    
+        for i in range(len(myList)):
+            test_shape[int(myList[i][0]):int(myList[i][1]),int(myList[i][2]):int(myList[i][3])] = int(myList[i][4])
+        
+        DMD.apply_shape(test_shape)    
+
+        # Create a photoimage object of the image in the path
+        # Load an image in the script
+        # global img
+        image_map = Image.open("/Users/samos_dev/GitHub/SAMOS_GUI_Python/SAMOS_DMD_dev/current_dmd_state.png")
+        self.img= ImageTk.PhotoImage(image_map)
+
+        print('img =', self.img)
+        self.canvas.create_image(104,128,image=self.img)
+        image_map.close()
      
+        
     def enter_command(self):       
         print('command entered:',self.Command_string.get())         
         t = DMD.send_command_string(self.Command_string.get()) #convert StringVar to string
@@ -1566,6 +1674,7 @@ class DMDPage(tk.Frame):
         parent.geometry("910x407")
         parent.title("SAMOS DMD Controller")
         self.PAR = SAMOS_Parameters()
+        self.Main = MainPage(None,None)  #MainPage class expects 2 arguments. They may be None.
         
         menubar = tk.Menu(parent, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
 
@@ -1994,7 +2103,7 @@ class CCDPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self.frame0l,background="dark turquoise")#, width=400, height=800)
-        self.frame2l.place(x=4, y=4, anchor="nw", width=420, height=400)
+        self.frame2l.place(x=0, y=4, anchor="nw", width=420, height=400)
         
         
   
@@ -3459,7 +3568,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_FITSmanager = tk.Frame(self,background="pink")#, width=400, height=800)
-        self.frame_FITSmanager.place(x=0, y=500, anchor="nw", width=400, height=250)
+        self.frame_FITSmanager.place(x=4, y=520, anchor="nw", width=400, height=250)
 
         labelframe_FITSmanager =  tk.LabelFrame(self.frame_FITSmanager, text="FITS manager", font=("Arial", 24))
         labelframe_FITSmanager.pack(fill="both", expand="yes")
@@ -3481,8 +3590,50 @@ class MainPage(tk.Frame):
  
         button_FITS_Load =  tk.Button(labelframe_FITSmanager, text="Load last file", bd=3, 
                                            command=self.load_last_file)
-        button_FITS_Load.place(x=0,y=25)
+        button_FITS_Load.place(x=0,y=0)
         
+ 
+# =============================================================================
+#      QUERY SIMBAD
+# 
+# =============================================================================
+        labelframe_Query_Simbad =  tk.LabelFrame(labelframe_FITSmanager, text="Query Simbad", 
+                                                     width=180,height=140,
+                                                     font=("Arial", 24))
+        labelframe_Query_Simbad.place(x=0, y=25)
+
+        button_Query_Simbad =  tk.Button(labelframe_Query_Simbad, text="Query Simbad", bd=3, command=self.Query_Simbad)
+        button_Query_Simbad.place(x=5, y=35)
+
+
+
+
+        self.label_SelectSurvey = tk.Label(labelframe_Query_Simbad, text="Survey")
+        self.label_SelectSurvey.place(x=5, y=5)
+#        # Dropdown menu options
+        Survey_options = [
+             "DSS",
+             "DSS2/red",
+             "CDS/P/AKARI/FIS/N160",
+             "PanSTARRS/DR1/z",
+             "2MASS/J",
+             "GALEX",
+             "AllWISE/W3"]
+#        # datatype of menu text
+        self.Survey_selected = tk.StringVar()
+#        # initial menu text
+        self.Survey_selected.set(Survey_options[0])
+#        # Create Dropdown menu
+        self.menu_Survey = tk.OptionMenu(labelframe_Query_Simbad, self.Survey_selected ,  *Survey_options)
+        self.menu_Survey.place(x=65, y=5)
+        
+        self.readout_Simbad = tk.Label(self.frame0l, text='')        
+ 
+    
+ 
+    
+ 
+    
         """ RA Entry box""" 
         self.string_RA = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
@@ -3509,50 +3660,35 @@ class MainPage(tk.Frame):
         label_Filter.place(x=190,y=55)
         entry_Filter.place(x=230,y=55)
 
+        """ Nr. of Stars Entry box""" 
+        label_nrofstars =  tk.Label(labelframe_FITSmanager, text="Nr. of stars")
+        label_nrofstars.place(x=280,y=55)
+        self.nrofstars=tk.IntVar()
+        entry_nrofstars = tk.Entry(labelframe_FITSmanager, width=3,  bd =3, textvariable=self.nrofstars)
+        entry_nrofstars.place(x=350, y=55)
+        self.nrofstars.set('25')
+
         """ SkyMapper Query """ 
         button_skymapper_query =  tk.Button(labelframe_FITSmanager, text="SkyMapper Query", bd=3, 
                                            command=self.SkyMapper_query)
         button_skymapper_query.place(x=190,y=80)
-        
-        button_skymapper_save =  tk.Button(labelframe_FITSmanager, text="SkyMapper Save", bd=3, 
-                                           command=self.SkyMapper_save)
-        button_skymapper_save.place(x=190,y=105)
-        
+               
         button_twirl_Astrometry =  tk.Button(labelframe_FITSmanager, text="twirl_Astrometry", bd=3, 
                                             command=self.twirl_Astrometry)
-        button_twirl_Astrometry.place(x=190,y=130)
+        button_twirl_Astrometry.place(x=190,y=105)
         
         # self.stop_it = 0
         
-        button_FITS_start =  tk.Button(labelframe_FITSmanager, text="FITS start", bd=3, 
-                                           command=self.check_for_file_existence)#start_the_loop)
-        button_FITS_start.place(x=0,y=50)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        button_Astrometry =  tk.Button(labelframe_FITSmanager, text="Astrometry", bd=3, 
+#        button_Astrometry =  tk.Button(labelframe_FITSmanager, text="Astrometry", bd=3, 
 #                                            command=Astrometry)
-                                            command=self.load_Astrometry)
-        button_Astrometry.place(x=0,y=110)
+#                                            command=self.load_Astrometry)
+#        button_Astrometry.place(x=0,y=110)
 
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        button_run_Sextractor =  tk.Button(labelframe_FITSmanager, text="run DaoFind", bd=3, 
-                                            command=self.run_DaoFind)
-        button_run_Sextractor.place(x=0,y=80)
-        label_sigma =  tk.Label(labelframe_FITSmanager, text="sigma")
-        label_sigma.place(x=120,y=82)
-        self.sigma=tk.StringVar()
-        entry_sigma = tk.Entry(labelframe_FITSmanager, width=3,  bd =3, textvariable=self.sigma)
-        entry_sigma.place(x=160, y=80)
-        self.sigma.set('25')
 
-
-# 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        button_show_slits =  tk.Button(labelframe_FITSmanager, text="Show slits", bd=3, 
-#                                            command=Astrometry)
-                                            command=self.show_slits)
-        button_show_slits.place(x=0,y=140)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -3694,7 +3830,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_SlitConf = tk.Frame(self,background="gray")#, width=400, height=800)
-        self.frame_SlitConf.place(x=400, y=600, anchor="nw", width=360, height=150)
+        self.frame_SlitConf.place(x=420, y=600, anchor="nw", width=360, height=170)
         labelframe_SlitConf =  tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration", font=("Arial", 24))
         labelframe_SlitConf.pack(fill="both", expand="yes")
         
@@ -4113,6 +4249,7 @@ class MainPage(tk.Frame):
         # color in RED all the regions loaded from .reg file
         CM.CompoundMixin.set_attr_all(self.canvas,color="red")
         # [print("draw-slits obj tags ", obj.tag) for obj in all_ginga_objects]
+
     
     """
     def convert_regions_xyAP2slit(self):
@@ -4789,7 +4926,7 @@ class MainPage(tk.Frame):
         IP = self.PAR.IP_dict['IP_CCD']
         [host,port] = IP.split(":")
 #        PCM.initialize(address=host, port=int(port))
-        Camera.expose(host, port=int(port))
+        Camera.expose()#host, port=int(port))
         expTime = params['Exposure Time']/1000
         self.fits_header.set_param("expTime", expTime)
         self.fits_header.set_param("filter", self.FW1_filter.get())
@@ -4850,11 +4987,114 @@ class MainPage(tk.Frame):
         self.fitsimage.set_image(self.AstroImage)
 #        self.root.title(self.fullpath_FITSfilename)
 
+    def Query_Simbad(self):
+        from astroquery.simbad import Simbad                                                            
+        from astropy.coordinates import SkyCoord
+        from astropy import units as u
+        print(self.Survey_selected.get())
+        coord = SkyCoord(self.string_RA.get()+'  '+self.string_DEC.get(),unit=(u.deg, u.deg), frame='fk5') 
+#        coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5') 
+        query_results = Simbad.query_region(coord)                                                      
+        print(query_results)
+    
+    # =============================================================================
+    # Download an image centered on the coordinates passed by the main window
+    # 
+    # =============================================================================
+        from urllib.parse import urlencode
+        from astropy.io import fits
+        object_main_id = query_results[0]['MAIN_ID']#.decode('ascii')
+        object_coords = SkyCoord(ra=query_results['RA'], dec=query_results['DEC'], 
+                                 unit=(u.deg, u.deg), frame='icrs')
+        c = SkyCoord(self.string_RA.get(),self.string_DEC.get(), unit=(u.deg, u.deg))
+        fov = 0.18*1056/60.
+        query_params = { 
+             'hips': self.Survey_selected.get(), #'DSS', #
+             #'object': object_main_id, 
+             # Download an image centered on the first object in the results 
+             #'ra': object_coords[0].ra.value, 
+             #'dec': object_coords[0].dec.value, 
+             'ra': c.ra.value, 
+             'dec': c.dec.value,
+             'fov': (fov * u.arcmin).to(u.deg).value, 
+             'width': 1056,#528, 
+             'height': 1032#516 
+             }                                                                                       
+             #&&&
+        url = f'http://alasky.u-strasbg.fr/hips-image-services/hips2fits?{urlencode(query_params)}' 
+        hdul = fits.open(url)                                                                           
+        # Downloading http://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=DSS&object=%5BT64%5D++7&ra=243.58457533549102&dec=-19.113364937196987&fov=0.03333333333333333&width=500&height=500
+        #|==============================================================| 504k/504k (100.00%)         0s
+        hdul.info()
+        hdul.info()                                                                                     
+        #Filename: /path/to/.astropy/cache/download/py3/ef660443b43c65e573ab96af03510e19
+        #No.    Name      Ver    Type      Cards   Dimensions   Format
+        #  0  PRIMARY       1 PrimaryHDU      22   (500, 500)   int16   
+        print(hdul[0].header)                                                                                  
+        # SIMPLE  =                    T / conforms to FITS standard                      
+        # BITPIX  =                   16 / array data type                                
+        # NAXIS   =                    2 / number of array dimensions                     
+        # NAXIS1  =                  500                                                  
+        # NAXIS2  =                  500                                                  
+        # WCSAXES =                    2 / Number of coordinate axes                      
+        # CRPIX1  =                250.0 / Pixel coordinate of reference point            
+        # CRPIX2  =                250.0 / Pixel coordinate of reference point            
+        # CDELT1  = -6.6666668547014E-05 / [deg] Coordinate increment at reference point  
+        # CDELT2  =  6.6666668547014E-05 / [deg] Coordinate increment at reference point  
+        # CUNIT1  = 'deg'                / Units of coordinate increment and value        
+        # CUNIT2  = 'deg'                / Units of coordinate increment and value        
+        # CTYPE1  = 'RA---TAN'           / Right ascension, gnomonic projection           
+        # CTYPE2  = 'DEC--TAN'           / Declination, gnomonic projection               
+        # CRVAL1  =           243.584534 / [deg] Coordinate value at reference point      
+        # CRVAL2  =         -19.11335065 / [deg] Coordinate value at reference point      
+        # LONPOLE =                180.0 / [deg] Native longitude of celestial pole       
+        # LATPOLE =         -19.11335065 / [deg] Native latitude of celestial pole        
+        # RADESYS = 'ICRS'               / Equatorial coordinate system                   
+        # HISTORY Generated by CDS hips2fits service - See http://alasky.u-strasbg.fr/hips
+        # HISTORY -image-services/hips2fits for details                                   
+        # HISTORY From HiPS CDS/P/DSS2/NIR (DSS2 NIR (XI+IS))    
+        self.image = hdul                                    
+        hdul.writeto('./newtable.fits',overwrite=True)
+        
+    
+        from ginga.AstroImage import AstroImage
+        from PIL import Image
+        img = AstroImage()
+        from astropy.io import fits
+        Posx = self.string_RA.get()
+        Posy = self.string_DEC.get()
+        filt= self.string_Filter.get()
+        data = hdul[0].data
+        image_data = Image.fromarray(data)
+        img_res = image_data.resize(size=(1032,1056))
+        self.hdu_res = fits.PrimaryHDU(img_res)
+            # ra, dec in degrees
+        ra = Posx
+        dec = Posy
+        self.hdu_res.header['RA'] = ra
+        self.hdu_res.header['DEC'] = dec
+
+#            rebinned_filename = "./SkyMapper_g_20140408104645-29_150.171-54.790_1056x1032.fits"
+ #           hdu.writeto(rebinned_filename,overwrite=True)
+
+        img.load_hdu(self.hdu_res)       
+        print('\n',self.hdu_res.header)     
+        self.fitsimage.set_image(img)
+        self.AstroImage = img
+#        self.fullpath_FITSfilename = filepath.name
+        hdul.close()
+        work_dir = os.getcwd()
+        self.fits_image_ff = "{}/fits_image/newimage_ff.fits".format(work_dir)
+        fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
+ 
+        
+        # self.root.title(filepath)
+    
+
+
 
     """ 
-    TEST
-    Inject image from SkyMapper to create a WCS solution
-    using twirl
+    Inject image from SkyMapper to create a WCS solution using twirl
     """
     def SkyMapper_query(self):
         from ginga.AstroImage import AstroImage
@@ -4886,15 +5126,13 @@ class MainPage(tk.Frame):
             self.AstroImage = img
             self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
-        
-        # self.root.title(filepath)
-    
-    def SkyMapper_save(self):
-        from astropy.io import fits 
         work_dir = os.getcwd()
         self.fits_image_ff = "{}/fits_image/newimage_ff.fits".format(work_dir)
         fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
-        print("SAVED:  ",self.fits_image_ff)
+ 
+        
+        # self.root.title(filepath)
+    
     
     def twirl_Astrometry(self):
         from astropy.io import fits
@@ -4925,7 +5163,7 @@ class MainPage(tk.Frame):
         
         self.canvas.delete_all_objects(redraw=True)
         
-        stars = twirl.find_peaks(data)[0:25]
+        stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
         
 #        plt.figure(figsize=(8,8))
         med = np.median(data)
@@ -4948,7 +5186,7 @@ class MainPage(tk.Frame):
             self.canvas.add(obj)
         
         # we can now compute the WCS
-        gaias = twirl.gaia_radecs(center, fov, limit=25)
+        gaias = twirl.gaia_radecs(center, fov, limit=self.nrofstars.get())
         self.wcs = twirl._compute_wcs(stars, gaias)
         
         
@@ -4998,14 +5236,7 @@ class MainPage(tk.Frame):
 #         self.stop_it == 1
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-    def check_for_file_existence(self):
-        FITSfiledir = local_dir+"/fits_image/"
-        while len(os.listdir(FITSfiledir)) == 0:
-            print('nothing here')
-            time.sleep(1)
-        time.sleep(1) #one second to complete data transfer
-        self.load_last_file()
-        print('and move fits file')
+
         
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5583,163 +5814,6 @@ class MainPage(tk.Frame):
     def load_Astrometry(self):
         # => send center and list coodinates to Astrometry, and start Astrometry!
         Astrometry().receive_radec([self.ra_center,self.dec_center],[self.ra_list,self.dec_list],self.xy_list)
-
-
-######
-    def load_Motors_module_GUI(self):
-        # calls class "Motors" in tk_class_motors_V1.py; starts the gui and initialize
-        # SM_GUI()
-#        Motors()        
-        pass
-
-######
-    def load_DMD_module_GUI(self):
-        # GUI_DMD()       
-        pass
-
-######
-    def load_CCD_module_GUI(self):
-        # GUI_CCD().receive_radec([self.ra_center,self.dec_center],[self.ra_list,self.dec_list],self.xy_list)       
-        pass
-
-######
-    def load_SOAR_module_GUI(self):
-        # SOAR()       
-        pass
-
-######
-    def load_CONFIG_GUI(self):
-        # print(Config.load_IP_user(self))       
-        pass
-
-######
-# from https://sewpy.readthedocs.io/en/latest/
-    def run_DaoFind(self):
-        #self.fullpath_FITSfilename
-        # here is the daophot part of the procedure
-        hdu = fits.open(self.fullpath_FITSfilename, logger=self.logger)
-
-        # read the wcs to get radec from the pixels
-        # see https://docs.astropy.org/en/stable/api/astropy.wcs.WCS.html#astropy.wcs.WCS.pixel_to_world_values
-        w = wcs.WCS(hdu[0].header, hdu)
-
-        data = hdu[0].data
-        hdu.close()   #good practice
-        
-        # 1d background estimate
-        sigma = float(self.sigma.get())
-        print(sigma)
-        mean, median, std = sigma_clipped_stats(data, sigma=sigma)
-        print((mean, median, std))  
-        
-        # 2d background estimate
-        # FROM https://photutils.readthedocs.io/en/stable/background.html
-        sigma_clip = SigmaClip(sigma=3.)
-        bkg_estimator = MedianBackground()
-        bkg = Background2D(data, (50, 50), filter_size=(3, 3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
-        median = bkg.background    
-
-        plt.imshow(bkg.background, origin='lower', cmap='Greys_r', interpolation='nearest')
-        
-        
-        daofind = DAOStarFinder(fwhm=3.0, threshold=3.*std)  
-        sources = daofind(data - median)  
-        for col in sources.colnames:  
-            sources[col].info.format = '%.8g'  # for consistent table output
-        print(sources)  
-        
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#         self.display_Daofind(sources)
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-        # back to ginga
-        self.fitsimage.set_image(self.AstroImage)
-            # passes the image to the viewer through the set_image() method
-
-#        image = load_data(self.fullpath_FITSfilename, logger=self.logger)
-        viewer=self.fitsimage#.set_image(image)   #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas = viewer.get_private_canvas() #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas.delete_all_objects(redraw=True)
-        #canvas.show_pan_mark(True)
-        x = sources['xcentroid'] / 375 * 994#1032
-        y = sources['ycentroid'] / 385 * 1072#1056
-        
-        # get radec
-        # see https://docs.astropy.org/en/stable/api/astropy.wcs.WCS.html#astropy.wcs.WCS.pixel_to_world_values
-        self.ra_list, self.dec_list = w.all_pix2world(x, y, 1)  # we send this to astrometry for cross-matching sources
-        self.xy_list = (x,y)   # we send this to astrometry to build the new wcs
-        #
-
-        # tag = '_$pan_mark'
-        radius = 10
-        color='green'
-#        canvas = viewer.get_private_canvas()
-#        viewer.initialize_private_canvas(canvas)
-#        mark = canvas.get_object_by_tag(tag)
-#        mark.color = color  
-        Point = canvas.get_draw_class('point')
- #       canvas.set.drawtype('cross',color='green')
-#        self.canvas.redraw(whence=3)
-        i=0
-        for i in range(len(x)):
- #           x[0]=886
-#            y[0]=938
-#            canvas.add(Point(x[i]/2.-258, y[i]/2-264, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264)*1.01, (y[i]/2-258)*1.01, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264.5), (y[i]/2-258.5), radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]-526)/2., (y[i]-514)/2., radius, style='plus', color=color,                             
-            canvas.add(Point( (x[i]-508)/2., (y[i]-518)/2., radius, style='plus', color=color,                             
-                             coord='cartesian'),
-                       redraw=True)#False)
-            print(x[i], y[i],x[i]/2.-260, y[i]/2.-258)
-#            print(x[i], y[i],x[i]/2.-258, y[i]/2.2-258)
-        canvas.update_canvas(whence=3)
-        print('done')
-
-    def show_slits(self):
-        # back to ginga
-        self.fitsimage.set_image(self.AstroImage)
-            # passes the image to the viewer through the set_image() method
-
-#        image = load_data(self.fullpath_FITSfilename, logger=self.logger)
-        viewer=self.fitsimage#.set_image(image)   #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas = viewer.get_private_canvas() #ImageViewCanvas object of ginga.tkw.ImageViewTk module
-        canvas.delete_all_objects(redraw=True)
-        canvas.show_pan_mark(True)
-        x = [10,110,210,310,410,510,610,710]#sources['xcentroid']
-        y = [10,110,210,310,410,510,610,710]#)sources['ycentroid']
-        Dx = [7,7,  7,  7,  7,  7,  7,  7]
-        Dy = [3,3,  3,  3,  3,  3,  3,  3]
-        # tag = '_$pan_mark'
-        radius = 1
-        # color='green'
-#        canvas = viewer.get_private_canvas()
-#        viewer.initialize_private_canvas(canvas)
-#        mark = canvas.get_object_by_tag(tag)
-#        mark.color = color  
-        Point = canvas.get_draw_class('point')
- #       canvas.set.drawtype('cross',color='green')
-#        self.canvas.redraw(whence=3)
-        i=0
-        for i in range(len(x)):
-            x[0]=886
-            y[0]=938
-#            canvas.add(Point(x[i]/2.-258, y[i]/2-264, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264)*1.01, (y[i]/2-258)*1.01, radius, style='plus', color=color,                             
-#            canvas.add(Point( (x[i]/2.-264.5), (y[i]/2-258.5), radius, style='plus', color=color,                             
-            for ix in range(Dx[i]):
-                for iy in range(Dy[i]):
-                    xp = ((x[i] + (ix-int(Dx[i]/2)))-526)/2.
-                    yp = ((y[i] + (iy-int(Dy[i]/2)))-514)/2.
-#                    canvas.add(Point( (x[i]-526)/2., (y[i]-514)/2., radius, style='square', color='black',                             
-                    canvas.add(Point( xp, yp, radius, style='square', color='black',                             
-                             coord='cartesian'),
-                       redraw=True)#False)
-            print(x[i], y[i],x[i]/2.-264, y[i]/2.-258)
-#            print(x[i], y[i],x[i]/2.-258, y[i]/2.2-258)
-        canvas.update_canvas(whence=3)
-        print('done')
-    
 
 
 
