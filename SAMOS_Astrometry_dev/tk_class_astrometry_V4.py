@@ -386,6 +386,9 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         from astroquery.simbad import Simbad                                                            
         from astropy.coordinates import SkyCoord
         from astropy import units as u
+        print(self.Survey_selected.get())
+
+
         coord = SkyCoord(self.string_RA_center.get()+'  '+self.string_DEC_center.get(),unit=(u.hourangle, u.deg), frame='fk5') 
 #        coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5') 
         query_results = Simbad.query_region(coord)                                                      
