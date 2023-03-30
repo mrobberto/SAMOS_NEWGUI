@@ -202,9 +202,6 @@ class DigitalMicroMirrorDevice():
         else:  
             print(f'Message: {command[:-1]} sucessfully written.')
     
-    def apply_shape_to_both(self, dm1_shape, dm2_shape):
-        """ Builtin function for the DeformableMirror class. """
-        pass
     
     def apply_checkerboard(self):
         """ Apply a checkerboard to the DMD. """
@@ -1038,3 +1035,12 @@ class DigitalMicroMirrorDevice():
                     i = i+1
         except KeyboardInterrupt:
             pass
+        
+    def flip_shape(dm_shape):
+        "flip the dmd shape to match the new orientation avoiding the pond mirrors"
+        
+        #1. rotate array, from https://stackoverflow.com/questions/8421337/rotating-a-two-dimensional-array-in-python
+        list_of_tuples = zip(*dm_shape[::-1]) 
+        rotated_1 = [list(elem) for elem in list_of_tuples]
+        list_of_tuples = zip(*rotated_1[::-1])
+        return [list(elem) for elem in list_of_tuples]

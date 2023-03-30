@@ -78,7 +78,7 @@ dmd._open()
 test_shape = np.ones((1080,2048)) # This is the size of the DC2K
 xc = 540
 yc = 1024
-test_shape[xc:xc+1,yc:yc+1] = 0
+test_shape[xc:xc+5,yc:yc+5] = 0
 dmd.apply_shape(test_shape)
 dmd.apply_invert()    
 
@@ -129,7 +129,7 @@ dmd.apply_slits(slits)
 # RANDOM SET OF CUSTOM SLITS
 # =============================================================================
 # =============================================================================
-slit0 = {"index": 1, "x1":440, "x2": 640, "y1":848, "y2":1248}
+#slit0 = {"index": 1, "x1":440, "x2": 640, "y1":848, "y2":1248}
 #slit1 = {"index": 1, "x1":435, "x2": 600, "y1":620, "y2":640}
 #slit2 = {"index": 2, "x1":535, "x2": 550, "y1":700, "y2":740}
 #slit3 = {"index": 3, "x1":635, "x2": 650, "y1":800, "y2":840}
@@ -143,11 +143,11 @@ slit0 = {"index": 1, "x1":440, "x2": 640, "y1":848, "y2":1248}
 # # =============================================================================
 #slit11 = {"index": 11, 'x1': 649, 'x2': 665, 'y1': 921, 'y2': 927}
 #slit12 = {"index": 12, 'x1': 409, 'x2': 575, 'y1': 1021, 'y2': 1027}
-slits = [slit0]#[slit1,slit2,slit3,slit4,slit5,slit6,slit7,slit8,slit9,slit10,slit11,slit12]
+#slits = [slit0]#[slit1,slit2,slit3,slit4,slit5,slit6,slit7,slit8,slit9,slit10,slit11,slit12]
 # #slits=[slit1,slit11,slit12]
 # #slits=[slit1]
 #print(slits)
-dmd.apply_slits(slits)
+#dmd.apply_slits(slits)
 
 
 
