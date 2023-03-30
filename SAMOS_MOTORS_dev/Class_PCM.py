@@ -996,7 +996,7 @@ class Class_PCM():
             self.move_FW_pos_wheel('A1')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
-            self.move_FW_pos_wheel('B4')    
+            self.move_FW_pos_wheel('B3')    
             print('\n >>> FW2 arrived \n') 
  
         if filter == 'SLOAN-r':
@@ -1004,7 +1004,7 @@ class Class_PCM():
             self.move_FW_pos_wheel('A2')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
-            self.move_FW_pos_wheel('B4')    
+            self.move_FW_pos_wheel('B3')    
             print('\n >>> FW2 arrived \n') 
   
         if filter == 'SLOAN-i':
@@ -1012,7 +1012,7 @@ class Class_PCM():
             self.move_FW_pos_wheel('A3')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
-            self.move_FW_pos_wheel('B4')    
+            self.move_FW_pos_wheel('B3')    
 
         if filter == 'open':
             print('send FW1')
@@ -1026,14 +1026,14 @@ class Class_PCM():
             self.move_FW_pos_wheel('A5')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
-            self.move_FW_pos_wheel('B4')    
+            self.move_FW_pos_wheel('B3')    
 
         if filter == 'blank':
             print('send FW1')
             self.move_FW_pos_wheel('A6')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
-            self.move_FW_pos_wheel('B4')    
+            self.move_FW_pos_wheel('B3')    
 
         if filter == 'Halpha':
             print('send FW1')
@@ -1049,14 +1049,33 @@ class Class_PCM():
             print('send FW2')
             self.move_FW_pos_wheel('B2')    
             
-        if filter == 'SII':
+        if filter == 'TBD1':
             print('send FW1')
             self.move_FW_pos_wheel('A4')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
             self.move_FW_pos_wheel('B3')    
             
+        if filter == 'glass':
+            print('send FW1')
+            self.move_FW_pos_wheel('A4')
+            print('\n >>> FW1 arrived \n') 
+            print('send FW2')
+            self.move_FW_pos_wheel('B4')    
 
+        if filter == 'TBD2':
+            print('send FW1')
+            self.move_FW_pos_wheel('A4')
+            print('\n >>> FW1 arrived \n') 
+            print('send FW2')
+            self.move_FW_pos_wheel('B5')    
+
+        if filter == 'TBD3':
+            print('send FW1')
+            self.move_FW_pos_wheel('A4')
+            print('\n >>> FW1 arrived \n') 
+            print('send FW2')
+            self.move_FW_pos_wheel('B6')    
 
     # =============================================================================
     # #

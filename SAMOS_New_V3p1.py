@@ -5009,7 +5009,10 @@ class MainPage(tk.Frame):
     def handle_light(self):
         """ handle_light """
         light_file = local_dir+"/fits_image/newimage.fit"
-        flat_file = local_dir+"/fits_image/superflat_"+self.FW_filter+"_norm.fits"
+        try:
+            flat_file = local_dir+"/fits_image/superflat_"+self.FW_filter+"_norm.fits"
+        except:    
+            flat_file = local_dir+"/fits_image/superflat_norm.fits"
         dark_s_file = local_dir+"/fits_image/superdark_s.fits"
         bias_file = local_dir+"/fits_image/superbias.fits"
         
@@ -6206,9 +6209,17 @@ class MainPage(tk.Frame):
 
 
 class SAMOS_Parameters():
-    """ to be written """
+    """ Collection of paramaeters to be shared by the classes """
     def __init__(self):
-        """ to be written """
+        """
+        Defines:
+            self.Image_on/off
+            self.dir_dict
+            self.IP_dict
+            self.IP_status_dict
+            self.inoutvar
+            self.scale_DMD2PIXEL = 0.892
+        """
         
         self.Image_on = tk.PhotoImage(file=local_dir+"/Images/on.png")
         self.Image_off = tk.PhotoImage(file=local_dir+"/Images/off.png")
