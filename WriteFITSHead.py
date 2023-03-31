@@ -126,7 +126,7 @@ class FITSHead(object):
         self.filter = None
         self.filtpos = None
         self.grating = None
-        self.dmdReg = None # region file of slits in in celestial coords
+        self.dmdmap = None # region file of slits in in celestial coords
         
         # ----------------------- #
         
@@ -178,8 +178,8 @@ class FITSHead(object):
                 'DECPANGL': (self.decpangl, 'Position angle of the DEC axis (deg)'),
                 'PIXSIZE1': (self.pixsize1, 'Unbinned pixel size for axis 1 (microns)'),
                 'PIXSIZE2': (self.pixsize2, 'Unbinned pixel size for axis 2 (microns)'),
-                'PIXSCALE1': (self.pixscale1, 'Unbinned pixel scale for axis 1 (arcsec/pixel)'),
-                'PIXSCALE2': (self.pixscale2, 'Unbinned pixel scale for axis 2 (arcsec/pixel)'),
+                'PIXSCAL1': (self.pixscale1, 'Unbinned pixel scale for axis 1 (arcsec/pixel)'),
+                'PIXSCAL2': (self.pixscale2, 'Unbinned pixel scale for axis 2 (arcsec/pixel)'),
                 'WCSDIM': (self.wcsdim, 'WCS dimensionality'),
                 'CTYPE1': (self.ctype1, 'Coordinate type'),
                 'CTYPE2': (self.ctype2, 'Coordinate type'),
@@ -196,7 +196,7 @@ class FITSHead(object):
                 'FILTER': (self.filter, 'Name of filter'),
                 'FILTPOS': (self.filtpos, 'Filter position'),
                 'GRATING' : (self.grating, 'VPH grating name'),
-                'DMDREG' : (self.dmdReg, 'Name of corresponding DMD .reg file')}
+                'DMDMAP' : (self.dmdmap, 'Name of corresponding DMD file')}
         
         
     def create_fits_header(self, input_header):
@@ -230,18 +230,16 @@ class FITSHead(object):
             
         self.output_header = output_header
         
-        
-       
-    def write_fits(self, imdata):
-        
+    def load_DMD_grid(self, gridfnam):
+        """ 
+        1. open the .csv dmd grid file
+        2. convertto the the format adeqae for the fits header
+        3. 
+     
         """
-        At the end of the acquisition, create a new 
-        FITS Primary HDU,  set the image data, and 
-        write the main_dict to the header.
-        Returns the final FITS file.
-        """
+        self.gridfnam = gridfnam
         
-        pass
+
 
     
 

@@ -17,6 +17,7 @@ local_dir = str(path.absolute())
 sys.path.append(os.path.join(path.parent,'SAMOS_system_dev'))
 from SAMOS_Functions import Class_SAMOS_Functions as SF
 
+
 #class DigitalMicroMirrorDevice(DeformableMirrorController):
 class DigitalMicroMirrorDevice():
     """ Class to control the Digital Micromirror Array created by the JHU
@@ -371,6 +372,10 @@ class DigitalMicroMirrorDevice():
         """
         
         #self.update_dmd_plot(shape=dm_shape, plot_name='attempted_dmd_shape')
+        
+        #Flip shape 
+        dm_shape = self.flip_shape(dm_shape)    
+
 
         if dm_shape.shape != self.dmd_size:
             raise IndexError(f"Given shape to apply to DMD is of size {dm_shape.shape}, while we expect the DMD to be of size {self.dmd_size}.")
@@ -758,6 +763,8 @@ class DigitalMicroMirrorDevice():
 #            self.send(m)
         
         self.current_dmd_shape = np.copy(self.shapes['whiteout'][0])
+        DMD_Page.str_map_filename = "whiteout"
+        DMD_Page.textbox_filename.text = "whiteout"
         self.update_dmd_plot()
     
 
@@ -1036,11 +1043,13 @@ class DigitalMicroMirrorDevice():
         except KeyboardInterrupt:
             pass
         
-    def flip_shape(dm_shape):
+    def flip_shape(self,dm_shape):
         "flip the dmd shape to match the new orientation avoiding the pond mirrors"
         
         #1. rotate array, from https://stackoverflow.com/questions/8421337/rotating-a-two-dimensional-array-in-python
         list_of_tuples = zip(*dm_shape[::-1]) 
         rotated_1 = [list(elem) for elem in list_of_tuples]
         list_of_tuples = zip(*rotated_1[::-1])
-        return [list(elem) for elem in list_of_tuples]
+        rotated_2 = [list(elem) for elem in list_of_tuples]
+        dm_shape_flipped = np.array(rotated_2) * (-1) + 1
+        return dm_shape_flipped

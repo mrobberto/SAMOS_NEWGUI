@@ -147,6 +147,7 @@ params = {'Exposure Time': 0, 'CCD Temperature': 2300, 'Trigger Mode': 4, 'NofFr
         # Trigger Mode = 5: dark
 CCD = Class_Camera(dict_params=params)
 
+
 # Import the DMD class
 DMD = DigitalMicroMirrorDevice()  # config_id='pass')
 
@@ -241,7 +242,7 @@ from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
 """
 convert = CONVERT()
 
-
+main_fits_header = WFH.FITSHead()
 """
 DMD = DigitalMicroMirrorDevice()#config_id='pass')
 
@@ -265,7 +266,7 @@ class App(tk.Tk):
         super().__init__()
 
         # Setting up Initial Things
-        self.title("SAMOS Tkinter Restructuring")
+        self.title("SAMOS Control System")
         self.geometry("1000x500")
         self.resizable(True, True)
         # self.iconphoto(False, tk.PhotoImage(file="assets/title_icon.png"))
@@ -1079,10 +1080,10 @@ class DMDPage(tk.Frame):
 #       Load Basic Patterns
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_Whiteout = tk.Button(
-            self.frame_startup, text="Whiteout", bd=3, bg='#0052cc', command=self.dmd_whiteout)
+            self.frame_startup, text="Blackout", bd=3, bg='#0052cc', command=self.dmd_blackout)
         button_Whiteout.place(x=4, y=34)
         button_Blackout = tk.Button(
-            self.frame_startup, text="Blackout", bd=3, bg='#0052cc', command=self.dmd_blackout)
+            self.frame_startup, text="Whiteout", bd=3, bg='#0052cc', command=self.dmd_whiteout)
         button_Blackout.place(x=140, y=34)
         button_Checkerboard = tk.Button(
             self.frame_startup, text="Checkerboard", bd=3, bg='#0052cc', command=self.dmd_checkerboard)
@@ -1110,7 +1111,7 @@ class DMDPage(tk.Frame):
 
         label_filename = tk.Label(self.frame_startup, text="Current DMD Map")
         label_filename.place(x=4, y=170)
-        self.str_filename = tk.StringVar()
+        self.str_map_filename = tk.StringVar()
         self.textbox_filename = tk.Text(self.frame_startup, height=1, width=22)
         self.textbox_filename.place(x=120, y=170)
 
@@ -1166,10 +1167,13 @@ class DMDPage(tk.Frame):
                        text="Load Slit Grid",
                        command=self.LoadSlits)
         button_load_slits.place(x=140, y=320)
-
+        
+        #gridfnam = tk.StringVar()
         label_filename_slits = tk.Label(
             self.frame_startup, text="Current Slit Grid")
         label_filename_slits.place(x=4, y=350)
+        #params["gridfnam"] = gridfnam
+        #print(gridfnam)
         self.str_filename_slits = tk.StringVar()
         self.textbox_filename_slits = tk.Text(
             self.frame_startup, height=1, width=22)
@@ -1318,7 +1322,7 @@ class DMDPage(tk.Frame):
         label_filename_masks = tk.Label(
             self.HadamardConf_LabelFrame, text="Loaded Mask Set:")
         label_filename_masks.place(x=4, y=349)
-        self.str_filename_masks = tk.StringVar()
+        #self.str_filename_masks = tk.StringVar()
         self.textbox_filename_masks = tk.Text(
             self.HadamardConf_LabelFrame, height=1, width=22)
         self.textbox_filename_masks.place(x=120, y=350)
@@ -1373,7 +1377,7 @@ class DMDPage(tk.Frame):
         maskfile_png = maskfile + ".png"       
         image_mask = Image.open(local_dir+"/Hadamard/mask_sets/" + maskfile_bmp)
         im =np.asarray(Image.open(local_dir+"/Hadamard/mask_sets/" + maskfile_bmp), dtype='int')
-        #im.resize((512,270)).save(local_dir+"/Hadamard/mask_sets/" + maskfile_png)
+        #im.resize((512,270)).save(local_dir+"/Hadamslitard/mask_sets/" + maskfile_png)
         plt.clf()
         shape_rotated = np.rot90(im, k=1, axes=(0, 1))
         plt.imshow(shape_rotated, vmin=0, vmax=1)
@@ -1468,9 +1472,13 @@ class DMDPage(tk.Frame):
         # Position image
         label1.place(x=-100, y=0)
         image_map.close() 
+        self.str_map_filename.set("none")
+        self.textbox_filename.delete("1.0","end")
+        self.textbox_filename.insert(tk.INSERT, "none")
+
               
-    def dmd_blackout(self):
-        """ dmd_blackout """
+    def dmd_whiteout(self):
+        """ dmd_whiteout """
         DMD.apply_blackout()
         # global img
         image_map = Image.open(dir_DMD + "/current_dmd_state.png")
@@ -1480,9 +1488,13 @@ class DMDPage(tk.Frame):
         # Position image
         label1.place(x=-100, y=0)
         image_map.close()
+        self.str_map_filename.set("whiteout")
+        self.textbox_filename.delete("1.0","end")
+        self.textbox_filename.insert(tk.INSERT, "whiteout")
 
-    def dmd_whiteout(self):
-        """ dmd_whiteout """
+
+    def dmd_blackout(self):
+        """ dmd_blackout """
         DMD.apply_whiteout()
         # global img
         image_map = Image.open(dir_DMD + "/current_dmd_state.png")
@@ -1492,6 +1504,9 @@ class DMDPage(tk.Frame):
         # Position image
         label1.place(x=-100, y=0)
         image_map.close()
+        self.str_map_filename.set("blackout")
+        self.textbox_filename.delete("1.0","end")
+        self.textbox_filename.insert(tk.INSERT, "blackout")
 
     def dmd_checkerboard(self):
         """ dmd_checkerboard """
@@ -1506,6 +1521,9 @@ class DMDPage(tk.Frame):
         # Position image
         label1.place(x=-100, y=0)
         image_map.close()
+        self.str_map_filename.set("checkerboard")
+        self.textbox_filename.delete("1.0","end")
+        self.textbox_filename.insert(tk.INSERT, "checkerboard")
 
     def dmd_invert(self):
         """ dmd_invert """
@@ -1524,6 +1542,9 @@ class DMDPage(tk.Frame):
         # Position image
         label1.place(x=-100, y=0)
         image_map.close()
+        #self.str_map_filename.set("checkerboard")
+        self.textbox_filename.insert(tk.INSERT, " inverted ")
+
 
 #        # global img
 #        img= ImageTk.PhotoImage(Image.open(local_dir + "/current_dmd_state.png"))
@@ -1553,7 +1574,7 @@ class DMDPage(tk.Frame):
         subprocess.call(['open', '-a','TextEdit', filename])
         head, tail = os.path.split(filename)
         self.textbox_filename.insert(tk.END, tail)
-        self.str_filename.set(tail)
+        self.str_map_filename.set(tail)
         
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -1566,7 +1587,7 @@ class DMDPage(tk.Frame):
         """ LoadMap """
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_maps_csv",
+        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -1574,6 +1595,8 @@ class DMDPage(tk.Frame):
                                                       "*.*")))
         head, tail = os.path.split(filename)
         self.textbox_filename.insert(tk.END, tail)
+        
+        main_fits_header.set_param("dmdmap", tail)
         
         myList = []
 
@@ -1583,7 +1606,7 @@ class DMDPage(tk.Frame):
                 myList.append(row)
         # print(myList) 
         file.close()        
-        
+      
         for i in range(len(myList)):
             print("Row " + str(i) + ": " + str(myList[i]))
         
@@ -1591,13 +1614,41 @@ class DMDPage(tk.Frame):
         for i in range(len(myList)):
             test_shape[int(myList[i][0]):int(myList[i][1]),int(myList[i][2]):int(myList[i][3])] = int(myList[i][4])
         
-        DMD.apply_shape(test_shape)    
+        try: 
+            DMD.apply_shape(test_shape)    
+        except:
+            print("DMD non connected")
+                
+        """ CREATE THE astropy regions file in PIXEL UNITS """
+        
+        #1. instantiate the convert class
+        c=CONVERT()
+                
+        f = open(local_dir + '/SAMOS_regions/pixels/'+ tail[:-3]+'reg', 'w')
 
+        #2. loop over the lines to create ds9 region files
+        header= "# Region file format: DS9 astropy/regions\nglobal edit=1 width=1 font=Sans Serif fill=0 color=red\nimage"
+        f.write(header + '\n')
+        for i in range(len(myList)):
+            x0,y0 = c.DMD2CCD(float(myList[i][0]),float(myList[i][2]))
+            x1,y1 = c.DMD2CCD(float(myList[i][1]),float(myList[i][3]))
+            xc = (x0 + x1)/2.
+            yc = (y0 + y1)/2.
+            dx = x1-x0
+            dy = y1-y0
+            output_string = "box("+str(xc)+","+str(yc)+","+str(dx)+","+str(dy)+",0)"
+            print(output_string)
+            f.write(output_string + '\n')
+        f.close()
+            
+        self.m=MainPage(None,None)
+        self.m.textbox_filename_regfile_xyAP.insert(tk.END,tail[:-3]+'reg')       
         # Create a photoimage object of the image in the path
         # Load an image in the script
         # global img
         image_map = Image.open(dir_DMD + "/current_dmd_state.png")
         self.img= ImageTk.PhotoImage(image_map)
+        
 
         print('img =', self.img)
         self.canvas.create_image(104,128,image=self.img)
@@ -1621,7 +1672,7 @@ class DMDPage(tk.Frame):
                                                       "*.*")))
         head, tail = os.path.split(filename_slits)
         self.textbox_filename_slits.insert(tk.END, tail)
-
+        main_fits_header.set_param("dmdmap", tail)
         table = pd.read_csv(filename_slits)
         xoffset = 0
         yoffset = np.full(len(table.index),int(2048/4))
@@ -1662,7 +1713,7 @@ class DMDPage(tk.Frame):
         """
         
         #1. read the current filename
-        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_filename.get()
+        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_map_filename.get()
         #2.
         myList = []
         with open (self.map_filename,'r') as file:
@@ -1684,7 +1735,7 @@ class DMDPage(tk.Frame):
     def PushCurrentMap(self):
         """ Push to the DMD the file in Current DMD Map Textbox """
         
-        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_filename.get()
+        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_map_filename.get()
         
         myList = []
         with open (self.map_filename,'r') as file:
@@ -3138,13 +3189,14 @@ class CCD2DMD_RecalPage(tk.Frame):
         vbox_c = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
 #        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         vbox_c.pack(side=tk.BOTTOM)
-        vbox_c.place(x=250, y=545, anchor="nw")#, width=500, height=800)
+        vbox_c.place(x=60, y=545, anchor="nw")#, width=500, height=800)
         import tksheet
         
-        tk_sources_table = tksheet.Sheet(vbox_c, width=535, height=200)
-        #tk_sources_table.headers()
-        tk_sources_table.grid()
+        tk_grid_sources_table = tksheet.Sheet(vbox_c, width=900, height=300, 
+                                               column_width=60)        #tk_sources_table.headers()
+        tk_grid_sources_table.grid()
         
+        self.tk_grid_sources_table = tk_grid_sources_table
  # =============================================================================
  #         
  #  #    Buttions for Source Extraction
@@ -3187,7 +3239,10 @@ class CCD2DMD_RecalPage(tk.Frame):
                             title = "Select a FITS File",parent=self.frame0l)
         
         
-        #self.load_file()
+        if filename=='':
+             print('no grid file selected')
+             return        
+         
         self.AstroImage = load_data(filename, logger=self.logger)
         self.fitsimage.set_image(self.AstroImage)
        
@@ -3197,25 +3252,54 @@ class CCD2DMD_RecalPage(tk.Frame):
         #self.source_find_entry["state"] = "normal"
         
         self.fits_header = self.AstroImage.as_hdu().header
-        self.grid_pattern_name = self.fits_header["gridfnam"]
+        self.grid_pattern_name = self.fits_header["DMDMAP"]
         dmd_pattern_text = "DMD Pattern: {}".format(self.grid_pattern_name)
         self.dmd_pattern_label["text"] = dmd_pattern_text
         
         self.grid_pattern_fullPath = "SAMOS_DMD_dev/DMD_csv/slits/{}".format(self.grid_pattern_name)
         dmd_table = pd.read_csv(self.grid_pattern_fullPath)
-        self.dmd_table = dmd_table
-        
+        self.dmd_table = dmd_table#.sort_values(by="y", ascending=False).reset_index(drop=True)
+        #self.rotate_dmd_table_180()
         self.source_find_button["state"] = "active"
         self.run_coord_transf_button["state"] = "active"
         
+    def rotate_dmd_table_180(self):
+        
+        numcols = int(np.sqrt(self.dmd_table.shape[0]))
+        rot_dmd_tab = self.dmd_table.sort_values(by="y", ascending=False).reset_index(drop=True)
+        j=-1
+        
+        stacked_x_rows = []
+        
+        inds = rot_dmd_tab.index.values[::11]
+        for ind in range(len(inds)):
+            
+            i = inds[ind]
 
+            #print(sorted_row)
+            if i==inds[-1]:
+                sorted_row = rot_dmd_tab.iloc[i:].copy().sort_values(by="x", ascending=False)
+                stacked_x_rows.extend(sorted_row.x.values)
+                break
 
+            next_ind = inds[ind+1]        
+            sorted_row = rot_dmd_tab.iloc[i:i+numcols].copy().sort_values(by="x", ascending=False)
+            
+            stacked_x_rows.extend(sorted_row.x.values)
+            
+        rot_dmd_tab["x"] = np.array(stacked_x_rows)
+        print(rot_dmd_tab)
+        #self.dmd_table = rot_dmd_tab.copy()
+
+           
     def irafstarfind(self):#expected_sources=53**2,fwhm=5):
         """ to be written """
         
         fwhm = 5 #float(self.source_fwhm_entry.get())
         
         ccd = self.AstroImage.as_nddata().data
+        
+        
 
         #print(ccd.header)
         mean_ccd, median_ccd, std_ccd = sigma_clipped_stats(ccd, sigma=4.0)
@@ -3228,17 +3312,56 @@ class CCD2DMD_RecalPage(tk.Frame):
 
         iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
         
-        self.sources_table = sources_table
+        self.sources_table = sources_table.round(3)
         
         DMD_PIX_df = pd.concat((self.dmd_table,self.sources_table),axis=1)
         
+        dup_ind_col_drop = DMD_PIX_df.columns.values[0]
+        DMD_PIX_df = DMD_PIX_df.drop(columns=dup_ind_col_drop)
         print(DMD_PIX_df)
         print(DMD_PIX_df.columns)
        
+        self.DMD_PIX_df = DMD_PIX_df
+        self.tk_grid_sources_table.headers(newheaders = DMD_PIX_df.columns.values,
+                                            show_headers_if_not_sheet = True, 
+                                            redraw = True)
+
+        for i in DMD_PIX_df.index.values:
+
+            row = DMD_PIX_df.iloc[i]
+            self.tk_grid_sources_table.insert_row(values=row, redraw=True)
+            
+    
+
+
     def run_coord_transf(self):
-        """ to be written """
+
         
-        pass
+
+        self.afftest = CTH.AFFtest(self.DMD_PIX_df)
+        self.afftest.fit_wcs_with_sip(3)
+        
+        
+
+        new_hdr = self.fits_header.copy()
+        imwcs = self.afftest.ccd_to_dmd_wcs.to_header(relax=True)
+
+        imwcs.rename_keyword("PC1_1", "CD1_1")
+        imwcs.rename_keyword("PC1_2", "CD1_2")
+        imwcs.rename_keyword("PC2_1", "CD2_1")
+        imwcs.rename_keyword("PC2_2", "CD2_2")
+
+        for key in list(imwcs.keys()):
+            new_hdr.set(key, imwcs[key])
+
+        new_hdu = fits.PrimaryHDU(data=self.AstroImage.as_nddata().data,
+                                  header=new_hdr)
+
+        # will change this file to CONVERT/DMD_Mapping_WCS.fits once confident it works
+        new_hdu.writeto("SAMOS_DMD_dev/CONVERT/DMD_Mapping_WCS.fits", overwrite=True)
+
+        print("New transform FITS file created")
+
     
     def create_menubar(self, parent):
         """ to be written """
@@ -3305,8 +3428,8 @@ class MainPage(tk.Frame):
         # will be used to write "OtherParameters.txt"
         self.extra_header_params = 0
         self.header_entry_string = '' #keep string of entries to write to a file after acquisition.
-        self.fits_header = WFH.FITSHead()
-        self.fits_header.create_main_params_dict()
+        #self.fits_header = WFH.FITSHead()
+        main_fits_header.create_main_params_dict()
         self.wcs = None
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
@@ -4048,7 +4171,7 @@ class MainPage(tk.Frame):
 
         label_filename = tk.Label(labelframe_DMD, text="Current DMD Map")
         label_filename.place(x=4,y=190)
-        self.str_filename = tk.StringVar() 
+        self.str_map_filename = tk.StringVar() 
         self.textbox_filename = tk.Text(labelframe_DMD, height = 1, width = 22)      
         self.textbox_filename.place(x=120,y=190)
         """
@@ -4061,7 +4184,7 @@ class MainPage(tk.Frame):
 
         label_filename_slits = tk.Label(labelframe_DMD, text="Current Slit Grid")
         label_filename_slits.place(x=4,y=250)
-        self.str_filename_slits = tk.StringVar() 
+        self.str_map_filename_slits = tk.StringVar() 
         self.textbox_filename_slits = tk.Text(labelframe_DMD, height = 1, width = 22)      
         self.textbox_filename_slits.place(x=120,y=250)
         """
@@ -4074,7 +4197,7 @@ class MainPage(tk.Frame):
         
         label_filename_slittable = tk.Label(labelframe_DMD, text="Saved Slit Table")
         label_filename_slittable.place(x=4,y=310)
-        self.str_filename_slittable = tk.StringVar() 
+        self.str_map_filename_slittable = tk.StringVar() 
         self.textbox_filename_slittable= tk.Text(labelframe_DMD, height = 1, width = 22)      
         self.textbox_filename_slittable.place(x=120,y=310)
         """
@@ -4416,7 +4539,7 @@ class MainPage(tk.Frame):
        
      
     def convert_regions_xyGA2xyAP(self):
-        """ to be written """
+        """ converting (x,y) Ginga Regions to (x,y) Astropy Regions """
         print("converting (x,y) Ginga Regions to (x,y) Astropy Regions")
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         list_all_ginga_objects = list(all_ginga_objects)
@@ -4439,8 +4562,8 @@ class MainPage(tk.Frame):
         print("RADEC loaded")
 
     def load_regfile_RADEC(self):
-        """ to be written """
-        print("reading (RA,DEC) Regions from .reg file")        
+        """ read (RA,DEC) Regions from .reg file """
+        print("read (RA,DEC) Regions from .reg file")        
         self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
 #        self.textbox_filename_slits.delete('1.0', tk.END)
         self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir = local_dir +"/SAMOS_regions/RADEC",
@@ -4475,7 +4598,7 @@ class MainPage(tk.Frame):
         return self.filename_regfile_RADEC
         
     def load_regfile_xyAP(self):
-        """ to be written """
+        """ read (x,y) Astropy Regions from .reg file """
         print("reading (x,y) Astropy Regions from .reg file")                
         reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
                                          initialdir=local_dir+'/SAMOS_regions/pixels')
@@ -4643,10 +4766,10 @@ class MainPage(tk.Frame):
                     x2,y2 = convert.CCD2DMD(cx0,cy1)    # and the higher
                     x2,y2 = int(np.round(x2)), int(np.round(y2))
                     print(x1,x2,y1,y2)
-#                    self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
-#                    self.slit_shape[x1-2:x1,y1-2:y2+1] = 1                    
-                    self.slit_shape[y1-2:y2+1,x1-2:x2+1] = 0
-                    self.slit_shape[y1-2:y2+1,x1-2:x1] = 1                    
+                    self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
+                    self.slit_shape[x1-2:x1,y1-2:y2+1] = 1                    
+#                    self.slit_shape[y1-2:y2+1,x1-2:x2+1] = 0
+#                    self.slit_shape[y1-2:y2+1,x1-2:x1] = 1                    
 #                    self.slit_shape[y1:y2+1,x1:x2+1] = 0
                 """ paint black the horizontal columns, avoids rounding error in the pixel->dmd sub-int conversion"""
                 for i in np.unique(good_box_y):  #scanning multiple rows means each steps moves up along the y axis
@@ -4661,10 +4784,10 @@ class MainPage(tk.Frame):
                     x2,y2 = convert.CCD2DMD(cx1,cy0)    # and the higher
                     x2,y2 = int(np.round(x2)), int(np.round(y2))
                     print(x1,x2,y1,y2)
-                    #self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
-                    #self.slit_shape[x1-2:x1,y1-2:y1] = 1                    
-                    self.slit_shape[y1-2:y2+1,x1-2:x2+1] = 0
-                    self.slit_shape[y1-2:y1,x1-2:x1] = 1                    
+                    self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
+                    self.slit_shape[x1-2:x1,y1-2:y1] = 1                    
+#                    self.slit_shape[y1-2:y2+1,x1-2:x2+1] = 0
+#                    self.slit_shape[y1-2:y1,x1-2:x1] = 1                    
                 """
                 for i in range(len(good_box[0])):
                 x = ccd_x0 + good_box[i]
@@ -4740,7 +4863,7 @@ class MainPage(tk.Frame):
         print('moving to filter:',self.FW_filter.get()) 
 #        self.Current_Filter.set(self.FW_filter.get())
         filter = self.FW_filter.get()
-        self.fits_header.set_param("filter", filter)
+        main_fits_header.set_param("filter", filter)
         print(filter)
         t = PCM.move_filter_wheel(filter)
         # self.Echo_String.set(t)
@@ -4761,7 +4884,7 @@ class MainPage(tk.Frame):
 #        Grating_Position_Optioned 
         GR_pos = self.Grating_positions[i_selected]
         print(GR_pos)
-        self.fits_header.set_param("grating", GR_pos)
+        main_fits_header.set_param("grating", GR_pos)
  #       print('moving to grating',Grating_Position_Optioned) 
 #        self.Current_Filter.set(self.FW1_filter.get())
 #        grating = str(Grating_Position_Optioned)
@@ -4864,7 +4987,7 @@ class MainPage(tk.Frame):
         self.expose(params)
 #        self.combine_files()
         self.handle_light()
-        self.fits_header.set_param("expTime", self.Light_ExpT.get())
+        main_fits_header.set_param("expTime", self.Light_ExpT.get())
         print("science file created")
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -4895,7 +5018,7 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
         self.handle_dark()
-        self.fits_header.set_param("expTime", self.Dark_ExpT.get())
+        main_fits_header.set_param("expTime", self.Dark_ExpT.get())
         print("Superdark file created")
 
 
@@ -4911,7 +5034,7 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
         self.handle_flat()
-        self.fits_header.set_param("expTime", self.Flat_ExpT.get())
+        main_fits_header.set_param("expTime", self.Flat_ExpT.get())
         print("Superflat file created")
         # Camera= CCD(dict_params=params)
 
@@ -5050,10 +5173,13 @@ class MainPage(tk.Frame):
         else:    
             light_dark_bias = light_dark
             
-        self.fits_header.create_fits_header(hdr)
+        
         fits_image = local_dir+"/fits_image/newimage_ff.fits"  
+        main_fits_header.set_param("filename", os.path.split(fits_image)[1])
+        main_fits_header.create_fits_header(hdr)
+        
         fits.writeto(fits_image,light_dark_bias,
-                     self.fits_header.output_header,overwrite=True)
+                     main_fits_header.output_header,overwrite=True)
         self.Display(fits_image)
        
 
@@ -5083,10 +5209,12 @@ class MainPage(tk.Frame):
 #        PCM.initialize(address=host, port=int(port))
         Camera.expose()#host, port=int(port))
         expTime = params['Exposure Time']/1000
-        self.fits_header.set_param("expTime", expTime)
-        self.fits_header.set_param("filter", self.FW_filter.get())
+        main_fits_header.set_param("expTime", expTime)
+        main_fits_header.set_param("filter", self.FW_filter.get())
+        
         try:
-            self.fits_header.set_param("gridfnam", params["gridfnam"])
+            #main_fits_header.set_param("gridfnam", params["DMDMAP"])
+            print("DMDMAP", main_fits_header.dmdmap)
         except:
             print("no slit grid loaded")
         
@@ -5098,8 +5226,8 @@ class MainPage(tk.Frame):
         # fits_image = "{}/fits_image/newimage_fixed.fit".format(work_dir)
         self.fits_image = "{}/fits_image/newimage.fit".format(work_dir)
         fits_image_converted = local_dir+"/fits_image/newimage_fixed.fit"   
-        self.fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
-        self.fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
+        main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
+        main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
         # fits_image_converted = "{}/fits_image/newimage_fixed.fit".format(work_dir)                       
         self.convertSIlly(self.fits_image,fits_image_converted)
         
@@ -5107,8 +5235,8 @@ class MainPage(tk.Frame):
         shutil.copy(fits_image_converted,self.fits_image)
         hdul  = fits.open(self.fits_image)
         input_header = hdul[0].header
-        self.fits_header.create_fits_header(input_header)
-        print(self.fits_header.output_header)
+        main_fits_header.create_fits_header(input_header)
+        print(main_fits_header.output_header)
         self.Display(fits_image_converted)
         hdul.close()
         
@@ -6034,10 +6162,10 @@ class MainPage(tk.Frame):
         self.SlitTabView = STView()
         
 ######
-    def load_Astrometry(self):
-        """ to be written """
-        # => send center and list coodinates to Astrometry, and start Astrometry!
-        Astrometry().receive_radec([self.ra_center,self.dec_center],[self.ra_list,self.dec_list],self.xy_list)
+#    def load_Astrometry(self):
+#        """ to be written """
+#        # => send center and list coodinates to Astrometry, and start Astrometry!
+#        Astrometry().receive_radec([self.ra_center,self.dec_center],[self.ra_list,self.dec_list],self.xy_list)
 
 
 
@@ -6265,6 +6393,8 @@ class SAMOS_Parameters():
         self.inoutvar.set("outside") 
         
         self.scale_DMD2PIXEL = 0.892   #mirros to pixel as per e-mail by RB  Jan 207, 2023
+        
+        self.dmd_map_filename = ""
 
 
 if __name__ == "__main__":
