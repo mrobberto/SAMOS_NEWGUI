@@ -111,6 +111,7 @@ def sort_iraf_source_table(pd_iraf_sources,numcols=11):
     this_ix_inds = []
     passed_rows = 0
     pd_iraf_sources = pd_iraf_sources.sort_values(by="ycentroid").reset_index()
+    print(pd_iraf_sources)
     for i in pd_iraf_sources.index.values:
         j+=1
         x,y = pd_iraf_sources.loc[i,["xcentroid","ycentroid"]]
@@ -149,6 +150,8 @@ def sort_iraf_source_table(pd_iraf_sources,numcols=11):
             #print("rows passed",passed_rows)
             j = -1 #reset column counter
             passed_rows+=1 # quick log of rows passed
+            
+    print("reversed pd", pd_iraf_sources)
 
     return pd_iraf_sources.reindex(ix_sorted_inds).reset_index(drop=True)
 
@@ -323,10 +326,10 @@ class AFFtest:
         
         self.ccd_to_dmd_wcs = ccd_to_dmd_wcs
         self.CCD2DMD_wcs_conv_df = CCD2DMD_wcs_conv_df
-        CCD2DMD_wcs_conv_df.to_csv('MapResults/ccd2dmd_wcs_conversion_df.csv',index=False)
+        #CCD2DMD_wcs_conv_df.to_csv('MapResults/ccd2dmd_wcs_conversion_df.csv',index=False)
         self.dmd_to_ccd_wcs = dmd_to_ccd_wcs 
         self.DMD2CCD_wcs_conv_df = DMD2CCD_wcs_conv_df
-        DMD2CCD_wcs_conv_df.to_csv('MapResults/dmd2ccd_wcs_conversion_df.csv',index=False)
+        #DMD2CCD_wcs_conv_df.to_csv('MapResults/dmd2ccd_wcs_conversion_df.csv',index=False)
 
 
         if plot_hists:
