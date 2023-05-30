@@ -1,9 +1,0 @@
-<<<<<<< Updated upstream
-=======
-[Entry 1]
-Type=String
-Keyword=FILTER
-Value="SLOAN-i"
-Comment="Selected filter
-"
->>>>>>> Stashed changes

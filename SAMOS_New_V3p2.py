@@ -61,9 +61,9 @@ import time
 import WriteFITSHead as WFH
 from SlitTableViewer import SlitTableView as STView
 from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
-from SAMOS_Astrometry_dev.skymapper_interrogate_VOTABLE import skymapper_interrogate_VOTABLE
+#from SAMOS_Astrometry_dev.skymapper_interrogate_VOTABLE import skymapper_interrogate_VOTABLE
 from SAMOS_Astrometry_dev.tk_class_astrometry_V4 import Astrometry
-from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
+#from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
 import glob
 import pathlib
 import math
@@ -208,13 +208,13 @@ STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcNa
 # sys.path.append(local_dir)
 
 
-dir_Astrometry = local_dir+"/SAMOS_Astrometry_dev"
-dir_CCD = local_dir+"/SAMOS_CCD_dev"
-dir_DMD = local_dir+"/SAMOS_DMD_dev"
-dir_MOTORS = local_dir+"/SAMOS_MOTORS_dev"
-dir_SOAR = local_dir+"/SAMOS_SOAR_dev"
-dir_CONFIG = local_dir+"/SAMOS_CONFIG_dev"
-dir_SYSTEM = local_dir+"/SAMOS_system_dev"
+dir_Astrometry = os.path.join(local_dir,"SAMOS_Astrometry_dev")
+dir_CCD = os.path.join(local_dir,"SAMOS_CCD_dev")
+dir_DMD = os.path.join(local_dir,"SAMOS_DMD_dev")
+dir_MOTORS = os.path.join(local_dir,"SAMOS_MOTORS_dev")
+dir_SOAR = os.path.join(local_dir,"SAMOS_SOAR_dev")
+dir_CONFIG = os.path.join(local_dir,"SAMOS_CONFIG_dev")
+dir_SYSTEM = os.path.join(local_dir,"SAMOS_system_dev")
 
 os.sys.path.append(local_dir)
 os.sys.path.append(dir_Astrometry)
@@ -662,15 +662,14 @@ class ConfigPage(tk.Frame):
             today = datetime.now()
 
             # name of the directory
-            self.fits_dir = self.local_dir + \
-                "/SAMOS_" + today.strftime('%Y%m%d')
+            self.fits_dir = os.path.join(self.local_dir,"SAMOS_") + today.strftime('%Y%m%d')
 
             isdir = os.path.isdir(self.fits_dir)
             if isdir == False:
                 os.mkdir(self.fits_dir)
 
             fits_directory_file = open(
-                dir_SYSTEM + "/fits_current_dir_name.txt", "w")
+                os.path.join(dir_SYSTEM,"fits_current_dir_name.txt"), "w")
             fits_directory_file.write(self.fits_dir)
             fits_directory_file.close()
 
@@ -679,7 +678,7 @@ class ConfigPage(tk.Frame):
         dict_from_csv = {}
 
         # with open(self.parent_dir+"/SAMOS_system_dev/dirlist_default.csv", mode='r') as inp:
-        with open(dir_SYSTEM + "/dirlist_default.csv", mode='r') as inp:
+        with open(os.path.join(dir_SYSTEM,"dirlist_default.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]: rows[1] for rows in reader}
         inp.close()
@@ -710,7 +709,7 @@ class ConfigPage(tk.Frame):
         """ to be written """
         dict_from_csv = {}
 
-        with open(dir_SYSTEM + "/dirlist_user.csv", mode='r') as inp:
+        with open(os.path.join(dir_SYSTEM,"dirlist_user.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]: rows[1] for rows in reader}
 
@@ -753,9 +752,9 @@ class ConfigPage(tk.Frame):
         self.PAR.dir_dict['dir_system'] = self.dir_system.get()
 
         # open file for writing, "w" is writing
-        file_dirlist = open(dir_SYSTEM + "/dirlist_user.csv", "w")
+        file_dirlist = open(os.path.join(dir_SYSTEM,"dirlist_user.csv"), "w")
         w = csv.writer(file_dirlist)
-        print(dir_SYSTEM + "/dirlist_user.csv")
+        print(os.path.join(dir_SYSTEM,"dirlist_user.csv"))
         file_dirlist.close()
 
         # loop over dictionary keys and values
@@ -767,10 +766,10 @@ class ConfigPage(tk.Frame):
     def load_IP_user(self):
         """ to be written """
         if self.PAR.inoutvar.get() == 'inside':
-            ip_file = dir_SYSTEM + "/IP_addresses_default_inside.csv"
+            ip_file = os.path.join(dir_SYSTEM,"IP_addresses_default_inside.csv")
         else:
-            ip_file = dir_SYSTEM + "/IP_addresses_default_outside.csv"
-        ip_file_default = dir_SYSTEM + "/IP_addresses_default.csv"
+            ip_file = os.path.join(dir_SYSTEM,"IP_addresses_default_outside.csv")
+        ip_file_default = os.path.join(dir_SYSTEM,"IP_addresses_default.csv")
         os.system('cp {} {}'.format(ip_file, ip_file_default))
 
         with open(ip_file, mode='r') as inp:
@@ -810,10 +809,10 @@ class ConfigPage(tk.Frame):
 # open file for writing, "w" is writing
 
         if self.PAR.inoutvar.get() == 'inside':
-            ip_file = dir_SYSTEM + "/IP_addresses_default_inside.csv"
+            ip_file = os.path.join(dir_SYSTEM,"IP_addresses_default_inside.csv")
         else:
-            ip_file = dir_SYSTEM + "/IP_addresses_default_outside.csv"
-        ip_file_default = dir_SYSTEM + "/IP_addresses_default.csv"
+            ip_file = os.path.join(dir_SYSTEM,"IP_addresses_default_outside.csv")
+        ip_file_default = os.path.join(dir_SYSTEM,"IP_addresses_default.csv")
         os.system('cp {} {}'.format(ip_file, ip_file_default))
 
         print(ip_file)
@@ -832,10 +831,10 @@ class ConfigPage(tk.Frame):
         """ to be written """
 
         if self.PAR.inoutvar.get() == 'inside':
-            ip_file = dir_SYSTEM + "/IP_addresses_default_inside.csv"
+            ip_file = os.path.join(dir_SYSTEM,"IP_addresses_default_inside.csv")
         else:
-            ip_file = dir_SYSTEM + "/IP_addresses_default_outside.csv"
-        ip_file_default = dir_SYSTEM + "/IP_addresses_default.csv"
+            ip_file = os.path.join(dir_SYSTEM,"IP_addresses_default_outside.csv")
+        ip_file_default = os.path.join(dir_SYSTEM,"IP_addresses_default.csv")
         os.system('cp {} {}'.format(ip_file, ip_file_default))
 
         dict_from_csv = {}
@@ -861,7 +860,7 @@ class ConfigPage(tk.Frame):
 
     def save_IP_status(self):
         """ to be written """
-        file_IPstatus = open(dir_SYSTEM + "/IP_status_dict.csv", "w")
+        file_IPstatus = open(os.path.join(dir_SYSTEM,"IP_status_dict.csv"), "w")
         w = csv.writer(file_IPstatus)
 
         # loop over dictionary keys and values
@@ -894,7 +893,7 @@ class ConfigPage(tk.Frame):
 
 # CCD alive?
         print("\n Checking CCD status")
-        url_name = "http://"+self.PAR.IP_dict['IP_CCD']+'/'
+        url_name = "http://"+os.path.join(self.PAR.IP_dict['IP_CCD'])# +'/'
         answer = (CCD.get_url_as_string(url_name))[:6]  # expect <HTML>
         print("CCD returns:>", answer, "<")
         if str(answer) == '<HTML>':
@@ -1352,7 +1351,7 @@ class DMDPage(tk.Frame):
     def load_masks_file(self):
         """load_masks_file """
         self.textbox_filename_masks.delete('1.0', tk.END)
-        filename_masks = filedialog.askopenfilename(initialdir=local_dir+"/Hadamard/mask_sets",
+        filename_masks = filedialog.askopenfilename(initialdir=os.path.join(local_dir,"Hadamard","mask_sets"),
                                         title="Select a File",
                                         filetypes=(("Text files",
                                                       "*.bmp"),
@@ -1375,7 +1374,7 @@ class DMDPage(tk.Frame):
         oldfilename_masks = self.textbox_masknames.get("1.0", tk.END)
         old = str(oldfilename_masks[0:oldfilename_masks.rfind("_")])
         new = self.entrybox_newmasknames.get()
-        file_names = local_dir+"/Hadamard/mask_sets/"+old+"*.bmp"
+        file_names = os.path.join(local_dir,"Hadamard","mask_sets",old,"*.bmp")
         files = sorted(glob.glob(file_names))
         #head, tail = os.path.split(oldfilename_masks)
         for ifile in range(len(files)):
@@ -1395,15 +1394,15 @@ class DMDPage(tk.Frame):
         maskfile = basename + "_" + self.mask_checked.get()       
         maskfile_bmp = maskfile + ".bmp"       
         maskfile_png = maskfile + ".png"       
-        image_mask = Image.open(local_dir+"/Hadamard/mask_sets/" + maskfile_bmp)
-        im =np.asarray(Image.open(local_dir+"/Hadamard/mask_sets/" + maskfile_bmp), dtype='int')
+        image_mask = Image.open(os.path.join(local_dir,"Hadamard","mask_sets",maskfile_bmp))
+        im =np.asarray(Image.open(os.path.join(local_dir,"Hadamard","mask_sets",maskfile_bmp)), dtype='int')
         #im.resize((512,270)).save(local_dir+"/Hadamslitard/mask_sets/" + maskfile_png)
         plt.clf()
         shape_rotated = np.rot90(im, k=1, axes=(0, 1))
         plt.imshow(shape_rotated, vmin=0, vmax=1)
-        plt.savefig(local_dir+"/Hadamard/mask_sets/" + maskfile_png)
+        plt.savefig(os.path.join(local_dir,"Hadamard","mask_sets", maskfile_png))
         plt.close()  #needed to overwrite!
-        image_map = Image.open(local_dir+"/Hadamard/mask_sets/" + maskfile_png)        
+        image_map = Image.open(os.path.join(local_dir,"Hadamard","mask_sets", maskfile_png))        
         test = ImageTk.PhotoImage(image_map)
         label1 = tk.Label(self.canvas,image=test)
         label1.image = test
@@ -1451,7 +1450,7 @@ class DMDPage(tk.Frame):
 
         slit_width = int(self.entrybox_width.get()) #4 # Slit width in number of micromirrors 
         # folder = 'C:/Users/Kate/Documents/hadamard/mask_sets/' # Change path to fit user needs
-        folder = os.path.join(local_dir,'Hadamard/mask_sets/')
+        folder = os.path.join(local_dir,'Hadamard','mask_sets',os.path.sep)
         if matrix_type == 'S':
             mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
             name = 'S'+str(order)+'_'+str(slit_width)+'w_mask_1-'+str(order)+'.bmp'
@@ -1502,7 +1501,7 @@ class DMDPage(tk.Frame):
             from the point of view of the DMD with its current orientation, all mirrors are "OFF" """
         DMD.apply_blackout()
         # global img
-        image_map = Image.open(dir_DMD + "/whiteout_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD, "whiteout_dmd_state.png"))
         test = ImageTk.PhotoImage(image_map)
         label1 = tk.Label(self.canvas,image=test)
         label1.image = test
@@ -1519,7 +1518,7 @@ class DMDPage(tk.Frame):
             from the point of view of the DMD with its current orientation, all mirrors are "ON" """
         DMD.apply_whiteout()
         # global img
-        image_map = Image.open(dir_DMD + "/blackout_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD, "blackout_dmd_state.png"))
         test = ImageTk.PhotoImage(image_map)
         label1 = tk.Label(self.canvas,image=test)
         label1.image = test
@@ -1534,9 +1533,9 @@ class DMDPage(tk.Frame):
         """ dmd_checkerboard """
         DMD.apply_checkerboard()
         # global img
-        shutil.copy(dir_DMD + "/checkerboard.png",dir_DMD + "/current_dmd_state.png")
+        shutil.copy(os.path.join(dir_DMD, "checkerboard.png"),os.path.join(dir_DMD, "current_dmd_state.png"))
         time.sleep(1)
-        image_map = Image.open(dir_DMD + "/current_dmd_state.png")
+        image_map = Image.open( os.path.join(dir_DMD, "current_dmd_state.png") )
         test = ImageTk.PhotoImage(image_map)
         label1 = tk.Label(self.canvas,image=test)
         label1.image = test
@@ -1550,7 +1549,7 @@ class DMDPage(tk.Frame):
     def dmd_invert(self):
         """ dmd_invert """
         DMD.apply_invert()
-        image_map = Image.open(dir_DMD + "/current_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD, "current_dmd_state.png") )
         # image=image_map.convert("L")
         # image_invert = ImageOps.invert(image)
         # image_invert.save(dir_DMD+ "/current_dmd_state.png")
@@ -1576,7 +1575,7 @@ class DMDPage(tk.Frame):
     def dmd_antinvert(self):
         """ dmd_antinvert """
         DMD.apply_antinvert()
-        image_map = Image.open(dir_DMD + "/current_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD, "current_dmd_state.png") )
         test = ImageTk.PhotoImage(image_map)
         label1 = tk.Label(self.canvas,image=test)
         label1.image = test
@@ -1587,7 +1586,7 @@ class DMDPage(tk.Frame):
     def BrowseMapFiles(self):
         """ BrowseMapFiles """
         self.textbox_filename.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
+        filename = filedialog.askopenfilename(initialdir = os.path.join(dir_DMD, "DMD_csv","maps"),
                                           title = "Select a File",
                                           filetypes = (("Text files",
                                                         "*.csv"),
@@ -1609,7 +1608,7 @@ class DMDPage(tk.Frame):
         """ LoadMap """
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
+        filename = filedialog.askopenfilename(initialdir = os.path.join(dir_DMD, "DMD_csv","maps"),
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -1646,7 +1645,7 @@ class DMDPage(tk.Frame):
         #1. instantiate the convert class
         c=CONVERT()
                 
-        f = open(local_dir + '/SAMOS_regions/pixels/'+ tail[:-3]+'reg', 'w')
+        f = open(os.path.join(local_dir, 'SAMOS_regions','pixels', tail[:-3],'reg'), 'w')
 
         #2. loop over the lines to create ds9 region files
         header= "# Region file format: DS9 astropy/regions\nglobal edit=1 width=1 font=Sans Serif fill=0 color=red\nimage"
@@ -1668,7 +1667,7 @@ class DMDPage(tk.Frame):
         # Create a photoimage object of the image in the path
         # Load an image in the script
         # global img
-        image_map = Image.open(dir_DMD + "/current_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD, "current_dmd_state.png"))
         self.img= ImageTk.PhotoImage(image_map)
         
 
@@ -1686,7 +1685,7 @@ class DMDPage(tk.Frame):
         """ LoadSlits """
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/slits",
+        filename_slits = filedialog.askopenfilename(initialdir = os.path.join(dir_DMD,"DMD_csv","slits"),
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -1714,7 +1713,7 @@ class DMDPage(tk.Frame):
 #        image_map = Image.open(local_dir + "/current_dmd_state.png")
 #        self.img= ImageTk.PhotoImage(image_map)
 #         image_map.close()
-        image_map = Image.open(dir_DMD + "/current_dmd_state.png")        
+        image_map = Image.open(os.path.join(dir_DMD, "current_dmd_state.png") )        
         test = ImageTk.PhotoImage(image_map)
         label1 = tk.Label(self.canvas,image=test)
         label1.image = test
@@ -1735,7 +1734,7 @@ class DMDPage(tk.Frame):
         """
         
         #1. read the current filename
-        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_map_filename.get()
+        self.map_filename = os.path.join(dir_DMD,"DMD_csv","maps", self.str_map_filename.get())
         #2.
         myList = []
         with open (self.map_filename,'r') as file:
@@ -1757,7 +1756,7 @@ class DMDPage(tk.Frame):
     def PushCurrentMap(self):
         """ Push to the DMD the file in Current DMD Map Textbox """
         
-        self.map_filename = dir_DMD+"/DMD_csv/maps/" + self.str_map_filename.get()
+        self.map_filename = os.path.join(dir_DMD,"DMD_csv","maps", self.str_map_filename.get())
         
         myList = []
         with open (self.map_filename,'r') as file:
@@ -1778,7 +1777,7 @@ class DMDPage(tk.Frame):
         # Create a photoimage object of the image in the path
         # Load an image in the script
         # global img
-        image_map = Image.open("/Users/samos_dev/GitHub/SAMOS_GUI_Python/SAMOS_DMD_dev/current_dmd_state.png")
+        image_map = Image.open( os.path.join(dir_DMD,"current_dmd_state.png") )
         self.img= ImageTk.PhotoImage(image_map)
 
         print('img =', self.img)
@@ -2521,8 +2520,8 @@ class CCDPage(tk.Frame):
         self.label_camera_ON.place(x=4,y=8)
         
         # Define Our Images
-        self.on_png = tk.PhotoImage(file = local_dir + "/tk_utilities/on.png")
-        self.off_png = tk.PhotoImage(file =local_dir + "/tk_utilities/off.png")
+        self.on_png = tk.PhotoImage(file = os.path.join(local_dir, "tk_utilities","on.png") )
+        self.off_png = tk.PhotoImage(file = os.path.join(local_dir, "tk_utilities","off.png") )
         self.button_open_camera= tk.Button(labelframe_Setup, image=self.off_png, bd=0, command=self.turn_camera_ON)
                                                         # command = open_close_camera)
         self.button_open_camera.place(x=180, y=0)
@@ -3260,7 +3259,7 @@ class CCD2DMD_RecalPage(tk.Frame):
     def browse_grid_fits_files(self):
         """ to be written """
         
-        filename = tk.filedialog.askopenfilename(initialdir = local_dir+"/fits_image/",filetypes=[("FITS files","*fits")], 
+        filename = tk.filedialog.askopenfilename(initialdir = os.path.join(local_dir,"fits_image"),filetypes=[("FITS files","*fits")], 
                             title = "Select a FITS File",parent=self.frame0l)
         
         
@@ -3282,7 +3281,7 @@ class CCD2DMD_RecalPage(tk.Frame):
         dmd_pattern_text = "DMD Pattern: {}".format(self.grid_pattern_name)
         self.dmd_pattern_label["text"] = dmd_pattern_text
         
-        self.grid_pattern_fullPath = "SAMOS_DMD_dev/DMD_csv/slits/{}".format(self.grid_pattern_name)
+        self.grid_pattern_fullPath = os.path.join("SAMOS_DMD_dev","DMD_csv","slits","{}".format(self.grid_pattern_name))
         dmd_table = pd.read_csv(self.grid_pattern_fullPath)
         self.dmd_table = dmd_table#.sort_values(by="y", ascending=False).reset_index(drop=True)
         
@@ -3409,7 +3408,7 @@ class CCD2DMD_RecalPage(tk.Frame):
                                   header=new_hdr)
 
         # will change this file to CONVERT/DMD_Mapping_WCS.fits once confident it works
-        new_hdu.writeto("SAMOS_DMD_dev/CONVERT/DMD_Mapping_WCS.fits", overwrite=True)
+        new_hdu.writeto(os.path.join( "SAMOS_DMD_dev","CONVERT","DMD_Mapping_WCS.fits"), overwrite=True)
 
         print("New transform FITS file created")
 
@@ -3488,8 +3487,7 @@ class MainPage(tk.Frame):
         self.SlitTabView = None
         self.loaded_regfile = None
         today = datetime.now()
-        self.fits_dir = local_dir + \
-            "/SAMOS_" + today.strftime('%Y%m%d')
+        self.fits_dir = os.path.join(local_dir, "SAMOS_" + today.strftime('%Y%m%d'))
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -3507,7 +3505,7 @@ class MainPage(tk.Frame):
 #        label_FW1.place(x=4,y=10)
 
         all_dirs = SF.read_dir_user()
-        filter_data= ascii.read(local_dir+all_dirs['dir_system']+'/SAMOS_Filter_positions.txt')
+        filter_data= ascii.read(os.path.join(local_dir,all_dirs['dir_system'],'SAMOS_Filter_positions.txt'))
         filter_names = list(filter_data[0:11]['Filter'])
         # print(filter_names)
 
@@ -3588,7 +3586,7 @@ class MainPage(tk.Frame):
 #        labelframe_Grating.place(x=4, y=10)
          
         all_dirs = SF.read_dir_user()
-        Grating_data= ascii.read(local_dir+all_dirs['dir_system']+'/SAMOS_Filter_positions.txt')
+        Grating_data= ascii.read(os.path.join( local_dir,all_dirs['dir_system'],'SAMOS_Filter_positions.txt'))
         self.Grating_names = list(Grating_data[14:18]['Filter'])
         self.Grating_positions= list(Grating_data[14:18]['Position'])
 #        print(Grating_names)
@@ -4509,7 +4507,7 @@ class MainPage(tk.Frame):
         print("saving (x,y) Astropy Regions to .reg file")
         file = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")], 
                                         defaultextension = ".reg",
-                                        initialdir=local_dir+"/SAMOS_regions/pixels")
+                                        initialdir=os.path.join(local_dir,"SAMOS_regions","pixels"))
         # 1. Collect all
         self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
         # 2. convert to Astropy, pixels
@@ -4532,7 +4530,7 @@ class MainPage(tk.Frame):
             print("saving (RA,DEC) Astropy Regions to .reg file")
             file = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")], 
                                         defaultextension = ".reg",
-                                        initialdir=local_dir+"/SAMOS_regions/RADEC")
+                                        initialdir=os.path.join(local_dir,"SAMOS_regions","RADEC"))
         # we want to scoop all objects on the canvas
         # obj_all = CM.CompoundMixin.get_objects(self.canvas)
             self.RRR_RADec = self.convert_regions_xy2RADEC()
@@ -4673,7 +4671,7 @@ class MainPage(tk.Frame):
         print("read (RA,DEC) Regions from .reg file")        
         self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
 #        self.textbox_filename_slits.delete('1.0', tk.END)
-        self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir = local_dir +"/SAMOS_regions/RADEC",
+        self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir = os.path.join(local_dir, "SAMOS_regions","RADEC"),
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.reg"),
@@ -4709,7 +4707,7 @@ class MainPage(tk.Frame):
         """ read (x,y) Astropy Regions from .reg file """
         print("reading (x,y) Astropy Regions from .reg file")                
         reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
-                                         initialdir=local_dir+'/SAMOS_regions/pixels')
+                                         initialdir=os.path.join(local_dir,'SAMOS_regions','pixels'))
         print("reading (x,y) Astropy region file")
         if isinstance(reg, tuple):
             regfileName = reg[0]
@@ -5172,7 +5170,7 @@ class MainPage(tk.Frame):
         """ to be written """
         # this procedure runs after the CCD.expose()
         # to handle the decision of saving all single files or just the averages
-        file_names = local_dir+"/fits_image/setimage_*.fit"
+        file_names = os.path.join(local_dir,"fits_image","setimage_*.fit")
         files = glob.glob(file_names)
         superfile_cube = np.zeros((1032,1056,len(files)))   #note y,x,z
         for i in range(len(files)):
@@ -5183,20 +5181,20 @@ class MainPage(tk.Frame):
                    self.var_Dark_saveall.get() == 1 or \
                    self.var_Flat_saveall.get() == 1:
                    # save every single frame
-                    os.rename(files[i],local_dir+"/fits_image/"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits")
+                    os.rename(files[i],os.path.join(local_dir,"fits_image"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                 else: 
                     os.remove(files[i])
         superfile = superfile_cube.mean(axis=2)        
         superfile_header = hdu[0].header
         if self.image_type == "light" or self.image_type == "flat":
-            fits.writeto(local_dir+"/fits_image/super"+self.image_type+"_"+self.FW_filter.get()+".fits",superfile,superfile_header,overwrite=True)
+            fits.writeto(os.path.join(local_dir,",fits_image","super"+self.image_type+"_"+self.FW_filter.get()+".fits"),superfile,superfile_header,overwrite=True)
         else:
-            fits.writeto(local_dir+"/fits_image/super"+self.image_type+".fits",superfile,superfile_header,overwrite=True)            
+            fits.writeto(os.path.join(local_dir,"fits_image","super"+self.image_type+".fits"),superfile,superfile_header,overwrite=True)            
         hdu.close()
         
     def cleanup_files(self):
         """ to be written """
-        file_names = local_dir+"/fits_image/"+self.image_type+"_*.fits"
+        file_names = os.path.join(local_dir,"fits_image",self.image_type+"_*.fits")
         files = glob.glob(file_names)
         for i in range(len(files)):
              os.remove(files[i])
@@ -5204,7 +5202,7 @@ class MainPage(tk.Frame):
     def handle_dark(self):
         """ to be written """
         #a superdark file has been taken...
-        dark_file = local_dir+"/fits_image/superdark.fits"
+        dark_file = os.path.join(local_dir,"fits_image","superdark.fits")
         hdu_dark = fits.open(dark_file)
         dark = hdu_dark[0].data
         hdr = hdu_dark[0].header
@@ -5213,7 +5211,7 @@ class MainPage(tk.Frame):
         hdu_dark.close()
 
         #a bias file has also been taken...
-        bias_file = local_dir+"/fits_image/superbias.fits"
+        bias_file = os.path.join(local_dir,"fits_image","superbias.fits")
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
         hdu_bias.close()
@@ -5228,12 +5226,12 @@ class MainPage(tk.Frame):
         dark_sec = dark_bias / exptime
         hdr_out = hdr
         hdr_out['PARAM2']=1
-        fits.writeto(local_dir+"/fits_image/superdark_s.fits",dark_sec,hdr_out,overwrite=True)
+        fits.writeto( os.path.join(local_dir,"fits_image","superdark_s.fits"),dark_sec,hdr_out,overwrite=True)
 
     def handle_flat(self):
         """ to be written """
         #a  flat field has been taken...
-        flat_file = local_dir+"/fits_image/superflat_"+self.FW_filter.get()+".fits"
+        flat_file = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+".fits")
         hdu_flat = fits.open(flat_file)
         flat = hdu_flat[0].data
         hdr = hdu_flat[0].header
@@ -5242,13 +5240,13 @@ class MainPage(tk.Frame):
         hdu_flat.close()
 
         #take the dark current rate....
-        dark_s_file = local_dir+"/fits_image/superdark_s.fits"
+        dark_s_file = os.path.join(local_dir,"fits_image","superdark_s.fits")
         hdu_dark_s = fits.open(dark_s_file)
         dark_s = hdu_dark_s[0].data
         hdu_dark_s.close()
         
         #and the bias frame....
-        bias_file = local_dir+"/fits_image/superbias.fits"
+        bias_file = os.path.join(local_dir,"fits_image","superbias.fits")
         hdu_bias = fits.open(bias_file)
         bias = hdu_bias[0].data
         hdu_bias.close()
@@ -5269,18 +5267,20 @@ class MainPage(tk.Frame):
         
         #finally the flat is normalized to median=1  
         flat_norm = flat_dark / np.median(flat_dark)
-        fits.writeto(local_dir+"/fits_image/superflat_"+self.FW_filter.get()+"_norm.fits",flat_norm,hdr,overwrite=True)
+        fits.writeto( os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
 
         
     def handle_light(self):
         """ handle_light """
-        light_file = local_dir+"/fits_image/newimage.fit"
-        try:
-            flat_file = local_dir+"/fits_image/superflat_"+self.FW_filter.get()+"_norm.fits"
-        except:    
-            flat_file = local_dir+"/fits_image/superflat_norm.fits"
-        dark_s_file = local_dir+"/fits_image/superdark_s.fits"
-        bias_file = local_dir+"/fits_image/superbias.fits"
+        light_file = os.path.join(local_dir,"fits_image","newimage.fit")
+        flat_file = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits")
+        exists = os.path.isfile(flat_file)
+        if exists:
+            print("found flat file ", flat_file)
+        else:
+            flat_file = os.path.join(local_dir,"fits_image","superflat_norm.fits")
+        dark_s_file = os.path.join(local_dir,"fits_image","superdark_s.fits")
+        bias_file = os.path.join(local_dir,"fits_image","superbias.fits")
         
         hdu_light = fits.open(light_file)
         light = hdu_light[0].data
@@ -5317,7 +5317,7 @@ class MainPage(tk.Frame):
             light_dark_bias = light_dark
             
         
-        fits_image = local_dir+"/fits_image/newimage_ff.fits"  
+        fits_image = os.path.join(local_dir,"fits_image","newimage_ff.fits")
         main_fits_header.set_param("filename", os.path.split(fits_image)[1])
         main_fits_header.create_fits_header(hdr)
         
@@ -5342,7 +5342,7 @@ class MainPage(tk.Frame):
         
         Camera = Class_Camera(dict_params=params)
         
-        self.this_param_file = open("{}/Parameters.txt".format(os.getcwd()),"w")
+        self.this_param_file = open(os.path.join(os.getcwd(),"Parameters.txt"),"w")
         
         self.this_param_file.write(self.header_entry_string)
         self.this_param_file.close()
@@ -5367,8 +5367,8 @@ class MainPage(tk.Frame):
 
         # fits_image = "/Users/robberto/Box/@Massimo/_Python/SAMOS_GUI_dev/fits_image/newimage_fixed.fit"
         # fits_image = "{}/fits_image/newimage_fixed.fit".format(work_dir)
-        self.fits_image = "{}/fits_image/newimage.fit".format(work_dir)
-        fits_image_converted = local_dir+"/fits_image/newimage_fixed.fit"   
+        self.fits_image = os.path.join(work_dir,"fits_image","newimage.fit")
+        fits_image_converted = os.path.join(local_dir,"fits_image","newimage_fixed.fit")   
         main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
         main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
         # fits_image_converted = "{}/fits_image/newimage_fixed.fit".format(work_dir)                       
@@ -5405,8 +5405,8 @@ class MainPage(tk.Frame):
 
     def load_last_file(self):
         """ to be written """
-        FITSfiledir = local_dir+"/fits_image/"
-        self.fullpath_FITSfilename = FITSfiledir + (os.listdir(FITSfiledir))[0] 
+        FITSfiledir = os.path.join(local_dir,"fits_image")
+        self.fullpath_FITSfilename = os.path.join(FITSfiledir,(os.listdir(FITSfiledir))[0])
             # './fits_image/newimage_ff.fits'
         self.AstroImage = load_data(self.fullpath_FITSfilename, logger=self.logger)
         # AstroImage object of ginga.AstroImage module
@@ -5478,7 +5478,7 @@ class MainPage(tk.Frame):
         #  0  PRIMARY       1 PrimaryHDU      22   (500, 500)   int16   
         print(hdul[0].header)                                                                                  
         self.image = hdul                                    
-        hdul.writeto('./newtable.fits',overwrite=True)
+        hdul.writeto(os.path.join('.','newtable.fits'),overwrite=True)
         
     
         img = AstroImage()
@@ -5506,7 +5506,7 @@ class MainPage(tk.Frame):
 #        self.fullpath_FITSfilename = filepath.name
         hdul.close()
         work_dir = os.getcwd()
-        self.fits_image_ff = "{}/fits_image/newimage_ff.fits".format(work_dir)
+        self.fits_image_ff = os.path.join(work_dir,fits_image,"newimage_ff.fits")
         fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
  
         
@@ -5549,7 +5549,7 @@ class MainPage(tk.Frame):
             self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
         work_dir = os.getcwd()
-        self.fits_image_ff = "{}/fits_image/newimage_ff.fits".format(work_dir)
+        self.fits_image_ff = os.path.join(work_dir,fits_image,"newimage_ff.fits")
         fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
  
         
@@ -5629,7 +5629,7 @@ class MainPage(tk.Frame):
             hdu_wcs[0].header.set("dmdmap", os.path.split(self.loaded_regfile)[1])
             
         hdu_wcs[0].data = data # add data to fits file
-        self.wcs_filename = "./SAMOS_Astrometry_dev/" + "WCS_"+ra+"_"+dec+".fits"
+        self.wcs_filename = os.path.join(".","SAMOS_Astrometry_dev","WCS_"+ra+"_"+dec+".fits")
         hdu_wcs[0].writeto(self.wcs_filename,overwrite=True)
         
         self.Display(self.wcs_filename)
@@ -6144,7 +6144,7 @@ class MainPage(tk.Frame):
     
     def save_all_sub_patterns(self):
         
-        pattern_dirname = "{}/SubPatterns".format(self.fits_dir)
+        pattern_dirname = os.path.join(self.fits_dir,"SubPatterns")
         
         
         if not os.path.exists(pattern_dirname):
@@ -6159,7 +6159,7 @@ class MainPage(tk.Frame):
                 
                 pattern_data_rows = pattern.values
                 sky_regions = Regions(list(map(self.create_astropy_RectangleSkyRegion, pattern_data_rows)))
-                new_regfname = "{}/{}.reg".format(pattern_dirname, pattern_name)
+                new_regfname = os.path.join(pattern_dirname, pattern_name,".reg")
                 sky_regions.write(new_regfname, overwrite=True, format="ds9")
         
         pass
@@ -6174,14 +6174,14 @@ class MainPage(tk.Frame):
         pattern_name = self.pattern_group_dropdown.get()
         
         
-        pattern_dirname = "{}/SubPatterns".format(self.fits_dir)
+        pattern_dirname = os.path.join(self.fits_dir,"SubPatterns")
         if not os.path.exists(pattern_dirname):
             os.mkdir(pattern_dirname)
         if self.wcs.has_celestial:
             pattern_data_rows = current_pattern.values
             
             sky_regions = Regions(list(map(self.create_astropy_RectangleSkyRegion, pattern_data_rows)))
-            new_regfname = "{}/{}.reg".format(pattern_dirname, pattern_name)
+            new_regfname = os.path.join(pattern_dirname,pattern_name,".reg")
             sky_regions.write(new_regfname, overwrite=True, format="ds9")
         
     def create_astropy_RectangleSkyRegion(self, pattern_row):
@@ -6591,7 +6591,7 @@ class MainPage(tk.Frame):
         """ to be written """
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir = dir_DMD+"/DMD_csv/maps",
+        filename = filedialog.askopenfilename(initialdir = os.path.join(dir_DMD,"DMD_csv","maps"),
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -6621,7 +6621,7 @@ class MainPage(tk.Frame):
         # Create a photoimage object of the image in the path
         # Load an image in the script
         # global img
-        image_map = Image.open("/Users/samos_dev/GitHub/SAMOS_GUI_Python/SAMOS_DMD_dev/current_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD,"current_dmd_state.png"))
         self.img= ImageTk.PhotoImage(image_map)
 
         print('img =', self.img)
@@ -6639,7 +6639,7 @@ class MainPage(tk.Frame):
         """ to be written """
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir = dir_DMD +"/DMD_csv/slits",
+        filename_slits = filedialog.askopenfilename(initialdir = os.path.join(dir_DMD, "DMD_csv","slits"),
                                         title = "Select a File",
                                         filetypes = (("Text files",
                                                       "*.csv"),
@@ -6667,7 +6667,7 @@ class MainPage(tk.Frame):
         # Create a photoimage object of the image in the path
         # Load the image
         # global img
-        image_map = Image.open("/Users/samos_dev/GitHub/SAMOS_GUI_Python/SAMOS_DMD_dev/current_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD,"current_dmd_state.png"))
         self.img= ImageTk.PhotoImage(image_map)
 
         # Add image to the Canvas Items
@@ -6682,7 +6682,7 @@ class MainPage(tk.Frame):
             return
         file = filedialog.asksaveasfile(filetypes = [("csv file", ".csv")], 
                                         defaultextension = ".csv",
-                                        initialdir=local_dir+"/SAMOS_DMD_dev/DMD_csv/slits",
+                                        initialdir=os.path.join(dir_DMD,"DMD_csv","slits"),
                                         initialfile = self.filename_regfile_RADEC[0:-4]+".csv")
         pandas_slit_shape = pd.DataFrame(self.slit_shape)
         pandas_slit_shape.to_csv(file.name)
@@ -6760,8 +6760,8 @@ class SAMOS_Parameters():
             self.scale_DMD2PIXEL = 0.892
         """
         
-        self.Image_on = tk.PhotoImage(file=local_dir+"/Images/on.png")
-        self.Image_off = tk.PhotoImage(file=local_dir+"/Images/off.png")
+        self.Image_on = tk.PhotoImage(file=os.path.join(local_dir,"Images","on.png"))
+        self.Image_off = tk.PhotoImage(file=os.path.join(local_dir,"Images","off.png"))
         
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
                          'dir_CCD'   : '/SAMOS_CCD_dev',
@@ -6773,7 +6773,7 @@ class SAMOS_Parameters():
                         }
         
         """ Default IP address imported for all forms"""
-        ip_file_default = dir_SYSTEM + "/IP_addresses_default.csv"           
+        ip_file_default = os.path.join(dir_SYSTEM,"IP_addresses_default.csv")
         with open(ip_file_default, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
