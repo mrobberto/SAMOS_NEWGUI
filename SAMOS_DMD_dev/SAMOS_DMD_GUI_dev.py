@@ -4,6 +4,8 @@
 Created on Tue Nov 16 08:56:51 2021
 
 @author: robberto
+
+05.31.2023: removed background colors from buttons as they don't look good on windows
 """
 
 
@@ -87,22 +89,22 @@ class GUI_DMD(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
 #       DMD Initialize
 # =============================================================================
         #dmd.initialize()
-        button_Initialize =  tk.Button(self.frame_startup, text="Initialize", bd=3, bg='#0052cc',command=self.dmd_initialize)
+        button_Initialize =  tk.Button(self.frame_startup, text="Initialize", bd=3, command=self.dmd_initialize) # bg='#0052cc'
         button_Initialize.place(x=4,y=4)
 
 # ==========================================================================
 #       Load Basic Patterns
 # =============================================================================
-        button_Blackout =  tk.Button(self.frame_startup, text="Blackout", bd=3, bg='#0052cc',command=self.dmd_blackout)
+        button_Blackout =  tk.Button(self.frame_startup, text="Blackout", bd=3, command=self.dmd_blackout) # bg='#0052cc',
         button_Blackout.place(x=4,y=34)
-        button_Whiteout =  tk.Button(self.frame_startup, text="Whiteout", bd=3, bg='#0052cc',command=self.dmd_whiteout)
+        button_Whiteout =  tk.Button(self.frame_startup, text="Whiteout", bd=3, command=self.dmd_whiteout) #bg='#0052cc',
         button_Whiteout.place(x=4,y=64)
-        button_Checkerboard =  tk.Button(self.frame_startup, text="Checkerboard", bd=3, bg='#0052cc',command=self.dmd_checkerboard)
+        button_Checkerboard =  tk.Button(self.frame_startup, text="Checkerboard", bd=3, command=self.dmd_checkerboard) #bg='#0052cc',
         button_Checkerboard.place(x=4,y=94)
-        button_Invert =  tk.Button(self.frame_startup, text="Invert", bd=3, bg='#0052cc',command=self.dmd_invert)
+        button_Invert =  tk.Button(self.frame_startup, text="Invert", bd=3, command=self.dmd_invert) #bg='#0052cc',
         button_Invert.place(x=4,y=124)
 
-        button_antInvert =  tk.Button(self.frame_startup, text="AntInvert", bd=3, bg='#0052cc',command=self.dmd_antinvert)
+        button_antInvert =  tk.Button(self.frame_startup, text="AntInvert", bd=3, command=self.dmd_antinvert) #bg='#0052cc',
         button_antInvert.place(x=140,y=124)
   
 # ==========================================================================
