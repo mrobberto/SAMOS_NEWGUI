@@ -84,8 +84,8 @@ class Config(tk.Frame):
         # Keep track of the button state on/off
  #       self.Motors_is_on = True
         # Define Our Images 
-        self.Image_on = tk.PhotoImage(file = local_dir+"/Images/on.png")
-        self.Image_off = tk.PhotoImage(file = local_dir+"/Images/off.png")
+        self.Image_on = tk.PhotoImage(file = os.path.join(local_dir,"Images","on.png") )
+        self.Image_off = tk.PhotoImage(file = os.path.join(local_dir,"Images","off.png") ) 
         
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
                          'dir_CCD'   : '/SAMOS_CCD_dev',
@@ -370,7 +370,7 @@ class Config(tk.Frame):
     def load_dir_user(self):
         dict_from_csv = {}
 
-        with open(self.parent_dir+"/SAMOS_system_dev/dirlist_user.csv", mode='r') as inp:
+        with open( os.path.join(self.parent_dir,"SAMOS_system_dev","dirlist_user.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
 
@@ -411,8 +411,8 @@ class Config(tk.Frame):
         self.dir_dict['dir_system'] = self.dir_system.get()
         
         # open file for writing, "w" is writing
-        w = csv.writer(open(self.parent_dir+"/SAMOS_system_dev/dirlist_user.csv", "w"))
-        print(self.parent_dir+"/SAMOS_system_dev/dirlist_user.csv")
+        w = csv.writer(open(os.path.join(self.parent_dir,"SAMOS_system_dev","dirlist_user.csv"), "w"))
+        print(os.path.join(self.parent_dir,"SAMOS_system_dev","dirlist_user.csv"))
 
         # loop over dictionary keys and values
         for key, val in self.dir_dict.items():
@@ -422,12 +422,12 @@ class Config(tk.Frame):
            
 
     def load_IP_user(self):
-        local_path = self.parent_dir+"/SAMOS_system_dev/"
+        local_path = os.path.join(self.parent_dir,"SAMOS_system_dev")
         if self.inoutvar.get() == 'inside':
-            ip_file = local_path+"IP_addresses_default_inside.csv"
+            ip_file = os.path.join(local_path,"IP_addresses_default_inside.csv")
         else:
-            ip_file = local_path+"IP_addresses_default_outside.csv"
-        ip_file_default = local_path + "IP_addresses_default.csv"    
+            ip_file = os.path.join(local_path,"IP_addresses_default_outside.csv")
+        ip_file_default = os.path.join(local_path , "IP_addresses_default.csv")    
         os.system('cp {} {}'.format(ip_file,ip_file_default))  
         
         with open(ip_file, mode='r') as inp:
@@ -465,12 +465,12 @@ class Config(tk.Frame):
 #         
 # =============================================================================
 # open file for writing, "w" is writing
-        local_path = self.parent_dir+"/SAMOS_system_dev/"
+        local_path = os.path.join(self.parent_dir,"/SAMOS_system_dev")
         if self.inoutvar.get() == 'inside':
-            ip_file = local_path+"IP_addresses_default_inside.csv"
+            ip_file = os.path.join(local_path,"IP_addresses_default_inside.csv")
         else:
-            ip_file = local_path+"IP_addresses_default_outside.csv"
-        ip_file_default = local_path + "IP_addresses_default.csv"    
+            ip_file = os.path.join(local_path,"IP_addresses_default_outside.csv")
+        ip_file_default = os.path.join(local_path, "IP_addresses_default.csv")
         os.system('cp {} {}'.format(ip_file,ip_file_default))  
         
         w = csv.writer(open(ip_file, "w"))
@@ -488,12 +488,12 @@ class Config(tk.Frame):
         
     def load_IP_default(self):
         
-        local_path = self.parent_dir+"/SAMOS_system_dev/"
+        local_path = os.path.join(self.parent_dir,"/SAMOS_system_dev")
         if self.inoutvar.get() == 'inside':
-            ip_file = local_path+"/IP_addresses_default_inside.csv"
+            ip_file = os.path.join(local_path,"IP_addresses_default_inside.csv")
         else:
-            ip_file = local_path+"/IP_addresses_default_outside.csv"
-        ip_file_default = local_path + "IP_addresses_default.csv"    
+            ip_file = os.path.join(local_path,"IP_addresses_default_outside.csv")
+        ip_file_default = os.path.join(local_path, "IP_addresses_default.csv" )   
         os.system('cp {} {}'.format(ip_file,ip_file_default))  
 
         dict_from_csv = {}      
@@ -520,7 +520,7 @@ class Config(tk.Frame):
 
     def save_IP_status(self):
 
-        w = csv.writer(open(self.parent_dir+"/SAMOS_system_dev/IP_status_dict.csv", "w"))
+        w = csv.writer(open(os.path.join(self.parent_dir,"SAMOS_system_dev","IP_status_dict.csv"), "w"))
 
         # loop over dictionary keys and values
         for key, val in self.IP_status_dict.items():

@@ -62,7 +62,7 @@ import WriteFITSHead as WFH
 from SlitTableViewer import SlitTableView as STView
 from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
 #from SAMOS_Astrometry_dev.skymapper_interrogate_VOTABLE import skymapper_interrogate_VOTABLE
-from SAMOS_Astrometry_dev.tk_class_astrometry_V4 import Astrometry
+from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
 #from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
 import glob
 import pathlib
