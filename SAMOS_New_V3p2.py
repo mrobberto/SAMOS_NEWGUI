@@ -3506,7 +3506,7 @@ class MainPage(tk.Frame):
 
         all_dirs = SF.read_dir_user()
         filter_data= ascii.read(os.path.join(local_dir,all_dirs['dir_system'],'SAMOS_Filter_positions.txt'))
-        filter_names = list(filter_data[0:11]['Filter'])
+        filter_names = list(filter_data[0:12]['Filter'])
         # print(filter_names)
 
         self.FW_filter = tk.StringVar() 

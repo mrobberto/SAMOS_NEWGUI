@@ -11,7 +11,9 @@ to use:
 > import SAMOS_Functions
 > SF = SAMOS_Functions.Class_SAMOS_Functions()
 
-"""
+05.31.2023: Modified create_fits_folder() to put all .fits images in SISI_images
+
+""" 
 import csv
 from pathlib import Path
 import os, sys
@@ -97,14 +99,18 @@ class Class_SAMOS_Functions:
 
         today = datetime.now()
         
-        #name of the directory    
-        fits_dir = os.path.join(parent_dir,"SAMOS_" + today.strftime('%Y%m%d'))
+        #collect all SISI fits images in a common directory
+        SISI_images_dir = "SISI_Images"
         
+        #name of the daily directory    
+        fits_dir = os.path.join( parent_dir, SISI_images_dir, "SAMOS_" + today.strftime('%Y%m%d') )
+         
+        #create if not existing (first image of the day...)
         isdir = os.path.isdir(fits_dir)
         if isdir == False:  
             os.mkdir(fits_dir)
         
-            
+        #write on a file the name of the directory hosting the image    
         fits_directory_file = open(os.path.join(parent_dir,"SAMOS_system_dev","fits_current_dir_name.txt"), "w")
         fits_directory_file.write(fits_dir)
         fits_directory_file.close()    

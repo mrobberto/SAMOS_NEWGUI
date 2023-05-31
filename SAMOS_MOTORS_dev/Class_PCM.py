@@ -979,11 +979,11 @@ class Class_PCM():
 # FW_A5 15555  SLOAN-z
 # FW_A6 31111  blank
 # FW_B1 46667  Halpha
-# FW_B2 62222  O[III]
-# FW_B3 77778  S[II]
-# FW_B4 0      open 
-# FW_B5 15555  TBD1
-# FW_B6 31111  TBD2
+# FW_B2 62222  OIII
+# FW_B3 77778  open
+# FW_B4 0      glass 
+# FW_B5 15555  Hbeta
+# FW_B6 31111  SII
 # GR_H1 5      GR_A_Home
 # GR_H2 7      GR_B_Home 
 # GR_A1 70600  TBD-[69800-71400]
@@ -1049,7 +1049,7 @@ class Class_PCM():
             print('send FW2')
             self.move_FW_pos_wheel('B2')    
             
-        if filter == 'TBD1':
+        if filter == 'open':
             print('send FW1')
             self.move_FW_pos_wheel('A4')
             print('\n >>> FW1 arrived \n') 
@@ -1063,14 +1063,14 @@ class Class_PCM():
             print('send FW2')
             self.move_FW_pos_wheel('B4')    
 
-        if filter == 'TBD2':
+        if filter == 'Hbeta':
             print('send FW1')
             self.move_FW_pos_wheel('A4')
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
             self.move_FW_pos_wheel('B5')    
 
-        if filter == 'TBD3':
+        if filter == 'SII':
             print('send FW1')
             self.move_FW_pos_wheel('A4')
             print('\n >>> FW1 arrived \n') 
