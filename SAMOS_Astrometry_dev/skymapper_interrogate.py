@@ -18,7 +18,7 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
     string += 'POS=' + POS + '&'
     string += 'SIZE=' + SIZE + '&'
     string += 'BAND=' + FILTERS + '&'
-    string += 'FORMAT=image/fits&INTERSECT=covers&MJD_END=56970&RESPONSEFORMAT=CSV'
+    string += 'FORMAT=image/fits&INTERSECT=covers&MJD_END=56970'#'&RESPONSEFORMAT=CSV'
     
     with urllib.request.urlopen(string) as response:
        html = response.read()
@@ -28,7 +28,9 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
     #v=pd.read_csv(html)
     v=html.decode('UTF-8')
     
-    entrypoint  = v.find("\nSkyMapper")
+    #entrypoint  = v.find("\nSkyMapper")   #use this if &RESPONSEFORMAT=CSV' works
+    #image_number = v[entrypoint+13:entrypoint+30]
+    entrypoint  = v.find(">SkyMapper_")
     image_number = v[entrypoint+13:entrypoint+30]
     print(image_number)
     

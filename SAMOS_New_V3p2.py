@@ -5485,7 +5485,7 @@ class MainPage(tk.Frame):
         Posx = self.string_RA.get()
         Posy = self.string_DEC.get()
         filt= self.string_Filter.get()
-        data = hdul[0].data#[:,::-1]
+        data = hdul[0].data[:,::-1]
         image_data = Image.fromarray(data)
         #img_res = image_data.resize(size=(1032,1056))
         img_res = image_data
@@ -5506,7 +5506,7 @@ class MainPage(tk.Frame):
 #        self.fullpath_FITSfilename = filepath.name
         hdul.close()
         work_dir = os.getcwd()
-        self.fits_image_ff = os.path.join(work_dir,fits_image,"newimage_ff.fits")
+        self.fits_image_ff = os.path.join(work_dir,'fits_image',"newimage_ff.fits")
         fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
  
         
@@ -5525,8 +5525,8 @@ class MainPage(tk.Frame):
         Posx = self.string_RA.get()
         Posy = self.string_DEC.get()
         filt= self.string_Filter.get()
- #       filepath = skymapper_interrogate(Posx, Posy, filt)       
-        filepath = skymapper_interrogate_VOTABLE(Posx, Posy, filt)       
+        filepath = skymapper_interrogate(Posx, Posy, filt)       
+        #filepath = skymapper_interrogate_VOTABLE(Posx, Posy, filt)       
         with fits.open(filepath.name) as hdu_in:
 #            img.load_hdu(hdu_in[0])
             data = hdu_in[0].data
@@ -5549,7 +5549,7 @@ class MainPage(tk.Frame):
             self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
         work_dir = os.getcwd()
-        self.fits_image_ff = os.path.join(work_dir,fits_image,"newimage_ff.fits")
+        self.fits_image_ff = os.path.join(work_dir,"fits_image","newimage_ff.fits")
         fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
  
         
@@ -6224,7 +6224,7 @@ class MainPage(tk.Frame):
         
         print(self.base_pattern_name_entry.get())
         
-        self.DMD_Group = DMDGroup(dmd_slitview_df=self.SlitTabView.slitDF, regfile=self.loaded_regfile)
+        self.DMD_Group = DMD.Group(dmd_slitview_df=self.SlitTabView.slitDF, regfile=self.loaded_regfile)
             
         good_patterns = [self.SlitTabView.slitDF]
         
@@ -6543,7 +6543,7 @@ class MainPage(tk.Frame):
         #Creation of init_window
         slit_window.geometry("700x407")
         self.slit_window = slit_window
-        self.SlitTabView = STView(self.slit_window, self.container)
+        self.SlitTabView = STView()#self.slit_window, self.container)
         self.slit_window.withdraw()
 
     def show_slit_table(self):

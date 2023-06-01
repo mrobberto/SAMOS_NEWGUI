@@ -10,14 +10,14 @@ import tkinter as tk
 # Used for styling the GUI
 #from tkinter import ttk
 # import filedialog module
-from tkinter import filedialog
+#from tkinter import filedialog
 
 from PIL import Image,ImageTk,ImageOps
 
 import os,sys
-import shutil
+#import shutil
 #from astropy.io import ascii
-import time
+#import time
 
 import numpy as np
 import pandas as pd
@@ -30,17 +30,17 @@ sys.path.append(parent_dir)
 
 
 import tksheet
-from tksheet import Sheet
+#from tksheet import Sheet
 
-import ginga
-from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
-from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
-from ginga.canvas import CompoundMixin as CM
+#import ginga
+#from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
+#from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
+#from ginga.canvas import CompoundMixin as CM
 
 #test plugin
 #from ginga import plugin
 
-from ginga.util import ap_region
+#from ginga.util import ap_region
 
 from ginga.AstroImage import AstroImage
 img = AstroImage()
@@ -48,20 +48,20 @@ from astropy.io import fits
 from PIL import Image,ImageTk,ImageOps
 
 
-import tkinter as tk
-from tkinter import ttk
-from tkinter.filedialog import askopenfilename
 
-import regions
-from regions import Regions
-from regions import PixCoord, RectanglePixelRegion, PointPixelRegion, RegionVisual
+#from tkinter import ttk
+#from tkinter.filedialog import askopenfilename
+
+#import regions
+#from regions import Regions
+#from regions import PixCoord, RectanglePixelRegion, PointPixelRegion, RegionVisual
 
 from SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT 
 convert = CONVERT()
 
 from astropy.wcs import WCS
-from astropy.coordinates import SkyCoord
-import astropy.units as u 
+#from astropy.coordinates import SkyCoord
+#import astropy.units as u 
 
 
 # popup window for Main_V7 that shows the slit setup
