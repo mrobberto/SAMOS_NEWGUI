@@ -63,7 +63,7 @@ from SlitTableViewer import SlitTableView as STView
 from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
 #from SAMOS_Astrometry_dev.skymapper_interrogate_VOTABLE import skymapper_interrogate_VOTABLE
 from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
-#from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
+from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
 import glob
 import pathlib
 import math
@@ -6224,7 +6224,7 @@ class MainPage(tk.Frame):
         
         print(self.base_pattern_name_entry.get())
         
-        self.DMD_Group = DMD.Group(dmd_slitview_df=self.SlitTabView.slitDF, regfile=self.loaded_regfile)
+        self.DMD_Group = DMDGroup(dmd_slitview_df=self.SlitTabView.slitDF, regfile=self.loaded_regfile)
             
         good_patterns = [self.SlitTabView.slitDF]
         
@@ -6472,10 +6472,13 @@ class MainPage(tk.Frame):
             if event.key=='d':
                 # print(event.key)
                 canvas.delete_object(obj)
-                self.SlitTabView.stab.delete_row(self.obj_ind)
+                print("start tab len",len(self.SlitTabView.stab.get_sheet_data()))
+                self.SlitTabView.stab.delete_row(self.tab_row_ind)
+                print("end tab len", len(self.SlitTabView.stab.get_sheet_data()))
+                self.SlitTabView.stab.redraw()
                 self.SlitTabView.slitDF = self.SlitTabView.slitDF.drop(index=self.obj_ind)
-                del self.SlitTabView.slit_obj_tags[self.obj_ind]
-                
+                #del self.SlitTabView.slit_obj_tags[self.obj_ind]
+                self.SlitTabView.slit_obj_tags.remove(self.selected_obj_tag)
                 canvas.clear_selected()
                 
                 try:
@@ -6503,7 +6506,10 @@ class MainPage(tk.Frame):
     def edit_cb(self, obj):
         """ to be written """
         self.logger.info("object %s has been edited" % (obj.kind))
-
+        tab_row_ind = list(self.SlitTabView.stab.get_column_data(0)).index(obj.tag.strip("@"))
+        self.SlitTabView.stab.select_row(row=tab_row_ind, redraw=True)
+        # update slit table data to reflect the new edits
+        self.SlitTabView.update_table_row_from_obj(obj, self.fitsimage)
         return True
 
     def cleanup_kind(self,kind):

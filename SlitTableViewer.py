@@ -127,11 +127,11 @@ class SlitTableView(tk.Frame):
         
 #        self.master.deiconify()
  
-    def get_table_values_from_robj(self, obj, viewer):
+    def get_table_values_from_robj(self, obj, viewer=None):
        
         x, y = obj.center.x, obj.center.y
         width, height = obj.width, obj.height
-        print(width, height)
+        #print(width, height)
         halfw = width/2
         halfh = height/2
        
@@ -186,6 +186,39 @@ class SlitTableView(tk.Frame):
         return ra, dec, x, y, x0, y0,\
             x1, y1, dmd_x, dmd_y, dmd_x0, dmd_y0,\
                                  dmd_x1, dmd_y1
+                                 
+    def update_table_row_from_obj(self, obj, viewer):
+        """
+        
+
+        Parameters
+        ----------
+        obj : Astropy region object
+        viewer : tk fitsimage viewer
+            - Need the viewer with WCS to do RA/Dec transformations
+
+        Returns
+        -------
+        Updated version of slit table data
+
+        """
+        ra, dec, x, y, x0, y0,\
+            x1, y1, dmd_x, dmd_y, dmd_x0, dmd_y0,\
+                                 dmd_x1, dmd_y1 = self.get_table_values_from_robj(g2r(obj), viewer)
+        
+        tag_num = obj.tag.strip("@")
+        df_indx = int(tag_num)-1
+        
+        row_vals = np.array([tag_num, ra, dec, x, y, x0, y0,
+            x1, y1, dmd_x, dmd_y, dmd_x0, dmd_y0,dmd_x1, dmd_y1])
+        
+        self.slitDF.loc[df_indx] = row_vals
+        
+        row_num = list(self.stab.get_column_data(0)).index(tag_num)
+        self.stab.set_row_data(r=row_num, values=row_vals, redraw=True)
+        
+                                 
+        
        
  
     def add_slit_obj(self, obj, tag, viewer):
@@ -207,7 +240,7 @@ class SlitTableView(tk.Frame):
        
         print('adding slit obj')
         obj_num = int(tag.strip("@"))#len(self.slitDF.index.values)+1
-        print(obj_num)
+        #print(obj_num)
        
         ra, dec, x, y, x0, y0,\
             x1, y1, dmd_x, dmd_y, dmd_x0, dmd_y0, dmd_x1, dmd_y1 = self.get_table_values_from_robj(obj, viewer)
@@ -217,6 +250,7 @@ class SlitTableView(tk.Frame):
                                  x1, y1, int(dmd_x), int(dmd_y), int(dmd_x0), int(dmd_y0),
                                  int(dmd_x1), int(dmd_y1)]
         if (dmd_x0<0 or dmd_x0>1090):
+            print("slit obj not added, DMD coords are {},{}".format(dmd_x0, dmd_y0))
             return
        
         self.slitDF.loc[obj_num-1] = new_slitrow #pd.Series(np.array(new_slitrow))
@@ -287,7 +321,7 @@ class SlitTableView(tk.Frame):
         regs_CCD = []
        
         obj_num = self.stab.total_rows()
-        print(len(self.slit_obj_tags))
+       #print(len(self.slit_obj_tags))
        
         for reg_rect in regs_RADEC:
            
