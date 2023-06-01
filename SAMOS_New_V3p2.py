@@ -6543,7 +6543,7 @@ class MainPage(tk.Frame):
         #Creation of init_window
         slit_window.geometry("700x407")
         self.slit_window = slit_window
-        self.SlitTabView = STView()#self.slit_window, self.container)
+        self.SlitTabView = STView(self.slit_window, self.container)
         self.slit_window.withdraw()
 
     def show_slit_table(self):
