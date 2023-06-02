@@ -5977,10 +5977,13 @@ class MainPage(tk.Frame):
             except ValueError:
                 # if you just click instead of drawing a box, call the slit_handler
                 print("box")
-                new_obj = self.slit_handler(obj)
-                r = g2r(new_obj)
-                tag = new_obj.tag
-                obj = new_obj
+                obj.kind = "point"
+
+            
+            new_obj = self.slit_handler(obj)
+            r = g2r(new_obj)
+            tag = new_obj.tag
+            obj = new_obj
             
             self.SlitTabView.add_slit_obj(r, tag, self.fitsimage)
             #self.SlitTabView.slit_obj_tags.append(tag)
@@ -5995,22 +5998,27 @@ class MainPage(tk.Frame):
 
         
         
-    def slit_handler(self, point):
+    def slit_handler(self, obj):
         """ to be written """
         print('ready to associate a slit to ')
-        print(point)
+        print(obj)
         img_data = self.AstroImage.get_data()
-        # create box
-        x_c = point.points[0][0]-1#really needed?
-        y_c = point.points[0][1]-1
-        # create area to search, using astropy instead of ginga (still unclear how you do it with ginga)
-        r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)),
+        
+        
+        if obj.kind=='point':
+            # create box
+            x_c = obj.points[0][0]-1#really needed?
+            y_c = obj.points[0][1]-1
+            # create area to search, using astropy instead of ginga (still unclear how you do it with ginga)
+            r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)),
                                         width=40, height=40,
                                         angle = 0*u.deg)
-        # and we convert it to ginga.
-        # Note: r as an Astropy region is a RECTANGLE
-        #      obj is a Ginga region type BOX
-        obj = r2g(r)
+            obj = r2g(r)
+
+            # and we convert it to ginga.
+            # Note: r as an Astropy region is a RECTANGLE
+            #      obj is a Ginga region type BOX
+        #obj = r2g(r)
         # this retuns a Box object 
         self.canvas.add(obj)
         data_box = self.AstroImage.cutout_shape(obj)
@@ -6083,8 +6091,9 @@ class MainPage(tk.Frame):
                                  fill = False,
                                  angle=5*u.deg,
                                  pickable=True))
-
-        CM.CompoundMixin.delete_object(self.canvas,point)
+        
+#           The below line is a repeat.
+        CM.CompoundMixin.delete_object(self.canvas,obj)
         print("slit added")
         
         obj = self.canvas.get_object_by_tag(new_slit_tag)
@@ -6405,6 +6414,8 @@ class MainPage(tk.Frame):
             obj_ind = list(self.SlitTabView.stab.get_column_data(0)).index(self.selected_obj_tag.strip("@"))
             
             imcoords_txt_fmt = "{:.2f}"
+            
+            
             self.SlitTabView.stab.set_cell_data(r=obj_ind,c=5,redraw=True,
                                                 value=imcoords_txt_fmt.format(fits_x0))
             self.SlitTabView.stab.set_cell_data(r=obj_ind,c=6,redraw=True,
