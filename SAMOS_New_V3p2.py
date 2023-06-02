@@ -288,13 +288,13 @@ class App(tk.Tk):
 
         # Setting up Initial Things
         self.title("SAMOS Control System")
-        self.geometry("1000x500")
+        self.geometry("1100x500")
         self.resizable(True, True)
         # self.iconphoto(False, tk.PhotoImage(file="assets/title_icon.png"))
 
         # Creating a container
-        container = tk.Frame(self, bg="#8AA7A9")
-        container.pack(side="top", fill="both", expand=True)
+        container = tk.Frame(self, bg="#8AA7A9", width=1100)
+        container.pack(side="top", fill="both", expand=True,)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         # Initialize Frames
@@ -3491,13 +3491,49 @@ class MainPage(tk.Frame):
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
+#  #    OBSERVER/NIGHT INFO Label Frame
+#         
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        self.frame_ObsInf = tk.Frame(self, background="cyan")
+        self.frame_ObsInf.place(x=4, y=0, anchor="nw", width=400, height=195)
+        
+        labelframe_ObsInf = tk.LabelFrame(self.frame_ObsInf, text="Observer Info", 
+                                          font=("Ariel", 24))
+        labelframe_ObsInf.pack(fill="both", expand="yes")
+        
+        #name_scroll = tk.Scrollbar(labelframe_ObsInf)
+        #name_scroll.pack(side=tk.BOTTOM, fill=tk.Y)
+        self.names_var = tk.StringVar()
+        name_label = tk.Label(labelframe_ObsInf, text="Observer Name(s): ")
+        name_label.place(x=30, y=4)
+        name_entry = tk.Entry(labelframe_ObsInf, width=25, bd=3, 
+                              textvariable=self.names_var)
+                              #xscrollcommand=name_scroll)
+        name_entry.place(x=150, y=4)
+        
+        self.program_var = tk.StringVar()
+        program_label = tk.Label(labelframe_ObsInf, text="Program ID: ")
+        program_label.place(x=71, y=35)
+        program_entry = tk.Entry(labelframe_ObsInf, width=25, bd=3, 
+                                 textvariable=self.program_var)
+        program_entry.place(x=150, y=35)
+        
+        self.TO_var = tk.StringVar()
+        TO_label = tk.Label(labelframe_ObsInf, text="Telescope Operator(s): ")
+        TO_label.place(x=4, y=66)
+        TO_entry = tk.Entry(labelframe_ObsInf, width=25, bd=3, textvariable=self.TO_var)
+        TO_entry.place(x=150, y=66)
+
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#         
 #  #    FILTER STATUS Label Frame
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame0l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame0l.place(x=4, y=0, anchor="nw", width=220, height=110)
+        self.frame0l.place(x=4, y=200, anchor="nw", width=220, height=110)
  
-        labelframe_Filters =  tk.LabelFrame(self.frame0l, text="Filter Status", font=("Arial", 24))
+        labelframe_Filters =  tk.LabelFrame(self.frame0l, text="Filter Status", 
+                                            font=("Arial", 24))
         labelframe_Filters.pack(fill="both", expand="yes")
           
 
@@ -3579,7 +3615,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame1l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame1l.place(x=4, y=120, anchor="nw", width=220, height=110)
+        self.frame1l.place(x=220, y=200, anchor="nw", width=220, height=110)
 
         labelframe_Grating =  tk.LabelFrame(self.frame1l, text="Grism Status", font=("Arial", 24))
         labelframe_Grating.pack(fill="both", expand="yes")
@@ -3670,11 +3706,11 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame2l.place(x=0, y=240, anchor="nw", width=370, height=280)
+        self.frame2l.place(x=4, y=320, anchor="nw", width=380, height=260)
 
 #        root = tk.Tk()
 #        root.title("Tab Widget")
-        tabControl = ttk.Notebook(self.frame2l)
+        tabControl = ttk.Notebook(self.frame2l, padding=0)
   
         tab1 = ttk.Frame(tabControl)
         tab2 = ttk.Frame(tabControl)
@@ -3695,23 +3731,23 @@ class MainPage(tk.Frame):
         labelframe_Acquire.pack(fill="both", expand="yes")
 #        labelframe_Grating.place(x=4, y=10)
 
-        label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s)")
+        label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
         label_ExpTime.place(x=4,y=10)
         self.Light_ExpT=tk.StringVar()
         self.Light_ExpT.set("0.01")
         entry_ExpTime = tk.Entry(labelframe_Acquire, textvariable=self.Light_ExpT, width=5,  bd =3)
-        entry_ExpTime.place(x=100, y=10)
+        entry_ExpTime.place(x=95, y=8)
 
-        label_ObjectName =  tk.Label(labelframe_Acquire, text="Object Name:")
+        label_ObjectName =  tk.Label(labelframe_Acquire, text="Obj. Name:")
         label_ObjectName.place(x=4,y=40)
         entry_ObjectName = tk.Entry(labelframe_Acquire, width=11,  bd =3)
-        entry_ObjectName.place(x=100, y=38)
+        entry_ObjectName.place(x=95, y=38)
 
         label_Comment =  tk.Label(labelframe_Acquire, text="Comment:")
         label_Comment.place(x=4,y=70)
 #        scrollbar = tk.Scrollbar(orient="horizontal")
-        entry_Comment = tk.Entry(labelframe_Acquire, width=11,  bd =3)# , xscrollcommand=scrollbar.set)
-        entry_Comment.place(x=100, y=68)
+        entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
+        entry_Comment.place(x=95, y=68)
 
         button_ExpStart=  tk.Button(labelframe_Acquire, text="READ", bd=3, bg='#0052cc',font=("Arial", 24),
                                          command=self.expose_light)
@@ -3851,7 +3887,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_FITSmanager = tk.Frame(self,background="pink")#, width=400, height=800)
-        self.frame_FITSmanager.place(x=4, y=520, anchor="nw", width=400, height=250)
+        self.frame_FITSmanager.place(x=4, y=580, anchor="nw", width=400, height=250)
 
         labelframe_FITSmanager =  tk.LabelFrame(self.frame_FITSmanager, text="FITS manager", font=("Arial", 24))
         labelframe_FITSmanager.pack(fill="both", expand="yes")
@@ -3883,7 +3919,7 @@ class MainPage(tk.Frame):
         labelframe_Query_Simbad =  tk.LabelFrame(labelframe_FITSmanager, text="Query Simbad", 
                                                      width=180,height=140,
                                                      font=("Arial", 24))
-        labelframe_Query_Simbad.place(x=0, y=25)
+        labelframe_Query_Simbad.place(x=0, y=45)
 
         button_Query_Simbad =  tk.Button(labelframe_Query_Simbad, text="Query Simbad", bd=3, command=self.Query_Simbad)
         button_Query_Simbad.place(x=5, y=35)
@@ -3982,7 +4018,7 @@ class MainPage(tk.Frame):
         vbox = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
 #        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         vbox.pack(side=tk.TOP)
-        vbox.place(x=350, y=0, anchor="nw")#, width=500, height=800)
+        vbox.place(x=450, y=0, anchor="nw")#, width=500, height=800)
         # self.vb = vbox
 
 #        canvas = tk.Canvas(vbox, bg="grey", height=514, width=522)
@@ -4037,6 +4073,10 @@ class MainPage(tk.Frame):
 #        fi.configure(516, 528) #height, width
         fi.set_window_size(514,522)
         
+        self.readout = tk.Label(vbox, text='')
+        self.readout.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
+        #self.readout.place()
+        
         """
         HORIZONTAL BOX AT THE BOTTOM WITH ORIGINAL GINGA TOOLS
         """
@@ -4044,9 +4084,8 @@ class MainPage(tk.Frame):
         hbox = tk.Frame(self)
         hbox.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
 
-        self.readout = tk.Label(self, text='')
-        self.readout.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
-
+        
+        
         self.drawtypes = canvas.get_drawtypes()
         # wdrawtype = ttk.Combobox(self, values=self.drawtypes,
         # command=self.set_drawparams)
@@ -4095,13 +4134,7 @@ class MainPage(tk.Frame):
  
 
         # mode = self.canvas.get_draw_mode() #initially set to draw by line >canvas.set_draw_mode('draw')
-        hbox1 = tk.Frame(hbox)
-        hbox1.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
-
-        self.setChecked = tk.StringVar(None,"draw")
-        btn1 = tk.Radiobutton(hbox1,text="Draw",padx=20,variable=self.setChecked,value="draw", command=self.set_mode_cb).pack(anchor=tk.SW)
-        btn2 = tk.Radiobutton(hbox1,text="Edit",padx=20,variable=self.setChecked,value="edit", command=self.set_mode_cb).pack(anchor=tk.SW)
-        btn3 = tk.Radiobutton(hbox1,text="Pick",padx=20,variable=self.setChecked,value="pick", command=self.set_mode_cb).pack(anchor=tk.SW)
+        
  
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -4109,10 +4142,21 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_SlitConf = tk.Frame(self,background="gray")#, width=400, height=800)
-        self.frame_SlitConf.place(x=420, y=530, anchor="nw", width=400, height=250)
+        self.frame_SlitConf.place(x=410, y=580, anchor="nw", width=500, height=250)
         labelframe_SlitConf =  tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration", 
                                              font=("Arial", 24))
         labelframe_SlitConf.pack(fill="both", expand="yes")
+        
+
+
+        self.setChecked = tk.StringVar(None,"draw")
+        btn1 = tk.Radiobutton(labelframe_SlitConf,text="Draw",padx=6,pady=1,variable=self.setChecked,value="draw", command=self.set_mode_cb)
+        #btn1.pack(anchor='ne')
+        btn1.place(x=220, y=25)
+        btn2 = tk.Radiobutton(labelframe_SlitConf,text="Edit",padx=10,pady=1,variable=self.setChecked,value="edit", command=self.set_mode_cb)
+        btn2.place(x=220, y=50)#pack(anchor='ne')
+        btn3 = tk.Radiobutton(labelframe_SlitConf,text="Pick",padx=9,pady=1,variable=self.setChecked,value="pick", command=self.set_mode_cb)
+        btn3.place(x=220, y=75)#pack(anchor='ne')
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT WIDTH in mirrors, dispersion direction (affects Resolving power)
@@ -4156,7 +4200,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
         self.vslit = tk.IntVar()
         wslit = tk.Checkbutton(labelframe_SlitConf, text="Slit Pointer", variable=self.vslit, command=self.set_slit_drawtype)
-        wslit.place(x=220, y=20)
+        wslit.place(x=220, y=0)
     
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -4164,10 +4208,10 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
         #self.traces = tk.IntVar()
         traces_button= tk.Button(labelframe_SlitConf, text="Show Traces", command=self.show_traces)
-        traces_button.place(x=220, y=50)
+        traces_button.place(x=330, y=4)
         
         remove_traces_button = tk.Button(labelframe_SlitConf, text="Remove Traces", command=self.remove_traces, padx=0, pady=0)
-        remove_traces_button.place(x=220, y=75)
+        remove_traces_button.place(x=330, y=35)
         
         #### check overlapping slits and create a series of new DMD patterns with slits that do not overlap #####
 
@@ -4211,13 +4255,13 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
         #self.apply_to_all = tk.IntVar()
         apply_to_all_button= tk.Button(labelframe_SlitConf, text="Apply to All", command=self.apply_to_all)
-        apply_to_all_button.place(x=4, y=50)
+        apply_to_all_button.place(x=45, y=55)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    View Slit Table
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====        
         view_slit_tab_button = tk.Button(labelframe_SlitConf, text="View Slit Table", command=self.show_slit_table,padx=0, pady=0)        
-        view_slit_tab_button.place(x=4, y=75)
+        view_slit_tab_button.place(x=330, y=65)
         """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -4313,7 +4357,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         """        
         self.frame1r = tk.Frame(self)#, width=400, height=800)
-        self.frame1r.place(x=900, y=5, anchor="nw", width=360, height=800)
+        self.frame1r.place(x=1000, y=5, anchor="nw", width=380, height=800)
  
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====         
 #  #    RADEC module
@@ -5319,7 +5363,21 @@ class MainPage(tk.Frame):
         
         fits_image = os.path.join(local_dir,"fits_image","newimage_ff.fits")
         main_fits_header.set_param("filename", os.path.split(fits_image)[1])
+        main_fits_header.set_param("filedir", os.path.split(fits_image)[0])
+        main_fits_header.set_param("observers", (self.names_var.get(), "Observer Name(s)"))
+        main_fits_header.set_param("programID", (self.program_var.get(), "Program ID"))
+        main_fits_header.set_param("telOperators", (self.TO_var.get(), "Telescope Operator(s)"))
+        
         main_fits_header.create_fits_header(hdr)
+        
+        """
+        The following will be implemented when SAMOS is at SOAR.
+        It adds the TCS info to the header.
+        
+        # take the output info and return as a dictionary
+        TCS_dict = Class_SOAR_TCS.SOAR_TCS.infoa()
+        main_fits_header.output_header.update(TCS_dict)
+        """
         
         fits.writeto(fits_image,light_dark_bias,
                      main_fits_header.output_header,overwrite=True)
@@ -5354,6 +5412,7 @@ class MainPage(tk.Frame):
         expTime = params['Exposure Time']/1000
         main_fits_header.set_param("expTime", expTime)
         main_fits_header.set_param("filter", self.FW_filter.get())
+        main_fits_header.set_param("grating", self.Grating_Optioned.get())
         
         try:
             #main_fits_header.set_param("gridfnam", params["DMDMAP"])
@@ -5891,7 +5950,7 @@ class MainPage(tk.Frame):
             # change halfway across the pixel
             value = viewer.get_data(int(data_x + viewer.data_off),
                                     int(data_y + viewer.data_off))
-
+            value = int(round(value,0))
         except Exception:
             value = None
 
@@ -6013,14 +6072,16 @@ class MainPage(tk.Frame):
             r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)),
                                         width=40, height=40,
                                         angle = 0*u.deg)
-            obj = r2g(r)
 
+            obj = r2g(r)
             # and we convert it to ginga.
             # Note: r as an Astropy region is a RECTANGLE
             #      obj is a Ginga region type BOX
-        #obj = r2g(r)
-        # this retuns a Box object 
-        self.canvas.add(obj)
+            #obj = r2g(r)
+            # this retuns a Box object 
+            self.canvas.add(obj)
+        
+            
         data_box = self.AstroImage.cutout_shape(obj)
         
         # we can now remove the "pointer" object
@@ -6093,7 +6154,7 @@ class MainPage(tk.Frame):
                                  pickable=True))
         
 #           The below line is a repeat.
-        CM.CompoundMixin.delete_object(self.canvas,obj)
+        #CM.CompoundMixin.delete_object(self.canvas,obj)
         print("slit added")
         
         obj = self.canvas.get_object_by_tag(new_slit_tag)

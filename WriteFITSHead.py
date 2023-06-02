@@ -65,6 +65,9 @@ class FITSHead(object):
         
         self.filename = None # base filename e.g. 'NGC1976_83.819696	-5.390333'
         self.filedir = None # main directory to which output FITS are saved.
+        self.observers = None
+        self.programID = None
+        self.telOperators = None
         self.gridfnam = None # if image is grid, name of grid pattern file .csv
         
         self.expTime = None

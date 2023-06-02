@@ -154,5 +154,63 @@ class SOAR_TCS:
     def infoa(self):
         command = "INFOA"
         return_string = self.send_to_TCS(command)  
+        
+        """
+        (Taken from the SOAR_TCS_COMMANDS document.)
+        TCS command 'INFOA' returns a string of variables with the
+        current telescope settings, which will go into the FITS header.  
+        The returned variables are:
+            Date, Universal Time, Right ascention, 
+            Declination, Hour Angle, Telescope Azimuth, 
+            Telescope Elevation, Sidereal Time, 
+            Parallactic Angle, MJD, Telescope Focus, 
+            Airmass, IPA, Rotator Position, IROT, 
+            M3 Position, Outside Temperature, Humidity, 
+            Pressure, Wind Direction, Wind Speed, 
+            Inside Temperature, ECS Time Stamp, Dimm Seeing
+            Dome, Azimuth, Shutter Elevation, Guider Star ID
+            Guider X Position, Guider Y Position, 
+            Comparison Lamp Mirror, 
+            Lamp 1 State (on/off), Lamp 1 Tag (Lamp name),
+            Lamp 2 State, Lamp 2 Tag, Lamp 3 State, Lamp 3 Tag,
+            Lamp 4 State, Lamp 4 Tag, Lamp 5 State, Lamp 5 Tag,
+            Lamp 6 State, Lamp 6 Tag, Lamp 7 State, Lamp 7 Tag,
+            Lamp 8 State, Lamp 8 Tag, Lamp 9 State, Lamp 9 Tag,
+            Lamp 10 State, Lamp 10 Tag
+            
+        The ouput is formatted as a string of whitespace-separated variables,
+        e.g., 'DONE TCS_DATE=2019-06-26 LAMP_1=OFF TAG_1=Hg(Ar)...'
+        
+        """
+        
+        TCS_dict = {}
+        # Get the keyword/value pairs from the return string
+        # and put into dictionary.  Dictionary can then be
+        # added onto the FITS header dictionary.
+        for var in return_string.strip("DONE ").split(" "):
+            
+            key,val = var.split("=")
+            TCS_dict[key] = val
+        
+        return TCS_dict
+            
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         
