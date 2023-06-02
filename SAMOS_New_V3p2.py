@@ -6455,8 +6455,8 @@ class MainPage(tk.Frame):
       
         self.obj_ind = int(obj.tag.strip('@'))-1
         self.tab_row_ind = self.SlitTabView.stab.get_column_data(0).index(obj.tag.strip('@'))
-        dmd_x0, dmd_x1 = self.SlitTabView.slitDF.loc[self.obj_ind,['dmd_x0','dmd_x1']]
-        dmd_y0, dmd_y1 = self.SlitTabView.slitDF.loc[self.obj_ind,['dmd_y0','dmd_y1']]
+        dmd_x0, dmd_x1 = self.SlitTabView.slitDF.loc[self.obj_ind,['dmd_x0','dmd_x1']].astype(int)
+        dmd_y0, dmd_y1 = self.SlitTabView.slitDF.loc[self.obj_ind,['dmd_y0','dmd_y1']].astype(int)
         
         dmd_width = int(dmd_x1-dmd_x0)
         dmd_length = int(dmd_y1-dmd_y0)
