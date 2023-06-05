@@ -2154,7 +2154,7 @@ class Motors(tk.Frame):
         FW_pos = self.selected_FW_pos.get()
         t = PCM.move_FW_pos_wheel(FW_pos)
         self.Echo_String.set(t)
-        # self.fits_header.set_param("filterpos", FW_pos)
+        self.fits_header.set_param("filterpos", FW_pos)
         print(t)
         
     def FW_move_to_filter(self):       
@@ -3624,7 +3624,7 @@ class MainPage(tk.Frame):
         all_dirs = SF.read_dir_user()
         Grating_data= ascii.read(os.path.join( local_dir,all_dirs['dir_system'],'SAMOS_Filter_positions.txt'))
         self.Grating_names = list(Grating_data[14:18]['Filter'])
-        self.Grating_positions= list(Grating_data[14:18]['Position'])
+        self.Grating_positions = list(Grating_data[14:18]['Position'])
 #        print(Grating_names)
 #
         self.Grating_Optioned = tk.StringVar() 
@@ -3635,7 +3635,7 @@ class MainPage(tk.Frame):
         self.optionmenu_GR = tk.OptionMenu(labelframe_Grating, self.Grating_Optioned, *self.Grating_names)
         self.optionmenu_GR.place(x=5, y=8)
         button_SetGR =  tk.Button(labelframe_Grating, text="Set Grating", bd=3, command=self.set_grating)
-        button_SetGR.place(x=110,y=4)
+        button_SetGR.place(x=100,y=4)
 
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5364,9 +5364,10 @@ class MainPage(tk.Frame):
         fits_image = os.path.join(local_dir,"fits_image","newimage_ff.fits")
         main_fits_header.set_param("filename", os.path.split(fits_image)[1])
         main_fits_header.set_param("filedir", os.path.split(fits_image)[0])
-        main_fits_header.set_param("observers", (self.names_var.get(), "Observer Name(s)"))
-        main_fits_header.set_param("programID", (self.program_var.get(), "Program ID"))
-        main_fits_header.set_param("telOperators", (self.TO_var.get(), "Telescope Operator(s)"))
+        main_fits_header.set_param("observers", self.names_var.get())
+        main_fits_header.set_param("programID", self.program_var.get())
+        main_fits_header.set_param("telOperators", self.TO_var.get())
+#        main_fits_header.set_param("filterpos", self.selected_FW_pos.get())
         
         main_fits_header.create_fits_header(hdr)
         
@@ -5412,6 +5413,7 @@ class MainPage(tk.Frame):
         expTime = params['Exposure Time']/1000
         main_fits_header.set_param("expTime", expTime)
         main_fits_header.set_param("filter", self.FW_filter.get())
+#        main_fits_header.set_param("filtpos", self.selected_FW_pos.get())
         main_fits_header.set_param("grating", self.Grating_Optioned.get())
         
         try:

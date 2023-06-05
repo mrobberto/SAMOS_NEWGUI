@@ -1,6 +1,6 @@
 [Entry 1]
 Type=String
-Keyword=GRISM
-Value="0"
-Comment="Grism position
+Keyword=FILTER
+Value="SLOAN-r"
+Comment="Selected filter
 "

@@ -165,6 +165,9 @@ class FITSHead(object):
         #TODO: Put these in a better order
         
         self.main_dict = {'FILENAME' : self.filename,
+                'OBSERVER' : (self.observers, 'Observer Name(s)'),
+                'PROGID' : (self.programID, 'Program ID'),
+                'TONAMES' : (self.telOperators, 'Telescope Operator(s)'),
                 'GRIDFNAM' : (self.gridfnam, 'Grid pattern filename'),
                 'EXPTIME': (self.expTime, 'Exposure time (s)'),
                 'OBJECT': (self.objname,'User-defined name of object'),
