@@ -225,7 +225,7 @@ class FITSHead(object):
             if type(value)==tuple:
                 val = value[0]
                 comment = value[1]
-                if val is None:
+                if (val is None) or (val is ''):
                     val='unavail '
                 
                 output_header.set(key,val,comment)

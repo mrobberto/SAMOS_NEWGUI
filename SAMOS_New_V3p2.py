@@ -2154,7 +2154,7 @@ class Motors(tk.Frame):
         FW_pos = self.selected_FW_pos.get()
         t = PCM.move_FW_pos_wheel(FW_pos)
         self.Echo_String.set(t)
-        self.fits_header.set_param("filterpos", FW_pos)
+        main_fits_header.set_param("filterpos", FW_pos)
         print(t)
         
     def FW_move_to_filter(self):       
@@ -2163,7 +2163,7 @@ class Motors(tk.Frame):
         filter = self.selected_filter.get()
         t = PCM.move_filter_wheel(filter)
         self.Echo_String.set(t)
-        # self.fits_header.set_param("filters", filter)
+        main_fits_header.set_param("filters", filter)
         print(t)
 
     def GR_move_to_position(self):       
@@ -3479,7 +3479,6 @@ class MainPage(tk.Frame):
         # will be used to write "OtherParameters.txt"
         self.extra_header_params = 0
         self.header_entry_string = '' #keep string of entries to write to a file after acquisition.
-        #self.fits_header = WFH.FITSHead()
         main_fits_header.create_main_params_dict()
         self.wcs = None
         self.canvas_types = get_canvas_types()
@@ -3543,6 +3542,7 @@ class MainPage(tk.Frame):
         all_dirs = SF.read_dir_user()
         filter_data= ascii.read(os.path.join(local_dir,all_dirs['dir_system'],'SAMOS_Filter_positions.txt'))
         filter_names = list(filter_data[0:12]['Filter'])
+        self.filter_data = filter_data
         # print(filter_names)
 
         self.FW_filter = tk.StringVar() 
@@ -5028,6 +5028,9 @@ class MainPage(tk.Frame):
 #        self.Current_Filter.set(self.FW_filter.get())
         filter = self.FW_filter.get()
         main_fits_header.set_param("filter", filter)
+        filter_pos_ind = list(self.filter_data["Filter"]).index(filter)
+        filter_pos = list(self.filter_data["Position"])[filter_pos_ind]
+        main_fits_header.set_param("filtpos", filter_pos)
         print(filter)
         t = PCM.move_filter_wheel(filter)
         # self.Echo_String.set(t)
