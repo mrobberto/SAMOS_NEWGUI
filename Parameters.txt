@@ -1,6 +1,0 @@
-[Entry 1]
-Type=String
-Keyword=FILTER
-Value="SLOAN-r"
-Comment="Selected filter
-"
