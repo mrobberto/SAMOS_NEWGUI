@@ -3622,8 +3622,8 @@ class MainPage(tk.Frame):
         # Create Dropdown menu
         self.optionmenu_GR = tk.OptionMenu(labelframe_Grating, self.Grating_Optioned, *self.Grating_names)
         self.optionmenu_GR.place(x=5, y=8)
-        button_SetGR =  tk.Button(labelframe_Grating, text="Set Grating", bd=3, command=self.set_grating)
-        button_SetGR.place(x=100,y=4)
+        button_SetGR =  tk.Button(labelframe_Grating, text="Set Grism", bd=3, width=7, command=self.set_grating)
+        button_SetGR.place(x=110,y=4)
 
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
