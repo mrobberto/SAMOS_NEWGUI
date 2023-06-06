@@ -662,7 +662,7 @@ class ConfigPage(tk.Frame):
             today = datetime.now()
 
             # name of the directory
-            self.fits_dir = os.path.join(self.local_dir,"SAMOS_") + today.strftime('%Y%m%d')
+            self.fits_dir = os.path.join(self.local_dir,"SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
 
             isdir = os.path.isdir(self.fits_dir)
             if isdir == False:
@@ -3474,7 +3474,7 @@ class MainPage(tk.Frame):
         self.SlitTabView = None
         self.loaded_regfile = None
         today = datetime.now()
-        self.fits_dir = os.path.join(local_dir, "SAMOS_" + today.strftime('%Y%m%d'))
+        self.fits_dir = os.path.join(local_dir, "SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -3712,7 +3712,8 @@ class MainPage(tk.Frame):
         tabControl.add(tab4, text ='Flat')
         tabControl.add(tab5, text ='Buffer')
         tabControl.pack(expand = 1, fill ="both")
-  
+        
+        self.tabControl = tabControl
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      SCIENCE
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -3720,28 +3721,67 @@ class MainPage(tk.Frame):
         labelframe_Acquire =  tk.LabelFrame(tab1, text="Acquire Image", font=("Arial", 24))
         labelframe_Acquire.pack(fill="both", expand="yes")
 #        labelframe_Grating.place(x=4, y=10)
-
+        
+        label_out_fname = tk.Label(labelframe_Acquire, text="Base Filename:")
+        label_out_fname.place(x=4, y=10)
+        self.out_fname = tk.StringVar()
+        entry_out_fname = tk.Entry(labelframe_Acquire, textvariable=self.out_fname,
+                                   width=11, bd=3)
+        entry_out_fname.place(x=100, y=8)
+        
+        # label each file name incrementally to keep track
+        self.out_fnumber = tk.IntVar()
+        import fnmatch
+        if not os.path.exists(self.fits_dir):
+            next_file_number = 1
+        
+        else:
+            current_files = [os.path.join(self.fits_dir,f) for f in os.listdir(self.fits_dir) if not fnmatch.fnmatch(f, "SAMOS_*fits")]
+            if len(current_files)==0:
+                next_file_number = 1
+            else:
+                last_file = max(current_files, key=os.path.getctime)
+                last_file = os.path.split(last_file)[1]
+                ## set number of next exposure to be after the number of the most recently saved image
+                next_file_number = int(last_file.strip(".fits").split("_")[-1])+1
+        
+        out_int = "{:04n}".format(next_file_number)
+        
+        self.out_fnumber.set(out_int)
+        label_out_fnumber = tk.Label(labelframe_Acquire, text="Exp. #")
+        label_out_fnumber.place(x=220,y=8)
+        entry_out_fnumber = tk.Spinbox(labelframe_Acquire,  
+                                       textvariable=self.out_fnumber, width=4,
+                                       increment=1, from_=0,to=1000,format="%04.0f")
+                                       #command=self.change_out_fnumber)
+        entry_out_fnumber.place(x=270,y=8)
+        self.entry_out_fnumber = entry_out_fnumber
+        
+        
         label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
-        label_ExpTime.place(x=4,y=10)
+        label_ExpTime.place(x=4,y=40)
         self.Light_ExpT=tk.StringVar()
         self.Light_ExpT.set("0.01")
         entry_ExpTime = tk.Entry(labelframe_Acquire, textvariable=self.Light_ExpT, width=5,  bd =3)
-        entry_ExpTime.place(x=95, y=8)
+        entry_ExpTime.place(x=100, y=38)
 
-        label_ObjectName =  tk.Label(labelframe_Acquire, text="Obj. Name:")
-        label_ObjectName.place(x=4,y=40)
-        entry_ObjectName = tk.Entry(labelframe_Acquire, width=11,  bd =3)
-        entry_ObjectName.place(x=95, y=38)
+        label_ObjectName =  tk.Label(labelframe_Acquire, text="Object Name:")
+        label_ObjectName.place(x=4,y=70)
+        self.ObjectName = tk.StringVar()
+        self.ObjectName.set(" ")
+        entry_ObjectName = tk.Entry(labelframe_Acquire, width=11,  bd =3, 
+                                    textvariable=self.ObjectName)
+        entry_ObjectName.place(x=100, y=68)
 
         label_Comment =  tk.Label(labelframe_Acquire, text="Comment:")
-        label_Comment.place(x=4,y=70)
+        label_Comment.place(x=4,y=100)
 #        scrollbar = tk.Scrollbar(orient="horizontal")
         entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
-        entry_Comment.place(x=95, y=68)
+        entry_Comment.place(x=100, y=98)
 
         button_ExpStart=  tk.Button(labelframe_Acquire, text="READ", bd=3, bg='#0052cc',font=("Arial", 24),
                                          command=self.expose_light)
-        button_ExpStart.place(x=75,y=95)
+        button_ExpStart.place(x=225,y=50)
 
  
         label_Display =  tk.Label(labelframe_Acquire, text="Subtract for Display:")
@@ -4593,7 +4633,16 @@ class MainPage(tk.Frame):
         """ to be written """
         pass
         
+    def change_out_fnumber(self):
+        """
+        Returns
+        -------
+        Incremental change in Exposure number to be appended to the end of filenames.
+
+        """
+        return
         
+    
     def save_RADECregions_AstropyRADECRegFile(self): 
         """ to be written """
         if "RRR_RADec" not in dir(self):
@@ -5199,6 +5248,7 @@ class MainPage(tk.Frame):
         self.image_type = "bias"
         ExpTime_ms = float(self.Bias_ExpT.get())*1000
         params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 5, 'NofFrames': int(self.Bias_NofFrames.get())}
+        self.start_combo_obj_number = int(self.entry_out_fnumber.get())
         # cleanup the directory to remove setimage_ files that may be refreshed
         self.cleanup_files()
         self.expose(params)
@@ -5215,6 +5265,7 @@ class MainPage(tk.Frame):
         self.image_type = "dark"
         ExpTime_ms = float(self.Dark_ExpT.get())*1000
         params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 5, 'NofFrames': int(self.Dark_NofFrames.get())}
+        self.start_combo_obj_number = int(self.entry_out_fnumber.get())
         self.expose(params)
         self.combine_files()
         self.handle_dark()
@@ -5231,6 +5282,7 @@ class MainPage(tk.Frame):
         self.image_type = "flat"
         ExpTime_ms = float(self.Flat_ExpT.get())*1000
         params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
+        self.start_combo_obj_number = int(self.entry_out_fnumber.get())
         self.expose(params)
         self.combine_files()
         self.handle_flat()
@@ -5247,6 +5299,7 @@ class MainPage(tk.Frame):
         self.image_type = "buffer"
         ExpTime_ms = float(self.Buffer_ExpT.get())*1000
         params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
+        self.start_combo_obj_number = int(self.entry_out_fnumber.get())
         self.expose(params)
         self.combine_files()
         self.handle_buffer()
@@ -5265,23 +5318,62 @@ class MainPage(tk.Frame):
         file_names = os.path.join(local_dir,"fits_image","setimage_*.fit")
         files = glob.glob(file_names)
         superfile_cube = np.zeros((1032,1056,len(files)))   #note y,x,z
+        img_number = self.start_combo_obj_number-1
         for i in range(len(files)):
+            img_number+=1
             print(files[i])
             with fits.open(files[i]) as hdu:
+                night_dir_fname_fmt = "{}_{}_{}_{:04n}.fits".format(self.image_type,self.FW_filter.get(),str(i), int(self.entry_out_fnumber.get()))
+
                 superfile_cube[:,:,i] = hdu[0].data
                 if self.var_Bias_saveall.get() == 1 or \
                    self.var_Dark_saveall.get() == 1 or \
                    self.var_Flat_saveall.get() == 1:
                    # save every single frame
                     os.rename(files[i],os.path.join(local_dir,"fits_image"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
+                    #os.rename(files[i],os.path.join(self.fits_dir,self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
+                    os.rename(files[i], os.path.join(self.fits_dir,night_dir_fname_fmt))
+                    self.entry_out_fnumber.invoke("buttonup")
                 else: 
                     os.remove(files[i])
+                    #also remove the file that was put in the Night directory
+                    night_dir_fname = "{}_{:04n}.fits".format(self.out_fname.get(),img_number)
+                    try:
+                        os.remove(os.path.join(self.fits_dir,night_dir_fname))
+                    except FileNotFoundError:
+                        pass
+                    
+                    
         superfile = superfile_cube.mean(axis=2)        
         superfile_header = hdu[0].header
+        
+        obj_type = self.tabControl.tab(self.tabControl.select(), "text")
+        if obj_type=="Image":
+            obj_type="SCI"
+        elif obj_type=="Buffer":
+            obj_type="BUFF"
+        
+        
         if self.image_type == "light" or self.image_type == "flat":
-            fits.writeto(os.path.join(local_dir,",fits_image","super"+self.image_type+"_"+self.FW_filter.get()+".fits"),superfile,superfile_header,overwrite=True)
+            super_filename = os.path.join(local_dir,"fits_image","super"+self.image_type+"_"+self.FW_filter.get()+".fits")
+            #fits.writeto(,superfile,superfile_header,overwrite=True)
         else:
-            fits.writeto(os.path.join(local_dir,"fits_image","super"+self.image_type+".fits"),superfile,superfile_header,overwrite=True)            
+            super_filename = os.path.join(local_dir,"fits_image","super"+self.image_type+".fits")
+            
+        fits.writeto(super_filename,superfile,superfile_header,overwrite=True)  
+        
+        # save combined file in Night directory
+        second_super_filename = "{}_{:04n}.fits".format(os.path.split(super_filename)[1][:-5],
+                                                        int(self.entry_out_fnumber.get()))
+        main_fits_header.set_param("filedir", self.fits_dir)
+        main_fits_header.set_param("filename", second_super_filename)
+        main_fits_header.set_param("combined", "T")
+        main_fits_header.set_param("ncombined", len(files))
+        main_fits_header.create_fits_header(superfile_header)
+        print(second_super_filename)
+        fits.writeto(os.path.join(self.fits_dir,second_super_filename),superfile,
+                     main_fits_header.output_header,overwrite=True)  
+        #self.entry_out_fnumber.invoke("buttonup")
         hdu.close()
         
     def cleanup_files(self):
@@ -5428,11 +5520,20 @@ class MainPage(tk.Frame):
             
         
         fits_image = os.path.join(local_dir,"fits_image","newimage_ff.fits")
-        main_fits_header.set_param("filename", os.path.split(fits_image)[1])
-        main_fits_header.set_param("filedir", os.path.split(fits_image)[0])
-        main_fits_header.set_param("observers", self.names_var.get())
-        main_fits_header.set_param("programID", self.program_var.get())
-        main_fits_header.set_param("telOperators", self.TO_var.get())
+#        main_fits_header.set_param("filename", os.path.split(fits_image)[1])
+#        main_fits_header.set_param("filedir", os.path.split(fits_image)[0])
+#        main_fits_header.set_param("observers", self.names_var.get())
+#        main_fits_header.set_param("programID", self.program_var.get())
+#        main_fits_header.set_param("telOperators", self.TO_var.get())
+#        main_fits_header.set_param("objname", self.ObjectName.get())
+        
+        obj_type = self.tabControl.tab(self.tabControl.select(), "text")
+        if obj_type=="Image":
+            obj_type="SCI"
+        elif obj_type=="Buffer":
+            obj_type="BUFF"
+        
+#        main_fits_header.set_param("obstype", obj_type)
 #        main_fits_header.set_param("filterpos", self.selected_FW_pos.get())
         
         main_fits_header.create_fits_header(hdr)
@@ -5448,8 +5549,22 @@ class MainPage(tk.Frame):
         
         fits.writeto(fits_image,light_dark_bias,
                      main_fits_header.output_header,overwrite=True)
+        
+        
         self.Display(fits_image)
-       
+        
+        ## Save a copy of the image to store in the Obs Night Directory under 
+        ## a more informative filename
+        
+        new_fname = "{}_{:04n}.fits".format(self.out_fname.get(),int(self.entry_out_fnumber.get()))
+        main_fits_header.set_param("filedir", self.fits_dir)
+        main_fits_header.set_param("filename", new_fname)
+        full_fpath = os.path.join(self.fits_dir,new_fname)
+        print(full_fpath)
+#        fits.writeto(full_fpath, light_dark_bias, main_fits_header.output_header,
+#                     overwrite=True)
+        
+#        self.entry_out_fnumber.invoke("buttonup")
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose
@@ -5482,6 +5597,8 @@ class MainPage(tk.Frame):
 #        main_fits_header.set_param("filtpos", self.selected_FW_pos.get())
         main_fits_header.set_param("grating", self.Grating_Optioned.get())
         
+        
+        
         try:
             #main_fits_header.set_param("gridfnam", params["DMDMAP"])
             print("DMDMAP", main_fits_header.dmdmap)
@@ -5496,8 +5613,7 @@ class MainPage(tk.Frame):
         # fits_image = "{}/fits_image/newimage_fixed.fit".format(work_dir)
         self.fits_image = os.path.join(work_dir,"fits_image","newimage.fit")
         fits_image_converted = os.path.join(local_dir,"fits_image","newimage_fixed.fit")   
-        main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
-        main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
+        
         # fits_image_converted = "{}/fits_image/newimage_fixed.fit".format(work_dir)                       
         self.convertSIlly(self.fits_image,fits_image_converted)
         
@@ -5505,10 +5621,37 @@ class MainPage(tk.Frame):
         shutil.copy(fits_image_converted,self.fits_image)
         hdul  = fits.open(self.fits_image)
         input_header = hdul[0].header
+        obj_type = self.tabControl.tab(self.tabControl.select(), "text")
+        if obj_type=="Image":
+            obj_type="SCI"
+        elif obj_type=="Buffer":
+            obj_type="BUFF"
+        elif obj_type=="Bias":
+            obj_type="BIAS"
+            self.out_fname.set("Bias")
+        elif obj_type=="Dark":
+            obj_type="DARK"
+            exptime = float(self.Dark_ExpT.get())
+            self.out_fname.set("Dark_{}s".format(exptime))
+        elif obj_type=="Flat":
+            obj_type="FLAT"
+            self.out_fname.set("Flat_{}".format(self.FW_filter.get()))
+            
+        main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
+        main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
+        main_fits_header.set_param("observers", self.names_var.get())
+        main_fits_header.set_param("programID", self.program_var.get())
+        main_fits_header.set_param("telOperators", self.TO_var.get())
+        main_fits_header.set_param("objname", self.ObjectName.get())
+        main_fits_header.set_param("obstype", obj_type)
+        # reset some parameters that may have been changed from previous exposures.
+        main_fits_header.set_param("combined", "F")
+        main_fits_header.set_param("ncombined", 0)
+        
         main_fits_header.create_fits_header(input_header)
         print(main_fits_header.output_header)
         self.Display(fits_image_converted)
-        hdul.close()
+        
         
         self.fullpath_FITSfilename = self.fits_image
         # To do: cancel the original image.= If the canera is active; otherwise leave it.
@@ -5516,7 +5659,20 @@ class MainPage(tk.Frame):
         # Hence, we may need a general login window.
         
         # self.Display(self.fits_image)
-
+        new_fname = "{}_{:04n}.fits".format(self.out_fname.get(),int(self.entry_out_fnumber.get()))
+        main_fits_header.set_param("filedir", self.fits_dir)
+        main_fits_header.set_param("filename", new_fname)
+        full_fpath = os.path.join(self.fits_dir,new_fname)
+#        print(full_fpath)
+        #update header for new filename/filepath
+        main_fits_header.create_fits_header(main_fits_header.output_header)
+        fits.writeto(full_fpath, hdul[0].data, main_fits_header.output_header,
+                     overwrite=True)
+        print("Saved new file as {}".format(full_fpath))
+        self.entry_out_fnumber.invoke("buttonup")
+        hdul.close()
+        
+        
     def Display(self,imagefile): 
         """ to be written """
 #        image = load_data(fits_image_converted, logger=self.logger)
