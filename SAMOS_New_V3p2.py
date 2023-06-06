@@ -3892,8 +3892,8 @@ class MainPage(tk.Frame):
         entry_Buffer_NofFrames.place(x=100, y=38)
         
         
-        var_Buffer_saveall = tk.IntVar()
-        r1_Buffer_saveall = tk.Radiobutton(labelframe_Buffer, text = "Save single frames", variable=var_Buffer_saveall, value=1)
+        self.var_Buffer_saveall = tk.IntVar()
+        r1_Buffer_saveall = tk.Radiobutton(labelframe_Buffer, text = "Save single frames", variable=self.var_Buffer_saveall, value=1)
         r1_Buffer_saveall.place(x=150, y=38)
 
         label_Buffer_MasterFile =  tk.Label(labelframe_Buffer, text="Master Buffer File:")
@@ -5246,11 +5246,10 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "buffer"
         ExpTime_ms = float(self.Buffer_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
+        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Buffer_NofFrames.get())}
         self.expose(params)
         self.combine_files()
-        self.handle_buffer()
-        main_fits_header.set_param("expTime", self.Flat_ExpT.get())
+        main_fits_header.set_param("expTime", self.Buffer_ExpT.get())
         print("Buffer file created")
         # Camera= CCD(dict_params=params)
 
@@ -5259,9 +5258,10 @@ class MainPage(tk.Frame):
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def combine_files(self):
-        """ to be written """
-        # this procedure runs after the CCD.expose()
-        # to handle the decision of saving all single files or just the averages
+        """ 
+        this procedure runs after CCD.expose()
+        to handle the decision of saving all single files or just the averages
+        """
         file_names = os.path.join(local_dir,"fits_image","setimage_*.fit")
         files = glob.glob(file_names)
         superfile_cube = np.zeros((1032,1056,len(files)))   #note y,x,z
@@ -5271,7 +5271,8 @@ class MainPage(tk.Frame):
                 superfile_cube[:,:,i] = hdu[0].data
                 if self.var_Bias_saveall.get() == 1 or \
                    self.var_Dark_saveall.get() == 1 or \
-                   self.var_Flat_saveall.get() == 1:
+                   self.var_Flat_saveall.get() == 1 or \
+                   self.var_Buffer_saveall.get() == 1:
                    # save every single frame
                     os.rename(files[i],os.path.join(local_dir,"fits_image"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                 else: 
@@ -5361,31 +5362,18 @@ class MainPage(tk.Frame):
         flat_norm = flat_dark / np.median(flat_dark)
         fits.writeto( os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
 
-    def handle_buffer(self):
-        """ to be written """
-        #a  buffer field has been taken...
-        buffer_file = os.path.join(local_dir,"fits_image","buffer_"+self.FW_filter.get()+".fits")
-        hdu_flat = fits.open(buffer_file)
-        buffer = hdu_buffer[0].data
-        hdr = hdu_buffer[0].header
-        # with a certain exposure time...
-        exptime = hdr['PARAM2']
-        hdu_buffer.close()
+
 
         
-        #the buffer must be subtracted from the flat
-        if self.subtract_Bufferias.get() == 1:
-            light_buffer = light-buffer
-        else:    
-            light_buffer = light
-        
+       
         
     def handle_light(self):
         """ handle_light """
         light_file = os.path.join(local_dir,"fits_image","newimage.fit")
         flat_file = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits")
-        exists = os.path.isfile(flat_file)
-        if exists:
+        buffer_file = os.path.join(local_dir,"fits_image","superbuffer.fits")
+        flat_exists = os.path.isfile(flat_file)
+        if flat_exists:
             print("found flat file ", flat_file)
         else:
             flat_file = os.path.join(local_dir,"fits_image","superflat_norm.fits")
@@ -5408,6 +5396,10 @@ class MainPage(tk.Frame):
         flat = hdu_flat[0].data
         hdu_flat.close()
 
+        hdu_buffer = fits.open(buffer_file)
+        buffer = hdu_buffer[0].data
+        hdu_buffer.close()
+
         hdr = hdu_light[0].header
         exptime = hdr['PARAM2']
 
@@ -5425,8 +5417,7 @@ class MainPage(tk.Frame):
             light_dark_bias = np.divide(light_dark, flat) 
         else:    
             light_dark_bias = light_dark
-            
-        
+                   
         fits_image = os.path.join(local_dir,"fits_image","newimage_ff.fits")
         main_fits_header.set_param("filename", os.path.split(fits_image)[1])
         main_fits_header.set_param("filedir", os.path.split(fits_image)[0])
@@ -5449,6 +5440,12 @@ class MainPage(tk.Frame):
         fits.writeto(fits_image,light_dark_bias,
                      main_fits_header.output_header,overwrite=True)
         self.Display(fits_image)
+        
+        if self.subtract_Buffer.get() == 1:
+            light_buffer = light-buffer
+            fits.writeto(fits_image,light_buffer,
+                         main_fits_header.output_header,overwrite=True)
+            self.Display(fits_image)
        
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
