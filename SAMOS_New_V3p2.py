@@ -2310,6 +2310,21 @@ class CCDPage(tk.Frame):
         button_ExpStart.place(x=50,y=75)
 
 
+
+        label_Display =  tk.Label(labelframe_Acquire, text="Subtract for Display:")
+        label_Display.place(x=4,y=120)
+        subtract_Bias = tk.IntVar()
+        check_Bias = tk.Checkbutton(labelframe_Acquire, text='Bias',variable=subtract_Bias, onvalue=1, offvalue=0)
+        check_Bias.place(x=4, y=140)
+        subtract_Dark = tk.IntVar()
+        check_Dark = tk.Checkbutton(labelframe_Acquire, text='Dark',variable=subtract_Dark, onvalue=1, offvalue=0)
+        check_Dark.place(x=60,y=140)
+        subtract_Flat = tk.IntVar()
+        check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=subtract_Flat, onvalue=1, offvalue=0)
+        check_Flat.place(x=120,y=140)
+        subtract_Buffer = tk.IntVar()
+        check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=subtract_Buffer, onvalue=1, offvalue=0)
+        check_Buffer.place(x=180,y=140)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      BIAS
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -2424,20 +2439,6 @@ class CCDPage(tk.Frame):
 
 
 
-        label_Display =  tk.Label(labelframe_Acquire, text="Subtract for Display:")
-        label_Display.place(x=4,y=120)
-        subtract_Bias = tk.IntVar()
-        check_Bias = tk.Checkbutton(labelframe_Acquire, text='Bias',variable=subtract_Bias, onvalue=1, offvalue=0)
-        check_Bias.place(x=4, y=140)
-        subtract_Dark = tk.IntVar()
-        check_Dark = tk.Checkbutton(labelframe_Acquire, text='Dark',variable=subtract_Dark, onvalue=1, offvalue=0)
-        check_Dark.place(x=60,y=140)
-        subtract_Flat = tk.IntVar()
-        check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=subtract_Flat, onvalue=1, offvalue=0)
-        check_Flat.place(x=120,y=140)
-        subtract_Buffer = tk.IntVar()
-        check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=subtract_Buffer, onvalue=1, offvalue=0)
-        check_Buffer.place(x=180,y=140)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Buffer
@@ -2476,20 +2477,7 @@ class CCDPage(tk.Frame):
 
 
 
-        label_Display =  tk.Label(labelframe_Acquire, text="Subtract for Display:")
-        label_Display.place(x=4,y=120)
-        subtract_Bias = tk.IntVar()
-        check_Bias = tk.Checkbutton(labelframe_Acquire, text='Bias',variable=subtract_Bias, onvalue=1, offvalue=0)
-        check_Bias.place(x=4, y=140)
-        subtract_Dark = tk.IntVar()
-        check_Dark = tk.Checkbutton(labelframe_Acquire, text='Dark',variable=subtract_Dark, onvalue=1, offvalue=0)
-        check_Dark.place(x=60,y=140)
-        subtract_Flat = tk.IntVar()
-        check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=subtract_Flat, onvalue=1, offvalue=0)
-        check_Flat.place(x=120,y=140)
-        subtract_Buffer = tk.IntVar()
-        check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=subtract_Buffer, onvalue=1, offvalue=0)
-        check_Buffer.place(x=180,y=140)
+
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      CCD Setup panel
@@ -3623,8 +3611,8 @@ class MainPage(tk.Frame):
          
         all_dirs = SF.read_dir_user()
         Grating_data= ascii.read(os.path.join( local_dir,all_dirs['dir_system'],'SAMOS_Filter_positions.txt'))
-        self.Grating_names = list(Grating_data[14:18]['Filter'])
-        self.Grating_positions = list(Grating_data[14:18]['Position'])
+        self.Grating_names = list(Grating_data[12:18]['Filter'])
+        self.Grating_positions = list(Grating_data[12:18]['Position'])
 #        print(Grating_names)
 #
         self.Grating_Optioned = tk.StringVar() 
@@ -3634,8 +3622,8 @@ class MainPage(tk.Frame):
         # Create Dropdown menu
         self.optionmenu_GR = tk.OptionMenu(labelframe_Grating, self.Grating_Optioned, *self.Grating_names)
         self.optionmenu_GR.place(x=5, y=8)
-        button_SetGR =  tk.Button(labelframe_Grating, text="Set Grating", bd=3, command=self.set_grating)
-        button_SetGR.place(x=100,y=4)
+        button_SetGR =  tk.Button(labelframe_Grating, text="Set Grism", bd=3, width=7, command=self.set_grating)
+        button_SetGR.place(x=110,y=4)
 
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -3716,11 +3704,13 @@ class MainPage(tk.Frame):
         tab2 = ttk.Frame(tabControl)
         tab3 = ttk.Frame(tabControl)
         tab4 = ttk.Frame(tabControl)
+        tab5 = ttk.Frame(tabControl)
   
         tabControl.add(tab1, text ='Image')
         tabControl.add(tab2, text ='Bias')
         tabControl.add(tab3, text ='Dark')
         tabControl.add(tab4, text ='Flat')
+        tabControl.add(tab5, text ='Buffer')
         tabControl.pack(expand = 1, fill ="both")
   
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -3753,6 +3743,7 @@ class MainPage(tk.Frame):
                                          command=self.expose_light)
         button_ExpStart.place(x=75,y=95)
 
+ 
         label_Display =  tk.Label(labelframe_Acquire, text="Subtract for Display:")
         label_Display.place(x=4,y=135)
         self.subtract_Bias = tk.IntVar()
@@ -3764,7 +3755,9 @@ class MainPage(tk.Frame):
         self.subtract_Flat = tk.IntVar()
         check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=self.subtract_Flat, onvalue=1, offvalue=0)
         check_Flat.place(x=120,y=155)
-
+        self.subtract_Buffer = tk.IntVar()
+        check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=self.subtract_Buffer, onvalue=1, offvalue=0)
+        check_Buffer.place(x=180,y=155)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      BIAS
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -3878,8 +3871,44 @@ class MainPage(tk.Frame):
         button_ExpStart.place(x=75,y=95)
 
 
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#      Buffer
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        labelframe_Buffer =  tk.LabelFrame(tab5, text="Buffer", 
+                                                     width=300, height=170,
+                                                     font=("Arial", 24))
+        labelframe_Buffer.pack(fill="both", expand="yes")
 
+        label_Buffer_ExpT =  tk.Label(labelframe_Buffer, text="Exposure time (s):")
+        label_Buffer_ExpT.place(x=4,y=10)
+        self.Buffer_ExpT = tk.StringVar(value="0.00")
+        entry_Buffer_ExpT = tk.Entry(labelframe_Buffer, width=6,  bd =3, textvariable=self.Buffer_ExpT)
+        entry_Buffer_ExpT.place(x=120, y=6)
         
+        label_Buffer_NofFrames =  tk.Label(labelframe_Buffer, text="Nr. of Frames:")
+        label_Buffer_NofFrames.place(x=4,y=40)
+        self.Buffer_NofFrames = tk.StringVar(value="10")
+        entry_Buffer_NofFrames = tk.Entry(labelframe_Buffer, width=5,  bd =3, textvariable=self.Buffer_NofFrames)
+        entry_Buffer_NofFrames.place(x=100, y=38)
+        
+        
+        var_Buffer_saveall = tk.IntVar()
+        r1_Buffer_saveall = tk.Radiobutton(labelframe_Buffer, text = "Save single frames", variable=var_Buffer_saveall, value=1)
+        r1_Buffer_saveall.place(x=150, y=38)
+
+        label_Buffer_MasterFile =  tk.Label(labelframe_Buffer, text="Master Buffer File:")
+        label_Buffer_MasterFile.place(x=4,y=70)
+        self.Buffer_MasterFile = tk.StringVar(value="Buffer")
+        entry_Buffer_MasterFile = tk.Entry(labelframe_Buffer, width=11,  bd =3, textvariable=self.Buffer_MasterFile)
+        entry_Buffer_MasterFile.place(x=120, y=68)
+
+        button_ExpStart=  tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
+                                    command=self.expose_buffer)
+        button_ExpStart.place(x=75,y=95)
+
+
+
+       
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -5208,6 +5237,22 @@ class MainPage(tk.Frame):
         main_fits_header.set_param("expTime", self.Flat_ExpT.get())
         print("Superflat file created")
         # Camera= CCD(dict_params=params)
+    
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# # Expose_buffer
+# 
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+    def expose_buffer(self):
+        """ to be written """
+        self.image_type = "buffer"
+        ExpTime_ms = float(self.Buffer_ExpT.get())*1000
+        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
+        self.expose(params)
+        self.combine_files()
+        self.handle_buffer()
+        main_fits_header.set_param("expTime", self.Flat_ExpT.get())
+        print("Buffer file created")
+        # Camera= CCD(dict_params=params)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Handle files: sets or single?
@@ -5316,6 +5361,24 @@ class MainPage(tk.Frame):
         flat_norm = flat_dark / np.median(flat_dark)
         fits.writeto( os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
 
+    def handle_buffer(self):
+        """ to be written """
+        #a  buffer field has been taken...
+        buffer_file = os.path.join(local_dir,"fits_image","buffer_"+self.FW_filter.get()+".fits")
+        hdu_flat = fits.open(buffer_file)
+        buffer = hdu_buffer[0].data
+        hdr = hdu_buffer[0].header
+        # with a certain exposure time...
+        exptime = hdr['PARAM2']
+        hdu_buffer.close()
+
+        
+        #the buffer must be subtracted from the flat
+        if self.subtract_Bufferias.get() == 1:
+            light_buffer = light-buffer
+        else:    
+            light_buffer = light
+        
         
     def handle_light(self):
         """ handle_light """
@@ -6793,7 +6856,7 @@ class MainPage(tk.Frame):
 
     def create_menubar(self, parent):
         """ to be written """
-        parent.geometry("1280x900")
+        parent.geometry("1400x900")   #was ("1280x900")
 #        parent.geometry("1680x900")
         parent.title("SAMOS Main Page")
         self.PAR = SAMOS_Parameters()
