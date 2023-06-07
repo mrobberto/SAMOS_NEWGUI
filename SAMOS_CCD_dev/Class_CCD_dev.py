@@ -140,7 +140,8 @@ class Class_Camera(object):
 
 
     
-    def expose(self):
+    def expose(self):#, exp_progbar, exp_progbar_style, var_exp, 
+               #read_progbar, read_progbar_style, var_read):
         if 2<=len(sys.argv):
             target=sys.argv[1]
         else:
@@ -274,10 +275,29 @@ class Class_Camera(object):
                 exposure_remaining=int(x[3].split("</value>")[0])
                 readout_percent=int(x[4].split("</value>")[0])
                 result=int(x[7].split("\n")[0].split("</value>")[0])
-                print("exposure_remaining={},readout_percent={},result={}.\n".format(exposure_remaining,readout_percent,result),end='\r')
+                
+                if exposure_remaining>=0:
+                    self.exp_progbar.step()
+                    expose_perc = ((self.ExpTime-exposure_remaining)/self.ExpTime)*100
+                    self.var_exp.set(expose_perc)
+                    self.exp_progbar_style.configure('text.Horizontal.TProgressbar',
+                                                text='Expose {:g} %'.format(self.var_exp.get()))
+                    
+                    self.exp_progbar.update()
+                    print("exposure_remaining={},readout_percent={},result={}.\n".format(exposure_remaining,readout_percent,result),end='\r')
+                
+                if 0<readout_percent<=100:
+                    self.read_progbar.step()
+                    self.var_read.set(readout_percent)
+                    self.read_progbar_style.configure('text.Horizontal.RProgressbar',
+                                                      text='Readout {:g} %'.format(self.var_read.get()))
+                    self.read_progbar.update()
+                    
                 if readout_percent>99:
                     reading=False
+                    
                 else:
+                    
                     sleep(0.2)
             timeRequested=time()
             #data=get_url(target+'image.bin')    # Just the pixels (in network byte order)

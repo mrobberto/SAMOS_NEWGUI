@@ -3482,7 +3482,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_ObsInf = tk.Frame(self, background="cyan")
-        self.frame_ObsInf.place(x=4, y=0, anchor="nw", width=400, height=195)
+        self.frame_ObsInf.place(x=4, y=0, anchor="nw", width=400, height=150)
         
         labelframe_ObsInf = tk.LabelFrame(self.frame_ObsInf, text="Observer Info", 
                                           font=("Ariel", 24))
@@ -3517,7 +3517,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame0l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame0l.place(x=4, y=200, anchor="nw", width=220, height=110)
+        self.frame0l.place(x=4, y=155, anchor="nw", width=220, height=110)
  
         labelframe_Filters =  tk.LabelFrame(self.frame0l, text="Filter Status", 
                                             font=("Arial", 24))
@@ -3603,7 +3603,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame1l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame1l.place(x=220, y=200, anchor="nw", width=220, height=110)
+        self.frame1l.place(x=220, y=155, anchor="nw", width=220, height=110)
 
         labelframe_Grating =  tk.LabelFrame(self.frame1l, text="Grism Status", font=("Arial", 24))
         labelframe_Grating.pack(fill="both", expand="yes")
@@ -3694,7 +3694,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame2l.place(x=4, y=320, anchor="nw", width=380, height=260)
+        self.frame2l.place(x=4, y=275, anchor="nw", width=420, height=300)
 
 #        root = tk.Tk()
 #        root.title("Tab Widget")
@@ -3757,6 +3757,18 @@ class MainPage(tk.Frame):
         entry_out_fnumber.place(x=270,y=8)
         self.entry_out_fnumber = entry_out_fnumber
         
+        self.Light_NofFrames = tk.IntVar()
+        self.Light_NofFrames.set(1)
+        label_Light_NofFrames = tk.Label(labelframe_Acquire, text="N Frames:")
+        label_Light_NofFrames.place(x=210, y=40)
+        entry_Light_NofFrames = tk.Entry(labelframe_Acquire, textvariable=self.Light_NofFrames,
+                                         width=3, bd=3)
+        entry_Light_NofFrames.place(x=285, y=40)
+        
+        self.var_Light_saveall = tk.IntVar()
+        r1_Light_saveall = tk.Radiobutton(labelframe_Acquire, text = "Save single frames", variable=self.var_Light_saveall, value=1)
+        r1_Light_saveall.place(x=200, y=70)
+        
         
         label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
         label_ExpTime.place(x=4,y=40)
@@ -3769,7 +3781,7 @@ class MainPage(tk.Frame):
         label_ObjectName.place(x=4,y=70)
         self.ObjectName = tk.StringVar()
         self.ObjectName.set(" ")
-        entry_ObjectName = tk.Entry(labelframe_Acquire, width=11,  bd =3, 
+        entry_ObjectName = tk.Entry(labelframe_Acquire, width=8,  bd =3, 
                                     textvariable=self.ObjectName)
         entry_ObjectName.place(x=100, y=68)
 
@@ -3781,7 +3793,51 @@ class MainPage(tk.Frame):
 
         button_ExpStart=  tk.Button(labelframe_Acquire, text="READ", bd=3, bg='#0052cc',font=("Arial", 24),
                                          command=self.expose_light)
-        button_ExpStart.place(x=225,y=50)
+        button_ExpStart.place(x=250,y=140)
+        
+
+        #### Include progress bars for exposure and readout. ####
+        ### Most of this so we can update the label during an exposure.
+        s_expose = ttk.Style(labelframe_Acquire)
+        # add the label to the progressbar style
+        s_expose.layout('text.Horizontal.TProgressbar', 
+             [('Horizontal.Progressbar.trough',
+               {'children': [('Horizontal.Progressbar.pbar',
+                              {'side': 'left', 'sticky': 'ns'})],
+                'sticky': 'nswe'}), 
+              ('Horizontal.Progressbar.label', {'sticky': 'nswe'})])
+        
+
+        # change the text of the progressbar, 
+        # the trailing spaces are here to properly center the text
+        s_expose.configure("text.Horizontal.TProgressbar", text="Expose 0 %      ", anchor='center')
+        
+        self.var_perc_exp_done = tk.IntVar()
+        self.exp_progbar = ttk.Progressbar(labelframe_Acquire, orient='horizontal', 
+                                           variable=self.var_perc_exp_done,
+                                      length=150, style="text.Horizontal.TProgressbar")
+        self.exp_progbar.place(x=50, y=200)
+        # need to save the style so it can be configured later during exposure/readout
+        self.exp_progbar_style = s_expose
+
+        
+        s_readout = ttk.Style(labelframe_Acquire)
+        s_readout.layout('text.Horizontal.RProgressbar', 
+             [('Horizontal.Progressbar.trough',
+               {'children': [('Horizontal.Progressbar.pbar',
+                              {'side': 'left', 'sticky': 'ns'})],
+                'sticky': 'nswe'}), 
+              ('Horizontal.Progressbar.label', {'sticky': 'nswe'})])
+        
+        s_readout.configure("text.Horizontal.RProgressbar", text="Readout 0 %      ", anchor='center')
+        self.var_perc_read_done = tk.IntVar()
+        self.readout_progbar = ttk.Progressbar(labelframe_Acquire, orient='horizontal', 
+                                               variable=self.var_perc_read_done,
+                                      length=150, style="text.Horizontal.RProgressbar")
+        self.readout_progbar.place(x=200, y=200)
+        # need to save the style so it can be configured later during exposure/readout
+        self.readout_progbar_style = s_readout
+
 
  
         label_Display =  tk.Label(labelframe_Acquire, text="Subtract for Display:")
@@ -5577,6 +5633,12 @@ class MainPage(tk.Frame):
         # Camera= CCD(dict_params=params)
         
         Camera = Class_Camera(dict_params=params)
+        Camera.exp_progbar = self.exp_progbar
+        Camera.exp_progbar_style = self.exp_progbar_style
+        Camera.var_exp = self.var_perc_exp_done
+        Camera.read_progbar = self.readout_progbar
+        Camera.read_progbar_style = self.readout_progbar_style
+        Camera.var_read = self.var_perc_read_done
         
         self.this_param_file = open(os.path.join(os.getcwd(),"Parameters.txt"),"w")
         
@@ -5587,6 +5649,7 @@ class MainPage(tk.Frame):
         [host,port] = IP.split(":")
 #        PCM.initialize(address=host, port=int(port))
         Camera.expose()#host, port=int(port))
+        self.reset_progress_bars()
         expTime = params['Exposure Time']/1000
         main_fits_header.set_param("expTime", expTime)
         main_fits_header.set_param("filter", self.FW_filter.get())
@@ -5618,20 +5681,28 @@ class MainPage(tk.Frame):
         hdul  = fits.open(self.fits_image)
         input_header = hdul[0].header
         obj_type = self.tabControl.tab(self.tabControl.select(), "text")
+        if self.out_fname.get()=="":
+            basename = self.out_fname.get()
+        else:
+            basename = "_"+self.out_fname.get()
         if obj_type=="Image":
             obj_type="SCI"
+            out_fname="Sci"+basename
         elif obj_type=="Buffer":
             obj_type="BUFF"
+            out_fname = "Buff"+basename
         elif obj_type=="Bias":
             obj_type="BIAS"
-            self.out_fname.set("Bias")
+            out_fname = "Bias"+basename
+            #self.out_fname.set("Bias")
         elif obj_type=="Dark":
             obj_type="DARK"
             exptime = float(self.Dark_ExpT.get())
-            self.out_fname.set("Dark_{}s".format(exptime))
+            
+            out_fname = "Dark_{}s".format(exptime)+basename
         elif obj_type=="Flat":
             obj_type="FLAT"
-            self.out_fname.set("Flat_{}".format(self.FW_filter.get()))
+            out_fname = "Flat_{}".format(self.FW_filter.get())+basename
             
         main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
         main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
@@ -5655,7 +5726,7 @@ class MainPage(tk.Frame):
         # Hence, we may need a general login window.
         
         # self.Display(self.fits_image)
-        new_fname = "{}_{:04n}.fits".format(self.out_fname.get(),int(self.entry_out_fnumber.get()))
+        new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", new_fname)
         full_fpath = os.path.join(self.fits_dir,new_fname)
@@ -5679,8 +5750,17 @@ class MainPage(tk.Frame):
         # passes the image to the viewer through the set_image() method
         self.fitsimage.set_image(self.AstroImage)
 
-       
+    def reset_progress_bars(self):
         
+        self.exp_progbar["value"] = 0
+        self.var_perc_exp_done.set(0)
+        self.exp_progbar_style.configure('text.Horizontal.TProgressbar',
+                                    text='Expose {:g} %'.format(self.var_perc_exp_done.get()))
+        self.readout_progbar["value"] = 0
+        self.var_perc_read_done.set(0)
+        self.readout_progbar_style.configure('text.Horizontal.RProgressbar',
+                                    text='Readout {:g} %'.format(self.var_perc_read_done.get()))
+     
 
     def load_last_file(self):
         """ to be written """
@@ -7108,6 +7188,7 @@ class SAMOS_Parameters():
 
 if __name__ == "__main__":
     app = App()
+                  
     app.mainloop()
 
     # IF you find this useful >> Claps on Medium >> Stars on Github >> Subscription on youtube will help me
