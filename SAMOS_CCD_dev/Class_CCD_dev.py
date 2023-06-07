@@ -276,8 +276,9 @@ class Class_Camera(object):
                 readout_percent=int(x[4].split("</value>")[0])
                 result=int(x[7].split("\n")[0].split("</value>")[0])
                 
-                if exposure_remaining>=0:
+                if exposure_remaining>=0 and self.ExpTime>0:
                     self.exp_progbar.step()
+                    
                     expose_perc = ((self.ExpTime-exposure_remaining)/self.ExpTime)*100
                     self.var_exp.set(expose_perc)
                     self.exp_progbar_style.configure('text.Horizontal.TProgressbar',

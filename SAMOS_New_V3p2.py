@@ -3791,7 +3791,7 @@ class MainPage(tk.Frame):
         entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
         entry_Comment.place(x=100, y=98)
 
-        button_ExpStart=  tk.Button(labelframe_Acquire, text="READ", bd=3, bg='#0052cc',font=("Arial", 24),
+        button_ExpStart=  tk.Button(labelframe_Acquire, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
                                          command=self.expose_light)
         button_ExpStart.place(x=250,y=140)
         
@@ -3810,7 +3810,9 @@ class MainPage(tk.Frame):
 
         # change the text of the progressbar, 
         # the trailing spaces are here to properly center the text
-        s_expose.configure("text.Horizontal.TProgressbar", text="Expose 0 %      ", anchor='center')
+        s_expose.configure("text.Horizontal.TProgressbar", 
+                           text="Expose 0 %      ", anchor='center',
+                           background="magenta", troughcolor="gray", foreground="black")
         
         self.var_perc_exp_done = tk.IntVar()
         self.exp_progbar = ttk.Progressbar(labelframe_Acquire, orient='horizontal', 
@@ -3829,7 +3831,9 @@ class MainPage(tk.Frame):
                 'sticky': 'nswe'}), 
               ('Horizontal.Progressbar.label', {'sticky': 'nswe'})])
         
-        s_readout.configure("text.Horizontal.RProgressbar", text="Readout 0 %      ", anchor='center')
+        s_readout.configure("text.Horizontal.RProgressbar", 
+                            text="Readout 0 %      ", anchor='center',
+                            background="cyan", troughcolor="gray", foreground="black")
         self.var_perc_read_done = tk.IntVar()
         self.readout_progbar = ttk.Progressbar(labelframe_Acquire, orient='horizontal', 
                                                variable=self.var_perc_read_done,
