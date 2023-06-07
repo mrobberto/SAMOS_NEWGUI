@@ -5232,7 +5232,7 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "science"
         ExpTime_ms = float(self.Light_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Buffer_NofFrames.get())}
+        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Light_NofFrames.get())}
         self.expose(params)
 #        self.combine_files()
         self.handle_light()
