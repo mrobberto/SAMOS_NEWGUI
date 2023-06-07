@@ -3932,8 +3932,8 @@ class MainPage(tk.Frame):
         entry_Buffer_NofFrames.place(x=100, y=38)
         
         
-        var_Buffer_saveall = tk.IntVar()
-        r1_Buffer_saveall = tk.Radiobutton(labelframe_Buffer, text = "Save single frames", variable=var_Buffer_saveall, value=1)
+        self.var_Buffer_saveall = tk.IntVar()
+        r1_Buffer_saveall = tk.Radiobutton(labelframe_Buffer, text = "Save single frames", variable=self.var_Buffer_saveall, value=1)
         r1_Buffer_saveall.place(x=150, y=38)
 
         label_Buffer_MasterFile =  tk.Label(labelframe_Buffer, text="Master Buffer File:")
@@ -5232,11 +5232,11 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "science"
         ExpTime_ms = float(self.Light_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': 1}
+        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Buffer_NofFrames.get())}
         self.expose(params)
 #        self.combine_files()
         self.handle_light()
-        main_fits_header.set_param("expTime", self.Light_ExpT.get())
+        main_fits_header.set_param("expTime", self.Buffer_ExpT.get())
         print("science file created")
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5312,9 +5312,10 @@ class MainPage(tk.Frame):
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def combine_files(self):
-        """ to be written """
-        # this procedure runs after the CCD.expose()
-        # to handle the decision of saving all single files or just the averages
+        """ 
+         this procedure runs after CCD.expose()
+         to handle the decision of saving all single files or just the averages
+         """
         file_names = os.path.join(local_dir,"fits_image","setimage_*.fit")
         files = glob.glob(file_names)
         superfile_cube = np.zeros((1032,1056,len(files)))   #note y,x,z
@@ -5328,7 +5329,8 @@ class MainPage(tk.Frame):
                 superfile_cube[:,:,i] = hdu[0].data
                 if self.var_Bias_saveall.get() == 1 or \
                    self.var_Dark_saveall.get() == 1 or \
-                   self.var_Flat_saveall.get() == 1:
+                   self.var_Flat_saveall.get() == 1 or \
+                self.var_Buffer_saveall.get() == 1:
                    # save every single frame
                     os.rename(files[i],os.path.join(local_dir,"fits_image"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     #os.rename(files[i],os.path.join(self.fits_dir,self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
@@ -5476,8 +5478,9 @@ class MainPage(tk.Frame):
         """ handle_light """
         light_file = os.path.join(local_dir,"fits_image","newimage.fit")
         flat_file = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits")
-        exists = os.path.isfile(flat_file)
-        if exists:
+        buffer_file = os.path.join(local_dir,"fits_image","superbuffer.fits")
+        flat_exists = os.path.isfile(flat_file)
+        if flat_exists:
             print("found flat file ", flat_file)
         else:
             flat_file = os.path.join(local_dir,"fits_image","superflat_norm.fits")
@@ -5499,6 +5502,10 @@ class MainPage(tk.Frame):
         hdu_flat = fits.open(flat_file)
         flat = hdu_flat[0].data
         hdu_flat.close()
+        
+        hdu_buffer = fits.open(buffer_file)
+        buffer = hdu_buffer[0].data
+        hdu_buffer.close()
 
         hdr = hdu_light[0].header
         exptime = hdr['PARAM2']
@@ -5552,6 +5559,12 @@ class MainPage(tk.Frame):
         
         
         self.Display(fits_image)
+        
+        if self.subtract_Buffer.get() == 1:
+             light_buffer = light-buffer
+             fits.writeto(fits_image,light_buffer,
+                          main_fits_header.output_header,overwrite=True)
+             self.Display(fits_image)
         
         ## Save a copy of the image to store in the Obs Night Directory under 
         ## a more informative filename
