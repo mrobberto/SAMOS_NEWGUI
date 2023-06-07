@@ -5298,12 +5298,12 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "buffer"
         ExpTime_ms = float(self.Buffer_ExpT.get())*1000
-        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
+        params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Buffer_NofFrames.get())}
         self.start_combo_obj_number = int(self.entry_out_fnumber.get())
         self.expose(params)
         self.combine_files()
-        self.handle_buffer()
-        main_fits_header.set_param("expTime", self.Flat_ExpT.get())
+#        self.handle_buffer()
+        main_fits_header.set_param("expTime", self.Buffer_ExpT.get())
         print("Buffer file created")
         # Camera= CCD(dict_params=params)
 
@@ -5455,24 +5455,7 @@ class MainPage(tk.Frame):
         flat_norm = flat_dark / np.median(flat_dark)
         fits.writeto( os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
 
-    def handle_buffer(self):
-        """ to be written """
-        #a  buffer field has been taken...
-        buffer_file = os.path.join(local_dir,"fits_image","buffer_"+self.FW_filter.get()+".fits")
-        hdu_flat = fits.open(buffer_file)
-        buffer = hdu_buffer[0].data
-        hdr = hdu_buffer[0].header
-        # with a certain exposure time...
-        exptime = hdr['PARAM2']
-        hdu_buffer.close()
 
-        
-        #the buffer must be subtracted from the flat
-        if self.subtract_Bufferias.get() == 1:
-            light_buffer = light-buffer
-        else:    
-            light_buffer = light
-        
         
     def handle_light(self):
         """ handle_light """
