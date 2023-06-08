@@ -1645,7 +1645,7 @@ class DMDPage(tk.Frame):
         #1. instantiate the convert class
         c=CONVERT()
                 
-        f = open(os.path.join(local_dir, 'SAMOS_regions','pixels', tail[:-3],'reg'), 'w')
+        f = open(os.path.join(local_dir, 'SAMOS_regions','pixels', tail[:-3]+'reg'), 'w')
 
         #2. loop over the lines to create ds9 region files
         header= "# Region file format: DS9 astropy/regions\nglobal edit=1 width=1 font=Sans Serif fill=0 color=red\nimage"
@@ -2253,7 +2253,7 @@ class CCDPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self.frame0l,background="dark turquoise")#, width=400, height=800)
-        self.frame2l.place(x=0, y=4, anchor="nw", width=420, height=400)
+        self.frame2l.place(x=0, y=4, anchor="nw", width=420, height=300)
         
         
   
@@ -3731,12 +3731,14 @@ class MainPage(tk.Frame):
         
         # label each file name incrementally to keep track
         self.out_fnumber = tk.IntVar()
+        
         import fnmatch
         if not os.path.exists(self.fits_dir):
             next_file_number = 1
         
         else:
-            current_files = [os.path.join(self.fits_dir,f) for f in os.listdir(self.fits_dir) if not fnmatch.fnmatch(f, "SAMOS_*fits")]
+            #current_files = [os.path.join(self.fits_dir,f) for f in os.listdir(self.fits_dir) if not fnmatch.fnmatch(f, "SAMOS_*fits")]
+            current_files = glob.glob(os.path.join(self.fits_dir,"*_"+"[0-9]"*4+".fits"))
             if len(current_files)==0:
                 next_file_number = 1
             else:
@@ -5294,9 +5296,9 @@ class MainPage(tk.Frame):
         ExpTime_ms = float(self.Light_ExpT.get())*1000
         params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Light_NofFrames.get())}
         self.expose(params)
-#        self.combine_files()
+        if self.Light_NofFrames.get()>1:
+            self.combine_files()
         self.handle_light()
-        main_fits_header.set_param("expTime", self.Buffer_ExpT.get())
         print("science file created")
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5329,7 +5331,6 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
         self.handle_dark()
-        main_fits_header.set_param("expTime", self.Dark_ExpT.get())
         print("Superdark file created")
 
 
@@ -5346,7 +5347,6 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
         self.handle_flat()
-        main_fits_header.set_param("expTime", self.Flat_ExpT.get())
         print("Superflat file created")
         # Camera= CCD(dict_params=params)
     
@@ -5363,7 +5363,6 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
 #        self.handle_buffer()
-        main_fits_header.set_param("expTime", self.Buffer_ExpT.get())
         print("Buffer file created")
         # Camera= CCD(dict_params=params)
 
@@ -5371,6 +5370,12 @@ class MainPage(tk.Frame):
 # # Handle files: sets or single?
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+    
+    def change_saveall_selected(self):
+        
+        pass
+        
+    
     def combine_files(self):
         """ 
          this procedure runs after CCD.expose()
@@ -5380,26 +5385,34 @@ class MainPage(tk.Frame):
         files = glob.glob(file_names)
         superfile_cube = np.zeros((1032,1056,len(files)))   #note y,x,z
         img_number = self.start_combo_obj_number-1
+        dmd_hdu = None
+        if DMD.current_dmd_shape is not None:
+            dmd_hdu = self.create_dmd_pattern_hdu(main_fits_header.output_header)
+        
+        
         for i in range(len(files)):
             img_number+=1
             print(files[i])
             with fits.open(files[i]) as hdu:
-                night_dir_fname_fmt = "{}_{}_{}_{:04n}.fits".format(self.image_type,self.FW_filter.get(),str(i), int(self.entry_out_fnumber.get()))
-
+                night_dir_fname_search = os.path.join(self.fits_dir,"*_{:04n}.fits".format(img_number))
+                night_dir_fname = glob.glob(night_dir_fname_search)[0]
+                night_hdulist = fits.open(night_dir_fname)
+                night_hdulist[0].header = main_fits_header.output_header
+                if dmd_hdu is not None:
+                    night_hdulist.append(dmd_hdu)
                 superfile_cube[:,:,i] = hdu[0].data
                 if self.var_Bias_saveall.get() == 1 or \
                    self.var_Dark_saveall.get() == 1 or \
                    self.var_Flat_saveall.get() == 1 or \
-                self.var_Buffer_saveall.get() == 1:
+                   self.var_Buffer_saveall.get() == 1:
                    # save every single frame
                     os.rename(files[i],os.path.join(local_dir,"fits_image"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     #os.rename(files[i],os.path.join(self.fits_dir,self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
-                    os.rename(files[i], os.path.join(self.fits_dir,night_dir_fname_fmt))
-                    self.entry_out_fnumber.invoke("buttonup")
+                    #self.entry_out_fnumber.invoke("buttonup")
+                    night_hdulist.writeto(night_dir_fname, overwrite=True)
                 else: 
                     os.remove(files[i])
                     #also remove the file that was put in the Night directory
-                    night_dir_fname = "{}_{:04n}.fits".format(self.out_fname.get(),img_number)
                     try:
                         os.remove(os.path.join(self.fits_dir,night_dir_fname))
                     except FileNotFoundError:
@@ -5422,7 +5435,7 @@ class MainPage(tk.Frame):
         else:
             super_filename = os.path.join(local_dir,"fits_image","super"+self.image_type+".fits")
             
-        fits.writeto(super_filename,superfile,superfile_header,overwrite=True)  
+          
         
         # save combined file in Night directory
         second_super_filename = "{}_{:04n}.fits".format(os.path.split(super_filename)[1][:-5],
@@ -5433,8 +5446,23 @@ class MainPage(tk.Frame):
         main_fits_header.set_param("ncombined", len(files))
         main_fits_header.create_fits_header(superfile_header)
         print(second_super_filename)
-        fits.writeto(os.path.join(self.fits_dir,second_super_filename),superfile,
-                     main_fits_header.output_header,overwrite=True)  
+        
+        super_hdu1 = fits.PrimaryHDU(superfile,superfile_header)
+        super_hdu2 = fits.PrimaryHDU(superfile,main_fits_header.output_header)
+
+        hdulist1 = fits.HDUList(hdus=[super_hdu1])
+        #second file with updated fits header
+        hdulist2 = fits.HDUList(hdus=[super_hdu2])
+        if dmd_hdu is not None:
+        
+            hdulist1.append(dmd_hdu)
+            hdulist2.append(dmd_hdu)
+            
+        hdulist1.writeto(super_filename, overwrite=True)
+        hdulist2.writeto(second_super_filename, overwrite=True)
+        #fits.writeto(super_filename,superfile,superfile_header,overwrite=True)
+        #fits.writeto(os.path.join(self.fits_dir,second_super_filename),superfile,
+        #             main_fits_header.output_header,overwrite=True)  
         #self.entry_out_fnumber.invoke("buttonup")
         hdu.close()
         
@@ -5472,8 +5500,29 @@ class MainPage(tk.Frame):
         dark_sec = dark_bias / exptime
         hdr_out = hdr
         hdr_out['PARAM2']=1
-        fits.writeto( os.path.join(local_dir,"fits_image","superdark_s.fits"),dark_sec,hdr_out,overwrite=True)
-
+        dir_hdul1 = os.path.join(local_dir,"fits_image","superdark_s.fits")
+        fits.writeto(dir_hdul1 ,dark_sec,hdr_out,overwrite=True)
+        
+        main_fits_header.create_fits_header(hdr_out)
+        pr_hdu = fits.PrimaryHDU(dark_sec, main_fits_header.output_header)
+        hdulist1 = fits.HDUList(hdus=[pr_hdu])
+        
+        out_fname = "superdark_s"
+        new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
+        main_fits_header.set_param("filedir", self.fits_dir)
+        main_fits_header.set_param("filename", new_fname)
+        dir_hdul2 = os.path.join(self.fits_dir,out_fname)
+        #second file with updated fits header
+        hdulist2 = fits.HDUList(hdus=[pr_hdu])
+        if DMD.current_dmd_shape is not None:
+            dmd_hdu = self.create_dmd_pattern_hdu(main_fits_header.output_header)
+        
+            hdulist1.append(dmd_hdu)
+            hdulist2.append(dmd_hdu)
+            
+        hdulist1.writeto(dir_hdul1, overwrite=True)
+        hdulist2.writeto(dir_hdul2, overwrite=True)
+        
     def handle_flat(self):
         """ to be written """
         #a  flat field has been taken...
@@ -5513,8 +5562,30 @@ class MainPage(tk.Frame):
         
         #finally the flat is normalized to median=1  
         flat_norm = flat_dark / np.median(flat_dark)
-        fits.writeto( os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
-
+        
+        dir_hdul1 = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits")
+        #hdulist.writeto(os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),overwrite=True)
+        #fits.writeto( os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
+        
+        main_fits_header.create_fits_header(hdr)
+        pr_hdu = fits.PrimaryHDU(flat_norm, main_fits_header.output_header)
+        hdulist1 = fits.HDUList(hdus=[pr_hdu])
+        
+        out_fname = os.path.split(dir_hdul1)[1][:-5]
+        new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
+        main_fits_header.set_param("filedir", self.fits_dir)
+        main_fits_header.set_param("filename", new_fname)
+        dir_hdul2 = os.path.join(self.fits_dir,new_fname)
+        #second file with updated fits header
+        hdulist2 = fits.HDUList(hdus=[pr_hdu])
+        if DMD.current_dmd_shape is not None:
+            dmd_hdu = self.create_dmd_pattern_hdu(main_fits_header.output_header)
+        
+            hdulist1.append(dmd_hdu)
+            hdulist2.append(dmd_hdu)
+            
+        hdulist1.writeto(dir_hdul1, overwrite=True)
+        hdulist2.writeto(dir_hdul2, overwrite=True)
 
         
     def handle_light(self):
@@ -5596,18 +5667,28 @@ class MainPage(tk.Frame):
         TCS_dict = Class_SOAR_TCS.SOAR_TCS.infoa()
         main_fits_header.output_header.update(TCS_dict)
         """
+        pr_hdu = fits.PrimaryHDU(light_dark_bias, main_fits_header.output_header)
+        hdulist = fits.HDUList([pr_hdu])
+        dmd_hdu = None
+        if DMD.current_dmd_shape is not None:
+            dmd_hdu = self.create_dmd_pattern_hdu(main_fits_header.output_header)
+            hdulist.append(dmd_hdu)
         
-        fits.writeto(fits_image,light_dark_bias,
-                     main_fits_header.output_header,overwrite=True)
+        #hdulist.writeto(fits_image,overwrite=True)
         
         
         self.Display(fits_image)
         
         if self.subtract_Buffer.get() == 1:
              light_buffer = light-buffer
-             fits.writeto(fits_image,light_buffer,
-                          main_fits_header.output_header,overwrite=True)
+             hdulist = fits.HDUList([fits.PrimaryHDU(light_buffer,main_fits_header.output_header)])
+             if dmd_hdu is not None:
+                 hdulist.append(dmd_hdu)
+             #fits.writeto(fits_image,light_buffer,
+             #             main_fits_header.output_header,overwrite=True)
              self.Display(fits_image)
+        
+        hdulist.writeto(fits_image,overwrite=True)
         
         ## Save a copy of the image to store in the Obs Night Directory under 
         ## a more informative filename
@@ -5617,6 +5698,8 @@ class MainPage(tk.Frame):
         main_fits_header.set_param("filename", new_fname)
         full_fpath = os.path.join(self.fits_dir,new_fname)
         print(full_fpath)
+        hdulist[0].header = main_fits_header.output_header
+        hdulist.writeto(full_fpath, overwrite=True)
 #        fits.writeto(full_fpath, light_dark_bias, main_fits_header.output_header,
 #                     overwrite=True)
         
@@ -5652,7 +5735,25 @@ class MainPage(tk.Frame):
         IP = self.PAR.IP_dict['IP_CCD']
         [host,port] = IP.split(":")
 #        PCM.initialize(address=host, port=int(port))
-        Camera.expose()#host, port=int(port))
+        imtype = self.image_type
+        if self.image_type=="science":
+            imtype="Sci"
+        elif self.image_type=="buffer":
+            imtype="Buff"
+        elif self.image_type=="flat":
+            imtype = "flat_{}".format(self.FW_filter.get())
+        if self.out_fname.get()=="":
+            basename = self.out_fname.get()
+        
+        else:
+            basename = "_"+self.out_fname.get()
+        out_fname = os.path.join(self.fits_dir,imtype+basename)
+        #new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
+
+        # these extra 2 parameters in Camera.expose are to save copies of the 
+        # file to the ObsNight directory
+        Camera.expose(night_dir_basename = out_fname, 
+                      start_fnumber = int(self.entry_out_fnumber.get()))#host, port=int(port))
         self.reset_progress_bars()
         expTime = params['Exposure Time']/1000
         main_fits_header.set_param("expTime", expTime)
@@ -5685,29 +5786,26 @@ class MainPage(tk.Frame):
         hdul  = fits.open(self.fits_image)
         input_header = hdul[0].header
         obj_type = self.tabControl.tab(self.tabControl.select(), "text")
-        if self.out_fname.get()=="":
-            basename = self.out_fname.get()
-        else:
-            basename = "_"+self.out_fname.get()
+        
         if obj_type=="Image":
             obj_type="SCI"
-            out_fname="Sci"+basename
+            out_fname="sci"+basename
         elif obj_type=="Buffer":
             obj_type="BUFF"
-            out_fname = "Buff"+basename
+            out_fname = "buff"+basename
         elif obj_type=="Bias":
             obj_type="BIAS"
-            out_fname = "Bias"+basename
+            out_fname = "bias"+basename
             #self.out_fname.set("Bias")
         elif obj_type=="Dark":
             obj_type="DARK"
             exptime = float(self.Dark_ExpT.get())
             
-            out_fname = "Dark_{}s".format(exptime)+basename
+            out_fname = "dark_{}s".format(exptime)+basename
         elif obj_type=="Flat":
             obj_type="FLAT"
-            out_fname = "Flat_{}".format(self.FW_filter.get())+basename
-            
+            out_fname = "flat_{}".format(self.FW_filter.get())+basename
+        
         main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
         main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
         main_fits_header.set_param("observers", self.names_var.get())
@@ -5730,19 +5828,60 @@ class MainPage(tk.Frame):
         # Hence, we may need a general login window.
         
         # self.Display(self.fits_image)
-        new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
-        main_fits_header.set_param("filedir", self.fits_dir)
-        main_fits_header.set_param("filename", new_fname)
-        full_fpath = os.path.join(self.fits_dir,new_fname)
+        #new_fname = "{}_{:04n}.fits".format(out_fname,
+        #                                    int(self.entry_out_fnumber.get()))
+        #main_fits_header.set_param("filedir", self.fits_dir)
+        #main_fits_header.set_param("filename", new_fname)
+        #full_fpath = os.path.join(self.fits_dir,new_fname)
 #        print(full_fpath)
         #update header for new filename/filepath
+        
         main_fits_header.create_fits_header(main_fits_header.output_header)
-        fits.writeto(full_fpath, hdul[0].data, main_fits_header.output_header,
-                     overwrite=True)
-        print("Saved new file as {}".format(full_fpath))
+        hdul[0].header = main_fits_header.output_header
+        hdulist = fits.HDUList(hdus=[hdul[0]])
+        if DMD.current_dmd_shape is not None:
+            dmd_hdu = self.create_dmd_pattern_hdu(main_fits_header.output_header)
+        
+            hdulist.append(dmd_hdu)
+        
+        # update the file(s) in the ObsNight directory with 
+        # the DMD pattern extension and the header info.
+        for night_file in DMD.img_night_dir_list:
+        
+            pr_hdu = fits.open(night_file)[0]
+            main_fits_header.set_param("filename", os.path.split(night_file)[1])
+            main_fits_header.create_fits_header(main_fits_header.output_header)
+            hdulist[0].data = pr_hdu.data
+            hdulist[0].header = main_fits_header.output_header
+            
+            hdulist.writeto(night_file, overwrite=True)
+            
+        # path to file in SISI/SAMOS_yyymmdd/
+        self.most_recent_img_fullpath = night_file
+        print("Saved new file as {}".format(night_file))
         self.entry_out_fnumber.invoke("buttonup")
         hdul.close()
+        hdulist.close()
         
+    def create_dmd_pattern_hdu(self, primary_header):
+        
+        """
+        If the DMD has a loaded pattern, create an image extension
+        to add to the output file.
+        """
+        
+        dmd_hdu = fits.ImageHDU(DMD.current_dmd_shape)
+        # check if pattern is DMD map or a grid pattern
+        dmd_hdu.header["FILENAME"] = primary_header["FILENAME"]
+        dmd_hdu.header["FILEDIR"] = primary_header["FILEDIR"]  
+        
+        if 'unavail' in primary_header["DMDMAP"]:
+            dmd_hdu.header["DMDMAP"] = primary_header["DMDMAP"]
+        
+        elif 'unavail' in primary_header["GRIDFNAM"]:
+            dmd_hdu.header["GRIDFNAM"] = primary_header["GRIDFNAM"]
+        
+        return dmd_hdu
         
     def Display(self,imagefile): 
         """ to be written """

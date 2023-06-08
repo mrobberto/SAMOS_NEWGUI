@@ -140,8 +140,10 @@ class Class_Camera(object):
 
 
     
-    def expose(self):#, exp_progbar, exp_progbar_style, var_exp, 
+    def expose(self, night_dir_basename, start_fnumber):#, exp_progbar, exp_progbar_style, var_exp, 
                #read_progbar, read_progbar_style, var_read):
+        fnumber = start_fnumber
+        self.img_night_dir_list = []
         if 2<=len(sys.argv):
             target=sys.argv[1]
         else:
@@ -287,14 +289,14 @@ class Class_Camera(object):
                     self.exp_progbar.update()
                     print("exposure_remaining={},readout_percent={},result={}.\n".format(exposure_remaining,readout_percent,result),end='\r')
                 
-                if 0<readout_percent<=100:
+                elif 0<readout_percent<=100:
                     self.read_progbar.step()
                     self.var_read.set(readout_percent)
                     self.read_progbar_style.configure('text.Horizontal.RProgressbar',
                                                       text='Readout {:g} %'.format(self.var_read.get()))
                     self.read_progbar.update()
                     
-                if readout_percent>99:
+                elif readout_percent>99:
                     reading=False
                     
                 else:
@@ -324,6 +326,13 @@ class Class_Camera(object):
             newFile.write(data)
             newFile.close()
             self.convertSIlly(fileout,fileout)
+            
+            fileout = "{}_{:04n}.fits".format(night_dir_basename, fnumber)
+            newFile = open(fileout, "wb")
+            newFile.write(data)
+            newFile.close()
+            self.convertSIlly(fileout,fileout)
+            self.img_night_dir_list.append(fileout)
             # 2) if there is a request for iterations, the serial number is appended; use setimage_ to isolate the set
             if iterations > 0:
                 fileout = os.path.join(parent_dir,"fits_image","setimage_" + str(image) +".fit")
@@ -331,6 +340,16 @@ class Class_Camera(object):
                 newFile.write(data)
                 newFile.close()
                 self.convertSIlly(fileout,fileout)
+                
+                
+                fileout = "{}_{}_{:04n}.fits".format(night_dir_basename, str(image), fnumber)
+                newFile = open(fileout, "wb")
+                newFile.write(data)
+                newFile.close()
+                self.convertSIlly(fileout,fileout)
+                fnumber+=1
+                self.img_night_dir_list.append(fileout)
+                
                 #=> these files are handled by the routines in Main_Vx.py
 
         self.write_fitsfile()
