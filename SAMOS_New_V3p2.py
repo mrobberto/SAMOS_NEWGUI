@@ -100,10 +100,13 @@ import tkinter as tk
 # from tkinter import *
 # import tkinter as tk  #small t for Python 3f
 from tkinter import ttk
+
 # import filedialog module
 from tkinter import filedialog
 # from tkinter.filedialog import askopenfilename
 # from tkinter.filedialog import asksaveasfile
+
+
 
 from astropy.coordinates import SkyCoord, FK4  # , ICRS, Galactic, FK5
 from astropy import units as u
@@ -1328,7 +1331,8 @@ class DMDPage(tk.Frame):
         self.mask_checked.set(0)
 #        self.mask_check_menu = tk.OptionMenu(
 #            self.HadamardConf_LabelFrame, self.mask_checked, *self.mask_arrays, command=self.check_mask)
-        self.mask_check_menu = ttk.Combobox(self.HadamardConf_LabelFrame, width =4, textvariable=self.mask_checked)
+        self.mask_check_menu = ttk.Combobox(self.HadamardConf_LabelFrame, width =4, 
+                                            textvariable=self.mask_checked, style="TCombobox")
         self.mask_check_menu.bind("<<ComboboxSelected>>", self.check_mask)
         self.mask_check_menu['values'] = list(self.mask_arrays)
         self.mask_check_menu.place(x=120, y=271)
@@ -3482,7 +3486,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_ObsInf = tk.Frame(self, background="cyan")
-        self.frame_ObsInf.place(x=4, y=0, anchor="nw", width=400, height=150)
+        self.frame_ObsInf.place(x=14, y=0, anchor="nw", width=400, height=150)
         
         labelframe_ObsInf = tk.LabelFrame(self.frame_ObsInf, text="Observer Info", 
                                           font=("Ariel", 24))
@@ -3536,9 +3540,12 @@ class MainPage(tk.Frame):
         self.FW_filter = tk.StringVar() 
         # initial menu text
         self.FW_filter.set(filter_names[2])
+        
+        
         # Create Dropdown menu
         self.optionmenu_FW = tk.OptionMenu(labelframe_Filters, self.FW_filter, *filter_names)
         self.optionmenu_FW.place(x=5, y=8)
+        self.optionmenu_FW.config(bg="white", fg="black")
         button_SetFW =  tk.Button(labelframe_Filters, text="Set Filter", bd=3, command=self.set_filter)
         button_SetFW.place(x=110,y=4)
         
@@ -3622,6 +3629,7 @@ class MainPage(tk.Frame):
         # Create Dropdown menu
         self.optionmenu_GR = tk.OptionMenu(labelframe_Grating, self.Grating_Optioned, *self.Grating_names)
         self.optionmenu_GR.place(x=5, y=8)
+        self.optionmenu_GR.config(bg="white", fg="black")
         button_SetGR =  tk.Button(labelframe_Grating, text="Set Grism", bd=3, width=7, command=self.set_grating)
         button_SetGR.place(x=110,y=4)
 
@@ -3690,23 +3698,29 @@ class MainPage(tk.Frame):
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
-#  #    ACQUIRE IMAGE Label Frame
+#  #    Configure IMAGE Label Frame
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame2l.place(x=4, y=275, anchor="nw", width=420, height=300)
+        self.frame2l.place(x=14, y=275, anchor="nw", width=420, height=160)
 
 #        root = tk.Tk()
 #        root.title("Tab Widget")
-        tabControl = ttk.Notebook(self.frame2l, padding=0)
-  
+
+        tabstyle = ttk.Style()
+        
+        tabstyle.configure("TNotebook.Tab", darkcolor="dark gray", lightcolor="black",
+                           foreground="black")
+        
+        tabControl = ttk.Notebook(self.frame2l, padding=0, style="TNotebook")
+        
         tab1 = ttk.Frame(tabControl)
         tab2 = ttk.Frame(tabControl)
         tab3 = ttk.Frame(tabControl)
         tab4 = ttk.Frame(tabControl)
         tab5 = ttk.Frame(tabControl)
   
-        tabControl.add(tab1, text ='Image')
+        tabControl.add(tab1, text ='Science')
         tabControl.add(tab2, text ='Bias')
         tabControl.add(tab3, text ='Dark')
         tabControl.add(tab4, text ='Flat')
@@ -3714,20 +3728,293 @@ class MainPage(tk.Frame):
         tabControl.pack(expand = 1, fill ="both")
         
         self.tabControl = tabControl
+        self.tabControl.bind("<<NotebookTabChanged>>", self.change_acq_type)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      SCIENCE
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
-        labelframe_Acquire =  tk.LabelFrame(tab1, text="Acquire Image", font=("Arial", 24))
+        labelframe_Acquire =  tk.LabelFrame(tab1, text="Science", font=("Arial", 24))
         labelframe_Acquire.pack(fill="both", expand="yes")
 #        labelframe_Grating.place(x=4, y=10)
         
-        label_out_fname = tk.Label(labelframe_Acquire, text="Base Filename:")
-        label_out_fname.place(x=4, y=10)
+    
+        
+        label_ObjectName =  tk.Label(labelframe_Acquire, text="Object Name:")
+        label_ObjectName.place(x=4,y=10)
+        self.ObjectName = tk.StringVar()
+        self.ObjectName.set(" ")
+        entry_ObjectName = tk.Entry(labelframe_Acquire, width=8,  bd =3, 
+                                    textvariable=self.ObjectName)
+        entry_ObjectName.place(x=100, y=8)
+
+        label_Comment =  tk.Label(labelframe_Acquire, text="Comments:")
+        label_Comment.place(x=4,y=55)
+#        scrollbar = tk.Scrollbar(orient="horizontal")
+        self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
+        self.entry_Comment.place(x=100, y=53)
+        
+        
+        self.Light_NofFrames = tk.IntVar()
+        self.Light_NofFrames.set(1)
+        label_Light_NofFrames = tk.Label(labelframe_Acquire, text="Nr. Exposures:")
+        label_Light_NofFrames.place(x=220, y=2)
+        entry_Light_NofFrames = tk.Entry(labelframe_Acquire, textvariable=self.Light_NofFrames,
+                                         width=3, bd=3)
+        entry_Light_NofFrames.place(x=315, y=0)
+        
+        self.var_Light_saveall = tk.IntVar()
+        r1_Light_saveall = tk.Radiobutton(labelframe_Acquire, text = "Save single frames", 
+                                          variable=self.var_Light_saveall, value=1)
+        r1_Light_saveall.place(x=218, y=30)
+        
+        
+        label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
+        #label_ExpTime.place(x=4,y=40)
+        self.Light_ExpT=tk.StringVar()
+        self.Light_ExpT.set("0.01")
+        entry_ExpTime = tk.Entry(labelframe_Acquire, textvariable=self.Light_ExpT, width=5,  bd =3)
+        #entry_ExpTime.place(x=100, y=38)
+
+        
+
+
+
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#      BIAS
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        labelframe_Bias =  tk.LabelFrame(tab2, text="Bias", 
+                                                     width=300, height=170,
+                                                     font=("Arial", 24))
+        labelframe_Bias.pack(fill="both", expand="yes")
+
+#        labelframe_Bias.place(x=5,y=5)
+
+
+
+
+        
+        label_Bias_MasterFile =  tk.Label(labelframe_Bias, text="Master Bias:")
+        label_Bias_MasterFile.place(x=4,y=10)
+        self.Bias_MasterFile = tk.StringVar(value="Bias")
+        entry_Bias_MasterFile = tk.Entry(labelframe_Bias, width=8,  bd =3, textvariable=self.Bias_MasterFile)
+        entry_Bias_MasterFile.place(x=100, y=8)
+        
+        label_Comment =  tk.Label(labelframe_Bias, text="Comments:")
+        label_Comment.place(x=4,y=55)
+#        scrollbar = tk.Scrollbar(orient="horizontal")
+        self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
+        self.entry_BiasComment.place(x=100, y=53)
+        
+        
+        label_Bias_NofFrames =  tk.Label(labelframe_Bias, text="Nr. of Frames:")
+        label_Bias_NofFrames.place(x=220,y=2)
+        self.Bias_NofFrames = tk.StringVar(value="10")
+        entry_Bias_NofFrames = tk.Entry(labelframe_Bias, width=3,  bd =3, textvariable=self.Bias_NofFrames)
+        entry_Bias_NofFrames.place(x=315, y=0)
+        
+        
+        self.var_Bias_saveall = tk.IntVar()
+        r1_Bias_saveall = tk.Radiobutton(labelframe_Bias, text = "Save single frames", variable=self.var_Bias_saveall, value=1)
+        r1_Bias_saveall.place(x=218, y=30)
+        
+
+        label_Bias_ExpT =  tk.Label(labelframe_Bias, text="Exposure time (s):")
+        #label_Bias_ExpT.place(x=4,y=10)
+        self.Bias_ExpT = tk.StringVar(value="0.00")
+        entry_Bias_ExpT = tk.Entry(labelframe_Bias, width=6,  bd =3, textvariable=self.Bias_ExpT)
+        #entry_Bias_ExpT.place(x=120, y=6)
+        
+        
+
+        
+
+        button_ExpStart=  tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
+                                          command=self.expose_bias)
+        #button_ExpStart.place(x=75,y=95)
+  
+#        root.mainloop()  
+
+
+
+
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#      Dark
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        labelframe_Dark =  tk.LabelFrame(tab3, text="Dark", 
+                                                     width=300, height=170,
+                                                     font=("Arial", 24))
+        labelframe_Dark.pack(fill="both", expand="yes")
+
+        
+        label_Dark_MasterFile =  tk.Label(labelframe_Dark, text="Master Dark:")
+        label_Dark_MasterFile.place(x=4,y=10)
+        self.Dark_MasterFile = tk.StringVar(value="Dark")
+        entry_Dark_MasterFile = tk.Entry(labelframe_Dark, width=8,  bd =3, textvariable=self.Dark_MasterFile)
+        entry_Dark_MasterFile.place(x=100, y=8)
+        
+        label_Comment =  tk.Label(labelframe_Dark, text="Comments:")
+        label_Comment.place(x=4,y=55)
+#        scrollbar = tk.Scrollbar(orient="horizontal")
+        self.entry_DarkComment = tk.Entry(labelframe_Dark, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
+        self.entry_DarkComment.place(x=100, y=53)
+        
+        label_Dark_NofFrames =  tk.Label(labelframe_Dark, text="Nr. of Frames:")
+        label_Dark_NofFrames.place(x=220,y=2)
+        self.Dark_NofFrames = tk.StringVar(value="10")
+        entry_Dark_NofFrames = tk.Entry(labelframe_Dark, width=3,  bd =3, textvariable=self.Dark_NofFrames)
+        entry_Dark_NofFrames.place(x=315, y=0)
+        
+        self.var_Dark_saveall = tk.IntVar()
+        r1_Dark_saveall = tk.Radiobutton(labelframe_Dark, text = "Save single frames", variable=self.var_Dark_saveall, value=1)
+        r1_Dark_saveall.place(x=218, y=30)
+        
+        
+
+        label_Dark_ExpT =  tk.Label(labelframe_Dark, text="Exposure time (s):")
+        #label_Dark_ExpT.place(x=4,y=10)
+        self.Dark_ExpT = tk.StringVar(value="0.00")
+        entry_Dark_ExpT = tk.Entry(labelframe_Dark, width=6,  bd =3, textvariable=self.Dark_ExpT)
+        #entry_Dark_ExpT.place(x=120, y=6)
+        
+
+        button_ExpStart=  tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
+                                          command=self.expose_dark)
+        #button_ExpStart.place(x=75,y=95)
+
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#      Flat
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        labelframe_Flat =  tk.LabelFrame(tab4, text="Flat", 
+                                                     width=300, height=170,
+                                                     font=("Arial", 24))
+        labelframe_Flat.pack(fill="both", expand="yes")
+        
+        label_Flat_MasterFile =  tk.Label(labelframe_Flat, text="Master Flat File:")
+        label_Flat_MasterFile.place(x=4,y=10)
+        self.Flat_MasterFile = tk.StringVar(value="Flat")
+        entry_Flat_MasterFile = tk.Entry(labelframe_Flat, width=11,  bd =3, textvariable=self.Flat_MasterFile)
+        entry_Flat_MasterFile.place(x=100, y=8)
+        
+        label_Comment =  tk.Label(labelframe_Flat, text="Comments:")
+        label_Comment.place(x=4,y=55)
+#        scrollbar = tk.Scrollbar(orient="horizontal")
+        self.entry_FlatComment = tk.Entry(labelframe_Flat, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
+        self.entry_FlatComment.place(x=100, y=53)
+
+        label_Flat_ExpT =  tk.Label(labelframe_Flat, text="Exposure time (s):")
+        #label_Flat_ExpT.place(x=4,y=10)
+        self.Flat_ExpT = tk.StringVar(value="0.00")
+        entry_Flat_ExpT = tk.Entry(labelframe_Flat, width=6,  bd =3, textvariable=self.Flat_ExpT)
+        #entry_Flat_ExpT.place(x=120, y=6)
+        
+        label_Flat_NofFrames =  tk.Label(labelframe_Flat, text="Nr. of Frames:")
+        label_Flat_NofFrames.place(x=220,y=2)
+        self.Flat_NofFrames = tk.StringVar(value="10")
+        entry_Flat_NofFrames = tk.Entry(labelframe_Flat, width=3,  bd =3, textvariable=self.Flat_NofFrames)
+        entry_Flat_NofFrames.place(x=315, y=0)
+        
+        
+        self.var_Flat_saveall = tk.IntVar()
+        r1_Flat_saveall = tk.Radiobutton(labelframe_Flat, text = "Save single frames", variable=self.var_Flat_saveall, value=1)
+        r1_Flat_saveall.place(x=218, y=30)
+
+        
+
+        button_ExpStart=  tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
+                                          command=self.expose_flat)
+        button_ExpStart.place(x=75,y=95)
+
+
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#      Buffer
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        labelframe_Buffer =  tk.LabelFrame(tab5, text="Buffer", 
+                                                     width=300, height=180,
+                                                     font=("Arial", 24))
+        labelframe_Buffer.pack(fill="both", expand="yes")
+        
+        label_Comment =  tk.Label(labelframe_Buffer, text="Comments:")
+        label_Comment.place(x=4,y=55)
+#        scrollbar = tk.Scrollbar(orient="horizontal")
+        self.entry_BufferComment = tk.Entry(labelframe_Buffer, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
+        self.entry_BufferComment.place(x=100, y=53)
+        
+        label_Buffer_MasterFile =  tk.Label(labelframe_Buffer, text="Master Buffer File:")
+        label_Buffer_MasterFile.place(x=4,y=10)
+        self.Buffer_MasterFile = tk.StringVar(value="Buffer")
+        entry_Buffer_MasterFile = tk.Entry(labelframe_Buffer, width=11,  bd =3, textvariable=self.Buffer_MasterFile)
+        entry_Buffer_MasterFile.place(x=100, y=8)
+
+        label_Buffer_ExpT =  tk.Label(labelframe_Buffer, text="Exposure time (s):")
+        #label_Buffer_ExpT.place(x=4,y=10)
+        self.Buffer_ExpT = tk.StringVar(value="0.00")
+        entry_Buffer_ExpT = tk.Entry(labelframe_Buffer, width=6,  bd =3, textvariable=self.Buffer_ExpT)
+        #entry_Buffer_ExpT.place(x=120, y=6)
+        
+        label_Buffer_NofFrames =  tk.Label(labelframe_Buffer, text="Nr. of Frames:")
+        label_Buffer_NofFrames.place(x=220,y=2)
+        self.Buffer_NofFrames = tk.StringVar(value="10")
+        entry_Buffer_NofFrames = tk.Entry(labelframe_Buffer, width=5,  bd =3, textvariable=self.Buffer_NofFrames)
+        entry_Buffer_NofFrames.place(x=315, y=0)
+        
+        
+        self.var_Buffer_saveall = tk.IntVar()
+        r1_Buffer_saveall = tk.Radiobutton(labelframe_Buffer, text = "Save single frames", variable=self.var_Buffer_saveall, value=1)
+        r1_Buffer_saveall.place(x=218, y=30)
+
+        
+
+        button_ExpStart=  tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
+                                    command=self.expose_buffer)
+        #button_ExpStart.place(x=75,y=95)
+
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+    
+#       ACQUIRE IMAGE FRAME 
+##      Begin exposure with progress bars
+
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+
+        self.ExposeBeginFrame = tk.Frame(self, background="dark gray")
+        self.ExposeBeginFrame.place(x=14, y=435, width=420, height=175)
+        
+        labelframe_ExposeBegin = tk.LabelFrame(self.ExposeBeginFrame, text="Acquire",
+                                               font=("Ariel", 24))
+        labelframe_ExposeBegin.pack(fill="both", expand="yes")
+        
+        
+        
+        label_out_fname = tk.Label(labelframe_ExposeBegin, text="Base Filename:")
+        label_out_fname.place(x=4, y=15)
         self.out_fname = tk.StringVar()
-        entry_out_fname = tk.Entry(labelframe_Acquire, textvariable=self.out_fname,
-                                   width=11, bd=3)
-        entry_out_fname.place(x=100, y=8)
+        entry_out_fname = tk.Entry(labelframe_ExposeBegin, textvariable=self.out_fname,
+                                   width=8, bd=3)
+        entry_out_fname.place(x=100, y=13)
+        
+        label_ExpTime =  tk.Label(labelframe_ExposeBegin, text="Exp. Time (s):")
+        label_ExpTime.place(x=4,y=55)
+        self.ExpTimeSet=tk.StringVar()
+        self.ExpTimeSet.set("0.01")
+        entry_ExpTime = tk.Entry(labelframe_ExposeBegin, textvariable=self.ExpTimeSet, width=4,  bd =3)
+        entry_ExpTime.place(x=100, y=53)
+        
+        
+        
+        # Select Acquisition Type
+        label_Display =  tk.Label(labelframe_ExposeBegin, text="Image Type:")
+        label_Display.place(x=205,y=0)
+        self.var_acq_type = tk.StringVar()
+        tab_selected = self.tabControl.tab(self.tabControl.select(), "text")
+        
+        
+        self.var_acq_type.set(tab_selected)
+        self.acq_type_select = ttk.Combobox(labelframe_ExposeBegin, width=8,
+                                           textvariable=self.var_acq_type,
+                                           style="TCombobox")
+        self.acq_type_select["values"] = ["Science", "Bias", "Dark", "Flat", "Buffer"]
+        self.acq_type_select["state"] = "readonly"
+        self.acq_type_select.place(x=295,y=0)
         
         # label each file name incrementally to keep track
         self.out_fnumber = tk.IntVar()
@@ -3746,56 +4033,22 @@ class MainPage(tk.Frame):
                 last_file = os.path.split(last_file)[1]
                 ## set number of next exposure to be after the number of the most recently saved image
                 next_file_number = int(last_file.strip(".fits").split("_")[-1])+1
-        
         out_int = "{:04n}".format(next_file_number)
         
         self.out_fnumber.set(out_int)
-        label_out_fnumber = tk.Label(labelframe_Acquire, text="Exp. #")
-        label_out_fnumber.place(x=220,y=8)
-        entry_out_fnumber = tk.Spinbox(labelframe_Acquire,  
+        label_out_fnumber = tk.Label(labelframe_ExposeBegin, text="Exp. #")
+        label_out_fnumber.place(x=160,y=55)
+        entry_out_fnumber = tk.Spinbox(labelframe_ExposeBegin,  
                                        textvariable=self.out_fnumber, width=4,
                                        increment=1, from_=0,to=1000,format="%04.0f")
                                        #command=self.change_out_fnumber)
-        entry_out_fnumber.place(x=270,y=8)
+        entry_out_fnumber.place(x=205,y=53)
         self.entry_out_fnumber = entry_out_fnumber
-        
-        self.Light_NofFrames = tk.IntVar()
-        self.Light_NofFrames.set(1)
-        label_Light_NofFrames = tk.Label(labelframe_Acquire, text="N Frames:")
-        label_Light_NofFrames.place(x=210, y=40)
-        entry_Light_NofFrames = tk.Entry(labelframe_Acquire, textvariable=self.Light_NofFrames,
-                                         width=3, bd=3)
-        entry_Light_NofFrames.place(x=285, y=40)
-        
-        self.var_Light_saveall = tk.IntVar()
-        r1_Light_saveall = tk.Radiobutton(labelframe_Acquire, text = "Save single frames", variable=self.var_Light_saveall, value=1)
-        r1_Light_saveall.place(x=200, y=70)
-        
-        
-        label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
-        label_ExpTime.place(x=4,y=40)
-        self.Light_ExpT=tk.StringVar()
-        self.Light_ExpT.set("0.01")
-        entry_ExpTime = tk.Entry(labelframe_Acquire, textvariable=self.Light_ExpT, width=5,  bd =3)
-        entry_ExpTime.place(x=100, y=38)
-
-        label_ObjectName =  tk.Label(labelframe_Acquire, text="Object Name:")
-        label_ObjectName.place(x=4,y=70)
-        self.ObjectName = tk.StringVar()
-        self.ObjectName.set(" ")
-        entry_ObjectName = tk.Entry(labelframe_Acquire, width=8,  bd =3, 
-                                    textvariable=self.ObjectName)
-        entry_ObjectName.place(x=100, y=68)
-
-        label_Comment =  tk.Label(labelframe_Acquire, text="Comment:")
-        label_Comment.place(x=4,y=100)
-#        scrollbar = tk.Scrollbar(orient="horizontal")
-        entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd =3, )# , xscrollcommand=scrollbar.set)
-        entry_Comment.place(x=100, y=98)
-
-        button_ExpStart=  tk.Button(labelframe_Acquire, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
-                                         command=self.expose_light)
-        button_ExpStart.place(x=250,y=140)
+        #### To begin the exposure
+        button_ExpStart=  tk.Button(labelframe_ExposeBegin, text="START", bd=3, 
+                                    bg='#0052cc',font=("Arial", 24),
+                                         command=self.start_an_exposure)
+        button_ExpStart.place(x=285,y=25)
         
 
         #### Include progress bars for exposure and readout. ####
@@ -3813,14 +4066,14 @@ class MainPage(tk.Frame):
         # change the text of the progressbar, 
         # the trailing spaces are here to properly center the text
         s_expose.configure("text.Horizontal.TProgressbar", 
-                           text="Expose 0 %      ", anchor='center',
-                           background="magenta", troughcolor="gray", foreground="black")
+                           text="Expose 0 %      ", anchor='center', 
+                           background="magenta", foreground="black", troughcolor="gray")
         
         self.var_perc_exp_done = tk.IntVar()
-        self.exp_progbar = ttk.Progressbar(labelframe_Acquire, orient='horizontal', 
+        self.exp_progbar = ttk.Progressbar(labelframe_ExposeBegin, orient='horizontal', 
                                            variable=self.var_perc_exp_done,
-                                      length=150, style="text.Horizontal.TProgressbar")
-        self.exp_progbar.place(x=50, y=200)
+                                      length=130, style="text.Horizontal.TProgressbar")
+        self.exp_progbar.place(x=280, y=80)
         # need to save the style so it can be configured later during exposure/readout
         self.exp_progbar_style = s_expose
 
@@ -3836,179 +4089,31 @@ class MainPage(tk.Frame):
         s_readout.configure("text.Horizontal.RProgressbar", 
                             text="Readout 0 %      ", anchor='center',
                             background="cyan", troughcolor="gray", foreground="black")
+        
         self.var_perc_read_done = tk.IntVar()
-        self.readout_progbar = ttk.Progressbar(labelframe_Acquire, orient='horizontal', 
+        self.readout_progbar = ttk.Progressbar(labelframe_ExposeBegin, orient='horizontal', 
                                                variable=self.var_perc_read_done,
-                                      length=150, style="text.Horizontal.RProgressbar")
-        self.readout_progbar.place(x=200, y=200)
+                                      length=130, style="text.Horizontal.RProgressbar")
+        self.readout_progbar.place(x=280, y=110)
         # need to save the style so it can be configured later during exposure/readout
         self.readout_progbar_style = s_readout
 
 
  
-        label_Display =  tk.Label(labelframe_Acquire, text="Subtract for Display:")
-        label_Display.place(x=4,y=135)
+        label_Display =  tk.Label(labelframe_ExposeBegin, text="Subtract for Display:")
+        label_Display.place(x=4,y=95)
         self.subtract_Bias = tk.IntVar()
-        check_Bias = tk.Checkbutton(labelframe_Acquire, text='Bias',variable=self.subtract_Bias, onvalue=1, offvalue=0)
-        check_Bias.place(x=4, y=155)
+        check_Bias = tk.Checkbutton(labelframe_ExposeBegin, text='Bias',variable=self.subtract_Bias, onvalue=1, offvalue=0)
+        check_Bias.place(x=4, y=115)
         self.subtract_Dark = tk.IntVar()
-        check_Dark = tk.Checkbutton(labelframe_Acquire, text='Dark',variable=self.subtract_Dark, onvalue=1, offvalue=0)
-        check_Dark.place(x=60,y=155)
+        check_Dark = tk.Checkbutton(labelframe_ExposeBegin, text='Dark',variable=self.subtract_Dark, onvalue=1, offvalue=0)
+        check_Dark.place(x=60,y=115)
         self.subtract_Flat = tk.IntVar()
-        check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=self.subtract_Flat, onvalue=1, offvalue=0)
-        check_Flat.place(x=120,y=155)
+        check_Flat = tk.Checkbutton(labelframe_ExposeBegin, text='Flat',variable=self.subtract_Flat, onvalue=1, offvalue=0)
+        check_Flat.place(x=120,y=115)
         self.subtract_Buffer = tk.IntVar()
-        check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=self.subtract_Buffer, onvalue=1, offvalue=0)
-        check_Buffer.place(x=180,y=155)
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#      BIAS
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        labelframe_Bias =  tk.LabelFrame(tab2, text="Bias", 
-                                                     width=300, height=170,
-                                                     font=("Arial", 24))
-        labelframe_Bias.pack(fill="both", expand="yes")
-
-#        labelframe_Bias.place(x=5,y=5)
-        label_Bias_ExpT =  tk.Label(labelframe_Bias, text="Exposure time (s):")
-        label_Bias_ExpT.place(x=4,y=10)
-        self.Bias_ExpT = tk.StringVar(value="0.00")
-        entry_Bias_ExpT = tk.Entry(labelframe_Bias, width=6,  bd =3, textvariable=self.Bias_ExpT)
-        entry_Bias_ExpT.place(x=120, y=6)
-        
-        label_Bias_NofFrames =  tk.Label(labelframe_Bias, text="Nr. of Frames:")
-        label_Bias_NofFrames.place(x=4,y=40)
-        self.Bias_NofFrames = tk.StringVar(value="10")
-        entry_Bias_NofFrames = tk.Entry(labelframe_Bias, width=5,  bd =3, textvariable=self.Bias_NofFrames)
-        entry_Bias_NofFrames.place(x=100, y=38)
-        
-        
-        self.var_Bias_saveall = tk.IntVar()
-        r1_Bias_saveall = tk.Radiobutton(labelframe_Bias, text = "Save single frames", variable=self.var_Bias_saveall, value=1)
-        r1_Bias_saveall.place(x=160, y=38)
-
-        label_Bias_MasterFile =  tk.Label(labelframe_Bias, text="Master Bias File:")
-        label_Bias_MasterFile.place(x=4,y=70)
-        self.Bias_MasterFile = tk.StringVar(value="Bias")
-        entry_Bias_MasterFile = tk.Entry(labelframe_Bias, width=11,  bd =3, textvariable=self.Bias_MasterFile)
-        entry_Bias_MasterFile.place(x=120, y=68)
-
-        button_ExpStart=  tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
-                                          command=self.expose_bias)
-        button_ExpStart.place(x=75,y=95)
-  
-#        root.mainloop()  
-
-
-
-
-        
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#      Dark
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        labelframe_Dark =  tk.LabelFrame(tab3, text="Dark", 
-                                                     width=300, height=170,
-                                                     font=("Arial", 24))
-        labelframe_Dark.pack(fill="both", expand="yes")
-
-        label_Dark_ExpT =  tk.Label(labelframe_Dark, text="Exposure time (s):")
-        label_Dark_ExpT.place(x=4,y=10)
-        self.Dark_ExpT = tk.StringVar(value="0.00")
-        entry_Dark_ExpT = tk.Entry(labelframe_Dark, width=6,  bd =3, textvariable=self.Dark_ExpT)
-        entry_Dark_ExpT.place(x=120, y=6)
-        
-        label_Dark_NofFrames =  tk.Label(labelframe_Dark, text="Nr. of Frames:")
-        label_Dark_NofFrames.place(x=4,y=40)
-        self.Dark_NofFrames = tk.StringVar(value="10")
-        entry_Dark_NofFrames = tk.Entry(labelframe_Dark, width=5,  bd =3, textvariable=self.Dark_NofFrames)
-        entry_Dark_NofFrames.place(x=100, y=38)
-        
-        
-        self.var_Dark_saveall = tk.IntVar()
-        r1_Dark_saveall = tk.Radiobutton(labelframe_Dark, text = "Save single frames", variable=self.var_Dark_saveall, value=1)
-        r1_Dark_saveall.place(x=160, y=38)
-
-        label_Dark_MasterFile =  tk.Label(labelframe_Dark, text="Master Dark File:")
-        label_Dark_MasterFile.place(x=4,y=70)
-        self.Dark_MasterFile = tk.StringVar(value="Dark")
-        entry_Dark_MasterFile = tk.Entry(labelframe_Dark, width=11,  bd =3, textvariable=self.Dark_MasterFile)
-        entry_Dark_MasterFile.place(x=120, y=68)
-
-        button_ExpStart=  tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
-                                          command=self.expose_dark)
-        button_ExpStart.place(x=75,y=95)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#      Flat
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        labelframe_Flat =  tk.LabelFrame(tab4, text="Flat", 
-                                                     width=300, height=170,
-                                                     font=("Arial", 24))
-        labelframe_Flat.pack(fill="both", expand="yes")
-
-        label_Flat_ExpT =  tk.Label(labelframe_Flat, text="Exposure time (s):")
-        label_Flat_ExpT.place(x=4,y=10)
-        self.Flat_ExpT = tk.StringVar(value="0.00")
-        entry_Flat_ExpT = tk.Entry(labelframe_Flat, width=6,  bd =3, textvariable=self.Flat_ExpT)
-        entry_Flat_ExpT.place(x=120, y=6)
-        
-        label_Flat_NofFrames =  tk.Label(labelframe_Flat, text="Nr. of Frames:")
-        label_Flat_NofFrames.place(x=4,y=40)
-        self.Flat_NofFrames = tk.StringVar(value="10")
-        entry_Flat_NofFrames = tk.Entry(labelframe_Flat, width=5,  bd =3, textvariable=self.Flat_NofFrames)
-        entry_Flat_NofFrames.place(x=100, y=38)
-        
-        
-        self.var_Flat_saveall = tk.IntVar()
-        r1_Flat_saveall = tk.Radiobutton(labelframe_Flat, text = "Save single frames", variable=self.var_Flat_saveall, value=1)
-        r1_Flat_saveall.place(x=160, y=38)
-
-        label_Flat_MasterFile =  tk.Label(labelframe_Flat, text="Master Flat File:")
-        label_Flat_MasterFile.place(x=4,y=70)
-        self.Flat_MasterFile = tk.StringVar(value="Flat")
-        entry_Flat_MasterFile = tk.Entry(labelframe_Flat, width=11,  bd =3, textvariable=self.Flat_MasterFile)
-        entry_Flat_MasterFile.place(x=120, y=68)
-
-        button_ExpStart=  tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
-                                          command=self.expose_flat)
-        button_ExpStart.place(x=75,y=95)
-
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#      Buffer
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        labelframe_Buffer =  tk.LabelFrame(tab5, text="Buffer", 
-                                                     width=300, height=170,
-                                                     font=("Arial", 24))
-        labelframe_Buffer.pack(fill="both", expand="yes")
-
-        label_Buffer_ExpT =  tk.Label(labelframe_Buffer, text="Exposure time (s):")
-        label_Buffer_ExpT.place(x=4,y=10)
-        self.Buffer_ExpT = tk.StringVar(value="0.00")
-        entry_Buffer_ExpT = tk.Entry(labelframe_Buffer, width=6,  bd =3, textvariable=self.Buffer_ExpT)
-        entry_Buffer_ExpT.place(x=120, y=6)
-        
-        label_Buffer_NofFrames =  tk.Label(labelframe_Buffer, text="Nr. of Frames:")
-        label_Buffer_NofFrames.place(x=4,y=40)
-        self.Buffer_NofFrames = tk.StringVar(value="10")
-        entry_Buffer_NofFrames = tk.Entry(labelframe_Buffer, width=5,  bd =3, textvariable=self.Buffer_NofFrames)
-        entry_Buffer_NofFrames.place(x=100, y=38)
-        
-        
-        self.var_Buffer_saveall = tk.IntVar()
-        r1_Buffer_saveall = tk.Radiobutton(labelframe_Buffer, text = "Save single frames", variable=self.var_Buffer_saveall, value=1)
-        r1_Buffer_saveall.place(x=150, y=38)
-
-        label_Buffer_MasterFile =  tk.Label(labelframe_Buffer, text="Master Buffer File:")
-        label_Buffer_MasterFile.place(x=4,y=70)
-        self.Buffer_MasterFile = tk.StringVar(value="Buffer")
-        entry_Buffer_MasterFile = tk.Entry(labelframe_Buffer, width=11,  bd =3, textvariable=self.Buffer_MasterFile)
-        entry_Buffer_MasterFile.place(x=120, y=68)
-
-        button_ExpStart=  tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc',font=("Arial", 24),
-                                    command=self.expose_buffer)
-        button_ExpStart.place(x=75,y=95)
-
-
+        check_Buffer = tk.Checkbutton(labelframe_ExposeBegin, text='Buffer',variable=self.subtract_Buffer, onvalue=1, offvalue=0)
+        check_Buffer.place(x=180,y=115)
 
        
         
@@ -4018,7 +4123,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_FITSmanager = tk.Frame(self,background="pink")#, width=400, height=800)
-        self.frame_FITSmanager.place(x=4, y=580, anchor="nw", width=400, height=250)
+        self.frame_FITSmanager.place(x=14, y=610, anchor="nw", width=420, height=250)
 
         labelframe_FITSmanager =  tk.LabelFrame(self.frame_FITSmanager, text="FITS manager", font=("Arial", 24))
         labelframe_FITSmanager.pack(fill="both", expand="yes")
@@ -4227,7 +4332,7 @@ class MainPage(tk.Frame):
         wdrawtype.bind("<Return>", self.set_drawparams)
         self.wdrawtype = wdrawtype
 
-        wdrawcolor = ttk.Combobox(hbox, values=self.drawcolors)#,
+        wdrawcolor = ttk.Combobox(hbox, values=self.drawcolors, style="TCombobox")#,
         #                           command=self.set_drawparams)
         index = self.drawcolors.index('red')
         wdrawcolor.current(index)
@@ -4273,7 +4378,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_SlitConf = tk.Frame(self,background="gray")#, width=400, height=800)
-        self.frame_SlitConf.place(x=410, y=580, anchor="nw", width=500, height=250)
+        self.frame_SlitConf.place(x=460, y=610, anchor="nw", width=500, height=250)
         labelframe_SlitConf =  tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration", 
                                              font=("Arial", 24))
         labelframe_SlitConf.pack(fill="both", expand="yes")
@@ -4366,7 +4471,8 @@ class MainPage(tk.Frame):
         self.base_pattern_name_entry = base_pattern_name_entry
         
         self.selected_dmd_pattern = tk.StringVar()
-        self.pattern_group_dropdown = ttk.Combobox(labelframe_PatternSeries, width=25, textvariable=self.selected_dmd_pattern)
+        self.pattern_group_dropdown = ttk.Combobox(labelframe_PatternSeries, width=25, 
+                                                   textvariable=self.selected_dmd_pattern, style="TCombobox")
         self.pattern_group_dropdown.bind("<<ComboboxSelected>>", self.selected_dmd_group_pattern)
         self.pattern_group_dropdown.place(x=4, y=35, width=200)
         
@@ -5365,6 +5471,21 @@ class MainPage(tk.Frame):
 #        self.handle_buffer()
         print("Buffer file created")
         # Camera= CCD(dict_params=params)
+        
+    def start_an_exposure(self):
+        
+        obj_type = self.var_acq_type.get()
+        
+        if obj_type=="Science":
+            self.expose_light()
+        elif obj_type=="Bias":
+            self.expose_bias()
+        elif obj_type=="Flat":
+            self.expose_flat()
+        elif obj_type=="Dark":
+            self.expose_dark()
+        elif obj_type=="Buffer":
+            self.expose_buffer()
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Handle files: sets or single?
@@ -5394,7 +5515,7 @@ class MainPage(tk.Frame):
             img_number+=1
             print(files[i])
             with fits.open(files[i]) as hdu:
-                night_dir_fname_search = os.path.join(self.fits_dir,"*_{:04n}.fits".format(img_number))
+                night_dir_fname_search = os.path.join(self.fits_dir,"*{}_{:04n}.fits".format(i,img_number))
                 night_dir_fname = glob.glob(night_dir_fname_search)[0]
                 night_hdulist = fits.open(night_dir_fname)
                 night_hdulist[0].header = main_fits_header.output_header
@@ -5423,7 +5544,7 @@ class MainPage(tk.Frame):
         superfile_header = hdu[0].header
         
         obj_type = self.tabControl.tab(self.tabControl.select(), "text")
-        if obj_type=="Image":
+        if obj_type=="Science":
             obj_type="SCI"
         elif obj_type=="Buffer":
             obj_type="BUFF"
@@ -5431,7 +5552,7 @@ class MainPage(tk.Frame):
         
         if self.image_type == "light" or self.image_type == "flat":
             super_filename = os.path.join(local_dir,"fits_image","super"+self.image_type+"_"+self.FW_filter.get()+".fits")
-            #fits.writeto(,superfile,superfile_header,overwrite=True)
+            #fits.writeto(,superfile,supefrfile_header,overwrite=True)
         else:
             super_filename = os.path.join(local_dir,"fits_image","super"+self.image_type+".fits")
             
@@ -5500,6 +5621,7 @@ class MainPage(tk.Frame):
         dark_sec = dark_bias / exptime
         hdr_out = hdr
         hdr_out['PARAM2']=1
+        
         dir_hdul1 = os.path.join(local_dir,"fits_image","superdark_s.fits")
         fits.writeto(dir_hdul1 ,dark_sec,hdr_out,overwrite=True)
         
@@ -5507,11 +5629,11 @@ class MainPage(tk.Frame):
         pr_hdu = fits.PrimaryHDU(dark_sec, main_fits_header.output_header)
         hdulist1 = fits.HDUList(hdus=[pr_hdu])
         
-        out_fname = "superdark_s"
+        out_fname = os.path.split(dir_hdul1)[1][:-5]#"superdark_s"
         new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", new_fname)
-        dir_hdul2 = os.path.join(self.fits_dir,out_fname)
+        dir_hdul2 = os.path.join(self.fits_dir,new_fname)
         #second file with updated fits header
         hdulist2 = fits.HDUList(hdus=[pr_hdu])
         if DMD.current_dmd_shape is not None:
@@ -5572,7 +5694,7 @@ class MainPage(tk.Frame):
         hdulist1 = fits.HDUList(hdus=[pr_hdu])
         
         out_fname = os.path.split(dir_hdul1)[1][:-5]
-        new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
+        new_fname = "superflat_{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", new_fname)
         dir_hdul2 = os.path.join(self.fits_dir,new_fname)
@@ -5649,10 +5771,31 @@ class MainPage(tk.Frame):
 #        main_fits_header.set_param("objname", self.ObjectName.get())
         
         obj_type = self.tabControl.tab(self.tabControl.select(), "text")
-        if obj_type=="Image":
+        if obj_type=="Science":
             obj_type="SCI"
         elif obj_type=="Buffer":
             obj_type="BUFF"
+            
+        if self.image_type=="science":
+            obj_type="SCI"
+            imtype="Sci"
+        elif self.image_type=="buffer":
+            obj_type="BUFF"
+            imtype="Buff"
+        elif self.image_type=="flat":
+            obj_type="FLAT"
+            imtype = "flat_{}".format(self.FW_filter.get())
+        elif self.image_type=="dark":
+#            imtype = "dark_{}s".format(self.ExpTime.get())
+            obj_type="DARK"
+            imtype = "dark_{}s".format(self.Dark_ExpT.get())
+        
+        if self.out_fname.get().strip(" ")=="":
+            basename = self.out_fname.get()
+        
+        else:
+            basename = "_"+self.out_fname.get()
+        out_fname = os.path.join(self.fits_dir,imtype+basename)
         
 #        main_fits_header.set_param("obstype", obj_type)
 #        main_fits_header.set_param("filterpos", self.selected_FW_pos.get())
@@ -5692,10 +5835,10 @@ class MainPage(tk.Frame):
         
         ## Save a copy of the image to store in the Obs Night Directory under 
         ## a more informative filename
-        
-        new_fname = "{}_{:04n}.fits".format(self.out_fname.get(),int(self.entry_out_fnumber.get()))
+        new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", new_fname)
+        main_fits_header.set_param("obstype", obj_type)
         full_fpath = os.path.join(self.fits_dir,new_fname)
         print(full_fpath)
         hdulist[0].header = main_fits_header.output_header
@@ -5709,7 +5852,20 @@ class MainPage(tk.Frame):
 # # Expose
 # 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+    
+    def change_acq_type(self, event):
+        
+        """
+        When the acquisition tab is changed 
+        """
+        
+        image_type = self.tabControl.tab(self.tabControl.select(), "text")
+        self.var_acq_type.set(image_type)
+        
+        
+    
 
+    
     def expose(self,params):
         """ to be written """
         
@@ -5742,7 +5898,11 @@ class MainPage(tk.Frame):
             imtype="Buff"
         elif self.image_type=="flat":
             imtype = "flat_{}".format(self.FW_filter.get())
-        if self.out_fname.get()=="":
+        elif self.image_type=="dark":
+#            imtype = "dark_{}s".format(self.ExpTime.get())
+            imtype = "dark_{}s".format(int(float(self.Dark_ExpT.get())))
+        
+        if self.out_fname.get().strip(" ")=="":
             basename = self.out_fname.get()
         
         else:
@@ -5787,24 +5947,24 @@ class MainPage(tk.Frame):
         input_header = hdul[0].header
         obj_type = self.tabControl.tab(self.tabControl.select(), "text")
         
-        if obj_type=="Image":
+        if obj_type=="Science":
             obj_type="SCI"
-            out_fname="sci"+basename
+            #out_fname="sci"+basename
         elif obj_type=="Buffer":
             obj_type="BUFF"
-            out_fname = "buff"+basename
+            #out_fname = "buff"+basename
         elif obj_type=="Bias":
             obj_type="BIAS"
-            out_fname = "bias"+basename
+            #out_fname = "bias"+basename
             #self.out_fname.set("Bias")
         elif obj_type=="Dark":
             obj_type="DARK"
             exptime = float(self.Dark_ExpT.get())
             
-            out_fname = "dark_{}s".format(exptime)+basename
+            #out_fname = "dark_{}s".format(exptime)+basename
         elif obj_type=="Flat":
             obj_type="FLAT"
-            out_fname = "flat_{}".format(self.FW_filter.get())+basename
+            #out_fname = "flat_{}".format(self.FW_filter.get())+basename
         
         main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
         main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
@@ -5846,7 +6006,7 @@ class MainPage(tk.Frame):
         
         # update the file(s) in the ObsNight directory with 
         # the DMD pattern extension and the header info.
-        for night_file in DMD.img_night_dir_list:
+        for night_file in Camera.img_night_dir_list:
         
             pr_hdu = fits.open(night_file)[0]
             main_fits_header.set_param("filename", os.path.split(night_file)[1])
@@ -5859,7 +6019,7 @@ class MainPage(tk.Frame):
         # path to file in SISI/SAMOS_yyymmdd/
         self.most_recent_img_fullpath = night_file
         print("Saved new file as {}".format(night_file))
-        self.entry_out_fnumber.invoke("buttonup")
+        #self.entry_out_fnumber.invoke("buttonup")
         hdul.close()
         hdulist.close()
         
@@ -7331,7 +7491,11 @@ class SAMOS_Parameters():
 
 if __name__ == "__main__":
     app = App()
-                  
+    ## set a style for the application so it works on various desktop themes
+    #ttk.Style().theme_use("clam")
+    combostyle = ttk.Style()
+    combostyle.configure("TCombobox", fieldbackground="dark gray", 
+                         foreground="black", background="white")
     app.mainloop()
 
     # IF you find this useful >> Claps on Medium >> Stars on Github >> Subscription on youtube will help me

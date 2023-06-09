@@ -289,14 +289,14 @@ class Class_Camera(object):
                     self.exp_progbar.update()
                     print("exposure_remaining={},readout_percent={},result={}.\n".format(exposure_remaining,readout_percent,result),end='\r')
                 
-                elif 0<readout_percent<=100:
+                if 0<readout_percent<=100:
                     self.read_progbar.step()
                     self.var_read.set(readout_percent)
                     self.read_progbar_style.configure('text.Horizontal.RProgressbar',
                                                       text='Readout {:g} %'.format(self.var_read.get()))
                     self.read_progbar.update()
                     
-                elif readout_percent>99:
+                if readout_percent>99:
                     reading=False
                     
                 else:
@@ -341,8 +341,10 @@ class Class_Camera(object):
                 newFile.close()
                 self.convertSIlly(fileout,fileout)
                 
-                
                 fileout = "{}_{}_{:04n}.fits".format(night_dir_basename, str(image), fnumber)
+                if iterations==1:
+                    fileout = "{}_{:04n}.fits".format(night_dir_basename, fnumber)
+
                 newFile = open(fileout, "wb")
                 newFile.write(data)
                 newFile.close()
