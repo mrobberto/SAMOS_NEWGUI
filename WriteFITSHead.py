@@ -65,6 +65,7 @@ class FITSHead(object):
         
         self.filename = None # base filename e.g. 'NGC1976_83.819696	-5.390333'
         self.filedir = None # main directory to which output FITS are saved.
+        self.extensions = False
         self.observers = None
         self.programID = None
         self.telOperators = None
@@ -170,6 +171,7 @@ class FITSHead(object):
         
         self.main_dict = {'FILENAME' : self.filename,
                           'FILEDIR' : self.filedir,
+                          'EXTEND' : self.extensions,
                 'OBSERVER' : (self.observers, 'Observer Name(s)'),
                 'PROGID' : (self.programID, 'Program ID'),
                 'TONAMES' : (self.telOperators, 'Telescope Operator(s)'),

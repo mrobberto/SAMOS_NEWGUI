@@ -40,6 +40,7 @@ class Class_Camera(object):
         self.DetTemp = dict_params['CCD Temperature']
         self.TriggerMode = dict_params['Trigger Mode']
         self.NofFrames = dict_params['NofFrames']
+        self.FrameSuff = None
         
  
         
@@ -142,7 +143,8 @@ class Class_Camera(object):
     
     def expose(self, night_dir_basename, start_fnumber):#, exp_progbar, exp_progbar_style, var_exp, 
                #read_progbar, read_progbar_style, var_read):
-        fnumber = start_fnumber
+        self.FrameSuff = start_fnumber
+        fnumber = int(start_fnumber.get())
         self.img_night_dir_list = []
         if 2<=len(sys.argv):
             target=sys.argv[1]
@@ -327,12 +329,14 @@ class Class_Camera(object):
             newFile.close()
             self.convertSIlly(fileout,fileout)
             
-            fileout = "{}_{:04n}.fits".format(night_dir_basename, fnumber)
-            newFile = open(fileout, "wb")
+            fileout1 = "{}_{:04n}.fits".format(night_dir_basename, fnumber)
+            newFile = open(fileout1, "wb")
             newFile.write(data)
             newFile.close()
-            self.convertSIlly(fileout,fileout)
-            self.img_night_dir_list.append(fileout)
+            self.convertSIlly(fileout1,fileout1)
+            self.img_night_dir_list.append(fileout1)
+            fnumber+=1
+            self.FrameSuff.invoke("buttonup")
             # 2) if there is a request for iterations, the serial number is appended; use setimage_ to isolate the set
             if iterations > 0:
                 fileout = os.path.join(parent_dir,"fits_image","setimage_" + str(image) +".fit")
@@ -341,16 +345,7 @@ class Class_Camera(object):
                 newFile.close()
                 self.convertSIlly(fileout,fileout)
                 
-                fileout = "{}_{}_{:04n}.fits".format(night_dir_basename, str(image), fnumber)
-                if iterations==1:
-                    fileout = "{}_{:04n}.fits".format(night_dir_basename, fnumber)
 
-                newFile = open(fileout, "wb")
-                newFile.write(data)
-                newFile.close()
-                self.convertSIlly(fileout,fileout)
-                fnumber+=1
-                self.img_night_dir_list.append(fileout)
                 
                 #=> these files are handled by the routines in Main_Vx.py
 
