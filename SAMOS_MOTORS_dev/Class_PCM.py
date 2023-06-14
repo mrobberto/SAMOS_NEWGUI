@@ -68,6 +68,11 @@ from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 #PCM = Class_PCM()
 #SF = Class_SAMOS_Functions()
 
+#colorblind friendly 
+indicator_light_on_color = "#08F903"
+indicator_light_off_color = "#194A18"
+indicator_light_pending_color = "#F707D3"
+
 class Class_PCM():
     
 
@@ -77,6 +82,12 @@ class Class_PCM():
 #        IP_dict = SF.read_IP_user()
         IP_dict = SF.read_IP_default()
         print("\n Current IP_default:\n",IP_dict,"\n")
+        
+        # reference to indicator lights in main GUI
+        # indicator lights will be different colors depending on
+        # if motors are moving or in position
+        self.canvas_Indicator = None
+        
         self.MOTORS_onoff = 0
         if IP_status_dict['IP_Motors'] == 'False':#../0'True':
 #            self.IP_Host = str((IP_dict['IP_PCM'])[:12]) #str((IP_dict['IP_Motors'])[:15])
@@ -88,6 +99,8 @@ class Class_PCM():
         else: 
 #            self.MOTORS_onoff = 0
             print('MOTORS NOT CONNECTED!!')
+            self.canvas_Indicator.itemconfig("grism_ind", fill=indicator_light_off_color)
+            self.canvas_Indicator.itemconfig("filter_ind", fill=indicator_light_off_color)
             self.MOTORS_onoff = 0
             return
  
@@ -579,7 +592,8 @@ class Class_PCM():
         HOST = self.IP_Host#self.params['Host']
         # 1000#65432        # The port used by the server
         PORT = self.IP_Port#self.params['Port']
-
+        
+        
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
 
@@ -592,18 +606,22 @@ class Class_PCM():
                 # return s.sendall(b'~@,9600_8N1T2000,/1?0\n')
                 s.sendall(b'~@,9600_8N1T2000,/1?0\n')
                 print("s.sendall(b'~@,9600_8N1T2000,/1?0\n')")
+                
 
             if FWorGR == "FW2":
                 s.sendall(b'~@,9600_8N1T2000,/2?0\n')
                 print("s.sendall(b'~@,9600_8N1T2000,/2?0\n')")
+                
 
             if FWorGR == "GR_A":
                 s.sendall(b'~@,9600_8N1T2000,/3?0\n')
                 print("s.sendall(b'~@,9600_8N1T2000,/3?0\n')")
+                
 
             if FWorGR == "GR_B":
                 s.sendall(b'~@,9600_8N1T2000,/4?0\n')
                 print("s.sendall(b'~@,9600_8N1T2000,/4?0\n')")
+                
 
             data = s.recv(1024)
 
@@ -744,6 +762,7 @@ class Class_PCM():
                           current_steps = self.query_current_step_counts('FW1')
                           current_steps = self.extract_steps_from_return_string(current_steps)
                           print('3. current_steps:',current_steps)
+                          
                 self.write_status  
                 return position,current_steps
     #
@@ -967,7 +986,9 @@ class Class_PCM():
 # =============================================================================
     def move_filter_wheel(self, filter):
         print(filter)
-        
+        self.canvas_Indicator.itemconfig("filter_ind", 
+                                         fill=indicator_light_pending_color)
+        self.canvas_Indicator.update()
 #        data = ascii.read(local_dir+'/IDG_filter_positions.txt')
 #        print(data)
 # =============================================================================
@@ -1076,7 +1097,10 @@ class Class_PCM():
             print('\n >>> FW1 arrived \n') 
             print('send FW2')
             self.move_FW_pos_wheel('B6')    
-
+        
+        self.canvas_Indicator.itemconfig("filter_ind", 
+                                         fill=indicator_light_on_color)
+        self.canvas_Indicator.update()
     # =============================================================================
     # #
     # # QUERY COMMANDS:
@@ -1243,7 +1267,9 @@ class Class_PCM():
         HOST = self.IP_Host#self.params['Host']
         # 1000#65432        # The port used by the server
         PORT = self.IP_Port#self.params['Port']
-
+        self.canvas_Indicator.itemconfig("grism_ind", 
+                                         fill=indicator_light_pending_color)
+        self.canvas_Indicator.update()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
 
@@ -1260,9 +1286,16 @@ class Class_PCM():
             data = s.recv(1024)
 
             print('Received', repr(data))
+        self.canvas_Indicator.itemconfig("grism_ind", 
+                                         fill=indicator_light_on_color)
+        self.canvas_Indicator.update()
 
     def fast_home_grism_rails(self, GR):
         import socket
+        
+        self.canvas_Indicator.itemconfig("grism_ind", 
+                                         fill=indicator_light_pending_color)
+        self.canvas_Indicator.update()
 
         # '10.0.0.179'#127.0.0.1'  # The server's hostname or IP address
         HOST = self.IP_Host#self.params['Host']
@@ -1286,6 +1319,8 @@ class Class_PCM():
             data = s.recv(1024)
 
             print('Received', repr(data))
+        
+        
 
     def move_grism_rails(self, position):
         print('>',position)
@@ -1295,7 +1330,9 @@ class Class_PCM():
         HOST = self.IP_Host#self.params['Host']
         # 1000#65432        # The port used by the server
         PORT = self.IP_Port#self.params['Port']
-
+        
+        
+        
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
 
@@ -1396,6 +1433,7 @@ class Class_PCM():
                if (abs(int(current_steps) - (self.GR_A_counts_pos1)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_A is at position 1\n')
                #self.write_status()          
+               
                return position,current_steps
 
 # =============================================================================
@@ -1503,7 +1541,10 @@ class Class_PCM():
                print('5 current_sensor GR_A:',bits[3],'should be on beam at: 0')
                if (abs(int(current_steps) - (self.GR_A_counts_pos2)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_A is at position 2\n')
-               #self.write_status()          
+               #self.write_status()         
+               #self.canvas_Indicator.itemconfig("grism_ind", 
+               #                                 fill=indicator_light_on_color)
+               #self.canvas_Indicator.update()
                return position,current_steps
 
 
@@ -1577,6 +1618,7 @@ class Class_PCM():
                if (abs(int(current_steps) - (self.GR_B_counts_pos1)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_B is at position 1\n')
                #self.write_status()          
+               
                return position,current_steps
 
 
@@ -1646,7 +1688,8 @@ class Class_PCM():
                print('5 current_sensor GR_B:',bits[3],'should be on beam at: 0')
                if (abs(int(current_steps) - (self.GR_B_counts_pos2)) < 10) and (str(bits[3]) == '0') :
                     print('\nGR_B is at position 2\n')
-               #self.write_status()          
+               #self.write_status()         
+               
                return position,current_steps
                 
                 
@@ -1659,7 +1702,7 @@ class Class_PCM():
         HOST = self.IP_Host#self.params['Host']
         # 1000#65432        # The port used by the server
         PORT = self.IP_Port#self.params['Port']
-
+        
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
 
@@ -1686,7 +1729,6 @@ class Class_PCM():
         HOST = self.IP_Host#self.params['Host']
         # 1000#65432        # The port used by the server
         PORT = self.IP_Port#self.params['Port']
-
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((HOST, PORT))
             

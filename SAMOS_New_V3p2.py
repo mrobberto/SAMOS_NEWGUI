@@ -4386,20 +4386,25 @@ class MainPage(tk.Frame):
         self.canvas_Indicator = tk.Canvas(self, background="gray")
         self.canvas_Indicator.place(x=60,y=810,width=310, height=85)
         
-        self.canvas_Indicator.create_oval(20,20,60,60, fill=indicator_light_off_color, 
-                                          outline=indicator_light_off_color, tags=["filter_ind"])
+        self.canvas_Indicator.create_oval(20,20,60,60, fill=indicator_light_on_color, 
+                                          outline=None, tags=["filter_ind"])
         self.canvas_Indicator.create_text(40,70, text="Filters")
-        self.canvas_Indicator.create_oval(100,20,140,60, fill=indicator_light_off_color, outline=indicator_light_off_color)
-        self.canvas_Indicator.create_text(120,70, text="Grisms",tags=["gism_ind"])
+        self.canvas_Indicator.create_oval(100,20,140,60, fill=indicator_light_on_color, 
+                                          tags=["grism_ind"], outline=None)
+        self.canvas_Indicator.create_text(120,70, text="Grisms")
         
         #indicator for mirror and SOAR TCS applicable at telescope
         self.canvas_Indicator.create_oval(170,20,210,60, fill=indicator_light_off_color, tags=["mirror_ind"],
-                                          outline=indicator_light_off_color)
+                                          outline=None)
         self.canvas_Indicator.create_text(190,70, text="Mirror")
         self.canvas_Indicator.create_oval(240,20,280,60, fill=indicator_light_off_color, tags=["tcs_ind"],
-                                          outline=indicator_light_off_color)
+                                          outline=None)
         self.canvas_Indicator.create_text(260,70, text="TCS")
-
+        
+        # connect canvas_Indicator to the PCM class so it can tell
+        # the objects what color to be
+        # might not be necessary to chane color in PCM class but keeping it here for now
+        PCM.canvas_Indicator = self.canvas_Indicator
  
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -5308,8 +5313,10 @@ class MainPage(tk.Frame):
         main_fits_header.set_param("filtpos", filter_pos)
         print(filter)
         self.canvas_Indicator.itemconfig("filter_ind",fill=indicator_light_pending_color)
+        self.canvas_Indicator.update()
         t = PCM.move_filter_wheel(filter)
         self.canvas_Indicator.itemconfig("filter_ind",fill=indicator_light_on_color)
+        self.canvas_Indicator.update()
 
         # self.Echo_String.set(t)
         print(t)
@@ -5338,9 +5345,10 @@ class MainPage(tk.Frame):
 #        GR_pos = self.selected_GR_pos.get()
 #        print(type(GR_pos),type(str(GR_pos)),type("GR_B1")) 
         self.canvas_Indicator.itemconfig("grism_ind",fill=indicator_light_pending_color)
-
+        self.canvas_Indicator.update()
         t = PCM.move_grism_rails(GR_pos)
         self.canvas_Indicator.itemconfig("grism_ind",fill=indicator_light_on_color)
+        self.canvas_Indicator.update()
 
 #        self.Echo_String.set(t)
         print(t)
