@@ -2328,8 +2328,8 @@ class CCDPage(tk.Frame):
         subtract_Dark = tk.IntVar()
         check_Dark = tk.Checkbutton(labelframe_Acquire, text='Dark',variable=subtract_Dark, onvalue=1, offvalue=0)
         check_Dark.place(x=60,y=140)
-        subtract_Flat = tk.IntVar()
-        check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=subtract_Flat, onvalue=1, offvalue=0)
+        divide_Flat = tk.IntVar()
+        check_Flat = tk.Checkbutton(labelframe_Acquire, text='Flat',variable=divide_Flat, onvalue=1, offvalue=0)
         check_Flat.place(x=120,y=140)
         subtract_Buffer = tk.IntVar()
         check_Buffer = tk.Checkbutton(labelframe_Acquire, text='Buffer',variable=subtract_Buffer, onvalue=1, offvalue=0)
@@ -4113,8 +4113,8 @@ class MainPage(tk.Frame):
         self.subtract_Dark = tk.IntVar()
         check_Dark = tk.Checkbutton(labelframe_ExposeBegin, text='Dark',variable=self.subtract_Dark, onvalue=1, offvalue=0)
         check_Dark.place(x=60,y=115)
-        self.subtract_Flat = tk.IntVar()
-        check_Flat = tk.Checkbutton(labelframe_ExposeBegin, text='Flat',variable=self.subtract_Flat, onvalue=1, offvalue=0)
+        self.divide_Flat = tk.IntVar()
+        check_Flat = tk.Checkbutton(labelframe_ExposeBegin, text='Flat',variable=self.divide_Flat, onvalue=1, offvalue=0)
         check_Flat.place(x=120,y=115)
         self.subtract_Buffer = tk.IntVar()
         check_Buffer = tk.Checkbutton(labelframe_ExposeBegin, text='Buffer',variable=self.subtract_Buffer, onvalue=1, offvalue=0)
@@ -5845,14 +5845,14 @@ class MainPage(tk.Frame):
 #       Revised version by Dana below where we check for a superdark
         try:
             dark_s_files = glob.glob(self.fits_dir+"/superdark_{}s*.fits".format(self.ExpTimeSet.get()))
-            if len(dark_s_files)==0:
+            if len(dark_s_files)>1:
                 dark_s_file = self.find_closest_dark()
-            else:
+            elif len(dark_s_files)==1:
                 dark_s_file = dark_s_files[0]
             hdu_dark_s = fits.open(dark_s_file)
             dark_s = hdu_dark_s[0].data
             hdu_dark_s.close()
-        except IndexError:
+        except (IndexError, ValueError):
             dark_s = np.zeros_like(light)
             dark_s_file = ''
         
@@ -5899,7 +5899,7 @@ class MainPage(tk.Frame):
         else:    
             light_dark = light_bias
 
-        if self.subtract_Flat.get() == 1:
+        if self.divide_Flat.get() == 1:
             light_dark_bias = np.divide(light_dark, flat) 
             main_fits_header.output_header.set("MSTRFLAT", dark_s_file, "Master Flat file if corrected")
 
