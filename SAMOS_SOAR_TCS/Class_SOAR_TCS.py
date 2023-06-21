@@ -18,12 +18,14 @@ from SAMOS_Functions import Class_SAMOS_Functions as SF
 class SOAR_TCS:
     def __init__(self):
         all_IPs = SF.read_IP_default()
-        i_columns=all_IPs['IP_SOAR'].find(':')        
-        self.SOAR_TCS_IP = all_IPs['IP_SOAR'][0:i_columns]
-        self.SOAR_TCS_port = int(all_IPs['IP_SOAR'][i_columns+1:])
-        self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
 
-    
+        """ switch when the correct IP and PORT are insterted"""
+        # self.SOAR_TCS_IP =  all_IPs['IP_SOAR'][0:i_columns]
+        # self.SOAR_TCS_port = int(all_IPs['IP_SOAR'][i_columns+1:])
+        # self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
+        self.params = {'Host': 0, 'Port': 0}
+        
+        
     def send_to_TCS(self,command):
         import socket
         socket.setdefaulttimeout(3)
@@ -57,7 +59,7 @@ class SOAR_TCS:
                 s.close()
     
     def way(self):
-        pass
+        return_string = self.send_to_TCS["WAY"]
     
     def offset(self,param,offset="E 0.0 N  0.0"):
         if param == "MOVE":
