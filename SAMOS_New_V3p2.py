@@ -1458,6 +1458,9 @@ class DMDPage(tk.Frame):
 
         slit_width = int(self.entrybox_width.get()) #4 # Slit width in number of micromirrors 
         # folder = 'C:/Users/Kate/Documents/hadamard/mask_sets/' # Change path to fit user needs
+
+#        folder = os.path.join(local_dir,'Hadamard','mask_sets',os.path.sep)
+        # above line was not allowing to write data
         folder = os.path.join(local_dir,'Hadamard','mask_sets/')
         if matrix_type == 'S':
             mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
@@ -5445,6 +5448,8 @@ class MainPage(tk.Frame):
         self.image_type = "sci"
         ExpTime_ms = float(self.ExpTimeSet.get())*1000
         params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Light_NofFrames.get())}
+
+ 
         self.expose(params)
         if self.Light_NofFrames.get()>1:
             self.combine_files()

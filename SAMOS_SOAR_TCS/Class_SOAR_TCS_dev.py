@@ -59,7 +59,8 @@ class SOAR_TCS:
                 s.close()
     
     def way(self):
-        return_string = self.send_to_TCS["WAY"]
+
+        return_string = self.send_to_TCS("WAY")  
     
     def offset(self,param,offset="E 0.0 N  0.0"):
         if param == "MOVE":
