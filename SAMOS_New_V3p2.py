@@ -1458,7 +1458,7 @@ class DMDPage(tk.Frame):
 
         slit_width = int(self.entrybox_width.get()) #4 # Slit width in number of micromirrors 
         # folder = 'C:/Users/Kate/Documents/hadamard/mask_sets/' # Change path to fit user needs
-        folder = os.path.join(local_dir,'Hadamard','mask_sets',os.path.sep)
+        folder = os.path.join(local_dir,'Hadamard','mask_sets/')
         if matrix_type == 'S':
             mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
             name = 'S'+str(order)+'_'+str(slit_width)+'w_mask_1-'+str(order)+'.bmp'
