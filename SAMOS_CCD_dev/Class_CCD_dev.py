@@ -364,10 +364,14 @@ class Class_Camera(object):
         print(fits_dir)
         today = datetime.now()
         # If no output file given, just prepend "fixed"
+        global outname
         outname = os.path.join(fits_dir,'SAMOS_image_'+today.strftime('%H%M%S')+'.fits')
         import shutil  
         shutil.copy(os.path.join(parent_dir,'fits_image','newimage_fixed.fit'), outname)
     
+    def delete_fitsfile(self):
+        os.remove(outname)
+        
         
         
     '''        

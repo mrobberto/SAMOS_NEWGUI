@@ -1221,11 +1221,13 @@ class Class_PCM():
     #
     # # ; stowed position (A)
     # # ~@,9600_8N1T2000,/3s10A0R
-            s.sendall(b'~@,9600_8N1T2000,/3s10A0R\n')
+#            s.sendall(b'~@,9600_8N1T2000,/3s10A0R\n')
+            s.sendall(b'~@,9600_8N1T2000,/3s10A1000Z2000R\n')  #line changed by S. Hope
     #
     # # ; stowed stowed (B)
     # # ~@,9600_8N1T2000,/4s10A0R
-            s.sendall(b'~@,9600_8N1T2000,/4s10A0R\n')
+#            s.sendall(b'~@,9600_8N1T2000,/4s10A0R\n')
+            s.sendall(b'~@,9600_8N1T2000,/4s10A1000Z2000R\n') #line changed by S. Hope
 
             data = s.recv(1024)
 

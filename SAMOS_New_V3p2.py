@@ -56,7 +56,7 @@ import re  # re module of the standard library handles strings, e.g. use re.sear
 # , PointPixelRegion, RegionVisual
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion
 from astroquery.simbad import Simbad
-from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
+#from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 import time
 import WriteFITSHead as WFH
 from SlitTableViewer import SlitTableView as STView
@@ -3494,9 +3494,9 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_ObsInf = tk.Frame(self, background="cyan")
-        self.frame_ObsInf.place(x=14, y=0, anchor="nw", width=400, height=150)
+        self.frame_ObsInf.place(x=10, y=0, anchor="nw", width=420, height=150)
         
-        labelframe_ObsInf = tk.LabelFrame(self.frame_ObsInf, text="Observer Info", 
+        labelframe_ObsInf = tk.LabelFrame(self.frame_ObsInf, text="Observer Information", 
                                           font=("Ariel", 24))
         labelframe_ObsInf.pack(fill="both", expand="yes")
         
@@ -3529,7 +3529,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame0l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame0l.place(x=4, y=155, anchor="nw", width=220, height=110)
+        self.frame0l.place(x=10, y=155, anchor="nw", width=220, height=110)
  
         labelframe_Filters =  tk.LabelFrame(self.frame0l, text="Filter Status", 
                                             font=("Arial", 24))
@@ -3710,7 +3710,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame2l = tk.Frame(self,background="cyan")#, width=400, height=800)
-        self.frame2l.place(x=14, y=275, anchor="nw", width=420, height=160)
+        self.frame2l.place(x=4, y=275, anchor="nw", width=420, height=160)
 
 #        root = tk.Tk()
 #        root.title("Tab Widget")
@@ -3985,9 +3985,9 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         self.ExposeBeginFrame = tk.Frame(self, background="dark gray")
-        self.ExposeBeginFrame.place(x=14, y=435, width=420, height=175)
+        self.ExposeBeginFrame.place(x=10, y=435, width=420, height=175)
         
-        labelframe_ExposeBegin = tk.LabelFrame(self.ExposeBeginFrame, text="Acquire",
+        labelframe_ExposeBegin = tk.LabelFrame(self.ExposeBeginFrame, text="Acquisition",
                                                font=("Ariel", 24))
         labelframe_ExposeBegin.pack(fill="both", expand="yes")
         
@@ -4131,7 +4131,7 @@ class MainPage(tk.Frame):
 #         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_FITSmanager = tk.Frame(self,background="pink")#, width=400, height=800)
-        self.frame_FITSmanager.place(x=14, y=610, anchor="nw", width=420, height=200)
+        self.frame_FITSmanager.place(x=10, y=610, anchor="nw", width=420, height=200)
 
         labelframe_FITSmanager =  tk.LabelFrame(self.frame_FITSmanager, text="FITS manager", font=("Arial", 24))
         labelframe_FITSmanager.pack(fill="both", expand="yes")
@@ -4163,7 +4163,7 @@ class MainPage(tk.Frame):
         labelframe_Query_Simbad =  tk.LabelFrame(labelframe_FITSmanager, text="Query Simbad", 
                                                      width=180,height=110,
                                                      font=("Arial", 24))
-        labelframe_Query_Simbad.place(x=0, y=45)
+        labelframe_Query_Simbad.place(x=5, y=45)
 
         button_Query_Simbad =  tk.Button(labelframe_Query_Simbad, text="Query Simbad", bd=3, command=self.Query_Simbad)
         button_Query_Simbad.place(x=5, y=35)
@@ -5449,7 +5449,7 @@ class MainPage(tk.Frame):
         ExpTime_ms = float(self.ExpTimeSet.get())*1000
         params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4, 'NofFrames': int(self.Light_NofFrames.get())}
 
- 
+        #handle multiple files 
         self.expose(params)
         if self.Light_NofFrames.get()>1:
             self.combine_files()
@@ -5620,9 +5620,19 @@ class MainPage(tk.Frame):
         second_super_filename0 = os.path.split(super_filename)[1][:-5]
         if self.image_type=="dark":
             second_super_filename0 = second_super_filename0+"_{}s".format(self.ExpTimeSet.get())
-            
+        
+        """
+        we don't want to use here the current file counter int(self.entry_out_fnumber.get()) 
+        because it has been already pushed up by +1 count
+        Therefore, we read it and take down 1 count for the supersci file
+        """
+        current_counter = int(self.entry_out_fnumber.get())
+        previous_counter = current_counter - 1
+        
+        
         second_super_filename = "{}_{:04n}.fits".format(second_super_filename0,
-                                                        int(self.entry_out_fnumber.get()))
+#                                                        int(self.entry_out_fnumber.get()))
+                                                        previous_counter)
         second_super_filename = os.path.join(self.fits_dir,second_super_filename)
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", second_super_filename)
@@ -5815,7 +5825,7 @@ class MainPage(tk.Frame):
 
         
     def handle_light(self):
-        """ handle_light """
+        """ handle_light frame for display, applying bias, dark and flat if necessary """
         light_file = os.path.join(local_dir,"fits_image","newimage.fit")
         flat_file = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits")
         buffer_file = os.path.join(local_dir,"fits_image","superbuffer.fits")
@@ -5918,6 +5928,7 @@ class MainPage(tk.Frame):
             
         if self.image_type=="sci":
             obj_type="SCI"
+            #I am adding the QL suffix to indicate that this is an image processed for QL
             imtype="Sci_{}".format(self.FW_filter.get())
         elif self.image_type=="bias":
             obj_type="BIAS"
@@ -5979,6 +5990,13 @@ class MainPage(tk.Frame):
         ## Save a copy of the image to store in the Obs Night Directory under 
         ## a more informative filename
         fname = self.current_night_dir_filenames[-1]
+        #
+        # ADD the QL Prefix to indicate that this file has been processed for Quick Look
+        path, file = os.path.split(fname)
+        file = file[:3] + '_QL' + file[3:]
+        fname = os.path.join(path,file)
+        # done
+        #
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", fname)
         main_fits_header.set_param("obstype", obj_type)
@@ -6150,7 +6168,7 @@ class MainPage(tk.Frame):
         
             hdulist.append(dmd_hdu)
         
-        # update the file(s) in the ObsNight directory with 
+        # UPDATE the file(s) in the ObsNight directory with 
         # the DMD pattern extension and the header info.
         self.current_night_dir_filenames = Camera.img_night_dir_list
         for night_file in Camera.img_night_dir_list:
@@ -6169,6 +6187,9 @@ class MainPage(tk.Frame):
         #self.entry_out_fnumber.invoke("buttonup")
         hdul.close()
         hdulist.close()
+        
+        print("Cleanup: deleting original fits file")
+        CCD.delete_fitsfile()
         
         
         
