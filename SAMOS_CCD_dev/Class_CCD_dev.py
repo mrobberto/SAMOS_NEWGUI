@@ -374,11 +374,10 @@ class Class_Camera(object):
         
         
         
-    '''        
     def Cooler(self,OnOff):
         #OnOff = '0' : Cooler OFF; OnOff = '1' : Cooler ON
         Command = "COOLER "+OnOff
         what = self.get_url_as_string(target+'command.txt',"{}".format("COOLER 1"))
         print(what)
         pass
-    '''
+    

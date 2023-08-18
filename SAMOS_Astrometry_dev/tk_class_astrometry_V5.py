@@ -603,6 +603,8 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         
     def APRegion_RAD2pix(APRegionfile,WCS):
         """
+        Convert the region file in ds9/RADEC9 format to ds9/xy format given a WCS solution
+        
         based on example on 
         https://astropy-regions.readthedocs.io/en/stable/getting_started.html
 
@@ -617,6 +619,7 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         -------
         region in pixel units
 
+        NOTE: Here we read a APRegionfile in   > format = ds9 <
         """
         regions = Regions.read(APRegionfile, format='ds9')
 #        RRR_pix = []
