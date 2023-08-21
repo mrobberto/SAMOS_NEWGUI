@@ -603,7 +603,7 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         
     def APRegion_RAD2pix(APRegionfile,WCS):
         """
-        Convert the region file in ds9/RADEC9 format to ds9/xy format given a WCS solution
+        Convert the region file in ds9/RADEC format to AP/xy format given a WCS solution
         
         based on example on 
         https://astropy-regions.readthedocs.io/en/stable/getting_started.html
@@ -611,15 +611,26 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         Parameters
         ----------
         APRegionfile : TYPE string 
-            DESCRIPTION: a filename containing an Astropy Region in RADEC
+            DESCRIPTION: a filename containing an Astropy Region in RADEC, ds9 format
+            NOTE: Here we read a APRegionfile in   > format = ds9 <
+            EXAMPLE:
+                # Region file format: DS9 astropy/regions
+                global include=1
+                image
+                box(480.80170584,499.68662062,3.06016566,9.18049699,1.43101865)
+                box(498.89513694,506.20672157,3.06016577,9.18049732,1.42975106)
+            
         WCS : TYPE 
             DESCRIPTION: a WCS  
 
         Returns
         -------
-        region in pixel units
+        RRR_pix: list of astropy regions in pixel units. 
+                 Example:
+                 IPdb [3]: RRR_pix
+                 Out  [3]: <Regions([<RectanglePixelRegion(center=PixCoord(x=479.8017058387717, y=498.6866206238554), width=3.060165662794892, height=9.180496988384677, angle=1.431018653723683 deg)>, 
+                                     <RectanglePixelRegion(center=PixCoord(x=497.89513693503744, y=505.20672157010375), width=3.0601657736932, height=9.180497321079601, angle=1.4297510640751057 deg)>])>
 
-        NOTE: Here we read a APRegionfile in   > format = ds9 <
         """
         regions = Regions.read(APRegionfile, format='ds9')
 #        RRR_pix = []
