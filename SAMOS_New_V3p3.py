@@ -51,19 +51,25 @@ TO DO: "Run Code" erases everything, should leave the slits untouched.
 - V2. Cleaned the startup sequence removing a bunch of print() messages
 """
 from SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT
+from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
+from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
 from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
+from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
+#from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
+from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
+from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
+from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
+from SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
+import SAMOS_system_dev.utils as U
+import SAMOS_system_dev.WriteFITSHead as WFH
 import re  # re module of the standard library handles strings, e.g. use re.search() to extract substrings
 # , PointPixelRegion, RegionVisual
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion
 from astroquery.simbad import Simbad
 #from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 import time
-import WriteFITSHead as WFH
-from SlitTableViewer import SlitTableView as STView
-from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
+
 #from SAMOS_Astrometry_dev.skymapper_interrogate_VOTABLE import skymapper_interrogate_VOTABLE
-from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
-from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
 import glob
 import pathlib
 import math
@@ -86,10 +92,6 @@ import ginga.colors as gcolors
 from ginga.canvas import CompoundMixin as CM
 from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
-from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
-from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
-#from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
-from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 import subprocess
 import pandas as pd
 import numpy as np
@@ -119,7 +121,7 @@ from photutils.background import Background2D, MedianBackground
 from photutils.detection import DAOStarFinder
 
 
-import utils as U
+
 import shutil
 # from esutil import htm
 
@@ -1495,7 +1497,7 @@ class DMDPage(tk.Frame):
         [host,port] = IP.split(":")
         DMD.initialize(address=host, port=int(port))
         DMD._open()
-        image_map = Image.open(dir_DMD + "/current_dmd_state.png")
+        image_map = Image.open(os.path.join(dir_DMD,"current_dmd_state.png"))
         test = ImageTk.PhotoImage(image_map)
         label1 = tk.Label(self.canvas,image=test)
         label1.image = test
@@ -2258,7 +2260,9 @@ class CCDPage(tk.Frame):
         # ADD CODE HERE TO DESIGN THIS PAGE
         self.frame0l = tk.Frame(self,background="cyan")#, width=300, height=300)
         self.frame0l.place(x=0, y=0, anchor="nw", width=950, height=590)
-
+        
+        
+        """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    ACQUIRE IMAGE Frame
@@ -2488,7 +2492,7 @@ class CCDPage(tk.Frame):
         button_ExpStart.place(x=75,y=95)
 
 
-
+        """
 
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -2497,7 +2501,8 @@ class CCDPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         self.frame2r = tk.Frame(self.frame0l,background="#4A7A8C")#, width=400, height=800)
-        self.frame2r.place(x=430, y=4, anchor="nw", width=360, height=400)
+#        self.frame2r.place(x=430, y=4, anchor="nw", width=360, height=400)
+        self.frame2r.place(x=4, y=4, anchor="nw", width=360, height=400)
         labelframe_Setup =  tk.LabelFrame(self.frame2r, text="Camera Setup", font=("Arial", 24))
         labelframe_Setup.pack(fill="both", expand="yes")
         
@@ -3259,7 +3264,7 @@ class CCD2DMD_RecalPage(tk.Frame):
     def browse_grid_fits_files(self):
         """ to be written """
         
-        filename = tk.filedialog.askopenfilename(initialdir = os.path.join(local_dir,"fits_image"),filetypes=[("FITS files","*fits")], 
+        filename = tk.filedialog.askopenfilename(initialdir = os.path.join(local_dir,"SAMOS_QL_images"),filetypes=[("FITS files","*fits")], 
                             title = "Select a FITS File",parent=self.frame0l)
         
         
@@ -4662,12 +4667,12 @@ class MainPage(tk.Frame):
         self.textbox_filename_regfile_RADEC.place(x=4,y=55)
 
         button_push_RADEC = tk.Button(labelframe_Sky,
-                                          text = "get center/point (RA,Dec) from filename",
+                                          text = "push center (RA,Dec) to fix WCS",
                                           command = self.push_RADEC)
         button_push_RADEC.place(x=54,y=90)
 
         label_workflow = tk.Label(labelframe_Sky, text="Point, take an image and twirl WCS from GAIA...", bg="#8AA7A9")
-        label_workflow.place(x=4,y=130)
+        label_workflow.place(x=4,y=120)
 
         button_regions_RADEC2pixel = tk.Button(labelframe_Sky,
                                            text = "display ds9/radec regions -> Ginga",
@@ -4738,8 +4743,9 @@ class MainPage(tk.Frame):
         button_regions_CCD_save= tk.Button(labelframe_CCD,
                                         text = "save (x,y) regions -> ds9/xy .reg file",
                                         command = self.save_regions_xy2xyfile)
-        button_regions_CCD_save.place(x=4,y=181)
-       
+        button_regions_CCD_save.place(x=4,y=90)
+
+
  # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====         
  #  #    DMD  module
  # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -4766,22 +4772,52 @@ class MainPage(tk.Frame):
         label_workflow = tk.Label(labelframe_DMD, text="Point, take an image and twirl WCS from GAIA...", bg="#20B2AA")
         label_workflow.place(x=4,y=130)
         """
+        
+        button_push_slits =  tk.Button(labelframe_DMD, text="Current Slit Regions -> DMD", bd=3, font=("Arial", 24),  relief=tk.RAISED, 
+                                       command=self.push_slit_shape)
+        button_push_slits.place(x=20,y=4)
+#        button_push_slits.place(x=20,y=125)
+
+        button_save_slittable = tk.Button(labelframe_DMD,
+                       text = "Save Slit List to .csv",
+                       command = self.Save_slittable)
+        button_save_slittable.place(x=4,y=54)
+#        button_save_slittable.place(x=4,y=175)
+        
+        label_filename_slittable = tk.Label(labelframe_DMD, 
+                                            text="Saved Slit List .csv file",
+                                            bg="#20B2AA")##00CED1")
+#        label_filename_slittable.place(x=4,y=205)
+        label_filename_slittable.place(x=4,y=84)
+
+        self.str_filename_slittable = tk.StringVar() 
+        self.textbox_filename_slittable= tk.Text(labelframe_DMD, height = 1, width = 25)      
+#        self.textbox_filename_slittable.place(x=147,y=206)
+        self.textbox_filename_slittable.place(x=147,y=85)
+
+
+
+
         button_load_slits = tk.Button(labelframe_DMD,
                        text = "Load & Push Slit .csv List",
                        command = self.load_regfile_csv)
-        button_load_slits.place(x=4,y=4)
+#        button_load_slits.place(x=4,y=4)
+        button_load_slits.place(x=4,y=125)
 
         label_filename_slits = tk.Label(labelframe_DMD, text="Current Slit List", bg="#20B2AA")
-        label_filename_slits.place(x=4,y=34)
+#        label_filename_slits.place(x=4,y=34)
+        label_filename_slits.place(x=4,y=154)
         self.str_filename_slits = tk.StringVar() 
         self.textbox_filename_slits = tk.Text(labelframe_DMD, height = 1, width = 22)      
-        self.textbox_filename_slits.place(x=120,y=34)
+#        self.textbox_filename_slits.place(x=120,y=34)
+        self.textbox_filename_slits.place(x=120,y=155)
 
         
         button_regions_DMD2pixel = tk.Button(labelframe_DMD,
                                             text = "convert slit regions -> (x,y) pixels",
                         command = self.convert_regions_slit2xyAP)
-        button_regions_DMD2pixel.place(x=4,y=84)
+#        button_regions_DMD2pixel.place(x=4,y=84)
+        button_regions_DMD2pixel.place(x=4,y=185)
 
         """
         button_regions_DMD_save= tk.Button(labelframe_DMD,
@@ -4789,21 +4825,8 @@ class MainPage(tk.Frame):
                          command = self.save_regions_DMD_AstropyReg)
         button_regions_DMD_save.place(x=4,y=181)
         """
-        button_push_slits =  tk.Button(labelframe_DMD, text="Current Slit Regions -> DMD", bd=3, font=("Arial", 24),  relief=tk.RAISED, 
-                                       command=self.push_slit_shape)
-        button_push_slits.place(x=20,y=125)
 
         
-        button_save_slittable = tk.Button(labelframe_DMD,
-                       text = "Save Slit List to .csv",
-                       command = self.Save_slittable)
-        button_save_slittable.place(x=4,y=181)
-        
-        label_filename_slittable = tk.Label(labelframe_DMD, text="Saved Slit List .csv file")
-        label_filename_slittable.place(x=4,y=210)
-        self.str_filename_slittable = tk.StringVar() 
-        self.textbox_filename_slittable= tk.Text(labelframe_DMD, height = 1, width = 22)      
-        self.textbox_filename_slittable.place(x=147,y=210)
 
         
         
@@ -4947,7 +4970,7 @@ class MainPage(tk.Frame):
         print("converted GA/xy to AP/xy   (aka RRR_xyAP)")
         # 3. convert to RADEC using wcs 
         self.RRR_RADec = Astrometry.APRegion_pix2RAD(self.RRR_xyAP,self.wcs)
-        print("converted AP/xy converted to APad (aka RRR_RADec")
+        print("converted AP/xy converted to AP/ad (aka RRR_RADec")
         print("\nCompleted conversion Ginga Regions to AP/radec Regions ")
         return self.RRR_RADec
 
@@ -5032,8 +5055,11 @@ class MainPage(tk.Frame):
         print("RADEC loaded")
 
     def load_regfile_RADEC(self):
-        """ read (RA,DEC) Regions from .reg file """
-        print("read (RA,DEC) Regions from .reg file")        
+        """ read (RA,DEC) Regions from .reg file 
+        - open ds9/ad file and read the regions files creating a AP/ad list of regions (aka RRR_RADec)
+        - extract center RA, Dec
+        """
+        print("read ds9/ad .reg file to create AP/ad regions (aka RRR_RADec")        
         self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
 #        self.textbox_filename_slits.delete('1.0', tk.END)
         self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir = os.path.join(local_dir, "SAMOS_regions","RADEC"),
@@ -5069,8 +5095,15 @@ class MainPage(tk.Frame):
         return self.filename_regfile_RADEC
         
     def load_ds9regfile_xyAP(self):
-        """ read (x,y) Astropy  Regions from ds9 .reg file """
-        print("reading (x,y) Astropy Regions from .reg file")                
+        """ read (x,y) Astropy  Regions from ds9 .reg file 
+            - open ds9 .reg file in pixels units
+            - extract the clean filename to get RA and DEC of the central point
+            - create AP.xy regions (aka RRR_xyAP)
+            - visualize xyAP regions on GINGA display\n  
+                => WCS solution needed
+            - convert xyAP regions to GINGA regions (aka RRR_xyGA)
+        """
+        print("\n Load ds9/xy reg. file")                
         reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
                                          initialdir=os.path.join(local_dir,'SAMOS_regions','pixels'))
         print("reading (x,y) Astropy region file")
@@ -5080,18 +5113,20 @@ class MainPage(tk.Frame):
             regfileName = str(reg)
         # if len(regfileName) != 0:
         
-        # Then extract the clean filename to get RA and DEC of the central point
+        # Then 
         head, tail = os.path.split(regfileName)
         self.loaded_regfile = regfileName
         self.textbox_filename_regfile_xyAP.insert(tk.END, tail)
             
         self.RRR_xyAP = Regions.read(regfileName, format='ds9')
+        print("created AP.xy regions (aka RRR_xyAP)")
         filtered_duplicates_regions = []
         for reg in self.RRR_xyAP:
             if reg not in filtered_duplicates_regions:
                 filtered_duplicates_regions.append(reg)
         
         self.RRR_xyAP = filtered_duplicates_regions
+        print("eliminated duplicated regions")
         
         if self.SlitTabView is None:
             #self.SlitTabView = STView()
@@ -5100,15 +5135,16 @@ class MainPage(tk.Frame):
         self.SlitTabView.load_table_from_regfile_CCD(regs_CCD=self.RRR_xyAP,
                                                         img_wcs=self.wcs)
         # if the image has a wcs, it will be used to get sky coords
-        
+        print("xyAP regions visualized on GINGA display\n   => WCS solution needed")
         
         self.RRR_xyGA = self.convert_regions_xyAP2xyGA()
+        print("convert xyAP regions to GINGA regions (aka RRR_xyGA)")
         # [print("first 10 xyAP obj tags ", obj.tag) for obj in self.canvas.get_objects()[:10]]
         
         # [print("last 10 xyAP obj tags ", obj.tag) for obj in self.canvas.get_objects()[-10:]]
-        print("how many objects? ", len(self.canvas.get_objects()))
+        print("number of regions: ", len(self.canvas.get_objects()))
         # self.display_region_file()
-        print("(x,y) Astropy Regions loaded from ds9 .reg file")        
+        print("ds9/xy regions loaded in Ginga")        
         # regfile = open(regfileName, "r")
         
         
@@ -5180,11 +5216,9 @@ class MainPage(tk.Frame):
         print("\nSlits written to region file\n")
 
 
-    
-    
-    def push_slit_shape(self):
+    def collect_slit_shape(self):
         """ 
-        push selected slits to DMD pattern
+        collect selected slits to DMD pattern
         Export all Ginga objects to Astropy region
         """
         # 1. list of ginga objects
@@ -5285,7 +5319,115 @@ class MainPage(tk.Frame):
 #        DMD.initialize(address=host, port=int(port))
 #        DMD._open()
 #        DMD.apply_shape(self.slit_shape)  
+    
+    
+    def push_slit_shape(self):
+        """ 
+        push selected slits to DMD pattern
+        Export all Ginga objects to Astropy region
+        """
+        self.collect_slit_shape()
+        
+        """# 1. list of ginga objects
+        objects = CM.CompoundMixin.get_objects(self.canvas)
+        
+        try:
+            
+            print(self.pattern_series[pattern_list_index])
+            current_pattern = self.pattern_series[pattern_list_index]
+            current_pattern_tags = ["@{}".format(int(obj_num)) for obj_num in current_pattern.object.values]
+            
+            objects =[self.canvas.get_object_by_tag(tag) for tag in current_pattern_tags]
+        except:
+            pass
+        
+        # counter = 0
+        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
+        for obj in objects:
+            print(obj) 
+            ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
+                
+            # first case: figures that have no extensions: do nothing 
+            if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
+                x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
+                x1,y1 = int(np.round(x1)), int(np.round(y1))
+                self.slit_shape[x1,y1]=0
+            elif  self.vslit.get() != 0 and obj.kind == 'point':
+                x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
+                x1,y1 = int(np.floor(x1)), int(np.floor(y1))
+                x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
+                x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
+            else:
+                print("generic aperture")
+                """"""
+                x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
+                x1,y1 = int(np.floor(x1)), int(np.floor(y1))
+                x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
+                x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
+                
+                # dmd_corners[:][1] = corners[:][1]+500
+                ####   
+                # x1 = round(dmd_corners[0][0])
+                # y1 = round(dmd_corners[0][1])+400
+                # x2 = round(dmd_corners[2][0])
+                # y2 = round(dmd_corners[2][1])+400
+                """"""
+                # 3 load the slit pattern  
+                data_box=self.AstroImage.cutout_shape(obj)
+                good_box = data_box.nonzero()
+                good_box_x = good_box[1]
+                good_box_y = good_box[0]
+                print(len(good_box[0]),len(good_box[1]))
+                """""" paint black the vertical columns, avoids rounding error in the pixel->dmd sub-int conversion""""""
+                for i in np.unique(good_box_x):  #scanning multiple rows means each steps moves up along the y axis
+                    iy = np.where(good_box_x == i) #the indices of the y values pertinent to that x 
+                    iymin = min(iy[0])   #the smallest y index 
+                    iymax = max(iy[0])   #last largest y index
+                    cx0 = ccd_x0 + i     #so for this x position
+                    cy0 = ccd_y0 + good_box_y[iymin] # we have these CCD columns limits, counted on the x axis
+                    cy1 = ccd_y0 + good_box_y[iymax]
+                    x1,y1 = convert.CCD2DMD(cx0,cy0)    #get the lower value of the column at the x position, 
+                    x1,y1 = int(np.round(x1)), int(np.round(y1))  
+                    x2,y2 = convert.CCD2DMD(cx0,cy1)    # and the higher
+                    x2,y2 = int(np.round(x2)), int(np.round(y2))
+                    print(x1,x2,y1,y2)
+                    self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
+                    self.slit_shape[x1-2:x1,y1-2:y2+1] = 1                    
+#                    self.slit_shape[y1-2:y2+1,x1-2:x2+1] = 0
+#                    self.slit_shape[y1-2:y2+1,x1-2:x1] = 1                    
+#                    self.slit_shape[y1:y2+1,x1:x2+1] = 0
+                """""" paint black the horizontal columns, avoids rounding error in the pixel->dmd sub-int conversion """"""
+                for i in np.unique(good_box_y):  #scanning multiple rows means each steps moves up along the y axis
+                    ix = np.where(good_box_y == i) #the indices of the y values pertinent to that x 
+                    ixmin = min(ix[0])   #the smallest y index 
+                    ixmax = max(ix[0])   #last largest y index
+                    cy0 = ccd_y0 + i     #so for this x position
+                    cx0 = ccd_x0 + good_box_x[ixmin] # we have these CCD columns limits, counted on the x axis
+                    cx1 = ccd_x0 + good_box_x[ixmax]
+                    x1,y1 = convert.CCD2DMD(cx0,cy0)    #get the lower value of the column at the x position, 
+                    x1,y1 = int(np.round(x1)), int(np.round(y1))  
+                    x2,y2 = convert.CCD2DMD(cx1,cy0)    # and the higher
+                    x2,y2 = int(np.round(x2)), int(np.round(y2))
+                    print(x1,x2,y1,y2)
+                    self.slit_shape[x1-2:x2+1,y1-2:y2+1] = 0
+                    self.slit_shape[x1-2:x1,y1-2:y1] = 1                    
+#                    self.slit_shape[y1-2:y2+1,x1-2:x2+1] = 0
+#                    self.slit_shape[y1-2:y1,x1-2:x1] = 1                    
+                """"""
+                for i in range(len(good_box[0])):
+                x = ccd_x0 + good_box[i]
+                y = ccd_y0 + good_box[i]
+                x1,y1 = convert.CCD2DMD(x,y)
+                self.slit_shape[x1,y1]=0
+                """"""
+       #     self.slit_shape[x1:x2,y1:y2]=0
+#        IP = self.PAR.IP_dict['IP_DMD']
+#        [host,port] = IP.split(":")
+#        DMD.initialize(address=host, port=int(port))
+#        DMD._open()
+#        DMD.apply_shape(self.slit_shape)  
         # DMD.apply_invert()   
+        """
         self.push_slits()      
         print("check")
         
@@ -5595,7 +5737,7 @@ class MainPage(tk.Frame):
          this procedure runs after CCD.expose()
          to handle the decision of saving all single files or just the averages
          """
-        file_names = os.path.join(local_dir,"fits_image","setimage_*.fit")
+        file_names = os.path.join(local_dir,"SAMOS_QL_images","setimage_*.fit")
         files = glob.glob(file_names)
         files = self.current_night_dir_filenames
         superfile_cube = np.zeros((1032,1056,len(files)))   #note y,x,z
@@ -5624,7 +5766,7 @@ class MainPage(tk.Frame):
                    self.var_Flat_saveall.get() == 1 or \
                    self.var_Buffer_saveall.get() == 1:
                    # save every single frame
-                    os.rename(files[i],os.path.join(local_dir,"fits_image"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
+                    os.rename(files[i],os.path.join(local_dir,"SAMOS_QL_images"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     #os.rename(files[i],os.path.join(self.fits_dir,self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     #self.entry_out_fnumber.invoke("buttonup")
                     night_hdulist.writeto(night_dir_fname, overwrite=True)
@@ -5654,10 +5796,10 @@ class MainPage(tk.Frame):
         
         
         if self.image_type == "sci" or self.image_type == "flat":
-            super_filename = os.path.join(local_dir,"fits_image","super"+self.image_type+"_"+self.FW_filter.get()+".fits")
+            super_filename = os.path.join(local_dir,"SAMOS_QL_images","super"+self.image_type+"_"+self.FW_filter.get()+".fits")
             #fits.writeto(,superfile,supefrfile_header,overwrite=True)
         else:
-            super_filename = os.path.join(local_dir,"fits_image","super"+self.image_type+".fits")
+            super_filename = os.path.join(local_dir,"SAMOS_QL_images","super"+self.image_type+".fits")
             
           
         
@@ -5709,7 +5851,7 @@ class MainPage(tk.Frame):
         
     def cleanup_files(self):
         """ to be written """
-        file_names = os.path.join(local_dir,"fits_image",self.image_type+"_*.fits")
+        file_names = os.path.join(local_dir,"SAMOS_QL_images",self.image_type+"_*.fits")
         files = glob.glob(file_names)
         for i in range(len(files)):
              os.remove(files[i])
@@ -5717,7 +5859,7 @@ class MainPage(tk.Frame):
     def handle_dark(self):
         """ to be written """
         #a superdark file has been taken...
-        dark_file = os.path.join(local_dir,"fits_image","superdark.fits")
+        dark_file = os.path.join(local_dir,"SAMOS_QL_images","superdark.fits")
         
         dark_file = glob.glob(self.fits_dir+"/superdark_{}s_*.fits".format(self.ExpTimeSet.get()))[0]
         hdu_dark = fits.open(dark_file)
@@ -5729,7 +5871,7 @@ class MainPage(tk.Frame):
 
         #if a bias file has also been taken...
         # make sure to use the bias that was taken for this observation run
-        bias_file = os.path.join(local_dir,"fits_image","superbias.fits")
+        bias_file = os.path.join(local_dir,"SAMOS_QL_images","superbias.fits")
         try:
             bias_file = glob.glob(self.fits_dir+"/superbias_*.fits")[0]
             hdu_bias = fits.open(bias_file)
@@ -5751,7 +5893,7 @@ class MainPage(tk.Frame):
         hdr_out = hdr
         hdr_out['PARAM2']=1
         
-        dir_hdul1 = os.path.join(local_dir,"fits_image","superdark_s.fits")
+        dir_hdul1 = os.path.join(local_dir,"SAMOS_QL_images","superdark_s.fits")
         fits.writeto(dir_hdul1 ,dark_sec,hdr_out,overwrite=True)
         
         main_fits_header.create_fits_header(hdr_out)
@@ -5777,7 +5919,7 @@ class MainPage(tk.Frame):
     def handle_flat(self):
         """ to be written """
         #a  flat field has been taken...
-        flat_file = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+".fits")
+        flat_file = os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+".fits")
         flat_file = glob.glob(self.fits_dir+"/superflat_{}*.fits".format(self.FW_filter.get()))[0]
 
         hdu_flat = fits.open(flat_file)
@@ -5788,7 +5930,7 @@ class MainPage(tk.Frame):
         hdu_flat.close()
 
         #take the dark current rate....
-#        dark_s_file = os.path.join(local_dir,"fits_image","superdark_s.fits")
+#        dark_s_file = os.path.join(local_dir,"SAMOS_QL_images","superdark_s.fits")
 #        hdu_dark_s = fits.open(dark_s_file)
 #        dark_s = hdu_dark_s[0].data
 #        hdu_dark_s.close()
@@ -5808,7 +5950,7 @@ class MainPage(tk.Frame):
 
         
         #and the bias frame....
-#        bias_file = os.path.join(local_dir,"fits_image","superbias.fits")
+#        bias_file = os.path.join(local_dir,"SAMOS_QL_images","superbias.fits")
 #        hdu_bias = fits.open(bias_file)
 #        bias = hdu_bias[0].data
 #        hdu_bias.close()
@@ -5845,9 +5987,9 @@ class MainPage(tk.Frame):
         #finally the flat is normalized to median=1  
         flat_norm = flat_dark / np.median(flat_dark)
         
-        dir_hdul1 = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits")
-        #hdulist.writeto(os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),overwrite=True)
-        #fits.writeto( os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
+        dir_hdul1 = os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits")
+        #hdulist.writeto(os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits"),overwrite=True)
+        #fits.writeto( os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
         
         main_fits_header.create_fits_header(hdr)
         pr_hdu = fits.PrimaryHDU(flat_norm, main_fits_header.output_header)
@@ -5872,16 +6014,16 @@ class MainPage(tk.Frame):
         
     def handle_light(self):
         """ handle_light frame for display, applying bias, dark and flat if necessary """
-        light_file = os.path.join(local_dir,"fits_image","newimage.fit")
-        flat_file = os.path.join(local_dir,"fits_image","superflat_"+self.FW_filter.get()+"_norm.fits")
-        buffer_file = os.path.join(local_dir,"fits_image","superbuffer.fits")
+        light_file = os.path.join(local_dir,"SAMOS_QL_images","newimage.fit")
+        flat_file = os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits")
+        buffer_file = os.path.join(local_dir,"SAMOS_QL_images","superbuffer.fits")
         flat_exists = os.path.isfile(flat_file)
         if flat_exists:
             print("found flat file ", flat_file)
         else:
-            flat_file = os.path.join(local_dir,"fits_image","superflat_norm.fits")
-        dark_s_file = os.path.join(local_dir,"fits_image","superdark_s.fits")
-        bias_file = os.path.join(local_dir,"fits_image","superbias.fits")
+            flat_file = os.path.join(local_dir,"SAMOS_QL_images","superflat_norm.fits")
+        dark_s_file = os.path.join(local_dir,"SAMOS_QL_images","superdark_s.fits")
+        bias_file = os.path.join(local_dir,"SAMOS_QL_images","superbias.fits")
         
         hdu_light = fits.open(light_file)
         light = hdu_light[0].data
@@ -5968,8 +6110,7 @@ class MainPage(tk.Frame):
             light_dark_bias = light_dark
             
         
-        fits_image = os.path.join(local_dir,"fits_image","newimage_ff.fits")
-        
+        fits_image = os.path.join(local_dir,"SAMOS_QL_images","newimage_ff.fits")
         
             
         if self.image_type=="sci":
@@ -6017,7 +6158,7 @@ class MainPage(tk.Frame):
             dmd_hdu = self.create_dmd_pattern_hdu(main_fits_header.output_header)
             hdulist.append(dmd_hdu)
         
-        #hdulist.writeto(fits_image,overwrite=True)
+        hdulist.writeto(fits_image,overwrite=True)
         
         
         self.Display(fits_image)
@@ -6089,13 +6230,15 @@ class MainPage(tk.Frame):
         return superdark_list[i]
         
     def expose(self,params):
-        """ to be written """
+        """ handle the file acquired by the SISI camera"""
         
         # Prepare the exposure parameers
         # ExpTime_ms = float(self.ExpTime.get())*1000
         # params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4}
         
         # Camera= CCD(dict_params=params)
+        #
+        # START WITH DEFINITIONS
         self.current_night_dir_filenames = []
         Camera = Class_Camera(dict_params=params)
         Camera.exp_progbar = self.exp_progbar
@@ -6105,10 +6248,10 @@ class MainPage(tk.Frame):
         Camera.read_progbar_style = self.readout_progbar_style
         Camera.var_read = self.var_perc_read_done
         
-        self.this_param_file = open(os.path.join(os.getcwd(),"Parameters.txt"),"w")
+        #self.this_param_file = open(os.path.join(os.getcwd(),"SAMOS_system_dev","Parameters.txt"),"w")
+        #self.this_param_file.write(self.header_entry_string)
+        #self.this_param_file.close()
         
-        self.this_param_file.write(self.header_entry_string)
-        self.this_param_file.close()
         # Expose
         IP = self.PAR.IP_dict['IP_CCD']
         [host,port] = IP.split(":")
@@ -6150,11 +6293,9 @@ class MainPage(tk.Frame):
 #        main_fits_header.set_param("filtpos", self.selected_FW_pos.get())
         main_fits_header.set_param("grating", self.Grating_Optioned.get())
         
-        
-        
         try:
             #main_fits_header.set_param("gridfnam", params["DMDMAP"])
-            print("DMDMAP", main_fits_header.dmdmap)
+            print("DMDMAP is ", main_fits_header.dmdmap)
         except:
             print("no slit grid loaded")
         
@@ -6162,22 +6303,22 @@ class MainPage(tk.Frame):
         # create proper working directory
         work_dir = os.getcwd()
 
-        # fits_image = "/Users/robberto/Box/@Massimo/_Python/SAMOS_GUI_dev/fits_image/newimage_fixed.fit"
-        # fits_image = "{}/fits_image/newimage_fixed.fit".format(work_dir)
-        self.fits_image = os.path.join(work_dir,"fits_image","newimage.fit")
-        fits_image_converted = os.path.join(local_dir,"fits_image","newimage_fixed.fit")   
-        
+        # THE CONVERSTLLY THING HAS BEEN DONE IN Class_CCD/dev/expose
+        self.fits_image = os.path.join(os.getcwd(),"SAMOS_QL_images","newimage.fit")
+        """ 
+        self.fits_image = os.path.join(work_dir,"SAMOS_QL_images","newimage.fit")
+        fits_image_converted = os.path.join(local_dir,"SAMOS_QL_images","newimage_fixed.fits")   
         # fits_image_converted = "{}/fits_image/newimage_fixed.fit".format(work_dir)                       
         self.convertSIlly(self.fits_image,fits_image_converted)
-        
         # copy the cleaned file to newimage.fit
-        shutil.copy(fits_image_converted,self.fits_image)
+        #shutil.copy(fits_image_converted,self.fits_image)
+        """
         hdul  = fits.open(self.fits_image)
         input_header = hdul[0].header        
 
         
-        main_fits_header.set_param("filename", os.path.split(fits_image_converted)[1]) 
-        main_fits_header.set_param("filedir", os.path.split(fits_image_converted)[0])                 
+        main_fits_header.set_param("filename", os.path.split(self.fits_image)[1]) 
+        main_fits_header.set_param("filedir", os.path.split(self.fits_image)[0])                 
         main_fits_header.set_param("observers", self.names_var.get())
         main_fits_header.set_param("programID", self.program_var.get())
         main_fits_header.set_param("telOperators", self.TO_var.get())
@@ -6189,7 +6330,8 @@ class MainPage(tk.Frame):
         
         main_fits_header.create_fits_header(input_header)
         print(main_fits_header.output_header)
-        self.Display(fits_image_converted)
+        #self.Display(fits_image_converted)
+        self.Display(self.fits_image)
         
         
         self.fullpath_FITSfilename = self.fits_image
@@ -6288,7 +6430,7 @@ class MainPage(tk.Frame):
 
     def load_last_file(self):
         """ to be written """
-        FITSfiledir = os.path.join(local_dir,"fits_image")
+        FITSfiledir = os.path.join(local_dir,"SAMOS_QL_images")
         self.fullpath_FITSfilename = os.path.join(FITSfiledir,(os.listdir(FITSfiledir))[0])
             # './fits_image/newimage_ff.fits'
         self.AstroImage = load_data(self.fullpath_FITSfilename, logger=self.logger)
@@ -6361,7 +6503,7 @@ class MainPage(tk.Frame):
         #  0  PRIMARY       1 PrimaryHDU      22   (500, 500)   int16   
         print(hdul[0].header)                                                                                  
         self.image = hdul                                    
-        hdul.writeto(os.path.join('.','newtable.fits'),overwrite=True)
+        hdul.writeto(os.path.join(dir_Astrometry,'newtable.fits'),overwrite=True)
         
     
         img = AstroImage()
@@ -6432,7 +6574,7 @@ class MainPage(tk.Frame):
             self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
         work_dir = os.getcwd()
-        self.fits_image_ff = os.path.join(work_dir,"fits_image","newimage_ff.fits")
+        self.fits_image_ff = os.path.join(work_dir,"SAMOS_QL_images","newimage_ff.fits")
         fits.writeto(self.fits_image_ff,self.hdu_res.data,header=self.hdu_res.header,overwrite=True) 
  
         
@@ -7662,8 +7804,8 @@ class SAMOS_Parameters():
             self.scale_DMD2PIXEL = 0.892
         """
         
-        self.Image_on = tk.PhotoImage(file=os.path.join(local_dir,"Images","on.png"))
-        self.Image_off = tk.PhotoImage(file=os.path.join(local_dir,"Images","off.png"))
+        self.Image_on = tk.PhotoImage(file=os.path.join(local_dir,"tk_utilities","Images","on.png"))
+        self.Image_off = tk.PhotoImage(file=os.path.join(local_dir,"tk_utilities","Images","off.png"))
         
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
                          'dir_CCD'   : '/SAMOS_CCD_dev',

@@ -217,6 +217,7 @@ class Class_PCM():
                 s.connect((HOST, PORT))
                 s.sendall(b'~se,all,on\n')
                 data = s.recv(1024)
+                return(data)
             except socket.error:
                 return("no connection")
             finally:
@@ -1765,8 +1766,8 @@ class Class_PCM():
         data = Table()
         data['wheel']= ['FW1','FW2','GR_A','GR_B']
         data['counts']= [FW1_steps,FW2_steps,GR_A_steps,GR_B_steps]
-        cwd = os.getcwd()
-        ascii.write(data,cwd + '/FW_GR_status.dat',overwrite=True)
+        #cwd = os.getcwd()
+        ascii.write(data,os.path.join(local_dir,'FW_GR_status.dat'),overwrite=True)
 # =============================================================================
 #     def timed_query_current_count_monitor(self, FW):
 #         while self.stop_timer == False:
