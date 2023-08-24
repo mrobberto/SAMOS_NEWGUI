@@ -42,31 +42,39 @@ import pandas as pd
 
 
 # For an S-matrix
-def make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
+def make_S_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
     matrix = HTSI.S_matrix(order) # Generate the S-matrix
+    matrix_type = 'S'
 
     DMD_mask = np.zeros((DMD_size)) # Create an array to represent the DMD mask. Use Zeros as those translate to off mirrors
-    mask_set = np.zeros((DMD_size[0],DMD_size[1],order))
+    mask_set = np.zeros((DMD_size[0],DMD_size[1],order)) # data cube 1080x2048xorder filled with Zero
     for i in range (0,order):
-        row = matrix[i,:]
-        row_expanded = np.repeat(row, slit_width)
-        mask_size = order*slit_width
-
+        row = matrix[i,:]                           #an array of 1 or 0, as long as order (e.g. 7: [1,1,1,0,1,0,0]). All float
+        row_expanded = np.repeat(row, slit_width)   #same but each element is now repeated eg. 3 times, so 21 values.
+        mask_size_y = order*slit_width                #total number of elements, e.g. 21
+        mask_size_x = length
+        
         # insert that mask into the DMD mask array
-        x1,x2 = Xo-(mask_size/2), Xo+(mask_size/2)
-        y1,y2 = int(Yo-(mask_size/2)),int(Yo+(mask_size/2))
+        #
+        # HERE IS A TRICK CHANGE OF COORDINATES: x is the long size (2048), y is the short side (1080)
+        # The spectra go in the Y direction, the X is cross dispersion. 
+        # So the width of the slit is in the short (Y) direction, the length is in the long (X) direction
+        y1,y2 = int(Yo-(mask_size_y/2)),int(Yo+(mask_size_y/2))  #here we set the range of GINGA rows. Floating values!
+        x1,x2 = int(Xo-(mask_size_x/2)),int(Xo+(mask_size_x/2))  #here we set the range of GINGA columns. Integers. Note that we are working with a square area
         
         """For  horizontal slits, spectra along the DMD """
         #for j in range (y1, y2):    
         #    DMD_mask[j, int(x1):int(x2)]= row_expanded
         
         """For  vertical slits, spectra across the DMD """        
-        for j in range (int(x1), int(x2)):    
+        for j in range (x1, x2):    
             DMD_mask[y1:y2,j]= row_expanded
         mask_set[:,:,i]= DMD_mask 
         mask = DMD_mask.astype(np.uint8)
-        name = 'S'+str(order)+'_'+str(slit_width)+'w_mask_'+str(i+1)+'.bmp'
-#        pd_mask = pd.DataFrame(mask)
+ #       name = 'S'+str(order)+'_'+str(slit_width) + 'w_mask_'+str(i+1)+'.bmp'       
+        # => better naming convention for mask files 
+        name = str(matrix_type)+str(order) + '_mask_'+str(slit_width) + 'w_' + "{:03d}".format((i+1))  + '.bmp'
+ #        pd_mask = pd.DataFrame(mask)
 #        pd_mask.to_bmp(folder+name)
 
         imageio.imwrite(folder+name, mask)
@@ -75,7 +83,7 @@ def make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
 
 
 # Code for a set of H-matrix DMD masks (pairs of masks)  
-def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
+def make_H_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
     matrix = hadamard(order, dtype='float64') # generate the H-matrix 
 
     mask_set_a = np.zeros((DMD_size[0],DMD_size[1],order))
@@ -88,7 +96,8 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
     for i in range (0,order):
         row = matrix[i,:]
         row_expanded = np.repeat(row, slit_width) # Adjusts the elements to account for slit widths
-        mask_size = order*slit_width
+        mask_size_y = order*slit_width
+        mask_size_x = length
     
         # Convert the -1s and +1s into pairs of masks with 1s and 0s
         row_a = np.copy(row_expanded) # 1 means on -1 means off
@@ -101,8 +110,11 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
                 row_b[j] = 0 
                 row_a[j] = 1 
     
-        x1,x2 = Xo-(mask_size/2), Xo+(mask_size/2) # Coordinates for the mask center
-        y1,y2 = int(Yo-(mask_size/2)),int(Yo+(mask_size/2)) # Coordinates for the mask center
+#        x1,x2 = int(Xo-(mask_size_x/2)), int(Xo+(mask_size_x/2)) # Coordinates for the mask center
+#        y1,y2 = int(Yo-(mask_size_y/2)), int(Yo+(mask_size_y/2)) # Coordinates for the mask center
+        # insert that mask into the DMD mask array
+        y1,y2 = int(Yo-(mask_size_y/2)),int(Yo+(mask_size_y/2))  #here we set the range of GINGA rows. Floating values!
+        x1,x2 = int(Xo-(mask_size_x/2)),int(Xo+(mask_size_x/2))  #here we set the range of GINGA columns. Integers. Note that we are working with a square area
     
         """For  horizontal slits, spectra along the DMD """
         #for j in range (y1, y2):    # Insert the matrices into the DMD mask array
@@ -110,7 +122,7 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
         #    DMD_mask_b[j, int(x1):int(x2)]= row_b
 
         """For  vertical slits, spectra across the DMD """        
-        for j in range (int(x1), int(x2)):    # Insert the matrices into the DMD mask array
+        for j in range (x1, x2):    # Insert the matrices into the DMD mask array
             DMD_mask_a[y1:y2, j] = row_a
             DMD_mask_b[y1:y2, j]= row_b
 
@@ -121,8 +133,11 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
         mask_a = DMD_mask_a.astype(np.uint8)
         mask_b = DMD_mask_b.astype(np.uint8)
 
-        name_a = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_a'+str(i+1)+'.bmp'
-        name_b = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_b'+str(i+1)+'.bmp'
+       # name_a = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_a'+str(i+1)+'.bmp'
+       # name_b = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_b'+str(i+1)+'.bmp'
+        # => better naming convention for mask files 
+        name_a = str(matrix_type)+str(order)+'_mask_'+str(slit_width)+'w_a_' + "{:03d}".format((i+1))  + '.bmp'
+        name_b = str(matrix_type)+str(order)+'_mask_'+str(slit_width)+'w_b_' + "{:03d}".format((i+1))  + '.bmp'
         
 #        pd_mask_a = pd.DataFrame(mask_a)
 #        pd_mask_a.to_bmp(folder+name_a)

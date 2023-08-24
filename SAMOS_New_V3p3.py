@@ -102,6 +102,7 @@ import tkinter as tk
 # from tkinter import *
 # import tkinter as tk  #small t for Python 3f
 from tkinter import ttk
+from tkinter import messagebox  
 
 # import filedialog module
 from tkinter import filedialog
@@ -1356,7 +1357,10 @@ class DMDPage(tk.Frame):
             self.HadamardConf_LabelFrame, height=1, width=22)
         self.textbox_filename_masks.place(x=120, y=350)
 
-        # &&&
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
     def load_masks_file(self):
         """load_masks_file """
@@ -1455,28 +1459,32 @@ class DMDPage(tk.Frame):
         matrix_type = self.SHMatrix_Checked.get() # Two options, H or S
         order = self.order # e.g. 15 Order of the hadamard matrix (or S matrix)
         """note the flipping of xy when we talk to the DMD"""
-        Xo, Yo = float(self.entrybox_center_y.get()), float(self.entrybox_center_x.get())
+        Xo, Yo = int(self.entrybox_center_y.get()), int(self.entrybox_center_x.get())
         # DMD_size[1]/2, DMD_size[0]/2   # Coordinates on the DMD to center the Hadamard matrix around
 
         slit_width = int(self.entrybox_width.get()) #4 # Slit width in number of micromirrors 
+        slit_length = int(self.entrybox_length.get()) #4 # Slit length in number of micromirrors 
+
         # folder = 'C:/Users/Kate/Documents/hadamard/mask_sets/' # Change path to fit user needs
 
 #        folder = os.path.join(local_dir,'Hadamard','mask_sets',os.path.sep)
         # above line was not allowing to write data
         folder = os.path.join(local_dir,'Hadamard','mask_sets/')
         if matrix_type == 'S':
-            mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
-            name = 'S'+str(order)+'_'+str(slit_width)+'w_mask_1-'+str(order)+'.bmp'
+            mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, slit_length, Xo, Yo, folder)  #mask_set.shape (1080,2048,7)
+#            name = 'S'+str(order)+'_'+str(slit_width)+'w_mask_1-'+str(order)+'.bmp'
+            name = 'S'+str(order)+'_mask_'+str(slit_width)+'w_' + "{:03d}".format(order) + '.bmp'
         if matrix_type == 'H':
-            mask_set_a,mask_set_b, matrix = make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
-            name = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_ab1-'+str(order)+'.bmp'
+            mask_set_a,mask_set_b, matrix = make_H_matrix_masks(order, DMD_size, slit_width, slit_length, Xo, Yo, folder)
+#            name = str(matrix_type)+str(order)+'_'+str(slit_width)+'w_mask_ab1-'+str(order)+'.bmp'
+            name = str(matrix_type)+str(order)+'_mask_'+str(slit_width) + 'w_ab_' +  "{:03d}".format(order) + '.bmp'
         self.textbox_masknames.delete("1.0", tk.END)
         self.textbox_masknames.insert(tk.INSERT,str(name))
         self.entrybox_newmasknames.delete(0, tk.END)
         self.entrybox_newmasknames.insert(tk.INSERT,str(name[0:name.rfind("_")]))
         self.textbox_filename_masks.delete("1.0", tk.END)
         self.textbox_filename_masks.insert(tk.INSERT,str(name))
-        pass
+        #pass
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # 
@@ -3471,6 +3479,8 @@ class MainPage(tk.Frame):
         """ to be written """
         super().__init__(container)
         
+        self.DMDPage = DMDPage
+        
         self.container = container
         logger = log.get_logger("example2", options=None)
         self.logger = logger
@@ -4643,7 +4653,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         """        
         self.frame1r = tk.Frame(self)#, width=400, height=800)
-        self.frame1r.place(x=1000, y=5, anchor="nw", width=380, height=800)
+        self.frame1r.place(x=1000, y=5, anchor="nw", width=380, height=860)
  
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====         
 #  #    RADEC module
@@ -4651,7 +4661,8 @@ class MainPage(tk.Frame):
         labelframe_Sky =  tk.LabelFrame(self.frame1r, 
                                         text="Sky (RA,Dec) regions", 
                                         font=("Arial", 20), bg="#8AA7A9")
-        labelframe_Sky.pack(fill="both", expand="yes")
+#        labelframe_Sky.pack(fill="both", expand="yes")
+        labelframe_Sky.place(x=0,y=0, width=380, height=250)
         
         button_load_regfile_RADEC = tk.Button(labelframe_Sky,
                                          text = "load (RA,Dec) regions from ds9/radec .reg file", 
@@ -4677,12 +4688,12 @@ class MainPage(tk.Frame):
         button_regions_RADEC2pixel = tk.Button(labelframe_Sky,
                                            text = "display ds9/radec regions -> Ginga",
                                            command = self.display_ds9ad_Ginga)
-        button_regions_RADEC2pixel.place(x=4,y=151)
+        button_regions_RADEC2pixel.place(x=4,y=145)
 
         button_regions_RADEC_save= tk.Button(labelframe_Sky,
                                             text = "write Ginga regions -> ds9/radec .reg file",
                                             command = self.write_GingaRegions_ds9adFile)
-        button_regions_RADEC_save.place(x=4,y=181)
+        button_regions_RADEC_save.place(x=4,y=175)
 
         """
         button_regions_RADEC_save= tk.Button(labelframe_Sky,
@@ -4695,7 +4706,8 @@ class MainPage(tk.Frame):
  # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_CCD =  tk.LabelFrame(self.frame1r, 
                                         text="CCD (x,y) regions", font=("Arial", 20), bg="#00CED1")
-        labelframe_CCD.pack(fill="both", expand="yes")
+#        labelframe_CCD.pack(fill="both", expand="yes")
+        labelframe_CCD.place(x=0,y=251, width=380, height=159)
          
         button_load_ds9regfile_xyAP = tk.Button(labelframe_CCD,
                                         text = "load (x,y) regions from ds9/xy .reg file", 
@@ -4750,7 +4762,8 @@ class MainPage(tk.Frame):
  #  #    DMD  module
  # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_DMD =  tk.LabelFrame(self.frame1r, text="DMD slits", font=("Arial", 20), bg="#20B2AA")
-        labelframe_DMD.pack(fill="both", expand="yes")
+#        labelframe_DMD.pack(fill="both", expand="yes")
+        labelframe_DMD.place(x=0,y=410, width=380, height=260)
          
         """
         button_load_regfile_DMD = tk.Button(labelframe_DMD,
@@ -4827,12 +4840,48 @@ class MainPage(tk.Frame):
         """
 
         
+ # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====         
+ #  #    HTS module
+ # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        labelframe_HTS =  tk.LabelFrame(self.frame1r, text="HTS", font=("Arial", 20), bg="#98F5FF")
+#        labelframe_HTM.pack(fill="both", expand="yes")
+        labelframe_HTS.place(x=0,y=700, width=380, height=150)
+        
+        """ Load Mask"""
+        button_load_masks_HTS = tk.Button(labelframe_HTS,
+                                            text="Load mask:",
+                                            command=self.load_masks_file_HTS)
+        button_load_masks_HTS.place(x=4, y=5)
+        
+        label_filename_masks_HTS = tk.Label(
+            labelframe_HTS, text="Loaded Mask:")
+        label_filename_masks_HTS.place(x=4, y=30)
+        #self.str_filename_masks = tk.StringVar()
+        self.textbox_filename_masks_HTS = tk.Text(
+            labelframe_HTS, height=1, width=22)
+        self.textbox_filename_masks_HTS.place(x=120, y=31)
 
+        """ Pust Mask"""
+        button_push_masks_HTS = tk.Button(labelframe_HTS,
+                                            text="Push mask:",
+                                            command=self.push_masks_file_HTS)
+        button_push_masks_HTS.place(x=4, y=60)
+        
+        label_filename_masks_HTS_pushed = tk.Label(
+            labelframe_HTS, text="Pushed Mask:")
+        label_filename_masks_HTS_pushed.place(x=4, y=85)
+        #self.str_filename_masks = tk.StringVar()
+        self.textbox_filename_masks_HTS_pushed = tk.Text(
+            labelframe_HTS, height=1, width=22)
+        self.textbox_filename_masks_HTS_pushed.place(x=120, y=86)
+        
+        """ NExt Mask"""
+        button_next_masks_HTS = tk.Button(labelframe_HTS,
+                                            text="NEXT",
+                                            command=self.next_masks_file_HTS)
+        button_next_masks_HTS.place(x=290, y=83)
         
         
-       
-
-     
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
 # Load AP Region file in RADEC
@@ -7731,8 +7780,88 @@ class MainPage(tk.Frame):
         pandas_slit_shape = pd.DataFrame(self.slit_shape)
         pandas_slit_shape.to_csv(file.name)
         
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+
+    def load_masks_file_HTS(self):
+        """load_masks_file for upload on DMD"""
+        self.textbox_filename_masks_HTS.delete('1.0', tk.END)
+        filename_masks = filedialog.askopenfilename(initialdir=os.path.join(local_dir,"Hadamard","mask_sets"),
+                                        title="Select a File",
+                                        filetypes=(("Text files",
+                                                      "*.bmp"),
+                                                     ("all files",
+                                                      "*.*")))
+        self.head_HTS, self.tail_HTS = os.path.split(filename_masks)
+        self.textbox_filename_masks_HTS.insert(tk.END, self.tail_HTS)
+        #self.textbox_masknames_HTS.delete("1.0", tk.END)
+        #self.entrybox_newmasknames.delete(0, tk.END)
+        #self.entrybox_newmasknames.insert(tk.INSERT,str(tail[0:tail.rfind("_")])) 
         
-    
+    def push_masks_file_HTS(self):
+        
+        #%% Open a file and check that the code worked
+        #name = 'H128_3w_mask_a1.bmp'
+        #name = 'H16_4w_mask_a1.bmp'
+        #name = 'S83_4w_mask_34.bmp'
+        #name = 'S11_3w_mask_9.bmp'
+        try:
+            im =np.asarray(Image.open(os.path.join(self.head_HTS,self.tail_HTS)), dtype='int')
+        #plt.imshow(im, cmap='gray')
+        except:
+            messagebox.showinfo(title='INFO', message='No mask')
+            return
+        DMD.initialize()
+        DMD.apply_shape(im)
+        #DMD.apply_invert()   #INVERT to push the pattern to SAMI, comment to see the mask on SISI
+        
+        self.textbox_filename_masks_HTS_pushed.delete("1.0", tk.END)    
+        self.textbox_filename_masks_HTS_pushed.insert(tk.END, self.tail_HTS)
+        
+       
+    def next_masks_file_HTS(self):
+        """load_masks_file for upload on DMD"""
+        #mask_file_tail = self.tail_HTS[-6:-4]
+
+        # => find all positions of the '_' string in the filename
+        i_ = [x for x, v in enumerate(self.tail_HTS) if v == '_']
+
+        # identify order, "signature ("a", "b", or "_" for H and S matrices) and counter of the current mask
+        order = self.tail_HTS[1:i_[0]]
+        ab_ = self.tail_HTS[i_[-1]-1]
+        counter = self.tail_HTS[i_[-1]+1:i_[-1]+4]  
+        
+        #if we have reached the last mask and we are not in Hmask_a, exit with message
+        if ((int(counter) == int(order)) and (ab_ != 'a')):
+            print("exit")
+            messagebox.showinfo(title='INFO', message='No mask')
+            return
+        
+        #incrementer:
+        # in H matrix, it's either 'a' or 'b'
+        # if 'a', set to 'b'
+        str1 = self.tail_HTS
+        list1 = list(str1)
+        if ab_ == 'a':  #Hmask_a goes to Hmask_b
+            list1[i_[-1]-1] = 'b'
+        elif ab_ == 'b':  #Hmask_b goes to Hmask_a with increment of counter
+            list1[i_[-1]-1] = 'a'
+            counter_plus1 = "{:03d}".format(int(counter)+1)
+            list1[i_[-1]+1:i_[-1]+4] = list(counter_plus1)
+        else: #Smask increment of counter
+            counter_plus1 = "{:03d}".format(int(counter)+1)
+            list1[i_[-1]+1:i_[-1]+4] = list(counter_plus1)
+            
+        self.tail_HTS = ''.join(list1)
+            
+        self.push_masks_file_HTS()
+        
+        #self.textbox_masknames_HTS.delete("1.0", tk.END)
+        #self.entrybox_newmasknames.delete(0, tk.END)
+        #self.entrybox_newmasknames.insert(tk.INSERT,str(tail[0:tail.rfind("_")]))         
+
     """
     Generic File Writer
     02/21/23 mr - to be tested!
