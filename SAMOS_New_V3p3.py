@@ -1309,27 +1309,82 @@ class DMDPage(tk.Frame):
         self.field_width_.set("21")
         self.textbox_field_width = tk.Text(
             self.HadamardConf_LabelFrame,  height=1, width=4, bg="red", fg="white", font=("Arial", 14))
-        self.textbox_field_width.place(x=50, y=150)
+        self.textbox_field_width.place(x=70, y=150)
         self.textbox_field_width.insert(tk.INSERT, "21")
 
         """ GENERATE """
         self.button_Generate = tk.Button(self.HadamardConf_LabelFrame, text="GENERATE", bd=3, bg='#A877BA', font=("Arial", 24),
                                       command=self.HTS_generate)
-        self.button_Generate.place(x=70, y=180)
+        self.button_Generate.place(x=70, y=150)#80)
         self.textbox_masknames = tk.Text(
             self.HadamardConf_LabelFrame, height=1, width=37)
-        self.textbox_masknames.place(x=4, y=220)
-
+        self.textbox_masknames.place(x=4, y=190)#220)
+        
         """ Rename?"""
         button_save_masks = tk.Label(self.HadamardConf_LabelFrame,
                                              text="Rename:")
-        button_save_masks.place(x=4, y=243)
+        button_save_masks.place(x=4, y=213) #243)
         self.entrybox_newmasknames = tk.Entry(
             self.HadamardConf_LabelFrame, width=25)
         self.entrybox_newmasknames.bind("<Return>", self.rename_masks_file)
-        self.entrybox_newmasknames.place(x=90, y=245)
+        self.entrybox_newmasknames.place(x=70, y=213)#243)
+       
+        
+       
+        self.Hadamard_RADEC_frame = tk.Frame(self.HadamardConf_LabelFrame, width=280, height=125, bg="gray")
+        self.Hadamard_RADEC_frame.place(x=0, y=245)#275)
+        """ Target RADEC?"""
+        label_target_RA = tk.Label(
+            self.Hadamard_RADEC_frame, text="Target RA:", bd=4)  # , font=("Arial", 24))
+        label_target_RA.place(x=4, y=4)
+        self.entrybox_target_RA = tk.Entry(
+            self.Hadamard_RADEC_frame, width=14)
+        self.entrybox_target_RA.insert(0, "01.234567")
+        self.entrybox_target_RA.place(x=80, y=4)
+        
+        label_target_DEC = tk.Label(
+            self.Hadamard_RADEC_frame, text="Target DEC:", bd=4)  # , font=("Arial", 24))
+        label_target_DEC.place(x=4, y=34)
+        self.entrybox_target_DEC = tk.Entry(
+            self.Hadamard_RADEC_frame, width=14)
+        self.entrybox_target_DEC.insert(0, "01.234567")
+        self.entrybox_target_DEC.place(x=80, y=34)
 
-        """ Check mask # ?"""
+        """ GENERATE FROM RADEC"""
+        self.button_Generate_from_RADEC = tk.Button(self.Hadamard_RADEC_frame, text="GENERATE FROM RADEC", bd=3, bg='#A877BA', font=("Arial", 18),
+                                      command=self.HTS_generate_from_RADEC)
+        self.button_Generate_from_RADEC.place(x=10, y=64)
+        
+
+    def HTS_generate_from_RADEC(self):
+        """ Generates HTS mask centered on RADEC coordinates 
+            - requires WCS (check on existence has to be written)
+            - no check on the RADEC being inside the field (to be written)
+            - RADEC format in decimal degrees (no HH:MM:SS, dd:mm:ss)
+        """
+        #get AR and DEC from input fields 
+        dec_HTS_center =  float(self.entrybox_target_DEC.get())
+        ra_HTS_center = float(self.entrybox_target_RA.get())
+
+        # convert radec->pixels using WCS
+        #from https://gist.github.com/barentsen/548f88ef38f645276fccea1481c76fc3
+        ad=np.array([[ra_HTS_center,dec_HTS_center]]).astype(float)
+        x_CCD_HTS_center, y_CCD_HTS_center = WCS_global.all_world2pix(ad, 0)[0]
+        
+        # convert pixels -> DMD mirrors
+        x_DMD_HTS_center , y_DMD_HTS_center = convert.CCD2DMD( int(x_CCD_HTS_center),int(y_CCD_HTS_center))
+
+        #refresh entrybox field
+        self.entrybox_center_x.delete(0,tk.END)
+        self.entrybox_center_x.insert(0, int(x_DMD_HTS_center))
+        self.entrybox_center_y.delete(0,tk.END)
+        self.entrybox_center_y.insert(0, int(y_DMD_HTS_center))
+
+        #generate mask
+        self.HTS_generate()
+        """
+        """" Check mask  ? """
+        """
         label_check = tk.Label(self.HadamardConf_LabelFrame,
                                text="Check Mask Nr.: ", bd=4)  # , font=("Arial", 24))
         label_check.place(x=4, y=270)
@@ -1343,8 +1398,10 @@ class DMDPage(tk.Frame):
         self.mask_check_menu.bind("<<ComboboxSelected>>", self.check_mask)
         self.mask_check_menu['values'] = list(self.mask_arrays)
         self.mask_check_menu.place(x=120, y=271)
+        """
 
         """ Load Masks?"""
+        """
         button_load_masks = tk.Button(self.HadamardConf_LabelFrame,
                                             text="Load masks:",
                                             command=self.load_masks_file)
@@ -1356,14 +1413,14 @@ class DMDPage(tk.Frame):
         self.textbox_filename_masks = tk.Text(
             self.HadamardConf_LabelFrame, height=1, width=22)
         self.textbox_filename_masks.place(x=120, y=350)
-
+        """
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
+    """
     def load_masks_file(self):
-        """load_masks_file """
+        """""""load_masks_file """""""
         self.textbox_filename_masks.delete('1.0', tk.END)
         filename_masks = filedialog.askopenfilename(initialdir=os.path.join(local_dir,"Hadamard","mask_sets"),
                                         title="Select a File",
@@ -1381,28 +1438,35 @@ class DMDPage(tk.Frame):
         # to be written
         # im =np.asarray(Image.open(local_dir+"/Hadamard/mask_sets/" + maskfile_bmp), dtype='int')
         pass
+    """
 
     def rename_masks_file(self, event=None):
-        """ to be written """
-        print("inside")
+        """ rename the mask file, only the part starting with 'mask' """
+
         oldfilename_masks = self.textbox_masknames.get("1.0", tk.END)
-        old = str(oldfilename_masks[0:oldfilename_masks.rfind("_")])
-        new = self.entrybox_newmasknames.get()
-        file_names = os.path.join(local_dir,"Hadamard","mask_sets",old,"*.bmp")
+        
+        # => find all positions of the '_' string in the filename
+        i_ = [x for x, v in enumerate(oldfilename_masks) if v == '_']
+        old_string  = oldfilename_masks[i_[0]+1:i_[1]]
+        #second = oldfilename_masks[i_[1]]
+
+        old = str(oldfilename_masks[0:i_[-1]])
+        new_string = self.entrybox_newmasknames.get()
+        file_names = os.path.join(local_dir,"Hadamard","mask_sets",old+"*.bmp")
         files = sorted(glob.glob(file_names))
-        #head, tail = os.path.split(oldfilename_masks)
         for ifile in range(len(files)):
-            os.rename(files[ifile], files[ifile].replace(old, new))
+            path,tail = os.path.split(files[ifile])
+            oldName = files[ifile]
+            newName = os.path.join(path, tail.replace(old_string, new_string))
+            os.rename(oldName, newName)
         self.textbox_masknames.delete("1.0", tk.END)
         self.textbox_masknames.insert(
-            tk.END, oldfilename_masks[0:-1].replace(old, new))
+            tk.END, oldfilename_masks[0:-1].replace(old_string, new_string))
         self.entrybox_newmasknames.delete(0, tk.END)
 
-
-        pass
-
+    """
     def check_mask(self, event=None):
-        """ to be written """
+        """""" to be written """""""
         maskname = self.textbox_masknames.get("1.0",tk.END)
         basename = str(maskname[0:maskname.rfind("_")])
         maskfile = basename + "_" + self.mask_checked.get()       
@@ -1424,7 +1488,7 @@ class DMDPage(tk.Frame):
         label1.place(x=-100, y=0)
         image_map.close() 
 
-        pass
+        """
    
     def calculate_field_width(self,event=None):
         """ calculate_field_width """
@@ -1482,9 +1546,9 @@ class DMDPage(tk.Frame):
         self.textbox_masknames.insert(tk.INSERT,str(name))
         self.entrybox_newmasknames.delete(0, tk.END)
         self.entrybox_newmasknames.insert(tk.INSERT,str(name[0:name.rfind("_")]))
-        self.textbox_filename_masks.delete("1.0", tk.END)
-        self.textbox_filename_masks.insert(tk.INSERT,str(name))
-        #pass
+        #self.textbox_filename_masks.delete("1.0", tk.END)
+        #self.textbox_filename_masks.insert(tk.INSERT,str(name))
+        
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # 
@@ -6679,8 +6743,11 @@ class MainPage(tk.Frame):
         
         # we can now compute the WCS
         gaias = twirl.gaia_radecs(center, fov, limit=self.nrofstars.get())
-        self.wcs = twirl._compute_wcs(stars, gaias)
         
+        self.wcs = twirl._compute_wcs(stars, gaias)
+
+        global WCS_global
+        WCS_global = self.wcs
         
         # Lets check the WCS solution 
         
@@ -6982,6 +7049,7 @@ class MainPage(tk.Frame):
                 return
             ra_txt, dec_txt = image.pixtoradec(fits_x, fits_y,
                                                format='str', coords='fits')
+            ra_deg, dec_deg = image.pixtoradec(fits_x, fits_y)
             self.ra_center, self.dec_center = image.pixtoradec(528, 516,
                                                format='str', coords='fits')
 
@@ -6990,13 +7058,17 @@ class MainPage(tk.Frame):
             #    str(e)))
             ra_txt = 'BAD WCS'
             dec_txt = 'BAD WCS'
+            ra_deg = 'BAD WCS'
+            dec_deg = 'BAD WCS'
         coords_text = "RA: %s  DEC: %s \n"%(ra_txt, dec_txt)
+#        coords_text_DEG = "RA: %s  DEC: %s \n"%(str(ra_deg), str(dec_deg))
+        coords_text_DEG = "RA: %.9s DEC %.9s\n" % (str(ra_deg),str(dec_deg))
 #        dmd_text = "DMD_X: %.2f  DMD_Y: %.2f \n"%(dmd_x, dmd_y)
         dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.round(dmd_x), round(dmd_y))
         text = "X: %.2f  Y: %.2f  Value: %s" % (
             fits_x, fits_y, value)
         
-        text = coords_text + dmd_text + text
+        text = coords_text + coords_text_DEG + dmd_text + text
         self.readout.config(text=text)
 
     def quit(self,root):
@@ -7822,8 +7894,7 @@ class MainPage(tk.Frame):
         
        
     def next_masks_file_HTS(self):
-        """load_masks_file for upload on DMD"""
-        #mask_file_tail = self.tail_HTS[-6:-4]
+        """look at the currently loaded mask and push the next one to the DMD"""
 
         # => find all positions of the '_' string in the filename
         i_ = [x for x, v in enumerate(self.tail_HTS) if v == '_']
@@ -7839,9 +7910,7 @@ class MainPage(tk.Frame):
             messagebox.showinfo(title='INFO', message='No mask')
             return
         
-        #incrementer:
-        # in H matrix, it's either 'a' or 'b'
-        # if 'a', set to 'b'
+        #increment and set as the current mask:
         str1 = self.tail_HTS
         list1 = list(str1)
         if ab_ == 'a':  #Hmask_a goes to Hmask_b
@@ -7852,15 +7921,12 @@ class MainPage(tk.Frame):
             list1[i_[-1]+1:i_[-1]+4] = list(counter_plus1)
         else: #Smask increment of counter
             counter_plus1 = "{:03d}".format(int(counter)+1)
-            list1[i_[-1]+1:i_[-1]+4] = list(counter_plus1)
-            
+            list1[i_[-1]+1:i_[-1]+4] = list(counter_plus1)          
         self.tail_HTS = ''.join(list1)
             
+        #Push to the DMD
         self.push_masks_file_HTS()
         
-        #self.textbox_masknames_HTS.delete("1.0", tk.END)
-        #self.entrybox_newmasknames.delete(0, tk.END)
-        #self.entrybox_newmasknames.insert(tk.INSERT,str(tail[0:tail.rfind("_")]))         
 
     """
     Generic File Writer
