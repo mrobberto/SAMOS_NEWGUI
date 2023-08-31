@@ -156,7 +156,7 @@ class Class_PCM():
     # INITIALIZE to receive the correct address
     #
     # =============================================================================
-    def initialize(self, address='172.16.0.141', port=8888):  #INITITALIZED OUTSIDE, USE VPN
+    def initialize(self, address='172.16.0.128', port=1000):  #INITITALIZED OUTSIDE, USE VPN
         self.IP_HOST = address
         self.IP_Port = port
 
