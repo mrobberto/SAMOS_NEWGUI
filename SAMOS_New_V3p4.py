@@ -3572,10 +3572,10 @@ class SOAR_Page(tk.Frame):
 
         button_WAY =  tk.Button(self.frame0l, text="Who are you?", command=self.WAY)
         button_WAY.place(x=4,y=40)
-        self.WAY_msg=tk.StringVar()
-        self.WAY_msg.set("")
-        entry_WAY = tk.Entry(self.frame0l, textvariable=self.WAY_msg, width=20,  bd =3)
-        entry_WAY.place(x=200, y=38)
+        #self.WAY_msg=tk.StringVar()
+        #self.WAY_msg.set("")
+        #entry_WAY = tk.Entry(self.frame0l, textvariable=self.WAY_msg, width=20,  bd =3)
+        #entry_WAY.place(x=200, y=38)
         
 #       Offset_options = ["Offset MOVE", "Offset STATUS"]
 #        # datatype of menu text
@@ -3593,39 +3593,42 @@ class SOAR_Page(tk.Frame):
         button_OFFSET_MOVE =  tk.Button(self.frame0l, text="OFFSET MOVE", command=partial(self.Offset_option_TCS, "MOVE"))
         button_OFFSET_MOVE.place(x=4,y=70)
         self.OFFSET_MOVE_msg=tk.StringVar()
-        self.OFFSET_MOVE_msg.set("E 34.3 N 56.7")
+        self.OFFSET_MOVE_msg.set("E 0.00 N 0.00")
         entry_OFFSET_MOVE = tk.Entry(self.frame0l, textvariable=self.OFFSET_MOVE_msg, width=20,  bd =3)
         entry_OFFSET_MOVE.place(x=200, y=68)
         button_OFFSET_STATUS =  tk.Button(self.frame0l, text="STATUS", command=partial(self.Offset_option_TCS, "STATUS"))
         button_OFFSET_STATUS.place(x=400,y=70)
  
-        Focus_options = ["Focus MOVEABS", "Focus MOVEREL", "Focus STATUS"]
+        Focus_options = ["Focus MOVEABS", "Focus MOVEREL"]
         # datatype of menu text
         self.Focus_option_selected = tk.StringVar()
         # initial Focus options text
-        self.Focus_option_selected.set( "Focus STATUS" ) 
+        self.Focus_option_selected.set( "Focus MOVEREL" ) 
         # Create Dropdown menu
         Focus_options_drop = tk.OptionMenu( self.frame0l , self.Focus_option_selected , *Focus_options, command = self.Focus_option_TCS )
         Focus_options_drop.place(x=4, y=100)
         self.Focus_option_msg=tk.StringVar()
-        self.Focus_option_msg.set("")
+        self.Focus_option_msg.set("0")
         entry_Focus_option = tk.Entry(self.frame0l, textvariable=self.Focus_option_msg, width=20,  bd =3)
         entry_Focus_option.place(x=200, y=98)
 
-        CLM_options = ["CLM IN", "CLM OUT", "CLM STATUS"]
+        CLM_options = ["CLM IN", "CLM OUT"]
         # datatype of menu text
         self.CLM_option_selected = tk.StringVar()
         # initial CLM options text
-        self.CLM_option_selected.set( "CLM STATUS" ) 
+        self.CLM_option_selected.set( "CLM IN" ) 
         # Create Dropdown menu
         CLM_options_drop = tk.OptionMenu( self.frame0l , self.CLM_option_selected , *CLM_options , command = self.CLM_option_TCS)
         CLM_options_drop.place(x=4, y=130)
-        self.CLM_option_msg=tk.StringVar()
-        self.CLM_option_msg.set("")
-        entry_CLM_option = tk.Entry(self.frame0l, textvariable=self.CLM_option_msg, width=20,  bd =3)
-        entry_CLM_option.place(x=200, y=128)
+#        self.CLM_option_msg=tk.StringVar()
+#        self.CLM_option_msg.set("")
+#        entry_CLM_option = tk.Entry(self.frame0l, textvariable=self.CLM_option_msg, width=20,  bd =3)
+#        entry_CLM_option.place(x=200, y=128)
+        button_CLM_STATUS =  tk.Button(self.frame0l, text="STATUS", command=partial(self.CLM_option_TCS, "STATUS"))
+        button_CLM_STATUS.place(x=400,y=130)
+
         
-        Guider_options = ["Guider DISABLE", "Guider ENABLE", "Guider STATUS"]
+        Guider_options = ["Guider DISABLE", "Guider ENABLE"]
         # datatype of menu text
         self.Guider_option_selected = tk.StringVar()
         # initial Guider options text
@@ -3633,37 +3636,70 @@ class SOAR_Page(tk.Frame):
         # Create Dropdown menu
         Guider_options_drop = tk.OptionMenu( self.frame0l , self.Guider_option_selected , *Guider_options, command=self.Guider_option_TCS )
         Guider_options_drop.place(x=4, y=160)
-        self.Guider_option_msg=tk.StringVar()
-        self.Guider_option_msg.set("")
-        entry_Guider_option = tk.Entry(self.frame0l, textvariable=self.Guider_option_msg, width=20,  bd =3)
-        entry_Guider_option.place(x=200, y=158)
+#        self.Guider_option_msg=tk.StringVar()
+#        self.Guider_option_msg.set("")
+#        entry_Guider_option = tk.Entry(self.frame0l, textvariable=self.Guider_option_msg, width=20,  bd =3)
+#        entry_Guider_option.place(x=200, y=158)
+        button_Guider_STATUS =  tk.Button(self.frame0l, text="STATUS", command=partial(self.Guider_option_TCS, "STATUS"))
+        button_Guider_STATUS.place(x=400,y=160)
 
-        Whitespot_options = ["Whitespot ON", "Whitespot OFF", "Whitespot STATUS"]
+
+        Whitespot_options = ["Whitespot ON", "Whitespot OFF"]
         # datatype of menu text
         self.Whitespot_option_selected = tk.StringVar()
         # initial Whitespot options text
-        self.Whitespot_option_selected.set( "Whitespot STATUS" ) 
+        self.Whitespot_option_selected.set( "Whitespot OFF" ) 
         # Create Dropdown menu
         Whitespot_options_drop = tk.OptionMenu( self.frame0l ,self. Whitespot_option_selected , *Whitespot_options, command = self.Whitespot_option_TCS )
         Whitespot_options_drop.place(x=4, y=190)
         self.Whitespot_option_msg=tk.StringVar()
-        self.Whitespot_option_msg.set("")
+        self.Whitespot_option_msg.set("50")
         entry_Whitespot_option = tk.Entry(self.frame0l, textvariable=self.Whitespot_option_msg, width=20,  bd =3)
         entry_Whitespot_option.place(x=200, y=188)
+        button_Whitespot_STATUS =  tk.Button(self.frame0l, text="STATUS", command=partial(self.Whitespot_option_TCS, "STATUS"))
+        button_Whitespot_STATUS.place(x=400,y=190)
         
-        LAMP_LN_options = ["LAMP LN ON", "LAMP LN OFF", "LAMP LN STATUS"]
+        Lamp_LN_options = ["Lamp LN ON", "Lamp LN OFF"]
         # datatype of menu text
-        self.LAMP_LN_option_selected = tk.StringVar()
+        self.Lamp_LN_option_selected = tk.StringVar()
         # initial LAMP LN options text
-        self.LAMP_LN_option_selected.set( "LAMP LN STATUS" ) 
+        self.Lamp_LN_option_selected.set( "LAMP LN OFF" ) 
         # Create Dropdown menu
-        LAMP_LN_options_drop = tk.OptionMenu( self.frame0l , self.LAMP_LN_option_selected , *LAMP_LN_options, command=self.LAMP_LN_option_TCS )
-        LAMP_LN_options_drop.place(x=4, y=220)
-        self.LAMP_LN_option_msg=tk.StringVar()
-        self.LAMP_LN_option_msg.set("")
-        entry_LAMP_LN_option = tk.Entry(self.frame0l, textvariable=self.LAMP_LN_option_msg, width=20,  bd =3)
-        entry_LAMP_LN_option.place(x=200, y=218)
+        Lamp_LN_options_drop = tk.OptionMenu( self.frame0l , self.Lamp_LN_option_selected , *Lamp_LN_options, command=self.LAMP_LN_option_TCS )
+        Lamp_LN_options_drop.place(x=4, y=220)
+        self.Lamp_LN_option_msg=tk.StringVar()
+        self.Lamp_LN_option_msg.set("L2")
+        entry_Lamp_LN_option = tk.Entry(self.frame0l, textvariable=self.Lamp_LN_option_msg, width=20,  bd =3)
+        entry_Lamp_LN_option.place(x=200, y=218)
+        button_Lamp_STATUS =  tk.Button(self.frame0l, text="STATUS", command=partial(self.LAMP_LN_option_TCS, "STATUS") )
+        button_Lamp_STATUS.place(x=400,y=220)
+        
+        """
+        self.v = tk.StringVar()
+        self.v.set("OFF")  # initializing the choice, i.e. Python
 
+        languages = ["ON", "OFF"]
+
+        tk.Label(self.frame0l, 
+        text=""" """"LAMP LN:""" """,
+                 justify = tk.LEFT,
+                 padx = 20).place(x=4, y=250)
+
+        
+        tk.Radiobutton(self.frame0l, 
+                   text=languages[0],
+                   padx = 20, 
+                   variable=self.v, 
+                   command=self.LAMP_LN_option_TCS,
+                   value="ON").place(x=200, y=250)
+        tk.Radiobutton(self.frame0l, 
+                   text=languages[1],
+                   padx = 20, 
+                   variable=self.v, 
+                   command=self.LAMP_LN_option_TCS,
+                   value="OFF").place(x=300, y=250)
+        """
+        
         ADC_options = ["ADC MOVE", "ADC IN", "ADC PARK", "ADC STATUS", "ADC TRACK"]
         # datatype of menu text
         self.ADC_option_selected = tk.StringVar()
@@ -3676,6 +3712,7 @@ class SOAR_Page(tk.Frame):
         self.ADC_option_msg.set("")
         entry_ADC_option = tk.Entry(self.frame0l, textvariable=self.ADC_option_msg, width=20,  bd =3)
         entry_ADC_option.place(x=200, y=248)
+        
         
         Target_options = ["TARGET MOVE", "TARGET MOUNT", "TARGET STATUS", "TARGET STOP"]
         # datatype of menu text
@@ -3690,31 +3727,50 @@ class SOAR_Page(tk.Frame):
         entry_Target = tk.Entry(self.frame0l, textvariable=self.Target_option_msg, width=20,  bd =3)
         entry_Target.place(x=200, y=278)
 
-        IPA_options = ["IPA MOVE", "IPA STATUS"]
-        # datatype of menu text
-        self.IPA_option_selected = tk.StringVar()
-        # initial ADC options text
-        self.IPA_option_selected.set( "IPA STATUS" ) 
-        # Create Dropdown menu
-        IPAs_drop = tk.OptionMenu( self.frame0l , self.IPA_option_selected , *IPA_options , command = self.IPA_option_TCS)
-        IPAs_drop.place(x=4, y=310)
-        self.IPA_option_msg = tk.StringVar()
-        self.IPA_option_msg.set("")
-        entry_IPA = tk.Entry(self.frame0l, textvariable=self.IPA_option_msg, width=20,  bd =3)
-        entry_IPA.place(x=200, y=308)
+#        IPA_options = ["IPA MOVE", "IPA STATUS"]
+#        # datatype of menu text
+#        self.IPA_option_selected = tk.StringVar()
+#        # initial ADC options text
+#        self.IPA_option_selected.set( "IPA STATUS" ) 
+#        # Create Dropdown menu
+#        IPAs_drop = tk.OptionMenu( self.frame0l , self.IPA_option_selected , *IPA_options , command = self.IPA_option_TCS)
+#        IPAs_drop.place(x=4, y=310)
+#        self.IPA_option_msg = tk.StringVar()
+#        self.IPA_option_msg.set("")
+#        entry_IPA = tk.Entry(self.frame0l, textvariable=self.IPA_option_msg, width=20,  bd =3)
+#        entry_IPA.place(x=200, y=308)
         
-        Instrument_options = ["INSTRUMENT MOVE", "INSTRUMENT STATUS"]
-        # datatype of menu text
-        self.Instrument_option_selected = tk.StringVar()
-        # initial ADC options text
-        self.Instrument_option_selected.set( "INSTRUMENT STATUS" ) 
-        # Create Dropdown menu
-        Instruments_drop = tk.OptionMenu( self.frame0l , self.Instrument_option_selected , *Instrument_options, command = self.Instrument_option_TCS )
-        Instruments_drop.place(x=4, y=340)
-        self.Instrument_option_msg = tk.StringVar()
-        self.Instrument_option_msg.set("")
-        entry_Instrument = tk.Entry(self.frame0l, textvariable=self.Instrument_option_msg, width=20,  bd =3)
-        entry_Instrument.place(x=200, y=338)
+        button_IPA_MOVE =  tk.Button(self.frame0l, text="IPA MOVE", command=partial(self.IPA_option_TCS, "MOVE"))
+        button_IPA_MOVE.place(x=4,y=310)
+        self.IPA_MOVE_msg=tk.StringVar()
+        self.IPA_MOVE_msg.set("0.0")
+        entry_IPA_MOVE = tk.Entry(self.frame0l, textvariable=self.IPA_MOVE_msg, width=20,  bd =3)
+        entry_IPA_MOVE.place(x=200, y=308)
+        button_IPA_STATUS =  tk.Button(self.frame0l, text="STATUS", command=partial(self.IPA_option_TCS, "STATUS"))
+        button_IPA_STATUS.place(x=400,y=310)
+
+#        Instrument_options = ["INSTRUMENT MOVE", "INSTRUMENT STATUS"]
+#        # datatype of menu text
+#        self.Instrument_option_selected = tk.StringVar()
+#        # initial ADC options text
+#        self.Instrument_option_selected.set( "INSTRUMENT STATUS" ) 
+#        # Create Dropdown menu
+#       Instruments_drop = tk.OptionMenu( self.frame0l , self.Instrument_option_selected , *Instrument_options, command = self.Instrument_option_TCS )
+#        Instruments_drop.place(x=4, y=340)
+#        self.Instrument_option_msg = tk.StringVar()
+#        self.Instrument_option_msg.set("")
+#        entry_Instrument = tk.Entry(self.frame0l, textvariable=self.Instrument_option_msg, width=20,  bd =3)
+#        entry_Instrument.place(x=200, y=338)
+
+        button_Instrument_MOVE =  tk.Button(self.frame0l, text="instrument MOVE", command=partial(self.Instrument_option_TCS, "MOVE"))
+        button_Instrument_MOVE.place(x=4,y=340)
+        self.Instrument_MOVE_msg=tk.StringVar()
+        self.Instrument_MOVE_msg.set("SAM")
+        entry_Instrument_MOVE = tk.Entry(self.frame0l, textvariable=self.Instrument_MOVE_msg, width=20,  bd =3)
+        entry_Instrument_MOVE.place(x=200, y=338)
+        button_Instrument_STATUS =  tk.Button(self.frame0l, text="STATUS", command=partial(self.Instrument_option_TCS, "STATUS"))
+        button_Instrument_STATUS.place(x=400,y=340)
+
         
         label_INFO =  tk.Button(self.frame0l, text="INFO", command=self.Handle_Infox)
         label_INFO.place(x=600,y=4)
@@ -3768,7 +3824,10 @@ class SOAR_Page(tk.Frame):
         pass
 
     def Offset_option_TCS(self, event):
-        """ to be written """
+        """ 
+        This command send an offset motion request to the TCS. 
+        The offset is given in units of arcseconds, and must be preceded by one of the direction characters N, S, E and W.
+        """
         if event == "MOVE":
             offset = self.OFFSET_MOVE_msg.get()
         else:
@@ -3780,30 +3839,73 @@ class SOAR_Page(tk.Frame):
         pass
 
     def Focus_option_TCS(self, event):
-        """ to be written """
-        self.Focus_option_msg.set("you selected "+self.Focus_option_selected.get())
-        pass
+        """
+        This command requests actions to the focus mechanism associated with the secondary mirror (M2).
+
+        Parameters
+        ----------
+        event : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        event = event.replace("Focus ","")
+        if event != "STATUS":
+            offset = self.Focus_option_msg.get()
+        else:
+            offset = ""
+        message = "FOCUS " + event + " " + offset
+        msg_back = SOAR.focus(event,offset)    
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
 
     def CLM_option_TCS(self, event):
-        """ to be written """
-        self.CLM_option_msg.set("you selected "+self.CLM_option_selected.get())
-        pass
+        """ This command requests actions to the comparison lamps mirror mechanism. """
+        event = event.replace("CLM ","")
+        message = "CLM " + event
+        msg_back = SOAR.clm(event)    
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
         
     def Guider_option_TCS(self, event):
-        """ to be written """
-        self.Guider_option_msg.set("you selected "+self.Guider_option_selected.get())
-        pass
+        """ This command enable or disable the guider device. """
+        event = event.replace("Guider ","")
+        message = "GUIDER " + event
+        msg_back = SOAR.guider(event)    
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
 
     def Whitespot_option_TCS(self, event):
-        """ to be written """
-        self.Whitespot_option_msg.set("you selected "+self.Whitespot_option_selected.get())
-        pass
+        """ This command requests actions to the lamps associated with the white spot. """
+        event = event.replace("Whitespot ","")
+        percentage = self.Whitespot_option_msg.get()
+        message = "WHITESPOT " + event
+        msg_back = SOAR.whitespot(event, percentage)    
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
 
-    def LAMP_LN_option_TCS(self, event):
+    def LAMP_LN_option_TCS(self,event):
         """ to be written """
-        self.LAMP_LN_option_msg.set("you selected "+self.LAMP_LN_option_selected.get())
-        pass
+        event = event.replace("Lamp LN ","")
+        location = self.Lamp_LN_option_msg.get()
+        message = "LAMP " + event
+        if event != "STATUS":
+            message += " " + location
+        msg_back = SOAR.lamp_id(event,location)    
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
 
+
+
+        """
+        if self.v.get() != "STATUS":
+            message = "LAMP LN" + self.v.get()
+        else:
+            message = "LAMP LN STATUS"
+        msg_back = SOAR.whitespot(message)    
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
+#        self.LAMP_LN_option_msg.set("you selected "+self.LAMP_LN_option_selected.get())
+        pass
+        """
+        
     def ADC_option_TCS(self, event):
         """ to be written """
         self.ADC_option_msg.set("you selected "+self.ADC_option_selected.get())
@@ -3815,14 +3917,29 @@ class SOAR_Page(tk.Frame):
         pass
 
     def IPA_option_TCS(self, event):
-        """ to be written """
-        self.IPA_option_msg.set("you selected "+self.IPA_option_selected.get())
-        pass
+        """ 
+        This command set a new instrument position angle to the TCS. 
+        The IPA is given in units of degrees. 
+        """
+        if event == "MOVE":
+            offset = self.IPA_MOVE_msg.get()
+        else:
+            offset = ""
+        msg_back = SOAR.ipa(event,offset)    
+        message = "IPA " + event + " " + offset
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
 
     def Instrument_option_TCS(self, event):
-        """ to be written """
-        self.Instrument_option_msg.set("you selected "+self.Instrument_option_selected.get())
-        pass
+        """ 
+        This command selects the instrument to move
+        """
+        if event == "MOVE":
+            offset = self.Instrument_MOVE_msg.get()
+        else:
+            offset = ""
+        msg_back = SOAR.ipa(event,offset)    
+        message = "IPA " + event + " " + offset
+        self.text_area.insert(tk.END,'\nsent: \n>'+message+'\nreceived: \n>'+str(msg_back))
 
     def Handle_Infox(self, event):
         """ to be written """
@@ -7396,9 +7513,10 @@ class MainPage(tk.Frame):
 #        coords_text_DEG = "RA: %s  DEC: %s \n"%(str(ra_deg), str(dec_deg))
         coords_text_DEG = "RA: %.9s DEC %.9s\n" % (str(ra_deg),str(dec_deg))
 #        dmd_text = "DMD_X: %.2f  DMD_Y: %.2f \n"%(dmd_x, dmd_y)
-        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.round(dmd_x), round(dmd_y))
+#        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.round(dmd_x), round(dmd_y))
+        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.rint(dmd_x), np.rint(dmd_y))
         text = "X: %.2f  Y: %.2f  Value: %s" % (
-            fits_x, fits_y, value)
+            np.rint(fits_x), np.rint(fits_y), value)
         
         text = coords_text + coords_text_DEG + dmd_text + text
         self.readout.config(text=text)

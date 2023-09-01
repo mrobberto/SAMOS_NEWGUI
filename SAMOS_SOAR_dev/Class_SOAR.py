@@ -114,7 +114,7 @@ class Class_SOAR:
             command = "FOCUS MOVEREL " + offset
         if param == "STATUS":
             command = "FOCUS STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
 
     def clm(self,param):
         if param == "IN":
@@ -123,7 +123,7 @@ class Class_SOAR:
             command = "CLM OUT "
         if param == "STATUS":
             command = "CLM STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
         
     def guider(self,param):
         if param == "DISABLE":
@@ -132,25 +132,25 @@ class Class_SOAR:
             command = "GUIDER ENABKE "
         if param == "STATUS":
             command = "GUIDER STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
         
-    def whitespot(self,param):
+    def whitespot(self,param, percentage):
         if param == "ON":
-            command = "WHITESPOT ON "
+            command = "WHITESPOT ON " + percentage
         if param == "OFF":
             command = "WHITESPOT OFF "
         if param == "STATUS":
             command = "WHITESPOT STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
         
-    def lamp(self,param):
+    def lamp_id(self,param, location):
         if param == "ON":
-            command = "LAMP ON "
+            command = "LAMP ON " + location
         if param == "OFF":
-            command = "LAMP OFF "
+            command = "LAMP OFF"
         if param == "STATUS":
             command = "LAMP STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
         
     def adc(self,param):
         if param == "MOVE":
@@ -161,15 +161,15 @@ class Class_SOAR:
             command = "ADC TRACK "
         if param == "STATUS":
             command = "ADC STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
 
     def info(self):
         command = "INFO"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
 
     def infox(self):
         command = "INFOX"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
         
     def target(self,param,RADEC="RA=00:00:00.00 DEC=00:00:00:00 EPOCH=2000.0"):
         if param == "MOVE":
@@ -180,30 +180,37 @@ class Class_SOAR:
             command = "TARGET STOP "
         if param == "STATUS":
             command = "TARGET STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
         
     def ipa(self,param,ANGLE="00.0"):
         if param == "MOVE":
             command = "IPA MOVE " + ANGLE
         if param == "STATUS":
             command = "IPA STATUS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)   
+
+    def instrument(self,param,INSTRUMENT="GOODMAN"):
+        if param == "MOVE":
+            command = "INSTRUMENT MOVE " + INSTRUMENT
+        if param == "STATUS":
+            command = "INSTRUMENT STATUS"
+        return self.send_to_TCS(command)   
 
     def ginfo(self):
         command = "GINFO"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
 
     def sinfo(self):
         command = "SINFO"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
 
     def rotpos(self):
         command = "ROTPOS"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
 
     def infoa(self):
         command = "INFOA"
-        return_string = self.send_to_TCS(command)  
+        return self.send_to_TCS(command)  
         
         """
         (Taken from the SOAR_TCS_COMMANDS document.)
