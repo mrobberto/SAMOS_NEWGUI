@@ -3406,13 +3406,19 @@ class CCD2DMD_RecalPage(tk.Frame):
     def irafstarfind(self):#expected_sources=53**2,fwhm=5):
         """ to be written """
         
-        fwhm = 2 #float(self.source_fwhm_entry.get())
+        fwhm = 5 #float(self.source_fwhm_entry.get())
         
         ccd = self.AstroImage.as_nddata().data
+        # bright columns on left and right side of CCD that we don't want to be included in the starfinder.
+        # set them to be the average of surrounding columns
+        colcorr_ccd = ccd.copy()
+        for col in range(1010,1025):
+            colcorr_ccd[:, col] = np.average((np.average(ccd[:,1000:1009], axis=1),np.average(ccd[:,1020:],axis=1)), axis=0)
         
-        ccd[:,1000:] = 0
-        ccd[:,:40] = 0
+        for col in range(20,40):
+            colcorr_ccd[:, col] = np.average((np.average(ccd[:,0:20], axis=1),np.average(ccd[:, 40:50], axis=1)), axis=0)
         
+        ccd = colcorr_ccd.copy()
 
         #print(ccd.header)
         mean_ccd, median_ccd, std_ccd = sigma_clipped_stats(ccd, sigma=4.0)
