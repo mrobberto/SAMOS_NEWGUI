@@ -4918,13 +4918,13 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
 #  #    Motor/Telescope Indicator Frame
-#         Circles that light green or 
+#         Circles that light green or magenta
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         
         self.canvas_Indicator = tk.Canvas(self, background="gray")
         self.canvas_Indicator.place(x=60,y=810,width=310, height=85)
         
-        self.canvas_Indicator.create_oval(20,20,60,60, fill=indicator_light_on_color, 
+        self.canvas_Indicator.create_oval(20,20,60,60, fill=indicator_light_on_color,
                                           outline=None, tags=["filter_ind"])
         self.canvas_Indicator.create_text(40,70, text="Filters")
         self.canvas_Indicator.create_oval(100,20,140,60, fill=indicator_light_on_color, 
@@ -7514,9 +7514,9 @@ class MainPage(tk.Frame):
         coords_text_DEG = "RA: %.9s DEC %.9s\n" % (str(ra_deg),str(dec_deg))
 #        dmd_text = "DMD_X: %.2f  DMD_Y: %.2f \n"%(dmd_x, dmd_y)
 #        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.round(dmd_x), round(dmd_y))
-        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.rint(dmd_x), np.rint(dmd_y))
-        text = "X: %.2f  Y: %.2f  Value: %s" % (
-            np.rint(fits_x), np.rint(fits_y), value)
+        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.np.floor(dmd_x), np.floor(dmd_y))
+        text = "X: %i  Y: %i  Value: %s" % (
+            np.floor(fits_x), np.floor(fits_y), value)
         
         text = coords_text + coords_text_DEG + dmd_text + text
         self.readout.config(text=text)
