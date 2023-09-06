@@ -7514,7 +7514,7 @@ class MainPage(tk.Frame):
         coords_text_DEG = "RA: %.9s DEC %.9s\n" % (str(ra_deg),str(dec_deg))
 #        dmd_text = "DMD_X: %.2f  DMD_Y: %.2f \n"%(dmd_x, dmd_y)
 #        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.round(dmd_x), round(dmd_y))
-        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.np.floor(dmd_x), np.floor(dmd_y))
+        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.floor(dmd_x), np.floor(dmd_y))
         text = "X: %i  Y: %i  Value: %s" % (
             np.floor(fits_x), np.floor(fits_y), value)
         
