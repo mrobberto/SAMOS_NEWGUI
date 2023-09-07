@@ -3579,9 +3579,15 @@ class CCD2DMD_RecalPage(tk.Frame):
         new_hdu = fits.PrimaryHDU(data=self.AstroImage.as_nddata().data,
                                   header=new_hdr)
 
+        img_Mapping_fpath = os.path.join("SAMOS_DMD_dev", "CONVERT",
+                        "DMD_Mapping_WCS.fits")
+        prev_Mapping_fname = os.path.join("SAMOS_DMD_dev", "CONVERT", 
+                                          "DMD_Mapping_WCS_prev.fits")
+        #change name of previous FITS file with the coordinate transformation
+        # to save it just in case recalibration went wrong.
+        os.rename(img_Mapping_fpath, prev_Mapping_fname)
         # will change this file to CONVERT/DMD_Mapping_WCS.fits once confident it works
-        new_hdu.writeto(os.path.join("SAMOS_DMD_dev", "CONVERT",
-                        "DMD_Mapping_WCS.fits"), overwrite=True)
+        new_hdu.writeto(img_Mapping_fpath, overwrite=True)
 
         print("New transform FITS file created")
 
@@ -5130,6 +5136,11 @@ class MainPage(tk.Frame):
                               variable=self.setChecked, value="pick", command=self.set_mode_cb)
         btn3.place(x=220, y=75)  # pack(anchor='ne')
 
+        self.deleteChecked = tk.IntVar()
+        btn4 = tk.Checkbutton(labelframe_SlitConf, text="Delete Picked", padx=5, pady=1,
+                              variable=self.deleteChecked)
+        btn4.place(x=280, y=75)
+
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT WIDTH in mirrors, dispersion direction (affects Resolving power)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5185,11 +5196,11 @@ class MainPage(tk.Frame):
         #self.traces = tk.IntVar()
         traces_button = tk.Button(
             labelframe_SlitConf, text="Show Traces", command=self.show_traces)
-        traces_button.place(x=330, y=4)
+        traces_button.place(x=330, y=-3)
 
         remove_traces_button = tk.Button(
             labelframe_SlitConf, text="Remove Traces", command=self.remove_traces, padx=0, pady=0)
-        remove_traces_button.place(x=330, y=35)
+        remove_traces_button.place(x=330, y=27)
 
         #### check overlapping slits and create a series of new DMD patterns with slits that do not overlap #####
 
@@ -5242,7 +5253,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         view_slit_tab_button = tk.Button(
             labelframe_SlitConf, text="View Slit Table", command=self.show_slit_table, padx=0, pady=0)
-        view_slit_tab_button.place(x=330, y=65)
+        view_slit_tab_button.place(x=330, y=55)
         """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #         
@@ -8289,25 +8300,27 @@ class MainPage(tk.Frame):
         canvas.set_draw_mode('pick')
 
         self.obj_ind = int(obj.tag.strip('@'))-1
-        self.tab_row_ind = self.SlitTabView.stab.get_column_data(
-            0).index(obj.tag.strip('@'))
-        dmd_x0, dmd_x1 = self.SlitTabView.slitDF.loc[self.obj_ind, [
-            'dmd_x0', 'dmd_x1']].astype(int)
-        dmd_y0, dmd_y1 = self.SlitTabView.slitDF.loc[self.obj_ind, [
-            'dmd_y0', 'dmd_y1']].astype(int)
+        try:
+            self.tab_row_ind = self.SlitTabView.stab.get_column_data(
+                0).index(obj.tag.strip('@'))
+            dmd_x0, dmd_x1 = self.SlitTabView.slitDF.loc[self.obj_ind, [
+                'dmd_x0', 'dmd_x1']].astype(int)
+            dmd_y0, dmd_y1 = self.SlitTabView.slitDF.loc[self.obj_ind, [
+                'dmd_y0', 'dmd_y1']].astype(int)
+            dmd_width = int(dmd_x1-dmd_x0)
+            dmd_length = int(dmd_y1-dmd_y0)
 
-        dmd_width = int(dmd_x1-dmd_x0)
-        dmd_length = int(dmd_y1-dmd_y0)
-
-        self.slit_w.set(dmd_width)
-        self.slit_l.set(dmd_length)
+            self.slit_w.set(dmd_width)
+            self.slit_l.set(dmd_length)
+        except:
+            pass
 
         if ptype == 'up' or ptype == 'down':
 
             self.SlitTabView.stab.select_row(row=self.tab_row_ind)
             print("picked object with tag {}".format(obj.tag))
         try:
-            if event.key == 'd':
+            if self.deleteChecked.get():#event.key == 'd':
                 # print(event.key)
                 canvas.delete_object(obj)
                 print("start tab len", len(
