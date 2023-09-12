@@ -28,15 +28,6 @@ Created on Tue Feb 25 13:21:00 2023
     - Added in paraemters the DMD2PIXEL scale of 0.892. To be used for the conversion
     - Slit loaded from file  appear in red
 
-02.27.2023
-    - cleaned first jupyter notebook to create target list using ipyaladin interactive
-    - region file in RADEC must be copieed to directory /regions/RADEC
-    - putton "load .red RADEC" allows to lod the region file in RADEC. File name format is rather rigid
-    - coordinates of the center are extracted searching filename between "RADEC="  and ".reg"
-    - observations is assumed to be done at this point: use SkyMapper Query for test
-    - after twirl vs. GAIA and WCS header created, convert the RADEC region file to a pixel region file
-    - the regions (slits) appear on the display!
-TO DO: "Run Code" erases everything, should leave the slits untouched.
 
 02.26.2023 First committ to share with Dana
 # ===#====
