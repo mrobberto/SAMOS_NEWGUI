@@ -152,24 +152,25 @@ class Class_SOAR:
             command = "LAMP STATUS"
         return self.send_to_TCS(command)  
         
-    def adc(self,param):
+    def adc(self,param,percent):
         if param == "MOVE":
-            command = "ADC MOVE "
+            command = "ADC MOVE "+percent
         if param == "IN":
             command = "ADC IN "
+        if param == "PARK":
+            command = "ADC PARK "
         if param == "TRACK":
             command = "ADC TRACK "
         if param == "STATUS":
             command = "ADC STATUS"
         return self.send_to_TCS(command)  
 
-    def info(self):
-        command = "INFO"
-        return self.send_to_TCS(command)  
+    def info_whatever(self,message):
+        return self.send_to_TCS(message)  
 
-    def infox(self):
-        command = "INFOX"
-        return self.send_to_TCS(command)  
+#    def infox(self):
+#        command = "INFOX"
+#        return self.send_to_TCS(command)  
         
     def target(self,param,RADEC="RA=00:00:00.00 DEC=00:00:00:00 EPOCH=2000.0"):
         if param == "MOVE":
