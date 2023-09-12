@@ -3414,6 +3414,7 @@ class CCD2DMD_RecalPage(tk.Frame):
 
         self.run_coord_transf_button = tk.Button(self.frame0l, text="Initialize Coord Transform", bg="#9D76A4", state="disabled",
         self.run_coord_transf_button = tk.Button(self.frame0l,text="Run Coord Transform",bg="#9D76A4",state="disabled",
+
                                                  command=self.run_coord_transf)
         self.run_coord_transf_button.pack(padx=15, pady=5)
         #self.run_coord_transf_button.place(x=4, y=40)
@@ -7837,6 +7838,10 @@ class MainPage(tk.Frame):
         dmd_text = "DMD_X: %i  DMD_Y: %i \n" % (
             np.floor(dmd_x), np.floor(dmd_y))
 =======
+
+        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.floor(dmd_x), np.floor(dmd_y))
+
+>>>>>>> 6e83262f94ba2c882b86d15b5268938166f40b1e
         text = "X: %i  Y: %i  Value: %s" % (
             np.floor(fits_x), np.floor(fits_y), value)
 
