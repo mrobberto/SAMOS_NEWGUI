@@ -7614,12 +7614,6 @@ class MainPage(tk.Frame):
             obj = r2g(reg)
         # add_region(self.canvas, obj, tag="twirlstars", draw=True)
             self.canvas.add(obj)
-            
-        # check that we have created a compostition of objects:
-        CM.CompoundMixin.is_compound(self.canvas.objects)     # True
-        # we can find out what are the "points" objects
-        points = CM.CompoundMixin.get_objects_by_kind(self.canvas, 'point')
-        print(list(points))
     
         self.draw_slits()
         pass
