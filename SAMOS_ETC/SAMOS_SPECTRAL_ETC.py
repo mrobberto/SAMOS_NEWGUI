@@ -62,7 +62,7 @@ class ETC_Spectral_Page(Frame):
         self.frame1.place(x=2, y=2, width=496, height=180)
 
         self.w = Canvas(self.frame1, width=496, height=180)
-        self.w.create_rectangle(8, 8, 488, 35, outline='blue')
+        self.w.create_rectangle(8, 5, 488, 38, outline='blue')
         # w.create_rectangle(50, 50, 100, 100, fill="red", outline = 'blue')
         self.w.pack()
 
@@ -87,7 +87,7 @@ class ETC_Spectral_Page(Frame):
 
         # Create Dropdown menu
         self.drop = OptionMenu(self.frame1, self.bandpass, *options)
-        self.drop.place(x=73, y=10)
+        self.drop.place(x=73, y=6)
 
         # b1 = Button(frame1, text="Ks")
 
@@ -95,7 +95,7 @@ class ETC_Spectral_Page(Frame):
         # b1.pack()
 
         #####
-        self.w.create_rectangle(8, 35, 488, 98, outline='blue')
+        self.w.create_rectangle(8, 38, 488, 98, outline='blue')
 
         ### SLIT WIDTH ###
         ##################
@@ -125,7 +125,7 @@ class ETC_Spectral_Page(Frame):
 #        # Create Dropdown menu
 #        self.slit_drop = OptionMenu(self.frame1 , self.slit_selected , slit_options[2], *slit_options)
         self.slit_drop = OptionMenu(self.frame1 , self.slit_selected ,  *slit_options)
-        self.slit_drop.place(x=110, y=37)
+        self.slit_drop.place(x=110, y=39)
         self.label_arcsec1 = Label(self.frame1, text="arcsec")
         self.label_arcsec1.place(x=180, y=40)
 
@@ -147,19 +147,19 @@ class ETC_Spectral_Page(Frame):
         init_Nexp = StringVar()
         init_Nexp.set("2")
         self.Entry_NofExp = Entry(self.frame1, width=4, textvariable=init_Nexp)
-        self.Entry_NofExp.place(x=400, y=37)
+        self.Entry_NofExp.place(x=400, y=40)
 
         ### ANGULAR EXTENT ###
         ######################
         self.label_AngularExtent = Label(self.frame1, text="Seeing FWHM")
-        self.label_AngularExtent.place(x=10, y=70)
+        self.label_AngularExtent.place(x=10, y=74)
         init_AngExt = StringVar()
         init_AngExt.set("0.4")
         self.Entry_AngularExtent = Entry(
             self.frame1, width=4, textvariable=init_AngExt)
-        self.Entry_AngularExtent.place(x=110, y=67)
+        self.Entry_AngularExtent.place(x=110, y=71)
         self.label_arcsec1 = Label(self.frame1, text="arcsec")
-        self.label_arcsec1.place(x=155, y=70)
+        self.label_arcsec1.place(x=155, y=74)
 
 #######################################################################################################################
         ### USE AOS ###
@@ -658,7 +658,8 @@ class ETC_Spectral_Page(Frame):
         self.w.create_rectangle(8, 8, 488, 46, outline='blue')
         self.w.pack()
 
-        self.text_SAMOS_Header = Text(self.frame_out, width=66, height=2, background='light gray')
+#        self.text_SAMOS_Header = Text(self.frame_out, width=66, height=2, background='light gray')
+        self.text_SAMOS_Header = Text(self.frame_out, width=59, height=2, background='light gray')
         #self.text_SAMOS_Header.insert(INSERT, text)
         self.text_SAMOS_Header.place(x=12, y=10)
         
@@ -3114,7 +3115,7 @@ class ETC_Spectral_Page(Frame):
 
     def create_menubar(self, parent):
         """ to be written """
-        parent.geometry("1000x720")
+        parent.geometry("1000x740")
         parent.title("SAMOS Specroscopic ETC at SOAR")
         self.PAR = SAMOS_Parameters()
 

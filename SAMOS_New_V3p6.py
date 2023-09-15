@@ -129,6 +129,8 @@ import os
 import sys
 cwd = os.getcwd()
 print(cwd)
+from sys import platform
+
 
 
 # define the local directory, absolute so it is not messed up when this is called
@@ -324,6 +326,7 @@ class App(tk.Tk):
             frame.grid(row=0, column=0, sticky="nsew")
 
         self.show_frame(ConfigPage)
+       
 
     def show_frame(self, cont):
         """ to be written """
@@ -345,6 +348,15 @@ class ConfigPage(tk.Frame):
 
  #       self.PAR = SAM_Par_module.SAMOS_Parameters()
         self.PAR = SAMOS_Parameters()
+        
+        if platform == "win32":
+            self.bigfont = ("Arial", 12, 'bold')
+            self.bigfont_20 = ("Arial", 12, 'bold')
+            self.bigfont_15 = ("Arial", 10, 'bold')
+        else:
+            self.bigfont = ("Arial", 24)
+            self.bigfont_20 = ("Arial", 20)
+            self.bigfont_15 = ("Arial", 15)
         # label = tk.Label(self, text="Config Page", font=('Times', '20'))
         # label.pack(pady=0,padx=0)
 
@@ -420,7 +432,7 @@ class ConfigPage(tk.Frame):
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.labelframe_Servers = tk.LabelFrame(
-            self.frame0l, text="Directories", font=("Arial", 24))
+            self.frame0l, text="Directories", font=self.bigfont)#("Arial", 24))
         self.labelframe_Servers.place(
             x=4, y=4, anchor="nw", width=592, height=225)
 
@@ -493,13 +505,13 @@ class ConfigPage(tk.Frame):
         Entry5.place(x=140, y=160)
 
         Button_dir_Current = tk.Button(self.labelframe_Servers, text="Load Current",
-                                       relief="raised", command=self.load_dir_user, font=("Arial", 24))
+                                       relief="raised", command=self.load_dir_user, font=self.bigfont)#("Arial", 24))
         Button_dir_Current.place(x=380, y=10)
         Button_dir_Save = tk.Button(self.labelframe_Servers, text="Save Current",
-                                    relief="raised", command=self.save_dir_user, font=("Arial", 24))
+                                    relief="raised", command=self.save_dir_user, font=self.bigfont)#("Arial", 24))
         Button_dir_Save.place(x=380, y=50)
         Button_dir_Load = tk.Button(self.labelframe_Servers, text="Load Default",
-                                    relief="raised", command=self.load_dir_default, font=("Arial", 24))
+                                    relief="raised", command=self.load_dir_default, font=self.bigfont)#("Arial", 24))
         Button_dir_Load.place(x=380, y=90)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -508,7 +520,7 @@ class ConfigPage(tk.Frame):
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.labelframe_Servers = tk.LabelFrame(
-            self.frame0l, text="Servers", font=("Arial", 24))
+            self.frame0l, text="Servers", font=self.bigfont)#("Arial", 24))
         self.labelframe_Servers.place(
             x=4, y=234, anchor="nw", width=592, height=200)
 
@@ -591,12 +603,6 @@ class ConfigPage(tk.Frame):
             self.labelframe_Servers, image=self.PAR.Image_off, bd=0, command=self.SAMI_switch)
         self.SOAR_SAMI_on_button.place(x=320, y=139)
 
-       # Button_IP_Load_Current = tk.Button(self.labelframe_Servers, text ="Load Current", relief="raised", command = self.load_IP_user, font=("Arial", 24))
-       # Button_IP_Load_Current.place(x=380, y=10)
-       # Button_IP_Save_Current = tk.Button(self.labelframe_Servers, text ="Save Current", relief="raised", command = self.save_IP_user, font=("Arial", 24))
-       # Button_IP_Save_Current.place(x=380, y=50)
-       # Button_IP_Load_Default = tk.Button(self.labelframe_Servers, text ="Load Default", relief="raised", command = self.load_IP_default, font=("Arial", 24))
-       # Button_IP_Load_Default.place(x=380, y=90)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -608,7 +614,7 @@ class ConfigPage(tk.Frame):
         self.frame0r.place(x=585, y=0)  # , anchor="nw", width=20, height=145)
 
         self.labelframe_Others = tk.LabelFrame(
-            self.frame0r, text="Others", font=("Arial", 24))
+            self.frame0r, text="Others", font=self.bigfont)
         self.labelframe_Others.place(
             x=4, y=4, anchor="nw", width=392, height=225)
 
@@ -637,7 +643,7 @@ class ConfigPage(tk.Frame):
         self.Initialize_frame.place(
             x=4, y=440, anchor="nw", width=592, height=48)
         Initialize_Button = tk.Button(self.Initialize_frame, text="Initialize",
-                                      relief="raised", command=self.startup, font=("Arial", 24))
+                                      relief="raised", command=self.startup, font=self.bigfont)#("Arial", 24))
         Initialize_Button.place(x=230, y=5)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -1013,6 +1019,7 @@ class ConfigPage(tk.Frame):
 
         # the size of the window is controlled when the menu is loaded
         parent.geometry("1000x500")
+
         parent.title("SAMOS Configuration")
 
         menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
@@ -1082,6 +1089,14 @@ class DMDPage(tk.Frame):
 
         # ADD CODE HERE TO DESIGN THIS PAGE
         # super() recalls and includes the __init__() of the master class (tk.Topelevel), so one can use that stuff there without copying the code.
+        if platform == "win32":
+            self.bigfont = ("Arial", 12, 'bold')
+            self.bigfont_20 = ("Arial", 12, 'bold')
+            self.bigfont_15 = ("Arial", 10, 'bold')
+        else:
+            self.bigfont = ("Arial", 24)
+            self.bigfont_20 = ("Arial", 20)
+            self.bigfont_15 = ("Arial", 15)
 
         # reference to the master widget, which is the tk window
         # self.master = master
@@ -1107,33 +1122,33 @@ class DMDPage(tk.Frame):
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.frame_startup = tk.Frame(self, background="light gray")
-        self.frame_startup.place(x=4, y=4, anchor="nw", width=290, height=400)
+        self.frame_startup.place(x=4, y=4, anchor="nw", width=290, height=396)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       DMD Initialize
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         # dmd.initialize()
         button_Initialize = tk.Button(
-            self.frame_startup, text="Initialize", bd=3, bg='#0052cc', command=self.dmd_initialize)
+            self.frame_startup, text="Initialize", bd=3, command=self.dmd_initialize)
         button_Initialize.place(x=4, y=4)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #       Load Basic Patterns
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         button_Whiteout = tk.Button(
-            self.frame_startup, text="Blackout", bd=3, bg='#0052cc', command=self.dmd_blackout)
+            self.frame_startup, text="Blackout", bd=3, command=self.dmd_blackout)
         button_Whiteout.place(x=4, y=34)
         button_Blackout = tk.Button(
-            self.frame_startup, text="Whiteout", bd=3, bg='#0052cc', command=self.dmd_whiteout)
+            self.frame_startup, text="Whiteout", bd=3, command=self.dmd_whiteout)
         button_Blackout.place(x=140, y=34)
         button_Checkerboard = tk.Button(
-            self.frame_startup, text="Checkerboard", bd=3, bg='#0052cc', command=self.dmd_checkerboard)
+            self.frame_startup, text="Checkerboard", bd=3, command=self.dmd_checkerboard)
         button_Checkerboard.place(x=4, y=64)
         button_Invert = tk.Button(
-            self.frame_startup, text="Invert", bd=3, bg='#0052cc', command=self.dmd_invert)
+            self.frame_startup, text="Invert", bd=3, command=self.dmd_invert)
         button_Invert.place(x=4, y=94)
         button_antInvert = tk.Button(
-            self.frame_startup, text="AntInvert", bd=3, bg='#0052cc', command=self.dmd_antinvert)
+            self.frame_startup, text="AntInvert", bd=3, command=self.dmd_antinvert)
         button_antInvert.place(x=140, y=94)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -1216,7 +1231,7 @@ class DMDPage(tk.Frame):
         # print(gridfnam)
         self.str_filename_slits = tk.StringVar()
         self.textbox_filename_slits = tk.Text(
-            self.frame_startup, height=1, width=22)
+            self.frame_startup, height=1, width=20)
         self.textbox_filename_slits.place(x=120, y=350)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -1319,12 +1334,12 @@ class DMDPage(tk.Frame):
         self.field_width_ = tk.StringVar()
         self.field_width_.set("21")
         self.textbox_field_width = tk.Text(
-            self.HadamardConf_LabelFrame,  height=1, width=4, bg="red", fg="white", font=("Arial", 14))
+            self.HadamardConf_LabelFrame,  height=1, width=4, bg="red", fg="white", font=self.bigfont_15)
         self.textbox_field_width.place(x=70, y=150)
         self.textbox_field_width.insert(tk.INSERT, "21")
 
         """ GENERATE """
-        self.button_Generate = tk.Button(self.HadamardConf_LabelFrame, text="GENERATE", bd=3, bg='#A877BA', font=("Arial", 24),
+        self.button_Generate = tk.Button(self.HadamardConf_LabelFrame, text="GENERATE", bd=3, bg='#A877BA', font=self.bigfont,
                                          command=self.HTS_generate)
         self.button_Generate.place(x=70, y=150)  # 80)
         self.textbox_masknames = tk.Text(
@@ -1361,7 +1376,7 @@ class DMDPage(tk.Frame):
         self.entrybox_target_DEC.place(x=80, y=34)
 
         """ GENERATE FROM RADEC"""
-        self.button_Generate_from_RADEC = tk.Button(self.Hadamard_RADEC_frame, text="GENERATE FROM RADEC", bd=3, bg='#A877BA', font=("Arial", 18),
+        self.button_Generate_from_RADEC = tk.Button(self.Hadamard_RADEC_frame, text="GENERATE FROM RADEC", bd=3, bg='#A877BA', font=self.bigfont_20,
                                                     command=self.HTS_generate_from_RADEC)
         self.button_Generate_from_RADEC.place(x=10, y=64)
 
@@ -1910,6 +1925,8 @@ class DMDPage(tk.Frame):
     def create_menubar(self, parent):
         """ create_menubar """
         parent.geometry("910x407")
+        if platform == "win32":
+            parent.geometry("910x425")
         parent.title("SAMOS DMD Controller")
         self.PAR = SAMOS_Parameters()
         # MainPage class expects 2 arguments. They may be None.
@@ -2338,6 +2355,9 @@ class Motors(tk.Frame):
     def create_menubar(self, parent):
         """ to be written """
         parent.geometry("400x330")
+        if platform == "win32":
+            parent.geometry("500x400")
+
         parent.title("SAMOS Motor Controller")
         self.PAR = SAMOS_Parameters()
 
@@ -2406,6 +2426,16 @@ class CCDPage(tk.Frame):
         label.pack(pady=0, padx=0)
 
         # ADD CODE HERE TO DESIGN THIS PAGE
+        if platform == "win32":
+            self.bigfont = ("Arial", 12, 'bold')
+            self.bigfont_20 = ("Arial", 12, 'bold')
+            self.bigfont_15 = ("Arial", 10, 'bold')
+        else:
+            self.bigfont = ("Arial", 24)
+            self.bigfont_20 = ("Arial", 20)
+            self.bigfont_15 = ("Arial", 15)
+        
+        
         # , width=300, height=300)
         self.frame0l = tk.Frame(self, background="cyan")
         self.frame0l.place(x=0, y=0, anchor="nw", width=950, height=590)
@@ -2653,7 +2683,7 @@ class CCDPage(tk.Frame):
 #        self.frame2r.place(x=430, y=4, anchor="nw", width=360, height=400)
         self.frame2r.place(x=4, y=4, anchor="nw", width=360, height=400)
         labelframe_Setup = tk.LabelFrame(
-            self.frame2r, text="Camera Setup", font=("Arial", 24))
+            self.frame2r, text="Camera Setup", font=self.bigfont)
         labelframe_Setup.pack(fill="both", expand="yes")
 
 #        #camera_is_open = tk.IntVar()
@@ -2671,7 +2701,7 @@ class CCDPage(tk.Frame):
         self.label_camera_ON = tk.Label(labelframe_Setup,
                                         text="The Camera is off",
                                         fg="grey",
-                                        font=("Helvetica", 20))
+                                        font=self.bigfont)
         self.label_camera_ON.place(x=4, y=8)
 
         # Define Our Images
@@ -2690,7 +2720,7 @@ class CCDPage(tk.Frame):
         self.label_cooler_ON = tk.Label(labelframe_Setup,
                                         text="The Cooler is off",
                                         fg="grey",
-                                        font=("Helvetica", 20))
+                                        font=self.bigfont)
         self.label_cooler_ON.place(x=4, y=58)
 
         # Define Our Images
@@ -4268,7 +4298,15 @@ class MainPage(tk.Frame):
         label.pack(pady=0, padx=0)
 
         # ADD CODE HERE TO DESIGN THIS PAGE
-
+        if platform == "win32":
+            self.bigfont = ("Arial", 12, 'bold')
+            self.bigfont_20 = ("Arial", 12, 'bold')
+            self.bigfont_15 = ("Arial", 10, 'bold')
+        else:
+            self.bigfont = ("Arial", 24)
+            self.bigfont_20 = ("Arial", 20)
+            self.bigfont_15 = ("Arial", 15)
+            
         # keep track of the entry number for header keys that need to be added
         # will be used to write "OtherParameters.txt"
         self.extra_header_params = 0
@@ -4293,7 +4331,7 @@ class MainPage(tk.Frame):
         self.frame_ObsInf.place(x=10, y=0, anchor="nw", width=420, height=150)
 
         labelframe_ObsInf = tk.LabelFrame(self.frame_ObsInf, text="Observer Information",
-                                          font=("Ariel", 24))
+                                          font=self.bigfont)
         labelframe_ObsInf.pack(fill="both", expand="yes")
 
         #name_scroll = tk.Scrollbar(labelframe_ObsInf)
@@ -4330,7 +4368,7 @@ class MainPage(tk.Frame):
         self.frame0l.place(x=10, y=155, anchor="nw", width=220, height=110)
 
         labelframe_Filters = tk.LabelFrame(self.frame0l, text="Filter Status",
-                                           font=("Arial", 24))
+                                           font=self.bigfont)#("Arial", 24))
         labelframe_Filters.pack(fill="both", expand="yes")
 
 
@@ -4422,7 +4460,7 @@ class MainPage(tk.Frame):
         self.frame1l.place(x=220, y=155, anchor="nw", width=220, height=110)
 
         labelframe_Grating = tk.LabelFrame(
-            self.frame1l, text="Grism Status", font=("Arial", 24))
+            self.frame1l, text="Grism Status", font=self.bigfont)#("Arial", 24))
         labelframe_Grating.pack(fill="both", expand="yes")
 #        labelframe_Grating.place(x=4, y=10)
 
@@ -4513,7 +4551,7 @@ class MainPage(tk.Frame):
         self.frame_CCDInf.place(
             x=10, y=265, anchor="nw", width=430, height=350)
         labelframe_CCDInf = tk.LabelFrame(
-            self.frame_CCDInf, text="CCD Setup", font=("Ariel", 24))
+            self.frame_CCDInf, text="CCD Setup", font=self.bigfont)
         labelframe_CCDInf.pack(fill="both", expand="yes")
 
 
@@ -4556,7 +4594,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         labelframe_Acquire = tk.LabelFrame(
-            tab1, text="Science", font=("Arial", 24))
+            tab1, text="Science", font=self.bigfont)
         #labelframe_Acquire.place(x=2, y=0, anchor="nw", width=410, height=115)
         labelframe_Acquire.pack(fill="both", expand="yes")
 
@@ -4603,12 +4641,12 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Bias = tk.LabelFrame(tab2, text="Bias",
                                         width=300, height=150,
-                                        font=("Arial", 24))
+                                        font=self.bigfont)
         labelframe_Bias.pack(fill="both", expand="yes")
 
 #        labelframe_Bias.place(x=5,y=5)
 
-#        labelframe_Bias =  tk.LabelFrame(self.frame_CCDInf, text="Bias", font=("Arial", 24))
+#        labelframe_Bias =  tk.LabelFrame(self.frame_CCDInf, text="Bias", font=self.bigfont)
 #        labelframe_Bias.place(x=5, y=53, anchor="nw", width=410, height=115)
 #                        # .pack(fill="both", expand="yes")
 
@@ -4645,7 +4683,7 @@ class MainPage(tk.Frame):
 #        entry_Bias_ExpT = tk.Entry(labelframe_Bias, width=6,  bd =3, textvariable=self.Bias_ExpT)
 #        #entry_Bias_ExpT.place(x=120, y=6)
 
-        button_ExpStart = tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc', font=("Arial", 24),
+        button_ExpStart = tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc', font=self.bigfont,
                                     command=self.expose_bias)
         # button_ExpStart.place(x=75,y=95)
 
@@ -4657,7 +4695,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Dark = tk.LabelFrame(tab3, text="Dark",
                                         width=300, height=170,
-                                        font=("Arial", 24))
+                                        font=self.bigfont)
         labelframe_Dark.pack(fill="both", expand="yes")
 
         label_Dark_MasterFile = tk.Label(labelframe_Dark, text="Master Dark:")
@@ -4693,7 +4731,7 @@ class MainPage(tk.Frame):
 #        entry_Dark_ExpT = tk.Entry(labelframe_Dark, width=6,  bd =3, textvariable=self.Dark_ExpT)
 #        #entry_Dark_ExpT.place(x=120, y=6)
 
-        button_ExpStart = tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc', font=("Arial", 24),
+        button_ExpStart = tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc', font=self.bigfont,
                                     command=self.expose_dark)
         # button_ExpStart.place(x=75,y=95)
 
@@ -4702,7 +4740,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Flat = tk.LabelFrame(tab4, text="Flat",
                                         width=300, height=170,
-                                        font=("Arial", 24))
+                                        font=self.bigfont)
         labelframe_Flat.pack(fill="both", expand="yes")
 
         label_Flat_MasterFile = tk.Label(
@@ -4738,7 +4776,7 @@ class MainPage(tk.Frame):
             labelframe_Flat, text="Save single frames", variable=self.var_Flat_saveall, value=1)
         r1_Flat_saveall.place(x=218, y=27)
 
-        button_ExpStart = tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc', font=("Arial", 24),
+        button_ExpStart = tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc', font=self.bigfont,
                                     command=self.expose_flat)
         button_ExpStart.place(x=75, y=95)
 
@@ -4748,7 +4786,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Buffer = tk.LabelFrame(tab5, text="Buffer",
                                           width=300, height=180,
-                                          font=("Arial", 24))
+                                          font=self.bigfont)
         labelframe_Buffer.pack(fill="both", expand="yes")
 
         label_Comment = tk.Label(labelframe_Buffer, text="Comments:")
@@ -4786,7 +4824,7 @@ class MainPage(tk.Frame):
             labelframe_Buffer, text="Save single frames", variable=self.var_Buffer_saveall, value=1)
         r1_Buffer_saveall.place(x=218, y=27)
 
-        button_ExpStart = tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc', font=("Arial", 24),
+        button_ExpStart = tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc', font=self.bigfont,
                                     command=self.expose_buffer)
         # button_ExpStart.place(x=75,y=95)
 
@@ -4802,7 +4840,7 @@ class MainPage(tk.Frame):
         self.ExposeBeginFrame.place(x=5, y=175, width=420, height=172)
 
         labelframe_ExposeBegin = tk.LabelFrame(self.ExposeBeginFrame, text="Acquisition",
-                                               font=("Ariel", 24))
+                                               font=self.bigfont)
         labelframe_ExposeBegin.pack(fill="both", expand="yes")
 
         label_out_fname = tk.Label(
@@ -4868,7 +4906,7 @@ class MainPage(tk.Frame):
         self.entry_out_fnumber = entry_out_fnumber
         # To begin the exposure
         button_ExpStart = tk.Button(labelframe_ExposeBegin, text="START", bd=3,
-                                    bg='#0052cc', font=("Arial", 24),
+                                    bg='#0052cc', font=self.bigfont,
                                     command=self.start_an_exposure)
         button_ExpStart.place(x=285, y=25)
 
@@ -4949,7 +4987,7 @@ class MainPage(tk.Frame):
             x=10, y=620, anchor="nw", width=420, height=190)
 
         labelframe_FITSmanager = tk.LabelFrame(
-            self.frame_FITSmanager, text="FITS manager", font=("Arial", 24))
+            self.frame_FITSmanager, text="FITS manager", font=self.bigfont)
         labelframe_FITSmanager.pack(fill="both", expand="yes")
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -4978,7 +5016,7 @@ class MainPage(tk.Frame):
 # =============================================================================
         labelframe_Query_Simbad = tk.LabelFrame(labelframe_FITSmanager, text="Query Simbad",
                                                 width=180, height=110,
-                                                font=("Arial", 24))
+                                                font=self.bigfont)
         labelframe_Query_Simbad.place(x=5, y=45)
 
         button_Query_Simbad = tk.Button(
@@ -5235,7 +5273,7 @@ class MainPage(tk.Frame):
         self.frame_SlitConf.place(
             x=460, y=610, anchor="nw", width=500, height=250)
         labelframe_SlitConf = tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration",
-                                            font=("Arial", 24))
+                                            font=self.bigfont)
         labelframe_SlitConf.pack(fill="both", expand="yes")
 
         self.setChecked = tk.StringVar(None, "draw")
@@ -5319,7 +5357,7 @@ class MainPage(tk.Frame):
         #### check overlapping slits and create a series of new DMD patterns with slits that do not overlap #####
 
         labelframe_PatternSeries = tk.LabelFrame(labelframe_SlitConf, text="Create Pattern Series with No Overlapping Slits",
-                                                 font=("Arial", 15), height=110, width=380)
+                                                 font=self.bigfont_15, height=110, width=380)
         labelframe_PatternSeries.place(x=4, y=105)
         #labelframe_PatternSeries.pack(fill="both", expand="yes")
 
@@ -5468,7 +5506,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Sky = tk.LabelFrame(self.frame1r,
                                        text="Sky (RA,Dec) regions",
-                                       font=("Arial", 20), bg="#8AA7A9")
+                                       font=self.bigfont_20, bg="#8AA7A9")
 #        labelframe_Sky.pack(fill="both", expand="yes")
         labelframe_Sky.place(x=0, y=0, width=380, height=250)
 
@@ -5515,7 +5553,7 @@ class MainPage(tk.Frame):
  #  #    CCD  module
  # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_CCD = tk.LabelFrame(self.frame1r,
-                                       text="CCD (x,y) regions", font=("Arial", 20), bg="#00CED1")
+                                       text="CCD (x,y) regions", font=self.bigfont_20, bg="#00CED1")
 #        labelframe_CCD.pack(fill="both", expand="yes")
         labelframe_CCD.place(x=0, y=251, width=380, height=159)
 
@@ -5571,7 +5609,7 @@ class MainPage(tk.Frame):
  #  #    DMD  module
  # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_DMD = tk.LabelFrame(
-            self.frame1r, text="DMD slits", font=("Arial", 20), bg="#20B2AA")
+            self.frame1r, text="DMD slits", font=self.bigfont_20, bg="#20B2AA")
 #        labelframe_DMD.pack(fill="both", expand="yes")
         labelframe_DMD.place(x=0, y=410, width=380, height=260)
 
@@ -5596,7 +5634,7 @@ class MainPage(tk.Frame):
         label_workflow.place(x=4,y=130)
         """
 
-        button_push_slits = tk.Button(labelframe_DMD, text="Current Slit Regions -> DMD", bd=3, font=("Arial", 24),  relief=tk.RAISED,
+        button_push_slits = tk.Button(labelframe_DMD, text="Current Slit Regions -> DMD", bd=3, font=self.bigfont,  relief=tk.RAISED,
                                       command=self.push_slit_shape)
         button_push_slits.place(x=20, y=4)
 #        button_push_slits.place(x=20,y=125)
@@ -5652,7 +5690,7 @@ class MainPage(tk.Frame):
  #  #    HTS module
  # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_HTS = tk.LabelFrame(
-            self.frame1r, text="HTS", font=("Arial", 20), bg="#98F5FF")
+            self.frame1r, text="HTS", font=self.bigfont_20, bg="#98F5FF")
 #        labelframe_HTM.pack(fill="both", expand="yes")
         labelframe_HTS.place(x=0, y=700, width=380, height=150)
 
@@ -8808,8 +8846,10 @@ class MainPage(tk.Frame):
 
     def create_menubar(self, parent):
         """ to be written """
+        
         parent.geometry("1400x900")  # was ("1280x900")
-#        parent.geometry("1680x900")
+        if platform == "win32":
+            parent.geometry("1400x920")
         parent.title("SAMOS Main Page")
         self.PAR = SAMOS_Parameters()
 

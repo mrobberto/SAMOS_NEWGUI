@@ -6,6 +6,7 @@ from time import sleep,time
 import xml.dom.minidom
 #import sys
 
+
 ### Substitute getch from https://www.reddit.com/r/learnpython/comments/7036k5/can_i_use_getch_on_macos_x/
 #import sys, tty, termios
 import sys
@@ -14,8 +15,8 @@ if platform == "linux" or platform == "linux2":
     import tty, termios
 if platform == "darwin":
     import tty, termios
-if platform == "win32":
-    import getch
+#if platform == "win32":
+#    import getch
 
 ### Needed to run ConvertSIlly by C. Loomis
 import math
@@ -52,17 +53,18 @@ class Class_Camera(object):
         
  
         
-    def getch(char_width=1):
-        '''get a fixed number of typed characters from the terminal. 
-        Linux / Mac only'''
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            ch = sys.stdin.read(char_width)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
+    if (platform == "linux") or (platform == "darwin"): 
+        def getch(char_width=1):
+            '''get a fixed number of typed characters from the terminal. 
+            Linux / Mac only'''
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(fd)
+                ch = sys.stdin.read(char_width)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            return ch
     ####
     
     

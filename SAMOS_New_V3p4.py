@@ -19,7 +19,7 @@ Created on Tue Feb 25 13:21:00 2023
     - added the capability of drawing generic shapes,
 03.01.2023 - V1.1
     - Major redesign of the SLit handling part, created the 3 color column on the right side
-      following the data flow.
+      following the data flow.l3416
     - Minor reorg, but notice the new structure of the .csv maps/slit pattern under DMD_dev
 
 02.28.2023 - V1.0
@@ -3413,7 +3413,7 @@ class CCD2DMD_RecalPage(tk.Frame):
         #self.source_find_button.place(x=4, y=20)
 
         self.run_coord_transf_button = tk.Button(self.frame0l, text="Initialize Coord Transform", bg="#9D76A4", state="disabled",
-        self.run_coord_transf_button = tk.Button(self.frame0l,text="Run Coord Transform",bg="#9D76A4",state="disabled",
+#        self.run_coord_transf_button = tk.Button(self.frame0l,text="Run Coord Transform",bg="#9D76A4",state="disabled",
 
                                                  command=self.run_coord_transf)
         self.run_coord_transf_button.pack(padx=15, pady=5)
@@ -7834,14 +7834,8 @@ class MainPage(tk.Frame):
         coords_text_DEG = "RA: %.9s DEC %.9s\n" % (str(ra_deg), str(dec_deg))
 #        dmd_text = "DMD_X: %.2f  DMD_Y: %.2f \n"%(dmd_x, dmd_y)
 #        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.round(dmd_x), round(dmd_y))
-<<<<<<< HEAD
         dmd_text = "DMD_X: %i  DMD_Y: %i \n" % (
             np.floor(dmd_x), np.floor(dmd_y))
-=======
-
-        dmd_text = "DMD_X: %i  DMD_Y: %i \n"%(np.floor(dmd_x), np.floor(dmd_y))
-
->>>>>>> 6e83262f94ba2c882b86d15b5268938166f40b1e
         text = "X: %i  Y: %i  Value: %s" % (
             np.floor(fits_x), np.floor(fits_y), value)
 
