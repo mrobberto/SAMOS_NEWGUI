@@ -28,6 +28,9 @@ import math as math
 from SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
 import SAMOS_system_dev.utils as U
 
+import sys
+from sys import platform
+
 class ETC_Spectral_Page(Frame):
 
 #    def __init__(self, win):
@@ -658,8 +661,10 @@ class ETC_Spectral_Page(Frame):
         self.w.create_rectangle(8, 8, 488, 46, outline='blue')
         self.w.pack()
 
-#        self.text_SAMOS_Header = Text(self.frame_out, width=66, height=2, background='light gray')
-        self.text_SAMOS_Header = Text(self.frame_out, width=59, height=2, background='light gray')
+    
+        self.text_SAMOS_Header = Text(self.frame_out, width=66, height=2, background='light gray')
+        if platform == "win32":
+            self.text_SAMOS_Header = Text(self.frame_out, width=59, height=2, background='light gray')
         #self.text_SAMOS_Header.insert(INSERT, text)
         self.text_SAMOS_Header.place(x=12, y=10)
         
