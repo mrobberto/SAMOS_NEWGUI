@@ -5069,35 +5069,36 @@ class MainPage(tk.Frame):
         """ SkyMapper Query """
         button_skymapper_query = tk.Button(labelframe_FITSmanager, text="SkyMapper Query", bd=1,
                                            command=self.SkyMapper_query)
-        button_skymapper_query.place(x=190, y=80)
+        button_skymapper_query.place(x=190, y=65)
         """ Filter Entry box"""
         self.string_Filter = tk.StringVar()
         self.string_Filter.set("i")
         label_Filter = tk.Label(labelframe_FITSmanager, text='Filter:',  bd=3)
         entry_Filter = tk.Entry(labelframe_FITSmanager,
                                 width=2,  bd=3, textvariable=self.string_Filter)
-        label_Filter.place(x=330, y=83)
-        entry_Filter.place(x=370, y=80)
+        label_Filter.place(x=330, y=68)
+        entry_Filter.place(x=370, y=65)
 
 
         """ twirl Astrometry"""
         button_twirl_Astrometry = tk.Button(labelframe_FITSmanager, text="twirl_WCS", bd=3,
                                             command=self.twirl_Astrometry)
-        button_twirl_Astrometry.place(x=190, y=105)
+        button_twirl_Astrometry.place(x=190, y=90)
         """ Nr. of Stars Entry box"""
         label_nrofstars = tk.Label(labelframe_FITSmanager, text="Nr. of stars:")
-        label_nrofstars.place(x=285, y=108)
+        label_nrofstars.place(x=285, y=94)
         self.nrofstars = tk.IntVar()
         entry_nrofstars = tk.Entry(
             labelframe_FITSmanager, width=3,  bd=3, textvariable=self.nrofstars)
-        entry_nrofstars.place(x=360, y=105)
+        entry_nrofstars.place(x=360, y=90)
         self.nrofstars.set('25')
 
         """ find stars"""
         button_find_stars = tk.Button(labelframe_FITSmanager, text="Find stars", bd=3,
-                                            command=self.find_stars)
-        button_find_stars.place(x=190, y=130)
-
+                                            command=self.find_stars, state='disabled')
+        #start with disabled state because you can't use this feature until twirl has been run
+        button_find_stars.place(x=190, y=115)
+        self.button_find_stars = button_find_stars
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #        button_Astrometry =  tk.Button(labelframe_FITSmanager, text="Astrometry", bd=3,
@@ -5357,7 +5358,7 @@ class MainPage(tk.Frame):
         #### check overlapping slits and create a series of new DMD patterns with slits that do not overlap #####
 
         labelframe_PatternSeries = tk.LabelFrame(labelframe_SlitConf, text="Create Pattern Series with No Overlapping Slits",
-                                                 font=self.bigfont_15, height=110, width=380)
+                                                 font=self.bigfont_15, height=110, width=385)
         labelframe_PatternSeries.place(x=4, y=105)
         #labelframe_PatternSeries.pack(fill="both", expand="yes")
 
@@ -5382,12 +5383,12 @@ class MainPage(tk.Frame):
             "<<ComboboxSelected>>", self.selected_dmd_group_pattern)
         self.pattern_group_dropdown.place(x=4, y=35, width=200)
 
-        save_this_sub_pattern_btn = tk.Button(labelframe_PatternSeries, text="Save This Sub Pattern",
+        save_this_sub_pattern_btn = tk.Button(labelframe_PatternSeries, text="Save Displayed Pattern",
                                               command=self.save_selected_sub_pattern,
                                               padx=0, pady=0)
         save_this_sub_pattern_btn.place(x=205, y=32)
         save_all_sub_patterns_btn = tk.Button(labelframe_PatternSeries,
-                                              text="Save All Sub Patterns",
+                                              text="Save All Patterns",
                                               command=self.save_all_sub_patterns, padx=0, pady=0)
         save_all_sub_patterns_btn.place(x=4, y=60)
 
@@ -7594,6 +7595,7 @@ class MainPage(tk.Frame):
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
         self.Display(self.wcs_filename)
+        self.button_find_stars['state'] = 'active'
         #
         # > to read:
         # hdu = fits_open(self.wcs_filename)
@@ -7647,12 +7649,22 @@ class MainPage(tk.Frame):
                            width=self.slit_w.get(), height=self.slit_l.get(),
                            angle=0*u.deg)                   
                    for x, y in stars]  # [(1, 2), (3, 4)]]
+        
+        if self.SlitTabView is None:
+            self.initialize_slit_table()
+
         regs = Regions(regions)
         for reg in regs:
             obj = r2g(reg)
         # add_region(self.canvas, obj, tag="twirlstars", draw=True)
             self.canvas.add(obj)
-    
+            obj.pickable = True
+            obj.add_callback('pick-up', self.pick_cb, 'up')
+            obj.add_callback('pick-down', self.pick_cb, 'down')
+            obj.add_callback('edited', self.edit_cb)
+            
+            self.SlitTabView.add_slit_obj(reg, obj.tag, self.fitsimage)
+
         self.draw_slits()
         pass
 
