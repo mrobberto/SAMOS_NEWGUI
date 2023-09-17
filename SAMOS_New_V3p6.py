@@ -7660,9 +7660,9 @@ class MainPage(tk.Frame):
             self.canvas.add(obj)
             obj.pickable = True
             obj.add_callback('pick-up', self.pick_cb, 'up')
-            obj.add_callback('pick-down', self.pick_cb, 'down')
+            # obj.add_callback('pick-down', self.pick_cb, 'down')
             obj.add_callback('edited', self.edit_cb)
-            
+
             self.SlitTabView.add_slit_obj(reg, obj.tag, self.fitsimage)
 
         self.draw_slits()
