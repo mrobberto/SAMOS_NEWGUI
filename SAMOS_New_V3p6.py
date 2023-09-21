@@ -5095,7 +5095,7 @@ class MainPage(tk.Frame):
 
         """ find stars"""
         button_find_stars = tk.Button(labelframe_FITSmanager, text="Find stars", bd=3,
-                                            command=self.find_stars, state='disabled')
+                                            command=self.find_stars)
         #start with disabled state because you can't use this feature until twirl has been run
         button_find_stars.place(x=190, y=115)
         self.button_find_stars = button_find_stars
@@ -7466,8 +7466,10 @@ class MainPage(tk.Frame):
 #        self.fullpath_FITSfilename = filepath.name
         hdul.close()
         work_dir = os.getcwd()
-        self.fits_image_ff = os.path.join(
-            work_dir, 'fits_image', "newimage_ff.fits")
+        if not os.path.exists(os.path.join(work_dir,"SAMOS_QL_images")):
+            os.mkdir(os.path.join(work_dir,"SAMOS_QL_images"))
+        self.fits_image_ff = os.path.join(work_dir, "SAMOS_QL_images/",
+            "newimage_ff.fits")
         fits.writeto(self.fits_image_ff, self.hdu_res.data,
                      header=self.hdu_res.header, overwrite=True)
 
@@ -7508,6 +7510,8 @@ class MainPage(tk.Frame):
             self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
         work_dir = os.getcwd()
+        if not os.path.exists(os.path.join(work_dir,"SAMOS_QL_images")):
+            os.mkdir(os.path.join(work_dir,"SAMOS_QL_images"))
         self.fits_image_ff = os.path.join(
             work_dir, "SAMOS_QL_images", "newimage_ff.fits")
         fits.writeto(self.fits_image_ff, self.hdu_res.data,
@@ -7588,14 +7592,25 @@ class MainPage(tk.Frame):
         if self.loaded_regfile is not None:
             hdu_wcs[0].header.set(
                 "dmdmap", os.path.split(self.loaded_regfile)[1])
+            
+        try: # make sure RA and DEC keys are in the header of the new WCS file
+            print(hdu_wcs[0].header['RA'], hdu_wcs[0].header['DEC'])
+        except KeyError:
+            hdu_wcs[0].header.set('RA', header['RA'])
+            hdu_wcs[0].header.set('DEC', header['DEC'])
+
 
         hdu_wcs[0].data = data  # add data to fits file
         self.wcs_filename = os.path.join(
             ".", "SAMOS_Astrometry_dev", "WCS_"+ra+"_"+dec+".fits")
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
+        self.wcs_filename = os.path.join(
+            ".", "SAMOS_QL_images", "WCS_"+ra+"_"+dec+".fits")
+        hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
+        self.fits_image_ff = self.wcs_filename
+
         self.Display(self.wcs_filename)
-        self.button_find_stars['state'] = 'active'
         #
         # > to read:
         # hdu = fits_open(self.wcs_filename)
@@ -7706,6 +7721,7 @@ class MainPage(tk.Frame):
         # self.load_file()
         self.AstroImage = load_data(filename, logger=self.logger)
         self.fitsimage.set_image(self.AstroImage)
+        self.fits_image_ff = filename
 
         if self.AstroImage.wcs.wcs.has_celestial:
             self.wcs = self.AstroImage.wcs.wcs
