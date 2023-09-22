@@ -7474,8 +7474,8 @@ class MainPage(tk.Frame):
                         "WCSAXES": 2,
                         "CRPIX1": 528,
                         "CRPIX2": 516,
-                        "CDELT1": 0.18/3600,
-                        "CDELT2": 0.18/3600,
+                        "CDELT1": 0.1875/3600,
+                        "CDELT2": 0.1875/3600,
                         "CUNIT1": "deg",
                         "CUNIT2": "deg",
                         "CTYPE1": "RA---TAN",
@@ -7526,7 +7526,7 @@ class MainPage(tk.Frame):
         hdul.close()
         work_dir = os.getcwd()
         self.fits_image_ff = os.path.join(
-            work_dir, 'fits_image', "newimage_ff.fits")
+            work_dir, 'SAMOS_QL_images', "newimage_ff.fits")
         fits.writeto(self.fits_image_ff, self.hdu_res.data,
                      header=self.hdu_res.header, overwrite=True)
 
@@ -7589,7 +7589,7 @@ class MainPage(tk.Frame):
 
         # image shape and pixel size in "
         shape = data.shape
-        pixel = 0.18 * u.arcsec
+        pixel = 0.1875 * u.arcsec
         fov = np.max(shape)*pixel.to(u.deg).value
 
         # Let's find some stars and display the image
