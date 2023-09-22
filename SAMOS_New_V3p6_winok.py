@@ -7526,7 +7526,7 @@ class MainPage(tk.Frame):
         hdul.close()
         work_dir = os.getcwd()
         self.fits_image_ff = os.path.join(
-            work_dir, 'fits_image', "newimage_ff.fits")
+            work_dir, 'SAMOS_QL_images', "newimage_ff.fits")
         fits.writeto(self.fits_image_ff, self.hdu_res.data,
                      header=self.hdu_res.header, overwrite=True)
 
