@@ -11,7 +11,14 @@ Created on Fri Sep 22 10:37:35 2023
 parameters = {'Observer': "SAMOS team", 
               'Telescope': "SOAR",
               'Program ID': 0,
-              'Telescope Operator': 0}
+              'Telescope Operator': 0,
+              'Object Name': "NGC 3105",
+              'Comment': "none",
+              'Bias Comments': "none",
+              'Dark Comments': "none",
+              'Flat Comments': "none",
+              'Buffer Comments': "none",
+              'Base Filename': "Test"}
 
 print("original dictionary: ", parameters)
 

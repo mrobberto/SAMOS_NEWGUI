@@ -4641,16 +4641,17 @@ class MainPage(tk.Frame):
         label_ObjectName = tk.Label(labelframe_Acquire, text="Object Name:")
         label_ObjectName.place(x=4, y=10)
         self.ObjectName = tk.StringVar()
-        self.ObjectName.set(" ")
+        self.ObjectName.set(self.PAR.PotN['Object Name'])
         entry_ObjectName = tk.Entry(labelframe_Acquire, width=8,  bd=3,
                                     textvariable=self.ObjectName)
         entry_ObjectName.place(x=100, y=8)
 
         label_Comment = tk.Label(labelframe_Acquire, text="Comments:")
         label_Comment.place(x=4, y=50)
-#        scrollbar = tk.Scrollbar(orient="horizontal")
-        # , xscrollcommand=scrollbar.set)
-        self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd=3, )
+        self.Comment = tk.StringVar()
+        self.Comment.set(self.PAR.PotN['Comment'])
+        self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd=3, 
+                                      textvariable=self.Comment)
         self.entry_Comment.place(x=100, y=48)
 
         self.Light_NofFrames = tk.IntVar()
@@ -4699,9 +4700,10 @@ class MainPage(tk.Frame):
 
         label_Comment = tk.Label(labelframe_Bias, text="Comments:")
         label_Comment.place(x=4, y=50)
-#        scrollbar = tk.Scrollbar(orient="horizontal")
-        # , xscrollcommand=scrollbar.set)
-        self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd=3, )
+        self.BiasComment = tk.StringVar()
+        self.BiasComment.set(self.PAR.PotN['Comment'])
+        self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd=3, 
+                                          textvariable=self.BiasComment)
         self.entry_BiasComment.place(x=100, y=48)
 
         label_Bias_NofFrames = tk.Label(labelframe_Bias, text="Nr. of Frames:")
@@ -4747,9 +4749,10 @@ class MainPage(tk.Frame):
 
         label_Comment = tk.Label(labelframe_Dark, text="Comments:")
         label_Comment.place(x=4, y=50)
-#        scrollbar = tk.Scrollbar(orient="horizontal")
-        # , xscrollcommand=scrollbar.set)
-        self.entry_DarkComment = tk.Entry(labelframe_Dark, width=20,  bd=3, )
+        self.DarkComment = tk.StringVar()
+        self.DarkComment.set(self.PAR.PotN['Comment'])
+        self.entry_DarkComment = tk.Entry(labelframe_Dark, width=20,  bd=3, 
+                                          textvariable = self.DarkComment)
         self.entry_DarkComment.place(x=100, y=48)
 
         label_Dark_NofFrames = tk.Label(labelframe_Dark, text="Nr. of Frames:")
@@ -4793,9 +4796,10 @@ class MainPage(tk.Frame):
 
         label_Comment = tk.Label(labelframe_Flat, text="Comments:")
         label_Comment.place(x=4, y=50)
-#        scrollbar = tk.Scrollbar(orient="horizontal")
-        # , xscrollcommand=scrollbar.set)
-        self.entry_FlatComment = tk.Entry(labelframe_Flat, width=20,  bd=3, )
+        self.FlatComment = tk.StringVar()
+        self.FlatComment.set(self.PAR.PotN['Comment'])
+        self.entry_FlatComment = tk.Entry(labelframe_Flat, width=20,  bd=3, 
+                                          textvariable=self.FlatComment)
         self.entry_FlatComment.place(x=100, y=48)
 
 #        label_Flat_ExpT =  tk.Label(labelframe_Flat, text="Exposure time (s):")
@@ -4831,10 +4835,10 @@ class MainPage(tk.Frame):
 
         label_Comment = tk.Label(labelframe_Buffer, text="Comments:")
         label_Comment.place(x=4, y=50)
-#        scrollbar = tk.Scrollbar(orient="horizontal")
-        # , xscrollcommand=scrollbar.set)
-        self.entry_BufferComment = tk.Entry(
-            labelframe_Buffer, width=20,  bd=3, )
+        self.BufferComment = tk.StringVar()
+        self.BufferComment.set(self.PAR.PotN['Comment'])
+        self.entry_BufferComment = tk.Entry(labelframe_Buffer, width=20,  bd=3, 
+                                            textvariable = self.BufferComment)
         self.entry_BufferComment.place(x=100, y=48)
 
         label_Buffer_MasterFile = tk.Label(
@@ -4887,6 +4891,7 @@ class MainPage(tk.Frame):
             labelframe_ExposeBegin, text="Base Filename:")
         label_out_fname.place(x=4, y=15)
         self.out_fname = tk.StringVar()
+        self.out_fname.set(self.PAR.PotN['Base Filename'])
         entry_out_fname = tk.Entry(labelframe_ExposeBegin, textvariable=self.out_fname,
                                    width=8, bd=3)
         entry_out_fname.place(x=100, y=13)
@@ -6704,6 +6709,14 @@ class MainPage(tk.Frame):
         self.PAR.PotN['Observer'] = self.names_var.get()
         self.PAR.PotN['Program ID'] = self.program_var.get() 
         self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
+        self.PAR.PotN['Object Name'] = self.ObjectName.get()
+        self.PAR.PotN['Comment'] = self.Comment.get()
+        self.PAR.PotN['Bias Comment'] = self.BiasComment.get()
+        self.PAR.PotN['Dark Comment'] = self.DarkComment.get()
+        self.PAR.PotN['Flat Comment'] = self.FlatComment.get()
+        self.PAR.PotN['Buffer Comment'] = self.FlatComment.get()
+        self.PAR.PotN['Base Filename'] = self.out_fname.get()
+        
         # ..open the json file and read all...
         PotN_file = os.path.join(local_dir,'SAMOS_system_dev','Parameters.txt')
         with open(PotN_file, "r") as jsonFile:
@@ -6712,6 +6725,13 @@ class MainPage(tk.Frame):
         data["Observer"] = self.PAR.PotN['Observer'] 
         data["Program ID"] = self.PAR.PotN['Program ID'] 
         data["Telescope Operator"] = self.PAR.PotN['Telescope Operator'] 
+        data["Object Name"] = self.PAR.PotN['Object Name'] 
+        data["Comment"] = self.PAR.PotN['Comment'] 
+        data["Bias Comment"] = self.PAR.PotN['Bias Comment'] 
+        data["Dark Comment"] = self.PAR.PotN['Dark Comment'] 
+        data["Flat Comment"] = self.PAR.PotN['Flat Comment'] 
+        data["Buffer Comment"] = self.PAR.PotN['Buffer Comment'] 
+        data["Base Filename"] = self.PAR.PotN['Base Filename'] 
         # ... write the json file
         with open(PotN_file, "w") as jsonFile:
             json.dump(data, jsonFile)
@@ -7111,11 +7131,13 @@ class MainPage(tk.Frame):
 #        except IndexError:
 #            buffer = np.zeros_like(light)
 #            buffer_file = ''
-
+        
+        #To scale the dark current we need to know the exposure time
         hdr = hdu_light[0].header
         exptime = hdr['PARAM2']
         # this exptime is in ms
 
+        #START PROCESSING THE IMAGE FOR DISPLAY
         if self.subtract_Bias.get() == 1:
             light_bias = light-bias
             main_fits_header.output_header.set(
@@ -7152,7 +7174,7 @@ class MainPage(tk.Frame):
         if self.image_type == "sci":
             obj_type = "SCI"
             # I am adding the QL suffix to indicate that this is an image processed for QL
-            imtype = "Sci_{}".format(self.FW_filter.get())
+            imtype = "sci_{}".format(self.FW_filter.get())
         elif self.image_type == "bias":
             obj_type = "BIAS"
             imtype = "bias"
@@ -7314,9 +7336,9 @@ class MainPage(tk.Frame):
 
         if self.out_fname.get().strip(" ") == "":
             basename = self.out_fname.get()
-
         else:
             basename = "_"+self.out_fname.get()
+            
         out_fname = os.path.join(self.fits_dir, imtype+basename)
         # new_fname = "{}_{:04n}.fits".format(out_fname,int(self.entry_out_fnumber.get()))
 

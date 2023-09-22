@@ -1,1 +1,1 @@
-{"Observer": "SAMOS team", "Telescope": "SOAR", "Program ID": "0", "Telescope Operator": "pippo"}
+{"Observer": "SAMOS team", "Telescope": "SOAR", "Program ID": "0", "Telescope Operator": "tbd", "Object Name": "NGC 3105", "Comment": "none", "Bias Comments": "none", "Dark Comments": "none", "Flat Comments": "none", "Buffer Comments": "none", "Base Filename": "Test", "Bias Comment": "none", "Dark Comment": "none", "Flat Comment": "none", "Buffer Comment": "none"}
