@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import sys
 import csv
+import json #added to handle the Parameters.txt file
 
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
@@ -80,3 +81,18 @@ class SAMOS_Parameters(object):
         self.scale_DMD2PIXEL = 0.892  # mirros to pixel as per e-mail by RB  Jan 207, 2023
 
         self.dmd_map_filename = ""
+
+        """
+        I am adding here the parameters that may change every night, 
+        saved in the Parameters.txt file as a dictionary
+        that has to be handled as a json file. 
+        See Prameters_README.py for further info on how to handle it
+        """
+        Parameters_of_the_night = os.path.join(dir_SYSTEM, "Parameters.txt")
+        with open(Parameters_of_the_night) as f:
+            data= f.read()
+        PotN = json.loads(data)    
+        self.Observer = PotN['Observer']
+        self.Telescope = PotN['Telescope']
+        #print(self.Observer)
+        

@@ -1,1 +1,1 @@
-PROBABLY NOT USED, CAN BE DELETED?
+{"Observer": "SAMOS team", "Telescope": "SOAR", "Program ID": "0", "Telescope Operator": "pippo"}

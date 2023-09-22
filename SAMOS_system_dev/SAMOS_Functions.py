@@ -100,7 +100,7 @@ class Class_SAMOS_Functions:
         today = datetime.now()
         
         #collect all SISI fits images in a common directory
-        SISI_images_dir = "SISI_Images"
+        SISI_images_dir = "../SISI_Images"
         
         #name of the daily directory    
         fits_dir = os.path.join( parent_dir, SISI_images_dir, "SAMOS_" + today.strftime('%Y%m%d') )

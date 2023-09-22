@@ -148,11 +148,11 @@ sys.path.append(parent_dir)
 PCM = Class_PCM()
 
 # at the moment the Class Camera must be called with a few parameters...
-params = {'Exposure Time': 0, 'CCD Temperature': 2300,
+CCD_params = {'Exposure Time': 0, 'CCD Temperature': 2300,
           'Trigger Mode': 4, 'NofFrames': 1}
 # Trigger Mode = 4: light
 # Trigger Mode = 5: dark
-CCD = Class_Camera(dict_params=params)
+CCD = Class_Camera(dict_params=CCD_params)
 
 
 # Import the DMD class
@@ -619,7 +619,7 @@ class ConfigPage(tk.Frame):
         Label1 = tk.Label(self.labelframe_Others, text="Telescope")
         Label1.place(x=4, y=10)
         self.Telescope = tk.StringVar()
-        self.Telescope.set('SOAR')
+        self.Telescope.set(self.PAR.PotN['Telescope'])
         Entry_IP_Telescope = tk.Entry(
             self.labelframe_Others, width=20, textvariable=self.Telescope)
         Entry_IP_Telescope.place(x=120, y=10)
@@ -627,7 +627,7 @@ class ConfigPage(tk.Frame):
         Label1 = tk.Label(self.labelframe_Others, text="Observer")
         Label1.place(x=4, y=35)
         self.Observer = tk.StringVar()
-        self.Observer.set('SAMOS Team')
+        self.Observer.set(self.PAR.PotN['Observer'])
         Entry_IP_Observer = tk.Entry(
             self.labelframe_Others, width=20, textvariable=self.Observer)
         Entry_IP_Observer.place(x=120, y=35)
@@ -679,7 +679,7 @@ class ConfigPage(tk.Frame):
 
             # name of the directory
             self.fits_dir = os.path.join(
-                self.local_dir, "SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
+                self.local_dir, "../SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
 
             isdir = os.path.isdir(self.fits_dir)
             if isdir == False:
@@ -1006,7 +1006,7 @@ class ConfigPage(tk.Frame):
             self.PAR.IP_status_dict['IP_SAMI'] = True
         self.save_IP_status()
         print(self.PAR.IP_status_dict)
-
+            
     def client_exit(self):
         """ to be written """
         print("complete")
@@ -4325,7 +4325,8 @@ class MainPage(tk.Frame):
         super().__init__(container)
 
         self.DMDPage = DMDPage
-
+        self.PAR = SAMOS_Parameters()
+        
         self.container = container
         logger = log.get_logger("example2", options=None)
         self.logger = logger
@@ -4356,7 +4357,7 @@ class MainPage(tk.Frame):
         self.loaded_regfile = None
         today = datetime.now()
         self.fits_dir = os.path.join(
-            local_dir, "SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
+            local_dir, "../SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -4373,6 +4374,7 @@ class MainPage(tk.Frame):
         # name_scroll = tk.Scrollbar(labelframe_ObsInf)
         # name_scroll.pack(side=tk.BOTTOM, fill=tk.Y)
         self.names_var = tk.StringVar()
+        self.names_var.set(self.PAR.PotN['Observer'])
         name_label = tk.Label(labelframe_ObsInf, text="Observer Name(s): ")
         name_label.place(x=30, y=4)
         name_entry = tk.Entry(labelframe_ObsInf, width=25, bd=3,
@@ -4381,6 +4383,7 @@ class MainPage(tk.Frame):
         name_entry.place(x=150, y=4)
 
         self.program_var = tk.StringVar()
+        self.program_var.set(self.PAR.PotN['Program ID'])
         program_label = tk.Label(labelframe_ObsInf, text="Program ID: ")
         program_label.place(x=71, y=35)
         program_entry = tk.Entry(labelframe_ObsInf, width=25, bd=3,
@@ -4388,6 +4391,7 @@ class MainPage(tk.Frame):
         program_entry.place(x=150, y=35)
 
         self.TO_var = tk.StringVar()
+        self.TO_var.set(self.PAR.PotN['Telescope Operator'])
         TO_label = tk.Label(labelframe_ObsInf, text="Telescope Operator(s): ")
         TO_label.place(x=4, y=66)
         TO_entry = tk.Entry(labelframe_ObsInf, width=25,
@@ -6520,16 +6524,16 @@ class MainPage(tk.Frame):
         alpha = float(self.walpha.get())
         fill = self.vfill.get() != 0
 
-        params = {'color': color,
+        draw_params = {'color': color,
                   'alpha': alpha,
                   # 'cap': 'ball',
                   }
         if kind in ('circle', 'rectangle', 'polygon', 'triangle',
                     'righttriangle', 'ellipse', 'square', 'box'):
-            params['fill'] = fill
-            params['fillalpha'] = alpha
+            draw_params['fill'] = fill
+            draw_params['fillalpha'] = alpha
 
-        self.canvas.set_drawtype(kind, **params)
+        self.canvas.set_drawtype(kind, **draw_params)
 
     def save_canvas(self):
         """ to be written """
@@ -6592,11 +6596,11 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "sci"
         ExpTime_ms = float(self.ExpTimeSet.get())*1000
-        params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
+        CCD_params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 4, 'NofFrames': int(self.Light_NofFrames.get())}
 
         # handle multiple files
-        self.expose(params)
+        self.expose(CCD_params)
         if self.Light_NofFrames.get() > 1:
             self.combine_files()
         self.handle_light()
@@ -6610,11 +6614,11 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "bias"
         ExpTime_ms = 0  # float(self.Bias_ExpT.get())*1000
-        params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
+        CCD_params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 5, 'NofFrames': int(self.Bias_NofFrames.get())}
         # cleanup the directory to remove setimage_ files that may be refreshed
         self.cleanup_files()
-        self.expose(params)
+        self.expose(CCD_params)
         self.combine_files()
         print("Superbias file created")
 
@@ -6629,9 +6633,9 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "dark"
         ExpTime_ms = float(self.ExpTimeSet.get())*1000
-        params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
+        CCD_params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 5, 'NofFrames': int(self.Dark_NofFrames.get())}
-        self.expose(params)
+        self.expose(CCD_params)
         self.combine_files()
         self.handle_dark()
         print("Superdark file created")
@@ -6647,9 +6651,9 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "flat"
         ExpTime_ms = float(self.ExpTimeSet.get())*1000
-        params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
+        CCD_params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
-        self.expose(params)
+        self.expose(CCD_params)
         self.combine_files()
         self.handle_flat()
         print("Superflat file created")
@@ -6663,16 +6667,17 @@ class MainPage(tk.Frame):
         """ to be written """
         self.image_type = "buff"
         ExpTime_ms = float(self.ExpTimeSet.get())*1000
-        params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
+        CCD_params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 4, 'NofFrames': int(self.Buffer_NofFrames.get())}
-        self.expose(params)
+        self.expose(CCD_params)
         self.combine_files()
 #        self.handle_buffer()
         print("Buffer file created")
         # Camera= CCD(dict_params=params)
 
     def start_an_exposure(self):
-
+        
+        self.update_PotN()
         obj_type = self.var_acq_type.get()
         self.start_combo_obj_number = int(self.entry_out_fnumber.get())
         # if a set of images, save the number suffix of the first
@@ -6688,6 +6693,33 @@ class MainPage(tk.Frame):
         elif obj_type == "Buffer":
             self.expose_buffer()
 
+    def update_PotN(self):
+        """
+        Updates the parameters of the night variables and files for logging the observations
+        """
+        import json
+#       How do we capture a parameter in another class/form?
+#        self.PAR.PotN['Telescope'] = ConfigPage.return_PotN(self) #ConfigPage.Telescope.get()
+        # For the parameters redefinied here it is easy: capture them...
+        self.PAR.PotN['Observer'] = self.names_var.get()
+        self.PAR.PotN['Program ID'] = self.program_var.get() 
+        self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
+        # ..open the json file and read all...
+        PotN_file = os.path.join(local_dir,'SAMOS_system_dev','Parameters.txt')
+        with open(PotN_file, "r") as jsonFile:
+            data = json.load(jsonFile)
+        #... change what has to be changed...
+        data["Observer"] = self.PAR.PotN['Observer'] 
+        data["Program ID"] = self.PAR.PotN['Program ID'] 
+        data["Telescope Operator"] = self.PAR.PotN['Telescope Operator'] 
+        # ... write the json file
+        with open(PotN_file, "w") as jsonFile:
+            json.dump(data, jsonFile)
+
+        
+
+        
+            
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Handle files: sets or single?
 #
@@ -6992,83 +7024,93 @@ class MainPage(tk.Frame):
         hdulist2.writeto(dir_hdul2, overwrite=True)
 
     def handle_light(self):
-        """ handle_light frame for display, applying bias, dark and flat if necessary """
+        """ 
+        handle_light frame for display, applying bias, dark and flat if necessary 
+        """
+        
+        # Get the file names
         light_file = os.path.join(local_dir, "SAMOS_QL_images", "newimage.fit")
+        
+        bias_file = os.path.join(
+            local_dir, "SAMOS_QL_images", "superbias.fits")
+
+        dark_s_file = os.path.join(
+            local_dir, "SAMOS_QL_images", "superdark_s.fits")
+
         flat_file = os.path.join(
             local_dir, "SAMOS_QL_images", "superflat_"+self.FW_filter.get()+"_norm.fits")
-        buffer_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superbuffer.fits")
+        #we may not have at disposal a flat file in the right filter, hence we get an old basic supeflat
         flat_exists = os.path.isfile(flat_file)
         if flat_exists:
             print("found flat file ", flat_file)
         else:
             flat_file = os.path.join(
                 local_dir, "SAMOS_QL_images", "superflat_norm.fits")
-        dark_s_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superdark_s.fits")
-        bias_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superbias.fits")
-
+            
+        buffer_file = os.path.join(
+            local_dir, "SAMOS_QL_images", "superbuff.fits")
+        
+        # Open the file that we have just taken, i.e. "light"        
         hdu_light = fits.open(light_file)
         light = hdu_light[0].data
         hdu_light.close()
 
-#        hdu_bias = fits.open(bias_file)
-#        bias = hdu_bias[0].data
-#        hdu_bias.close()
+        hdu_bias = fits.open(bias_file)
+        bias = hdu_bias[0].data
+        hdu_bias.close()
 #       Revised version by Dana below where we first check for a superbias
-        try:
-            bias_file = glob.glob(self.fits_dir+"/superbias_*.fits")[0]
-            hdu_bias = fits.open(bias_file)
-            bias = hdu_bias[0].data
-            hdu_bias.close()
-        except IndexError:
-            bias = np.zeros_like(light)
-            bias_file = ''
+#        try:
+#            bias_file = glob.glob(self.fits_dir+"/superbias_*.fits")[0]
+#            hdu_bias = fits.open(bias_file)
+#            bias = hdu_bias[0].data
+#            hdu_bias.close()
+#        except IndexError:
+#            bias = np.zeros_like(light)
+#            bias_file = ''
 
-#        hdu_dark_s = fits.open(dark_s_file)
-#        dark_s = hdu_dark_s[0].data
-#        hdu_dark_s.close()
+        hdu_dark_s = fits.open(dark_s_file)
+        dark_s = hdu_dark_s[0].data
+        hdu_dark_s.close()
 #       Revised version by Dana below where we check for a superdark
-        try:
-            dark_s_files = glob.glob(
-                self.fits_dir+"/superdark_{}s*.fits".format(self.ExpTimeSet.get()))
-            if len(dark_s_files) > 1:
-                dark_s_file = self.find_closest_dark()
-            elif len(dark_s_files) == 1:
-                dark_s_file = dark_s_files[0]
-            hdu_dark_s = fits.open(dark_s_file)
-            dark_s = hdu_dark_s[0].data
-            hdu_dark_s.close()
-        except (IndexError, ValueError):
-            dark_s = np.zeros_like(light)
-            dark_s_file = ''
+#        try:
+#            dark_s_files = glob.glob(
+#                self.fits_dir+"/superdark_{}s*.fits".format(self.ExpTimeSet.get()))
+#            if len(dark_s_files) > 1:
+#                dark_s_file = self.find_closest_dark()
+#            elif len(dark_s_files) == 1:
+#                dark_s_file = dark_s_files[0]
+#            hdu_dark_s = fits.open(dark_s_file)
+#            dark_s = hdu_dark_s[0].data
+#            hdu_dark_s.close()
+#        except (IndexError, ValueError):
+#            dark_s = np.zeros_like(light)
+#            dark_s_file = ''
 
-#        hdu_flat = fits.open(flat_file)
-#        flat = hdu_flat[0].data
-#        hdu_flat.close()
+        hdu_flat = fits.open(flat_file)
+        flat = hdu_flat[0].data
+        hdu_flat.close()
 #       Revised version by Dana below where we check for a superdark
-        try:
-            flat_file = glob.glob(
-                self.fits_dir+"/superflat_{}*.fits".format(self.FW_filter.get()))[0]
-            hdu_flat = fits.open(flat_file)
-            flat = hdu_flat[0].data
-            hdu_flat.close()
-        except IndexError:
-            flat = np.zeros_like(light)
-            flat_file = ''
+#        try:
+#            flat_file = glob.glob(
+#                self.fits_dir+"/superflat_{}*.fits".format(self.FW_filter.get()))[0]
+#            hdu_flat = fits.open(flat_file)
+#            flat = hdu_flat[0].data
+#            hdu_flat.close()
+#        except IndexError:
+#            flat = np.zeros_like(light)
+#            flat_file = ''
 
         hdu_buffer = fits.open(buffer_file)
         buffer = hdu_buffer[0].data
         hdu_buffer.close()
-        try:
-            buffer_file = glob.glob(self.fits_dir+"/superbuff*.fits")[0]
-            hdu_buffer = fits.open(buffer_file)
-            buffer = hdu_buffer[0].data
-            hdu_buffer.close()
-        except IndexError:
-            buffer = np.zeros_like(light)
-            buffer_file = ''
+#        try:
+#            buffer_file = glob.glob(self.fits_dir+"/superbuff*.fits")[0]
+#            hdu_buffer = fits.open(buffer_file)
+#            buffer = hdu_buffer[0].data
+#            hdu_buffer.close()
+#        except IndexError:
+#            buffer = np.zeros_like(light)
+#            buffer_file = ''
 
         hdr = hdu_light[0].header
         exptime = hdr['PARAM2']
@@ -7087,17 +7129,22 @@ class MainPage(tk.Frame):
                 (float(self.ExpTimeSet.get())/(exptime*1000))
             main_fits_header.output_header.set(
                 "MSTRDARK", dark_s_file, "Master Dark file if corrected")
-
         else:
             light_dark = light_bias
 
         if self.divide_Flat.get() == 1:
             light_dark_bias = np.divide(light_dark, flat)
             main_fits_header.output_header.set(
-                "MSTRFLAT", dark_s_file, "Master Flat file if corrected")
-
+                "MSTRFLAT", flat_file, "Master Flat file if corrected")
         else:
             light_dark_bias = light_dark
+
+        if self.subtract_Buffer.get() == 1:
+            light_dark_bias_buffer = light_dark_bias - buffer
+            main_fits_header.output_header.set(
+                "MSTRBUFF", buffer_file, "Master Flat file if corrected")
+        else:
+            light_dark_bias_buffer = light_dark_bias
 
         fits_image = os.path.join(
             local_dir, "SAMOS_QL_images", "newimage_ff.fits")
@@ -7141,7 +7188,7 @@ class MainPage(tk.Frame):
         main_fits_header.output_header.update(TCS_dict)
         """
         pr_hdu = fits.PrimaryHDU(
-            light_dark_bias, main_fits_header.output_header)
+            light_dark_bias_buffer, main_fits_header.output_header)
         hdulist = fits.HDUList([pr_hdu])
         dmd_hdu = None
         if DMD.current_dmd_shape is not None:
@@ -7153,6 +7200,7 @@ class MainPage(tk.Frame):
 
         self.Display(fits_image)
         main_fits_header.create_fits_header(main_fits_header.output_header)
+        """
         if self.subtract_Buffer.get() == 1:
             light_buffer = light-buffer
             hdulist = fits.HDUList(
@@ -7162,7 +7210,7 @@ class MainPage(tk.Frame):
             # fits.writeto(fits_image,light_buffer,
             #             main_fits_header.output_header,overwrite=True)
             self.Display(fits_image)
-
+        """    
         hdulist.writeto(fits_image, overwrite=True)
 
         # Save a copy of the image to store in the Obs Night Directory under
@@ -7219,18 +7267,18 @@ class MainPage(tk.Frame):
 
         return superdark_list[i]
 
-    def expose(self, params):
+    def expose(self, CCD_params):
         """ handle the file acquired by the SISI camera"""
 
         # Prepare the exposure parameers
         # ExpTime_ms = float(self.ExpTime.get())*1000
         # params = {'Exposure Time':ExpTime_ms,'CCD Temperature':2300, 'Trigger Mode': 4}
 
-        # Camera= CCD(dict_params=params)
+        # Camera= CCD(dict_params=CCD_params)
         #
         # START WITH DEFINITIONS
         self.current_night_dir_filenames = []
-        Camera = Class_Camera(dict_params=params)
+        Camera = Class_Camera(dict_params=CCD_params)
         Camera.exp_progbar = self.exp_progbar
         Camera.exp_progbar_style = self.exp_progbar_style
         Camera.var_exp = self.var_perc_exp_done
@@ -7277,7 +7325,7 @@ class MainPage(tk.Frame):
         Camera.expose(night_dir_basename=out_fname,
                       start_fnumber=self.entry_out_fnumber)  # host, port=int(port))
         self.reset_progress_bars()
-        expTime = params['Exposure Time']/1000
+        expTime = CCD_params['Exposure Time']/1000
         main_fits_header.set_param("expTime", expTime)
         main_fits_header.set_param("filter", self.FW_filter.get())
 #        main_fits_header.set_param("filtpos", self.selected_FW_pos.get())
