@@ -612,7 +612,7 @@ class ConfigPage(tk.Frame):
         self.frame0r.place(x=585, y=0)  # , anchor="nw", width=20, height=145)
 
         self.labelframe_Others = tk.LabelFrame(
-            self.frame0r, text="Others", font=self.bigfont)
+            self.frame0r, text="Observer Data", font=self.bigfont)
         self.labelframe_Others.place(
             x=4, y=4, anchor="nw", width=392, height=225)
 
@@ -622,15 +622,49 @@ class ConfigPage(tk.Frame):
         self.Telescope.set(self.PAR.PotN['Telescope'])
         Entry_IP_Telescope = tk.Entry(
             self.labelframe_Others, width=20, textvariable=self.Telescope)
-        Entry_IP_Telescope.place(x=120, y=10)
+        Entry_IP_Telescope.place(x=140, y=10)
+
+        Label1 = tk.Label(self.labelframe_Others, text="Program ID")
+        Label1.place(x=4, y=35)
+        self.Program_ID = tk.StringVar()
+        self.Program_ID.set(self.PAR.PotN['Program ID'])
+        Entry_Program_ID = tk.Entry(
+            self.labelframe_Others, width=20, textvariable=self.Program_ID)
+        Entry_Program_ID.place(x=140, y=35)
+
+        Label1 = tk.Label(self.labelframe_Others, text="Proposal Title")
+        Label1.place(x=4, y=60)
+        self.Proposal_Title = tk.StringVar()
+        self.Proposal_Title.set(self.PAR.PotN['Proposal Title'])
+        Entry_Proposal_Title = tk.Entry(
+            self.labelframe_Others, width=20, textvariable=self.Proposal_Title)
+        Entry_Proposal_Title.place(x=140, y=60)
+
+        Label1 = tk.Label(self.labelframe_Others, text="Principal Investigator")
+        Label1.place(x=4, y=85)
+        self.Principal_Investigator = tk.StringVar()
+        self.Principal_Investigator.set(self.PAR.PotN['Principal Investigator'])
+        Entry_Principal_Investigator = tk.Entry(
+            self.labelframe_Others, width=20, textvariable=self.Principal_Investigator)
+        Entry_Principal_Investigator.place(x=140, y=85)
 
         Label1 = tk.Label(self.labelframe_Others, text="Observer")
-        Label1.place(x=4, y=35)
+        Label1.place(x=4, y=110)
         self.Observer = tk.StringVar()
         self.Observer.set(self.PAR.PotN['Observer'])
-        Entry_IP_Observer = tk.Entry(
+        Entry_Observer = tk.Entry(
             self.labelframe_Others, width=20, textvariable=self.Observer)
-        Entry_IP_Observer.place(x=120, y=35)
+        Entry_Observer.place(x=140, y=110)
+
+        self.TO_var = tk.StringVar()
+        self.TO_var.set(self.PAR.PotN['Telescope Operator'])
+        TO_label = tk.Label(self.labelframe_Others, text="Telescope Operator ")
+        TO_label.place(x=4, y=135)
+        TO_entry = tk.Entry(self.labelframe_Others, width=20,
+                            textvariable=self.TO_var)
+        TO_entry.place(x=140, y=135)
+
+
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -4326,6 +4360,7 @@ class MainPage(tk.Frame):
 
         self.DMDPage = DMDPage
         self.PAR = SAMOS_Parameters()
+        self.ConfP = ConfigPage(parent,container)
         
         self.container = container
         logger = log.get_logger("example2", options=None)
@@ -6704,10 +6739,12 @@ class MainPage(tk.Frame):
         """
         import json
 #       How do we capture a parameter in another class/form?
-#        self.PAR.PotN['Telescope'] = ConfigPage.return_PotN(self) #ConfigPage.Telescope.get()
+        self.PAR.PotN['Telescope'] = self.ConfP.Telescope.get() #ConfigPage.Telescope.get()
+        self.PAR.PotN['Program ID'] = self.program_var.get() 
+        self.PAR.PotN['Proposal Title'] = self.ConfP.Proposal_Title.get()#ConfigPage.Telescope.get()
+        self.PAR.PotN['Principal Investigator'] = self.ConfP.Principal_Investigator.get() #ConfigPage.Telescope.get()
         # For the parameters redefinied here it is easy: capture them...
         self.PAR.PotN['Observer'] = self.names_var.get()
-        self.PAR.PotN['Program ID'] = self.program_var.get() 
         self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
         self.PAR.PotN['Object Name'] = self.ObjectName.get()
         self.PAR.PotN['Comment'] = self.Comment.get()
@@ -6724,6 +6761,8 @@ class MainPage(tk.Frame):
         #... change what has to be changed...
         data["Observer"] = self.PAR.PotN['Observer'] 
         data["Program ID"] = self.PAR.PotN['Program ID'] 
+        data["Proposal Title"] = self.PAR.PotN['Proposal Title'] 
+        data["Principal Investigator"] = self.PAR.PotN['Principal Investigator'] 
         data["Telescope Operator"] = self.PAR.PotN['Telescope Operator'] 
         data["Object Name"] = self.PAR.PotN['Object Name'] 
         data["Comment"] = self.PAR.PotN['Comment'] 

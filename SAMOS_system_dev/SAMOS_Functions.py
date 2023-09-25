@@ -124,6 +124,5 @@ class Class_SAMOS_Functions:
         fits_dir_open.close() 
         return fits_dir
 
-
 #print(SF.read_IP_user())    
 

@@ -8,10 +8,12 @@ Created on Fri Sep 22 10:37:35 2023
 #CREATE AND MODIFY DICTIONARY
 # https://www.digitalocean.com/community/tutorials/python-add-to-dictionary
 
-parameters = {'Observer': "SAMOS team", 
-              'Telescope': "SOAR",
-              'Program ID': 0,
-              'Telescope Operator': 0,
+parameters = {'Telescope': "SOAR",
+              'Telescope Operator': "Mr. Sulu",
+              'Program ID': "0000", 
+              'Proposal Title': "Live long and prosper",
+              'Principal Investigator': "Leonard Nimoy",
+              'Observer': "Lieutenant Uhura",
               'Object Name': "NGC 3105",
               'Comment': "none",
               'Bias Comments': "none",
@@ -50,8 +52,10 @@ js = json.loads(data)
 print("Data type after reconstruction : ", type(js))
 print(js)
 
-print("Extract after reconstruction : ", js.keys(),js['Observer'])
+print("Extract after reconstruction : ", js.keys(),js['Telescope'])
 
 #also
 for key, value in js.items() :
     print(key, value)
+
+#change a parameter
