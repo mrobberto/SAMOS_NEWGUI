@@ -340,12 +340,12 @@ class Class_Camera(object):
             newFile.close()
             self.convertSIlly(fileout,fileout)
             
-            fileout1 = "{}_{:04n}.fits".format(night_dir_basename, fnumber)
-            newFile = open(fileout1, "wb")
-            newFile.write(data)
-            newFile.close()
-            self.convertSIlly(fileout1,fileout1)
-            self.img_night_dir_list.append(fileout1)
+#            fileout1 = "{}_{:04n}.fits".format(night_dir_basename, fnumber)
+#            newFile = open(fileout1, "wb")
+#            newFile.write(data)
+#            newFile.close()
+#            self.convertSIlly(fileout1,fileout1)
+            self.img_night_dir_list.append(fileout)#1)
             fnumber+=1
             self.FrameSuff.invoke("buttonup")
             # 2) if there is a request for iterations, the serial number is appended; use setimage_ to isolate the set
@@ -378,11 +378,12 @@ class Class_Camera(object):
         global outname
         outname = os.path.join(fits_dir,'SAMOS_image_'+today.strftime('%H%M%S')+'.fits')
         import shutil  
-        shutil.copy(os.path.join(parent_dir,'SAMOS_QL_images','newimage_fixed.fit'), outname)
+#        shutil.copy(os.path.join(parent_dir,'SAMOS_QL_images','newimage_fixed.fit'), outname)
+        shutil.copy(os.path.join(parent_dir,'SAMOS_QL_images','newimage.fit'), outname)
     
     def delete_fitsfile(self):
         os.remove(outname)
-        
+        print(outname, " is gone...")
         
         
     def Cooler(self,OnOff):
