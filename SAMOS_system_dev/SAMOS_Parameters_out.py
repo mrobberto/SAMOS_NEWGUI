@@ -76,7 +76,7 @@ class SAMOS_Parameters():
         """
 
         self.inoutvar = tk.StringVar()
-        self.inoutvar.set("outside")
+        self.inoutvar.set("inside")
 
         self.scale_DMD2PIXEL = 0.892  # mirros to pixel as per e-mail by RB  Jan 207, 2023
 

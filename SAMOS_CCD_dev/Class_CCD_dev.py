@@ -133,7 +133,7 @@ class Class_Camera(object):
 
         with open(fname, "rb") as in_f:
                 buf = in_f.read()
-
+                in_f.close()
     # Two fixes:
     # Header cards:
         buf = buf.replace(b'SIMPLE  =                    F', b'SIMPLE  =                    T')
@@ -145,8 +145,9 @@ class Class_Camera(object):
         pad = round((math.ceil(blocks) - blocks) * FITSblock)
         buf = buf + (b'\0' * pad)
     
-        with open(outname, "wb+") as out_f:
+        with open(r"outname", "wb+") as out_f:
                 out_f.write(buf)
+                out_f.close()
         
 
 
@@ -334,7 +335,7 @@ class Class_Camera(object):
             # write to file
             # 1) the last file is always saved as newimage.fit, and handled by ginga
             fileout = os.path.join(parent_dir,"SAMOS_QL_images","newimage.fit")
-            newFile = open(fileout, "wb")
+            newFile = open(r"fileout", "wb")
             newFile.write(data)
             newFile.close()
             self.convertSIlly(fileout,fileout)
@@ -348,7 +349,7 @@ class Class_Camera(object):
             fnumber+=1
             self.FrameSuff.invoke("buttonup")
             # 2) if there is a request for iterations, the serial number is appended; use setimage_ to isolate the set
-            if iterations > 0:
+            if iterations > 1:
                 fileout = os.path.join(parent_dir,"SAMOS_QL_images","setimage_" + str(image) +".fit")
                 newFile = open(fileout, "wb")
                 newFile.write(data)
