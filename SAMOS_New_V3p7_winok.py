@@ -714,7 +714,7 @@ class ConfigPage(tk.Frame):
 
             # name of the directory
             self.fits_dir = os.path.join(
-                self.local_dir, "../SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
+                parent_dir, "SISI_images","SAMOS_" + today.strftime('%Y%m%d'))
 
             isdir = os.path.isdir(self.fits_dir)
             if isdir == False:
@@ -4393,7 +4393,7 @@ class MainPage(tk.Frame):
         self.loaded_regfile = None
         today = datetime.now()
         self.fits_dir = os.path.join(
-            local_dir, "../SISI_images/SAMOS_" + today.strftime('%Y%m%d'))
+            parent_dir, "SISI_images","SAMOS_" + today.strftime('%Y%m%d'))
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
