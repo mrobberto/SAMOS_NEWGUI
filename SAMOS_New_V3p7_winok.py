@@ -4381,7 +4381,7 @@ class MainPage(tk.Frame):
             self.bigfont_15 = ("Arial", 15)
 
         # keep track of the entry number for header keys that need to be added
-        # will be used to write "OtherParameters.txt"
+        # will be used to write fi"OtherParameters.txt"
         self.extra_header_params = 0
         # keep string of entries to write to a file after acquisition.
         self.header_entry_string = ''

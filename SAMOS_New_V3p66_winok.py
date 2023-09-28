@@ -6014,7 +6014,7 @@ class MainPage(tk.Frame):
                 self.RRR_xyAP.append(g2r(list_all_ginga_objects[i]))
         return self.RRR_xyAP
         print("(x,y) Ginga regions converted to (x,y) Astropy regions")
-
+        
     def push_RADEC(self):
         """ to be written """
         self.string_RA = tk.StringVar(self, self.RA_regCNTR)
@@ -7212,8 +7212,13 @@ class MainPage(tk.Frame):
         fname = os.path.join(path, file)
         # done
         #
-        main_fits_header.set_param("filedir", self.fits_dir)
+#        main_fits_header.set_param("filedir", self.fits_dir)
+        data_dir = self.fits_dir.replace(parent_dir,"")
+        main_fits_header.set_param("filedir", data_dir)
+        #main_fits_header.set_param("filename", fname)
+        file_name = fname.replace(self.fits_dir,"")[1:]
         main_fits_header.set_param("filename", fname)
+        
         main_fits_header.set_param("obstype", obj_type)
 
         main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7332,7 +7337,15 @@ class MainPage(tk.Frame):
 
         # THE CONVERSTLLY THING HAS BEEN DONE IN Class_CCD/dev/expose
         self.fits_image = os.path.join(
-            os.getcwd(), "SAMOS_QL_images", "newimage.fit")
+             os.getcwd(), "SAMOS_QL_images", "newimage.fit")
+
+        fits_dir = SF.read_fits_folder()
+        print(fits_dir)
+        list_of_files = glob.glob(
+             os.path.join(fits_dir,"*.fits") )  
+        latest_file = max(list_of_files, key=os.path.getctime)
+        print(latest_file)
+        
         """
         self.fits_image = os.path.join(
             work_dir,"SAMOS_QL_images","newimage.fit")
@@ -7343,13 +7356,14 @@ class MainPage(tk.Frame):
         # copy the cleaned file to newimage.fit
         # shutil.copy(fits_image_converted,self.fits_image)
         """
-        hdul = fits.open(self.fits_image)
+#        hdul = fits.open(self.fits_image)
+        hdul = fits.open(latest_file)
         original_header = hdul[0].header
-        del original_header['INSTRUME']
+        
         main_fits_header.set_param(
-            "filename", os.path.split(self.fits_image)[1])
+            "filename", os.path.split(latest_file)[1])
         main_fits_header.set_param(
-            "filedir", os.path.split(self.fits_image)[0])
+            "filedir", os.path.split(latest_file)[0])
         main_fits_header.set_param("observers", self.names_var.get())
         main_fits_header.set_param("programID", self.program_var.get())
         main_fits_header.set_param("telOperators", self.TO_var.get())
@@ -7364,7 +7378,7 @@ class MainPage(tk.Frame):
         # self.Display(fits_image_converted)
         self.Display(self.fits_image)
 
-        self.fullpath_FITSfilename = self.fits_image
+        self.fullpath_FITSfilename = latest_file # self.fits_image
         # To do: cancel the original image.= If the canera is active; otherwise leave it.
         # Hence, we need a general switch to activate if the camera is running.
         # Hence, we may need a general login window.
@@ -7391,7 +7405,7 @@ class MainPage(tk.Frame):
                 main_fits_header.output_header)
             hdulist.append(dmd_hdu)
 
-        fileout1 = "{}_{:04n}.fits".format(out_fname, int(self.entry_out_fnumber.get()))
+#        fileout1 = "{}_{:04n}.fits".format(out_fname, int(self.entry_out_fnumber.get()))
 #        newFile = open(fileout1, "wb")
 #        newFile.write(data)
 #        newFile.close()
@@ -7412,11 +7426,14 @@ class MainPage(tk.Frame):
             filename = os.path.split(night_file)[1]
             main_fits_header.set_param("filename", filename)
             main_fits_header.create_fits_header(main_fits_header.output_header)
-            hdulist[0].data = data
-            hdulist[0].header = main_fits_header.output_header
+ #           hdulist[0].data = data
+ #           hdulist[0].header = main_fits_header.output_header
 #            os.remove(night_file)
 #            time.sleep(11)
-            hdulist.writeto(fileout1, overwrite=True)
+#            hdulist.writeto(night_file, overwrite=True)
+            fits.writeto(night_file, data,
+                        header=main_fits_header.output_header, overwrite=True)
+
         # path to file in SISI/SAMOS_yyymmdd/
         self.most_recent_img_fullpath = night_file
         print("Saved new file as {}".format(night_file))
