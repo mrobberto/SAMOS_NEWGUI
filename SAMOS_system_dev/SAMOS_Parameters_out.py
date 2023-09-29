@@ -88,13 +88,13 @@ class SAMOS_Parameters():
         that has to be handled as a json file. 
         See Prameters_README.py for further info on how to handle it
         """
-        Parameters_of_the_night = os.path.join(local_dir, "Parameters.txt")
+        Parameters_of_the_night = os.path.join(local_dir, "Parameters_of_the_night.txt")
         with open(Parameters_of_the_night) as f:
             data= f.read()
         self.PotN = json.loads(data)    
-        #self.Observer = PotN['Observer']
-        #self.Telescope = PotN['Telescope']
-        #self.Program_ID = PotN['Program ID']
-        #self.Telescope_Operator = PotN['Telescope Operator']
+        self.Observer = self.PotN['Observer']
+        self.Telescope = self.PotN['Telescope']
+        self.Program_ID = self.PotN['Program ID']
+        self.Telescope_Operator = self.PotN['Telescope Operator']
         #print(self.Observer)
        

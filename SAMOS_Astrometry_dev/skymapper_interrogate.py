@@ -20,7 +20,7 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
     string += 'BAND=' + FILTERS + '&'
     string += 'FORMAT=image/fits&INTERSECT=covers&MJD_END=56970'#'&RESPONSEFORMAT=CSV'
     
-    with urllib.request.urlopen(string) as response:
+    with urllib.request.urlopen(string,timeout=30) as response:
        html = response.read()
     print(html)
     
@@ -44,7 +44,7 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
     print(string)
     #https://api.skymapper.nci.org.au/public/siap/dr2/get_image?IMAGE=20140425124821-10&SIZE=0.05,0.1&POS=189.99763,-11.62305&BAND=g&FORMAT=fits
     #https://api.skymapper.nci.org.au/public/siap/dr2/get_image?IMAGE=20140425124821-10&SIZE=0.0833&POS=189.99763,-11.62305&FORMAT=png
-    
+    #string='https://api.skymapper.nci.org.au/public/siap/dr2/query?POS=150.17110,-54.79004&SIZE=0.052899999999999996,0.05159999999999999&BAND=i&FORMAT=image/fits&INTERSECT=covers&MJD_END=56970'
     """
     #Fetching URLs
     #FROM https://docs.python.org/3/howto/urllib2.html
@@ -52,7 +52,7 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
     import shutil
     import tempfile#import urllib.request
     
-    with urllib.request.urlopen(string) as response:
+    with urllib.request.urlopen(string,timeout=30) as response:
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             shutil.copyfileobj(response, tmp_file)
     
