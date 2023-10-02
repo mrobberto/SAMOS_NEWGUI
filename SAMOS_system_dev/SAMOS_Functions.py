@@ -104,11 +104,13 @@ class Class_SAMOS_Functions:
         
         #name of the daily directory    
         fits_dir = os.path.join( parent_dir, SISI_images_dir, "SAMOS_" + today.strftime('%Y%m%d') )
+        SISI_QL_images_dir = os.path.join(fits_dir,"QL_images")
          
         #create if not existing (first image of the day...)
         isdir = os.path.isdir(fits_dir)
         if isdir == False:  
             os.mkdir(fits_dir)
+            os.mkdir(SISI_QL_images_dir)
         
         #write on a file the name of the directory hosting the image    
         fits_directory_file = open(os.path.join(parent_dir,"SAMOS_system_dev","fits_current_dir_name.txt"), "w")

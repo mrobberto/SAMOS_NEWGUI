@@ -6814,7 +6814,7 @@ class MainPage(tk.Frame):
          to handle the decision of saving all single files or just the averages
          """
         file_names = os.path.join(
-            local_dir, "SAMOS_QL_images", "setimage_*.fit")
+           local_dir, "SAMOS_QL_images", "setimage_*.fit")
         files = glob.glob(file_names)
         files = self.current_night_dir_filenames
         superfile_cube = np.zeros((1032, 1056, len(files)))  # note y,x,z

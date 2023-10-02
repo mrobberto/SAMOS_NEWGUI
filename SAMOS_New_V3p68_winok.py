@@ -3556,7 +3556,7 @@ class CCD2DMD_RecalPage(tk.Frame):
     def browse_grid_fits_files(self):
         """ to be written """
 
-        filename = tk.filedialog.askopenfilename(initialdir=os.path.join(local_dir, "SAMOS_QL_images"), filetypes=[("FITS files", "*fits")],
+        filename = tk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, filetypes=[("FITS files", "*fits")],
                                                  title="Select a FITS File", parent=self.frame0l)
 
         if filename == '':
@@ -4708,8 +4708,10 @@ class MainPage(tk.Frame):
         entry_Light_NofFrames.place(x=315, y=0)
 
         self.var_Light_saveall = tk.IntVar()
-        r1_Light_saveall = tk.Radiobutton(labelframe_Acquire, text="Save single frames",
-                                          variable=self.var_Light_saveall, value=1)
+#        r1_Light_saveall = tk.Radiobutton(labelframe_Acquire, text="Save single frames",
+#                                          variable=self.var_Light_saveall, value=1)
+        r1_Light_saveall = tk.Checkbutton(labelframe_Acquire, text="Save single frames",
+                                          variable=self.var_Light_saveall, onvalue=1, offvalue=0)
         r1_Light_saveall.place(x=218, y=27)
 
 #        label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
@@ -4757,8 +4759,10 @@ class MainPage(tk.Frame):
         entry_Bias_NofFrames.place(x=315, y=0)
 
         self.var_Bias_saveall = tk.IntVar()
-        r1_Bias_saveall = tk.Radiobutton(
-            labelframe_Bias, text="Save single frames", variable=self.var_Bias_saveall, value=1)
+#        r1_Bias_saveall = tk.Radiobutton(
+#            labelframe_Bias, text="Save single frames", variable=self.var_Bias_saveall, value=1)
+        r1_Bias_saveall = tk.Checkbutton(labelframe_Bias, text="Save single frames",
+                                          variable=self.var_Bias_saveall, onvalue=1, offvalue=0)
         r1_Bias_saveall.place(x=218, y=27)
 
 
@@ -4807,8 +4811,10 @@ class MainPage(tk.Frame):
         entry_Dark_NofFrames.place(x=315, y=0)
 
         self.var_Dark_saveall = tk.IntVar()
-        r1_Dark_saveall = tk.Radiobutton(
-            labelframe_Dark, text="Save single frames", variable=self.var_Dark_saveall, value=1)
+#        r1_Dark_saveall = tk.Radiobutton(
+#            labelframe_Dark, text="Save single frames", variable=self.var_Dark_saveall, value=1)
+        r1_Dark_saveall = tk.Checkbutton(labelframe_Dark, text="Save single frames",
+                                          variable=self.var_Dark_saveall, onvalue=1, offvalue=0)
         r1_Dark_saveall.place(x=218, y=27)
 
 
@@ -4860,8 +4866,10 @@ class MainPage(tk.Frame):
         entry_Flat_NofFrames.place(x=315, y=0)
 
         self.var_Flat_saveall = tk.IntVar()
-        r1_Flat_saveall = tk.Radiobutton(
-            labelframe_Flat, text="Save single frames", variable=self.var_Flat_saveall, value=1)
+#        r1_Flat_saveall = tk.Radiobutton(
+#            labelframe_Flat, text="Save single frames", variable=self.var_Flat_saveall, value=1)
+        r1_Flat_saveall = tk.Checkbutton(labelframe_Flat, text="Save single frames",
+                                          variable=self.var_Flat_saveall, onvalue=1, offvalue=0)
         r1_Flat_saveall.place(x=218, y=27)
 
         button_ExpStart = tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc', font=self.bigfont,
@@ -4907,8 +4915,10 @@ class MainPage(tk.Frame):
         entry_Buffer_NofFrames.place(x=315, y=0)
 
         self.var_Buffer_saveall = tk.IntVar()
-        r1_Buffer_saveall = tk.Radiobutton(
-            labelframe_Buffer, text="Save single frames", variable=self.var_Buffer_saveall, value=1)
+#        r1_Buffer_saveall = tk.Radiobutton(
+#            labelframe_Buffer, text="Save single frames", variable=self.var_Buffer_saveall, value=1)
+        r1_Buffer_saveall = tk.Checkbutton(labelframe_Buffer, text="Save single frames",
+                                          variable=self.var_Buffer_saveall, onvalue=1, offvalue=0)
         r1_Buffer_saveall.place(x=218, y=27)
 
         button_ExpStart = tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc', font=self.bigfont,
@@ -6655,6 +6665,75 @@ class MainPage(tk.Frame):
         with open(outname, "wb+") as out_f:
             out_f.write(buf)
 
+##################################
+#
+#      EXPOSURE STARTS HERE
+#
+##################################
+
+    def start_an_exposure(self):
+        """ 
+        This is the landing procedure after the START button has been pressed
+        """
+        self.update_PotN()
+        obj_type = self.var_acq_type.get()
+        self.start_combo_obj_number = int(self.entry_out_fnumber.get())
+        # if a set of images, save the number suffix of the first
+        # image in the set
+        if obj_type == "Science":
+            self.expose_light()
+        elif obj_type == "Bias":
+            self.expose_bias()
+        elif obj_type == "Flat":
+            self.expose_flat()
+        elif obj_type == "Dark":
+            self.expose_dark()
+        elif obj_type == "Buffer":
+            self.expose_buffer()
+
+   
+    def update_PotN(self):
+        """
+        Updates the parameters of the night variables and files for logging the observations
+        """
+        import json
+#       How do we capture a parameter in another class/form?
+        self.PAR.PotN['Telescope'] = self.ConfP.Telescope.get() #ConfigPage.Telescope.get()
+        self.PAR.PotN['Program ID'] = self.program_var.get() 
+        self.PAR.PotN['Proposal Title'] = self.ConfP.Proposal_Title.get()#ConfigPage.Telescope.get()
+        self.PAR.PotN['Principal Investigator'] = self.ConfP.Principal_Investigator.get() #ConfigPage.Telescope.get()
+        # For the parameters redefinied here it is easy: capture them...
+        self.PAR.PotN['Observer'] = self.names_var.get()
+        self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
+        self.PAR.PotN['Object Name'] = self.ObjectName.get()
+        self.PAR.PotN['Comment'] = self.Comment.get()
+        self.PAR.PotN['Bias Comment'] = self.BiasComment.get()
+        self.PAR.PotN['Dark Comment'] = self.DarkComment.get()
+        self.PAR.PotN['Flat Comment'] = self.FlatComment.get()
+        self.PAR.PotN['Buffer Comment'] = self.FlatComment.get()
+        self.PAR.PotN['Base Filename'] = self.out_fname.get()
+        
+        # ..open the json file and read all...
+        PotN_file = os.path.join(local_dir,'SAMOS_system_dev','Parameters_of_the_night.txt')
+        with open(PotN_file, "r") as jsonFile:
+            data = json.load(jsonFile)
+        #... change what has to be changed...
+        data["Observer"] = self.PAR.PotN['Observer'] 
+        data["Program ID"] = self.PAR.PotN['Program ID'] 
+        data["Proposal Title"] = self.PAR.PotN['Proposal Title'] 
+        data["Principal Investigator"] = self.PAR.PotN['Principal Investigator'] 
+        data["Telescope Operator"] = self.PAR.PotN['Telescope Operator'] 
+        data["Object Name"] = self.PAR.PotN['Object Name'] 
+        data["Comment"] = self.PAR.PotN['Comment'] 
+        data["Bias Comment"] = self.PAR.PotN['Bias Comment'] 
+        data["Dark Comment"] = self.PAR.PotN['Dark Comment'] 
+        data["Flat Comment"] = self.PAR.PotN['Flat Comment'] 
+        data["Buffer Comment"] = self.PAR.PotN['Buffer Comment'] 
+        data["Base Filename"] = self.PAR.PotN['Base Filename'] 
+        # ... write the json file
+        with open(PotN_file, "w") as jsonFile:
+            json.dump(data, jsonFile)
+
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose_light
 #
@@ -6670,7 +6749,7 @@ class MainPage(tk.Frame):
         self.expose(params)
         if self.Light_NofFrames.get() > 1:
             self.combine_files()
-        self.handle_light()
+        self.handle_QuickLook()
         print("science file created")
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -6737,71 +6816,11 @@ class MainPage(tk.Frame):
         params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 4, 'NofFrames': int(self.Buffer_NofFrames.get())}
         self.expose(params)
+
         self.combine_files()
 #        self.handle_buffer()
         print("Buffer file created")
         # Camera= CCD(dict_params=params)
-
-    def start_an_exposure(self):
-        self.update_PotN()
-        obj_type = self.var_acq_type.get()
-        self.start_combo_obj_number = int(self.entry_out_fnumber.get())
-        # if a set of images, save the number suffix of the first
-        # image in the set
-        if obj_type == "Science":
-            self.expose_light()
-        elif obj_type == "Bias":
-            self.expose_bias()
-        elif obj_type == "Flat":
-            self.expose_flat()
-        elif obj_type == "Dark":
-            self.expose_dark()
-        elif obj_type == "Buffer":
-            self.expose_buffer()
-
-
-    def update_PotN(self):
-        """
-        Updates the parameters of the night variables and files for logging the observations
-        """
-        import json
-#       How do we capture a parameter in another class/form?
-        self.PAR.PotN['Telescope'] = self.ConfP.Telescope.get() #ConfigPage.Telescope.get()
-        self.PAR.PotN['Program ID'] = self.program_var.get() 
-        self.PAR.PotN['Proposal Title'] = self.ConfP.Proposal_Title.get()#ConfigPage.Telescope.get()
-        self.PAR.PotN['Principal Investigator'] = self.ConfP.Principal_Investigator.get() #ConfigPage.Telescope.get()
-        # For the parameters redefinied here it is easy: capture them...
-        self.PAR.PotN['Observer'] = self.names_var.get()
-        self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
-        self.PAR.PotN['Object Name'] = self.ObjectName.get()
-        self.PAR.PotN['Comment'] = self.Comment.get()
-        self.PAR.PotN['Bias Comment'] = self.BiasComment.get()
-        self.PAR.PotN['Dark Comment'] = self.DarkComment.get()
-        self.PAR.PotN['Flat Comment'] = self.FlatComment.get()
-        self.PAR.PotN['Buffer Comment'] = self.FlatComment.get()
-        self.PAR.PotN['Base Filename'] = self.out_fname.get()
-        
-        # ..open the json file and read all...
-        PotN_file = os.path.join(local_dir,'SAMOS_system_dev','Parameters_of_the_night.txt')
-        with open(PotN_file, "r") as jsonFile:
-            data = json.load(jsonFile)
-        #... change what has to be changed...
-        data["Observer"] = self.PAR.PotN['Observer'] 
-        data["Program ID"] = self.PAR.PotN['Program ID'] 
-        data["Proposal Title"] = self.PAR.PotN['Proposal Title'] 
-        data["Principal Investigator"] = self.PAR.PotN['Principal Investigator'] 
-        data["Telescope Operator"] = self.PAR.PotN['Telescope Operator'] 
-        data["Object Name"] = self.PAR.PotN['Object Name'] 
-        data["Comment"] = self.PAR.PotN['Comment'] 
-        data["Bias Comment"] = self.PAR.PotN['Bias Comment'] 
-        data["Dark Comment"] = self.PAR.PotN['Dark Comment'] 
-        data["Flat Comment"] = self.PAR.PotN['Flat Comment'] 
-        data["Buffer Comment"] = self.PAR.PotN['Buffer Comment'] 
-        data["Base Filename"] = self.PAR.PotN['Base Filename'] 
-        # ... write the json file
-        with open(PotN_file, "w") as jsonFile:
-            json.dump(data, jsonFile)
-
         
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -6819,7 +6838,8 @@ class MainPage(tk.Frame):
          to handle the decision of saving all single files or just the averages
          """
         file_names = os.path.join(
-            local_dir, "SAMOS_QL_images", "setimage_*.fit")
+            self.PAR.QL_images, "setimage_*.fit")
+            
         files = glob.glob(file_names)
         files = self.current_night_dir_filenames
         superfile_cube = np.zeros((1032, 1056, len(files)))  # note y,x,z
@@ -6850,7 +6870,7 @@ class MainPage(tk.Frame):
                    self.var_Buffer_saveall.get() == 1:
                    # save every single frame
                     os.rename(files[i], os.path.join(
-                        local_dir, "SAMOS_QL_images"+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
+                        self.PAR.QL_images+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     # os.rename(files[i],os.path.join(self.fits_dir,self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     # self.entry_out_fnumber.invoke("buttonup")
                     night_hdulist.writeto(night_dir_fname, overwrite=True)
@@ -6880,18 +6900,23 @@ class MainPage(tk.Frame):
 
         if self.image_type == "sci" or self.image_type == "flat":
             super_filename = os.path.join(
-                local_dir, "SAMOS_QL_images", "super"+self.image_type+"_"+self.FW_filter.get()+".fits")
+                self.PAR.QL_images, self.image_type+"_"+self.FW_filter.get()+"_coadd.fits")
             # fits.writeto(,superfile,supefrfile_header,overwrite=True)
         else:
             super_filename = os.path.join(
-                local_dir, "SAMOS_QL_images", "super"+self.image_type+".fits")
+                self.PAR.QL_images, self.image_type+"_coadd.fits")
 
         # save combined file in Night directory
         # self.entry_out_fnumber.invoke("buttonup")
-        second_super_filename0 = os.path.split(super_filename)[1][:-5]
+        second_super_filename0 = os.path.split(super_filename)[1][:-11]
         if self.image_type == "dark":
             second_super_filename0 = second_super_filename0 + \
                 "_{}s".format(self.ExpTimeSet.get())
+
+        if self.out_fname.get().strip(" ") == "":
+            basename = self.out_fname.get()
+        else:
+            basename = "_"+self.out_fname.get()
 
         """
         we don't want to use here the current file counter int(self.entry_out_fnumber.get())
@@ -6901,8 +6926,8 @@ class MainPage(tk.Frame):
         current_counter = int(self.entry_out_fnumber.get())
         previous_counter = current_counter - 1
 
-        second_super_filename = "{}_{:04n}.fits".format(second_super_filename0,
-                                                        #                                                        int(self.entry_out_fnumber.get()))
+        second_super_filename = "{}{}_{:04n}_coadd.fits".format(second_super_filename0, basename,
+                                                        #int(self.entry_out_fnumber.get()))
                                                         previous_counter)
         second_super_filename = os.path.join(
             self.fits_dir, second_super_filename)
@@ -6936,16 +6961,19 @@ class MainPage(tk.Frame):
     def cleanup_files(self):
         """ to be written """
         file_names = os.path.join(
-            local_dir, "SAMOS_QL_images", self.image_type+"_*.fits")
+            self.PAR.QL_images, self.image_type+"_*.fits")
         files = glob.glob(file_names)
         for i in range(len(files)):
             os.remove(files[i])
 
     def handle_dark(self):
-        """ to be written """
+        """ 
+        We need to handle the dark because it may have been taken for an exposure time
+        different than the one used for the science image
+        """
         # a superdark file has been taken...
         dark_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superdark.fits")
+            self.PAR.QL_images, "superdark.fits")
 
         dark_file = glob.glob(
             self.fits_dir+"/superdark_{}s_*.fits".format(self.ExpTimeSet.get()))[0]
@@ -6959,7 +6987,7 @@ class MainPage(tk.Frame):
         # if a bias file has also been taken...
         # make sure to use the bias that was taken for this observation run
         bias_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superbias.fits")
+            self.PAR.QL_images, "superbias.fits")
         try:
             bias_file = glob.glob(self.fits_dir+"/superbias_*.fits")[0]
             hdu_bias = fits.open(bias_file)
@@ -6983,7 +7011,7 @@ class MainPage(tk.Frame):
         hdr_out['PARAM2'] = 1
 
         dir_hdul1 = os.path.join(
-            local_dir, "SAMOS_QL_images", "superdark_s.fits")
+            self.PAR.QL_images, "superdark_s.fits")
         fits.writeto(dir_hdul1, dark_sec, hdr_out, overwrite=True)
 
         main_fits_header.create_fits_header(hdr_out)
@@ -7010,10 +7038,13 @@ class MainPage(tk.Frame):
         hdulist2.writeto(dir_hdul2, overwrite=True)
 
     def handle_flat(self):
-        """ to be written """
+        """ 
+        we need to handle the flat because it may have been taken 
+        for a filter different than the one of the science image 
+        """
         # a  flat field has been taken...
         flat_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superflat_"+self.FW_filter.get()+".fits")
+            self.PAR.QL_images, "superflat_"+self.FW_filter.get()+".fits")
         flat_file = glob.glob(
             self.fits_dir+"/superflat_{}*.fits".format(self.FW_filter.get()))[0]
 
@@ -7083,7 +7114,7 @@ class MainPage(tk.Frame):
         flat_norm = flat_dark / np.median(flat_dark)
 
         dir_hdul1 = os.path.join(
-            local_dir, "SAMOS_QL_images", "superflat_"+self.FW_filter.get()+"_norm.fits")
+            self.PAR.QL_images, "superflat_"+self.FW_filter.get()+"_norm.fits")
         # hdulist.writeto(os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits"),overwrite=True)
         # fits.writeto( os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
 
@@ -7109,24 +7140,39 @@ class MainPage(tk.Frame):
         hdulist1.writeto(dir_hdul1, overwrite=True)
         hdulist2.writeto(dir_hdul2, overwrite=True)
 
-    def handle_light(self):
-        """ handle_light frame for display, applying bias, dark and flat if necessary """
-        light_file = os.path.join(local_dir, "SAMOS_QL_images", "newimage.fit")
+    def handle_QuickLook(self):
+        """ handle_light frame for Quick Look display, applying bias, dark and flat if necessary """
+        # last received image
+        light_file = os.path.join(self.PAR.QL_images, "newimage.fit")
+
+        # last bias taken
+        bias_file = os.path.join(
+            self.PAR.QL_images, "superbias.fits")
+
+        # last dark taken, normalized to count/s
+        dark_s_file = os.path.join(
+            self.PAR.QL_images, "superdark_s.fits")
+
+        """ This flat thing will need to be refined at the telescope building at least a library of dome flats"""
+        # last normalized flat in the current bandpass, should have this name
         flat_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superflat_"+self.FW_filter.get()+"_norm.fits")
-        buffer_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superbuffer.fits")
+            self.PAR.QL_images, "superflat_"+self.FW_filter.get()+"_norm.fits")
+
+        # does it exist? 
         flat_exists = os.path.isfile(flat_file)
+        # check if you really care...
         if self.divide_Flat.get() == 1:
             if flat_exists:
                 print("found flat file ", flat_file)
-            else:
+            else: #let's assume that there is in any case superflat good enough
                 flat_file = os.path.join(
-                    local_dir, "SAMOS_QL_images", "superflat_norm.fits")
-        dark_s_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superdark_s.fits")
-        bias_file = os.path.join(
-            local_dir, "SAMOS_QL_images", "superbias.fits")
+                    self.PAR.QL_images, "superflat_norm.fits")
+
+        # last saved buffer
+        buffer_file = os.path.join(
+            self.PAR.QL_images, "superbuffer.fits")
+        
+        
 
         hdu_light = fits.open(light_file)
         light = hdu_light[0].data
@@ -7137,7 +7183,7 @@ class MainPage(tk.Frame):
 #        hdu_bias.close()
 #       Revised version by Dana below where we first check for a superbias
         try:
-            bias_file = glob.glob(self.fits_dir+"/superbias_*.fits")[0]
+            bias_file = glob.glob(os.path.join(self.PAR.QL_images,"/superbias_*.fits"))[0]
             hdu_bias = fits.open(bias_file)
             bias = hdu_bias[0].data
             hdu_bias.close()
@@ -7151,7 +7197,7 @@ class MainPage(tk.Frame):
 #       Revised version by Dana below where we check for a superdark
         try:
             dark_s_files = glob.glob(
-                self.fits_dir+"/superdark_{}s*.fits".format(self.ExpTimeSet.get()))
+                os.path.join(self.PAR.QL_images,"/superdark_{}s*.fits").format(self.ExpTimeSet.get()))
             if len(dark_s_files) > 1:
                 dark_s_file = self.find_closest_dark()
             elif len(dark_s_files) == 1:
@@ -7169,7 +7215,7 @@ class MainPage(tk.Frame):
 #       Revised version by Dana below where we check for a superdark
         try:
             flat_file = glob.glob(
-                self.fits_dir+"/superflat_{}*.fits".format(self.FW_filter.get()))[0]
+                os.path.join(self.PAR.QL_images,"/superflat_{}*.fits").format(self.FW_filter.get()))[0]
             hdu_flat = fits.open(flat_file)
             flat = hdu_flat[0].data
             hdu_flat.close()
@@ -7181,7 +7227,8 @@ class MainPage(tk.Frame):
         buffer = hdu_buffer[0].data
         hdu_buffer.close()
         try:
-            buffer_file = glob.glob(self.fits_dir+"/superbuff*.fits")[0]
+            buffer_file = glob.glob(
+                os.path.join(self.PAR.QL_images,"/superbuff*.fits"))[0]
             hdu_buffer = fits.open(buffer_file)
             buffer = hdu_buffer[0].data
             hdu_buffer.close()
@@ -7202,24 +7249,29 @@ class MainPage(tk.Frame):
 
         if self.subtract_Dark.get() == 1:
             # if different exposure times between Light and Dark, scale the dark
-            light_dark = light_bias - dark_s * \
+            light_bias_dark = light_bias - dark_s * \
                 (float(self.ExpTimeSet.get())/(exptime*1000))
             main_fits_header.output_header.set(
                 "MSTRDARK", dark_s_file, "Master Dark file if corrected")
-
         else:
-            light_dark = light_bias
+            light_bias_dark = light_bias
 
         if self.divide_Flat.get() == 1:
-            light_dark_bias = np.divide(light_dark, flat)
+            light_bias_dark_flat = np.divide(light_bias_dark, flat)
+            main_fits_header.output_header.set(
+                "MSTRFLAT", flat_file, "Master Flat file if corrected")
+        else:
+            light_bias_dark_flat = light_bias_dark
+
+        if self.subtract_Buffer.get() == 1:
+            light_bias_dark_flat_buffer = light_bias_dark_flat - buffer
             main_fits_header.output_header.set(
                 "MSTRFLAT", dark_s_file, "Master Flat file if corrected")
-
         else:
-            light_dark_bias = light_dark
+            light_bias_dark_flat_buffer = light_bias_dark_flat
 
         fits_image = os.path.join(
-            local_dir, "SAMOS_QL_images", "newimage_ff.fits")
+            self.PAR.QL_images, "newimage_ff.fits")
  
         if self.image_type == "sci":
             obj_type = "SCI"
@@ -7239,12 +7291,11 @@ class MainPage(tk.Frame):
             obj_type = "DARK"
             imtype = "dark_{}s".format(self.ExpTimeSet.get())
 
-        if self.out_fname.get().strip(" ") == "":
-            basename = self.out_fname.get()
-
-        else:
-            basename = "_"+self.out_fname.get()
-        out_fname = os.path.join(self.fits_dir, imtype+basename)
+#        if self.out_fname.get().strip(" ") == "":
+#            basename = self.out_fname.get()
+#        else:
+#            basename = "_"+self.out_fname.get()
+#        out_fname = os.path.join(self.fits_dir, imtype+basename)
 
 #        main_fits_header.set_param("obstype", obj_type)
 #        main_fits_header.set_param("filterpos", self.selected_FW_pos.get())
@@ -7260,7 +7311,7 @@ class MainPage(tk.Frame):
         main_fits_header.output_header.update(TCS_dict)
         """
         pr_hdu = fits.PrimaryHDU(
-            light_dark_bias, main_fits_header.output_header)
+            light_bias_dark_flat_buffer, main_fits_header.output_header)
         hdulist = fits.HDUList([pr_hdu])
         dmd_hdu = None
         if DMD.current_dmd_shape is not None:
@@ -7271,22 +7322,22 @@ class MainPage(tk.Frame):
         #hdulist.writeto(fits_image, overwrite=True)
 
         main_fits_header.create_fits_header(main_fits_header.output_header)
-        if self.subtract_Buffer.get() == 1:
-            light_buffer = light-buffer
-            hdulist = fits.HDUList(
-                [fits.PrimaryHDU(light_buffer, main_fits_header.output_header)])
-            if dmd_hdu is not None:
-                hdulist.append(dmd_hdu)
-            # fits.writeto(fits_image,light_buffer,
-            #             main_fits_header.output_header,overwrite=True)
-            hdulist.writeto(fits_image, overwrite=True)
-            self.Display(fits_image)
-        #hdulist.writeto(fits_image, overwrite=True)
-        fits.writeto(fits_image,light_dark_bias,
+#        if self.subtract_Buffer.get() == 1:
+#            light_buffer = light-buffer
+#            hdulist = fits.HDUList(
+#                [fits.PrimaryHDU(light_buffer, main_fits_header.output_header)])
+#            if dmd_hdu is not None:
+#                hdulist.append(dmd_hdu)
+#            # fits.writeto(fits_image,light_buffer,
+#            #             main_fits_header.output_header,overwrite=True)
+#            hdulist.writeto(fits_image, overwrite=True)
+#            self.Display(fits_image)
+        # WRITES TO => newimage_ff.fits
+        fits.writeto(fits_image,light_bias_dark_flat_buffer,
                      main_fits_header.output_header,overwrite=True)
         self.Display(fits_image)
         
-    
+            
 
 #        hdulist.writeto(fits_image, overwrite=True)
 
@@ -7296,8 +7347,9 @@ class MainPage(tk.Frame):
         #
         # ADD the QL Prefix to indicate that this file has been processed for Quick Look
         path, file = os.path.split(fname)
-        file = file[:3] + '_QL' + file[3:]
-        fname = os.path.join(path, file)
+        QL_file = file[:-5] + '_QL.fits'
+#        QL_fname = os.path.join(self.PAR.QL_images, QL_file)
+        QL_fname = os.path.join(path,"QL_images", QL_file)
         # done
         #
 #        main_fits_header.set_param("filedir", self.fits_dir)
@@ -7311,11 +7363,12 @@ class MainPage(tk.Frame):
 
         main_fits_header.create_fits_header(main_fits_header.output_header)
         hdulist[0].header = main_fits_header.output_header
-        hdulist.writeto(fname, overwrite=True)
+        hdulist.writeto(QL_fname, overwrite=True)
 #        fits.writeto(full_fpath, light_dark_bias, main_fits_header.output_header,
 #                     overwrite=True)
 
 #        self.entry_out_fnumber.invoke("buttonup")
+        
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # # Expose
@@ -7425,7 +7478,7 @@ class MainPage(tk.Frame):
 
         # THE CONVERSTLLY THING HAS BEEN DONE IN Class_CCD/dev/expose
         self.fits_image = os.path.join(
-             os.getcwd(), "SAMOS_QL_images", "newimage.fit")
+             self.PAR.QL_images, "newimage.fit")
 
         fits_dir = SF.read_fits_folder()
         print(fits_dir)
@@ -7478,8 +7531,8 @@ class MainPage(tk.Frame):
         # main_fits_header.set_param("filename", new_fname)
         # full_fpath = os.path.join(self.fits_dir,new_fname)
 #        print(full_fpath)
+        
         # update header for new filename/filepath
-
         main_fits_header.create_fits_header(main_fits_header.output_header)
         hdul[0].header = main_fits_header.output_header
         hdulist = fits.HDUList(hdus=[hdul[0]])
@@ -7574,7 +7627,7 @@ class MainPage(tk.Frame):
 
     def load_last_file(self):
         """ to be written """
-        FITSfiledir = os.path.join(local_dir, "SAMOS_QL_images")
+        FITSfiledir = os.path.join(self.PAR.QL_images)
         self.fullpath_FITSfilename = os.path.join(
             FITSfiledir, (os.listdir(FITSfiledir))[0])
         # './fits_image/newimage_ff.fits'
@@ -7696,9 +7749,8 @@ class MainPage(tk.Frame):
             self.AstroImage = img
     #        self.fullpath_FITSfilename = filepath.name
             hdul.close()
-            work_dir = os.getcwd()
             self.fits_image_ff = os.path.join(
-                work_dir, 'SAMOS_QL_images', "newimage_ff.fits")
+                self.PAR.QL_images, "newimage_ff.fits")
             fits.writeto(self.fits_image_ff, self.hdu_res.data,
                          header=self.hdu_res.header, overwrite=True)
 
@@ -7737,9 +7789,9 @@ class MainPage(tk.Frame):
             self.AstroImage = img
             self.fullpath_FITSfilename = filepath.name
         hdu_in.close()
-        work_dir = os.getcwd()
+        
         self.fits_image_ff = os.path.join(
-            work_dir, "SAMOS_QL_images", "newimage_ff.fits")
+            self.PAR.QL_images, "newimage_ff.fits")
         fits.writeto(self.fits_image_ff, self.hdu_res.data,
                      header=self.hdu_res.header, overwrite=True)
         
@@ -7838,9 +7890,9 @@ class MainPage(tk.Frame):
         self.AstroImage = img
         #self.fullpath_FITSfilename = os.path.join(cwd,fits_file)#filepath.name
         #hdu_in.close()
-        work_dir = os.getcwd()
+        
         self.fits_image_ff = os.path.join(
-            work_dir, "SAMOS_QL_images", "newimage_ff.fits")
+            self.PAR.QL_images, "newimage_ff.fits")
         fits.writeto(self.fits_image_ff, self.hdu_res.data,
                      header=self.hdu_res.header, overwrite=True)     
         
