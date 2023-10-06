@@ -14,7 +14,7 @@ Created on Tue Feb 25 13:21:00 2023
 03.21.2023 - V3.0
     - fixed run Daofind (bkyut we may eliminated it, twirl looks ok)
     - fixed slit orientation, exchanged xyradius in slit_handler()
-    - added "Show Traces Button", created show_traces() to handle it. Traces are rectangles, not boxes, for display only
+    - added "Show Traces Button", created show_traces() to handle it. Tracesare rectangles, not boxes, for display only
 03.03.2023 - V2.0
     - added the capability of drawing generic shapes,
 03.01.2023 - V1.1
@@ -6747,8 +6747,8 @@ class MainPage(tk.Frame):
 
         # handle multiple files
         self.expose(params)
-        if self.Light_NofFrames.get() > 1:
-            self.combine_files()
+        #if self.Light_NofFrames.get() > 1:
+        self.combine_files()
         self.handle_QuickLook()
         print("science file created")
 
@@ -6757,7 +6757,9 @@ class MainPage(tk.Frame):
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     def expose_bias(self):
-        """ to be written """
+        """ 
+        Sets trigger mode = 5 to tell the SI camera that the shutter has to stay closed
+        """
         self.image_type = "bias"
         ExpTime_ms = 0  # float(self.Bias_ExpT.get())*1000
         params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
@@ -6765,8 +6767,11 @@ class MainPage(tk.Frame):
         # cleanup the directory to remove setimage_ files that may be refreshed
         self.cleanup_files()
         self.expose(params)
-        self.combine_files()
+#        self.handle_bias()
+        superbias = self.combine_files()
+        shutil.copy(superbias, os.path.join(self.PAR.QL_images,"superbias.fits"))
         print("Superbias file created")
+        self.handle_QuickLook()
 
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -6776,7 +6781,9 @@ class MainPage(tk.Frame):
 
 
     def expose_dark(self):
-        """ to be written """
+        """ 
+        Sets trigger mode = 5 to tell the SI camera that the shutter has to stay closed
+        """
         self.image_type = "dark"
         ExpTime_ms = float(self.ExpTimeSet.get())*1000
         params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
@@ -6784,6 +6791,7 @@ class MainPage(tk.Frame):
         self.expose(params)
         self.combine_files()
         self.handle_dark()
+        self.handle_QuickLook()
         print("Superdark file created")
 
 
@@ -6800,8 +6808,9 @@ class MainPage(tk.Frame):
         params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 4, 'NofFrames': int(self.Flat_NofFrames.get())}
         self.expose(params)
-        self.combine_files()
+        combined_files = self.combine_files()
         self.handle_flat()
+        self.handle_QuickLook()
         print("Superflat file created")
         # Camera= CCD(dict_params=params)
 
@@ -6816,9 +6825,9 @@ class MainPage(tk.Frame):
         params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 4, 'NofFrames': int(self.Buffer_NofFrames.get())}
         self.expose(params)
-
         self.combine_files()
-#        self.handle_buffer()
+        self.handle_buffer()
+        self.handle_QuickLook()
         print("Buffer file created")
         # Camera= CCD(dict_params=params)
         
@@ -6837,18 +6846,27 @@ class MainPage(tk.Frame):
          this procedure runs after CCD.expose()
          to handle the decision of saving all single files or just the averages
          """
-        file_names = os.path.join(
-            self.PAR.QL_images, "setimage_*.fit")
-            
-        files = glob.glob(file_names)
-        files = self.current_night_dir_filenames
+        # We may have received just one (setimage_0.fit) or multiple images; 
+        # we start building the list of filename        
+        #files = glob.glob(
+        #    os.path.join(self.PAR.QL_images, "setimage_*.fit") )
+        
+        files = self.current_night_dir_filenames           #e.g. files: =>  '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231003/dark_0.01s_771nm_0033.fits'
+        
+        #nothing to combine if there is only one new file
+        if len(files) == 1:
+            return files[0]
+        
         superfile_cube = np.zeros((1032, 1056, len(files)))  # note y,x,z
+        
         img_number = self.start_combo_obj_number-1
+
+        #create a header for the dmd pattern 
         dmd_hdu = None
         if DMD.current_dmd_shape is not None:
             dmd_hdu = self.create_dmd_pattern_hdu(
-                main_fits_header.output_header)
-
+                                main_fits_header.output_header)
+        #loop through the files    
         for i in range(len(files)):
             img_number += 1
             print(files[i])
@@ -6856,7 +6874,7 @@ class MainPage(tk.Frame):
 
                 # search string for image
                 # glob.glob(night_dir_fname_search)[0]
-                night_dir_fname = files[i]
+                night_dir_fname = files[i]              # e.g. night_dir_fname: => '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231003/dark_0.01s_771nm_0033.fits'
 
                 night_hdulist = fits.open(night_dir_fname)
                 night_hdulist[0].header = main_fits_header.output_header
@@ -6882,8 +6900,10 @@ class MainPage(tk.Frame):
                         os.remove(os.path.join(self.fits_dir, night_dir_fname))
                     except FileNotFoundError:
                         pass
-
-        superfile = superfile_cube.mean(axis=2)
+                    
+        #  => HERE WE DO THE COADD OF THE DATA            
+        superfile_data = superfile_cube.mean(axis=2)
+        
         superfile_header = hdu[0].header
         hdu.close()
         
@@ -6898,25 +6918,26 @@ class MainPage(tk.Frame):
         elif self.image_type == "flat":
             obj_type = "FLAT"
 
+        #ADD FILTERNAME if we are COADDING science or flat images        
         if self.image_type == "sci" or self.image_type == "flat":
-            super_filename = os.path.join(
+            superfile_dirname = os.path.join(
                 self.PAR.QL_images, self.image_type+"_"+self.FW_filter.get()+"_coadd.fits")
-            # fits.writeto(,superfile,supefrfile_header,overwrite=True)
-        else:
-            super_filename = os.path.join(
-                self.PAR.QL_images, self.image_type+"_coadd.fits")
+            # fits.writeto(,superfile_data,supefrfile_header,overwrite=True)
+        else: 
+            superfile_dirname = os.path.join(
+                self.PAR.QL_images, self.image_type+"_coadd.fits")   # e.g. superfile_name:  => '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/dark_coadd.fits'
 
         # save combined file in Night directory
         # self.entry_out_fnumber.invoke("buttonup")
-        second_super_filename0 = os.path.split(super_filename)[1][:-11]
+        second_superfile_name0 = os.path.split(superfile_dirname)[1][:-11]  
         if self.image_type == "dark":
-            second_super_filename0 = second_super_filename0 + \
-                "_{}s".format(self.ExpTimeSet.get())
-
+            second_superfile_name0 = second_superfile_name0 + \
+                "_{}s".format(self.ExpTimeSet.get())  # e,g, second_superfile_name0: => 'dark_0.01s'
+        
+        #remove spaces from basename, and add a "_
         if self.out_fname.get().strip(" ") == "":
             basename = self.out_fname.get()
-        else:
-            basename = "_"+self.out_fname.get()
+        basename = "_"+self.out_fname.get()
 
         """
         we don't want to use here the current file counter int(self.entry_out_fnumber.get())
@@ -6926,37 +6947,37 @@ class MainPage(tk.Frame):
         current_counter = int(self.entry_out_fnumber.get())
         previous_counter = current_counter - 1
 
-        second_super_filename = "{}{}_{:04n}_coadd.fits".format(second_super_filename0, basename,
+        second_superfile_name = "{}{}_{:04n}_coadd.fits".format(second_superfile_name0, basename,
                                                         #int(self.entry_out_fnumber.get()))
                                                         previous_counter)
-        second_super_filename = os.path.join(
-            self.fits_dir, second_super_filename)
+        second_superfile_dirname = os.path.join(
+            self.fits_dir, second_superfile_name) # e.g. '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231003/dark_0.01s_771nm_0038_coadd.fits'
         main_fits_header.set_param("filedir", self.fits_dir)
-        main_fits_header.set_param("filename", second_super_filename)
+        main_fits_header.set_param("filename", second_superfile_dirname)
         main_fits_header.set_param("combined", "T")
         main_fits_header.set_param("ncombined", len(files))
         main_fits_header.set_param("obstype", obj_type)
         main_fits_header.create_fits_header(superfile_header)
-        print(second_super_filename)
+        print(second_superfile_dirname)
 
-        super_hdu1 = fits.PrimaryHDU(superfile, superfile_header)
-        super_hdu2 = fits.PrimaryHDU(superfile, main_fits_header.output_header)
+        #super_hdu1 = fits.PrimaryHDU(superfile_data, superfile_header)
+        super_hdu2 = fits.PrimaryHDU(superfile_data, main_fits_header.output_header)
 
-        hdulist1 = fits.HDUList(hdus=[super_hdu1])
+        #hdulist1 = fits.HDUList(hdus=[super_hdu1])
         # second file with updated fits header
         hdulist2 = fits.HDUList(hdus=[super_hdu2])
         if dmd_hdu is not None:
-
-            hdulist1.append(dmd_hdu)
+        #    hdulist1.append(dmd_hdu)
             hdulist2.append(dmd_hdu)
 
-        hdulist1.writeto(super_filename, overwrite=True)
-        hdulist2.writeto(second_super_filename, overwrite=True)
-        # fits.writeto(super_filename,superfile,superfile_header,overwrite=True)
-        # fits.writeto(os.path.join(self.fits_dir,second_super_filename),superfile,
+        #hdulist1.writeto(superfile_dirname, overwrite=True)
+        hdulist2.writeto(second_superfile_dirname, overwrite=True)
+        # fits.writeto(superfile_name,superfile_data,superfile_header,overwrite=True)
+        # fits.writeto(os.path.join(self.fits_dir,second_superfile_name),superfile,
         #             main_fits_header.output_header,overwrite=True)
         # self.entry_out_fnumber.invoke("buttonup")
-        
+        combined_file = second_superfile_dirname
+        return combined_file
 
     def cleanup_files(self):
         """ to be written """
@@ -6966,17 +6987,46 @@ class MainPage(tk.Frame):
         for i in range(len(files)):
             os.remove(files[i])
 
+    def handle_bias(self):
+        """
+        Simple procedure to create superbias.fits 
+
+        Returns
+        -------
+        None.
+
+        """
+        #GET THE FILES TO BE CONVERTED IN counts/s
+        files = self.current_night_dir_filenames
+        
+        if len(files) == 1:
+            #print("only one dark frame to fix")
+            bias_file = files[0] 
+        if len(files) > 1:
+            #print("we deal with the coadded dark")
+            bias_file = os.path.join( self.PAR.QL_images, "dark_coadd.fits" ) 
+
     def handle_dark(self):
         """ 
         We need to handle the dark because it may have been taken for an exposure time
         different than the one used for the science image
+        
+        INPUT:
+            the files just taken and stored in the Directory of the Night, e.g.
+              '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231004/dark_0.01s_771nm_0052.fits'
+            or more files like this
         """
-        # a superdark file has been taken...
-        dark_file = os.path.join(
-            self.PAR.QL_images, "superdark.fits")
-
-        dark_file = glob.glob(
-            self.fits_dir+"/superdark_{}s_*.fits".format(self.ExpTimeSet.get()))[0]
+        
+        #GET THE FILES TO BE CONVERTED IN counts/s
+        files = self.current_night_dir_filenames
+        
+        #EXTRACT THE EXPOSURE TIME(S)
+        if len(files) == 1:
+            #print("only one dark frame to fix")
+            dark_file = files[0] 
+        if len(files) > 1:
+            #print("we deal with the coadded dark")
+            dark_file = os.path.join( self.PAR.QL_images, "dark_coadd.fits" ) 
         hdu_dark = fits.open(dark_file)
         dark = hdu_dark[0].data
         hdr = hdu_dark[0].header
@@ -6989,13 +7039,13 @@ class MainPage(tk.Frame):
         bias_file = os.path.join(
             self.PAR.QL_images, "superbias.fits")
         try:
-            bias_file = glob.glob(self.fits_dir+"/superbias_*.fits")[0]
+            bias_file = glob.glob(
+                os.path.join(self.fits_dir,"superbias_*.fits"))[0]
             hdu_bias = fits.open(bias_file)
             bias = hdu_bias[0].data
             hdu_bias.close()
         except IndexError:
             bias = np.zeros_like(dark)
-
         # the bias is subtracted from the dark
         if self.subtract_Bias.get() == 1:
             dark_bias = dark-bias
@@ -7008,12 +7058,13 @@ class MainPage(tk.Frame):
         # I think exptime should be *1000 bc it is in ms in the PARAM2
         dark_sec = dark_bias / (exptime*1000)
         hdr_out = hdr
-        hdr_out['PARAM2'] = 1
+        hdr_out['PARAM2'] = 1  #set the exposure time of this file to 1s
 
         dir_hdul1 = os.path.join(
             self.PAR.QL_images, "superdark_s.fits")
         fits.writeto(dir_hdul1, dark_sec, hdr_out, overwrite=True)
 
+        """
         main_fits_header.create_fits_header(hdr_out)
         pr_hdu = fits.PrimaryHDU(dark_sec, main_fits_header.output_header)
         hdulist1 = fits.HDUList(hdus=[pr_hdu])
@@ -7024,31 +7075,40 @@ class MainPage(tk.Frame):
             out_fname, int(self.entry_out_fnumber.get()))
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", new_fname)
-        dir_hdul2 = os.path.join(self.fits_dir, new_fname)
+        #dir_hdul2 = os.path.join(self.fits_dir, new_fname)
         # second file with updated fits header
-        hdulist2 = fits.HDUList(hdus=[pr_hdu])
+        #hdulist2 = fits.HDUList(hdus=[pr_hdu])
         if DMD.current_dmd_shape is not None:
             dmd_hdu = self.create_dmd_pattern_hdu(
                 main_fits_header.output_header)
 
             hdulist1.append(dmd_hdu)
-            hdulist2.append(dmd_hdu)
+            #hdulist2.append(dmd_hdu)
 
         hdulist1.writeto(dir_hdul1, overwrite=True)
-        hdulist2.writeto(dir_hdul2, overwrite=True)
-
+        #hdulist2.writeto(dir_hdul2, overwrite=True)
+        """
+        
     def handle_flat(self):
         """ 
         we need to handle the flat because it may have been taken 
         for a filter different than the one of the science image 
         """
-        # a  flat field has been taken...
-        flat_file = os.path.join(
-            self.PAR.QL_images, "superflat_"+self.FW_filter.get()+".fits")
-        flat_file = glob.glob(
-            self.fits_dir+"/superflat_{}*.fits".format(self.FW_filter.get()))[0]
+        files = self.current_night_dir_filenames
+        if len(files) == 1:
+            #print("only one dark frame to fix")
+            flat_file = files[0] 
+        if len(files) > 1:
+            #print("we deal with the coadded dark")
+            flat_file = os.path.join( self.PAR.QL_images, "flat_coadd.fits" ) 
 
-        hdu_flat = fits.open(flat_file)
+        # a  flat field has been taken...
+#        flat_file = os.path.join(
+#            self.PAR.QL_images, "superflat_"+self.FW_filter.get()+".fits")
+#        flat_file = glob.glob(
+#            os.path.join(self.fits_dir,"superflat_{}*.fits").format(self.FW_filter.get()))[0]
+
+        hdu_flat = fits.open(self.current_night_dir_filenames[0])
         flat = hdu_flat[0].data
         hdr = hdu_flat[0].header
         # with a certain exposure time...
@@ -7062,12 +7122,10 @@ class MainPage(tk.Frame):
 #        hdu_dark_s.close()
 #       Revised version by Dana below where we check for a superdark
         try:
-            dark_s_files = glob.glob(
-                self.fits_dir+"/superdark_{}s*.fits".format(self.ExpTimeSet.get()))
-            if len(dark_s_files) == 0:
+            dark_s_file = glob.glob(
+                os.path.join(self.PAR.QL_images,"superdark_s.fits"))[0]
+            if len(dark_s_file) == 0:
                 dark_s_file = self.find_closest_dark()
-            else:
-                dark_s_file = dark_s_files[0]
             hdu_dark_s = fits.open(dark_s_file)
             dark_s = hdu_dark_s[0].data
             hdu_dark_s.close()
@@ -7082,7 +7140,8 @@ class MainPage(tk.Frame):
 #        hdu_bias.close()
 #       Revised version by Dana below where we first check for a superbias
         try:
-            bias_file = glob.glob(self.fits_dir+"/superbias_*.fits")[0]
+            bias_file = glob.glob(
+                os.path.join(self.PAR.QL_images,"superbias.fits"))[0]
             hdu_bias = fits.open(bias_file)
             bias = hdu_bias[0].data
             hdu_bias.close()
@@ -7127,18 +7186,18 @@ class MainPage(tk.Frame):
             out_fname, int(self.entry_out_fnumber.get()))
         main_fits_header.set_param("filedir", self.fits_dir)
         main_fits_header.set_param("filename", new_fname)
-        dir_hdul2 = os.path.join(self.fits_dir, new_fname)
+ #       dir_hdul2 = os.path.join(self.fits_dir, new_fname)
         # second file with updated fits header
-        hdulist2 = fits.HDUList(hdus=[pr_hdu])
+  #      hdulist2 = fits.HDUList(hdus=[pr_hdu])
         if DMD.current_dmd_shape is not None:
             dmd_hdu = self.create_dmd_pattern_hdu(
                 main_fits_header.output_header)
 
             hdulist1.append(dmd_hdu)
-            hdulist2.append(dmd_hdu)
+#            hdulist2.append(dmd_hdu)
 
         hdulist1.writeto(dir_hdul1, overwrite=True)
-        hdulist2.writeto(dir_hdul2, overwrite=True)
+#        hdulist2.writeto(dir_hdul2, overwrite=True)
 
     def handle_QuickLook(self):
         """ handle_light frame for Quick Look display, applying bias, dark and flat if necessary """
@@ -7183,7 +7242,7 @@ class MainPage(tk.Frame):
 #        hdu_bias.close()
 #       Revised version by Dana below where we first check for a superbias
         try:
-            bias_file = glob.glob(os.path.join(self.PAR.QL_images,"/superbias_*.fits"))[0]
+            bias_file = glob.glob(os.path.join(self.PAR.QL_images,"superbias_*.fits"))[0]
             hdu_bias = fits.open(bias_file)
             bias = hdu_bias[0].data
             hdu_bias.close()
@@ -7197,7 +7256,7 @@ class MainPage(tk.Frame):
 #       Revised version by Dana below where we check for a superdark
         try:
             dark_s_files = glob.glob(
-                os.path.join(self.PAR.QL_images,"/superdark_{}s*.fits").format(self.ExpTimeSet.get()))
+                os.path.join(self.PAR.QL_images,"superdark_{}s*.fits").format(self.ExpTimeSet.get()))
             if len(dark_s_files) > 1:
                 dark_s_file = self.find_closest_dark()
             elif len(dark_s_files) == 1:
@@ -7370,10 +7429,6 @@ class MainPage(tk.Frame):
 #        self.entry_out_fnumber.invoke("buttonup")
         
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-# # Expose
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
     def change_acq_type(self, event):
         """
@@ -7401,6 +7456,11 @@ class MainPage(tk.Frame):
         i = np.argmin(np.abs(superdark_times-float(self.ExpTimeSet.get())))
 
         return superdark_list[i]
+
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# # Expose
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
     def expose(self, params):
         """ handle the file acquired by the SISI camera"""
@@ -7445,14 +7505,14 @@ class MainPage(tk.Frame):
         elif self.image_type == "dark":
             obj_type = "DARK"
 #            imtype = "dark_{}s".format(self.ExpTime.get())
-            imtype = "dark_{}s".format(int(float(self.ExpTimeSet.get())))
+            imtype = "dark_{}s".format(float(self.ExpTimeSet.get())) # e.g. 'dark_0.01s'
 
-        if self.out_fname.get().strip(" ") == "":
+        #PREPARE THE FILENAME OF THE IMAGE
+        #Remove spaces from Base Filename string
+        if self.out_fname.get().strip() == "":
             basename = self.out_fname.get()
-
-        else:
-            basename = "_"+self.out_fname.get()
-        out_fname = os.path.join(self.fits_dir, imtype+basename)
+        basename = "_"+self.out_fname.get()
+        out_fname = os.path.join(self.fits_dir, imtype+basename)   # e,g, '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231003/dark_0.01s_771nm'
         # new_fname = "{}_{:04n}.fits".format(basename,int(self.entry_out_fnumber.get()))
 
         # these extra 2 parameters in Camera.expose are to save copies of the
@@ -7460,33 +7520,19 @@ class MainPage(tk.Frame):
         Camera.expose(night_dir_basename=out_fname,
                       start_fnumber=self.entry_out_fnumber)  # host, port=int(port))
         self.reset_progress_bars()
-        expTime = params['Exposure Time']/1000
-        main_fits_header.set_param("expTime", expTime)
-        main_fits_header.set_param("filter", self.FW_filter.get())
-#        main_fits_header.set_param("filtpos", self.selected_FW_pos.get())
-        main_fits_header.set_param("grating", self.Grating_Optioned.get())
-
-        try:
-            # main_fits_header.set_param("gridfnam", params["DMDMAP"])
-            print("DMDMAP is ", main_fits_header.dmdmap)
-        except:
-            print("no slit grid loaded")
-
-        # Fix the fit header from U16 to I16, creating a new image
-        # create proper working directory
-        work_dir = os.getcwd()
-
-        # THE CONVERSTLLY THING HAS BEEN DONE IN Class_CCD/dev/expose
-        self.fits_image = os.path.join(
-             self.PAR.QL_images, "newimage.fit")
-
+        
+        # THE LAST ARRIVED FILE is latest_file
         fits_dir = SF.read_fits_folder()
         print(fits_dir)
         list_of_files = glob.glob(
              os.path.join(fits_dir,"*.fits") )  
         latest_file = max(list_of_files, key=os.path.getctime)
         print(latest_file)
-        
+        self.fullpath_FITSfilename = latest_file # self.fits_image
+        # To do: cancel the original image.= If the canera is active; otherwise leave it.
+        # Hence, we need a general switch to activate if the camera is running.
+        # Hence, we may need a general login window.
+
         """
         self.fits_image = os.path.join(
             work_dir,"SAMOS_QL_images","newimage.fit")
@@ -7501,6 +7547,12 @@ class MainPage(tk.Frame):
         hdul = fits.open(latest_file)
         original_header = hdul[0].header
         
+        # FIRST FIX of the FITS HEADER
+        expTime = params['Exposure Time']/1000
+        main_fits_header.set_param("expTime", expTime)
+        main_fits_header.set_param("filter", self.FW_filter.get())
+#        main_fits_header.set_param("filtpos", self.selected_FW_pos.get())
+        main_fits_header.set_param("grating", self.Grating_Optioned.get())
         main_fits_header.set_param(
             "filename", os.path.split(latest_file)[1])
         main_fits_header.set_param(
@@ -7513,16 +7565,38 @@ class MainPage(tk.Frame):
         # reset some parameters that may have been changed from previous exposures.
         main_fits_header.set_param("combined", "F")
         main_fits_header.set_param("ncombined", 0)
-
         main_fits_header.create_fits_header(original_header)
-        print(main_fits_header.output_header)
-        # self.Display(fits_image_converted)
-        self.Display(self.fits_image)
 
-        self.fullpath_FITSfilename = latest_file # self.fits_image
-        # To do: cancel the original image.= If the canera is active; otherwise leave it.
-        # Hence, we need a general switch to activate if the camera is running.
-        # Hence, we may need a general login window.
+        # ADD THE DMD MAP HEADER, IF ANY
+        try:
+            # main_fits_header.set_param("gridfnam", params["DMDMAP"])
+            print("DMDMAP is ", main_fits_header.dmdmap)
+        except:
+            print("no slit grid loaded")
+
+       # try:
+       #     DMD.current_dmd_shape
+       # except NameError:
+       #     DMD.current_dmd_shape = None
+        if DMD.current_dmd_shape is not None:
+            dmd_hdu = self.create_dmd_pattern_hdu(
+                main_fits_header.output_header)
+            hdulist.append(dmd_hdu)
+        
+        print(main_fits_header.output_header)
+
+        # QUICK LOOK IMAGE     
+        self.fits_image = os.path.join(
+             self.PAR.QL_images, "newimage.fit")
+        
+        # update header for new filename/filepath
+        main_fits_header.create_fits_header(main_fits_header.output_header)
+        hdul[0].header = main_fits_header.output_header
+        hdulist = fits.HDUList(hdus=[hdul[0]])
+        hdul.close()
+
+        # self.Display(fits_image_converted)
+        self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
         # self.Display(self.fits_image)
         # new_fname = "{}_{:04n}.fits".format(out_fname,
@@ -7532,19 +7606,6 @@ class MainPage(tk.Frame):
         # full_fpath = os.path.join(self.fits_dir,new_fname)
 #        print(full_fpath)
         
-        # update header for new filename/filepath
-        main_fits_header.create_fits_header(main_fits_header.output_header)
-        hdul[0].header = main_fits_header.output_header
-        hdulist = fits.HDUList(hdus=[hdul[0]])
-        hdul.close()
-       # try:
-       #     DMD.current_dmd_shape
-       # except NameError:
-       #     DMD.current_dmd_shape = None
-        if DMD.current_dmd_shape is not None:
-            dmd_hdu = self.create_dmd_pattern_hdu(
-                main_fits_header.output_header)
-            hdulist.append(dmd_hdu)
 
 #        fileout1 = "{}_{:04n}.fits".format(out_fname, int(self.entry_out_fnumber.get()))
 #        newFile = open(fileout1, "wb")
@@ -7554,29 +7615,28 @@ class MainPage(tk.Frame):
 
 
 
-        # UPDATE the file(s) in the ObsNight directory with
-        # the DMD pattern extension and the header info.
+        # GO THROUGH THE IMAGES, STILL WIH THE ORIGINAL HEADER, TO  UPDATE THE FINAL HEADERS
         
         self.current_night_dir_filenames = Camera.img_night_dir_list
         for night_file in Camera.img_night_dir_list:
-
-            pr_hdu = fits.open(night_file)
-            data = pr_hdu[0].data
+            #exctract the data
+            pr_hdu = fits.open(night_file)             #   night_file => '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231003/dark_0.01s_771nm_0031.fits'
+            data = pr_hdu[0].data 
             pr_hdu.close()
             
-            filename = os.path.split(night_file)[1]
+            #put the filename in the current main header
+            filename = os.path.split(night_file)[1]         # filename  => 'dark_0.01s_771nm_0031.fits'
             main_fits_header.set_param("filename", filename)
+            
+            #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
- #           hdulist[0].data = data
- #           hdulist[0].header = main_fits_header.output_header
-#            os.remove(night_file)
-#            time.sleep(11)
-#            hdulist.writeto(night_file, overwrite=True)
+
+            #update the final image
             fits.writeto(night_file, data,
                         header=main_fits_header.output_header, overwrite=True)
 
-        # path to file in SISI/SAMOS_yyymmdd/
-        self.most_recent_img_fullpath = night_file
+        # 
+        self.most_recent_img_fullpath = night_file  # e.g. dark_0s_Test_0004.fits
         print("Saved new file as {}".format(night_file))
         # self.entry_out_fnumber.invoke("buttonup")
         hdulist.close()

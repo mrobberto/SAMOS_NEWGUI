@@ -38,7 +38,7 @@ sys.path.append(parent_dir)
 
 #load the functions
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
-
+from SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
 
 
 class Class_Camera(object):
@@ -50,6 +50,7 @@ class Class_Camera(object):
         self.TriggerMode = dict_params['Trigger Mode']
         self.NofFrames = dict_params['NofFrames']
         self.FrameSuff = None
+        
         
  
         
@@ -154,6 +155,7 @@ class Class_Camera(object):
     def expose(self, night_dir_basename, start_fnumber):#, exp_progbar, exp_progbar_style, var_exp, 
                #read_progbar, read_progbar_style, var_read):
         self.FrameSuff = start_fnumber
+        self.PAR = SAMOS_Parameters()
         fnumber = int(start_fnumber.get())
         self.img_night_dir_list = []
         if 2<=len(sys.argv):
@@ -333,7 +335,8 @@ class Class_Camera(object):
             
             # write to file
             # 1) the last file is always saved as newimage.fit, and handled by ginga
-            fileout = os.path.join(parent_dir,"SAMOS_QL_images","newimage.fit")
+#            fileout = os.path.join(parent_dir,"SAMOS_QL_images","newimage.fit")
+            fileout = os.path.join(self.PAR.QL_images,"newimage.fit")
             newFile = open(fileout, "wb")
             newFile.write(data)
             newFile.close()
@@ -348,26 +351,29 @@ class Class_Camera(object):
             fnumber+=1
             self.FrameSuff.invoke("buttonup")
             # 2) if there is a request for iterations, the serial number is appended; use setimage_ to isolate the set
-            if iterations > 0:
-                fileout = os.path.join(parent_dir,"SAMOS_QL_images","setimage_" + str(image) +".fit")
-                newFile = open(fileout, "wb")
-                newFile.write(data)
-                newFile.close()
-                self.convertSIlly(fileout,fileout)
+#            if iterations > 1:
+#                fileout = os.path.join(parent_dir,"SAMOS_QL_images","setimage_" + str(image) +".fit")
+#                newFile = open(fileout, "wb")
+#                newFile.write(data)
+#                newFile.close()
+#                self.convertSIlly(fileout,fileout)
                 
 
                 
                 #=> these files are handled by the routines in Main_Vx.py
 
-        self.write_fitsfile()
+#        self.write_fitsfile()
 
               #if kbhit():
             #    if 27==ord(getch()):
             #        break
         print("Collected {} images in {:.3f} seconds.".format(collected_images,time() - startTime))
+        for fname in self.img_night_dir_list:
+            print("   ",fname)
         print("Longest image collection cycle was {:.3f} seconds.".format(longest_cycle))
         print("Read %u bytes in %.3f seconds (%.3f MB/s average)." % (total_read_bytes,total_read_time,(total_read_bytes/(1000000 * total_read_time))))
-        return "CCD: Exposure Completed"
+        return self.img_night_dir_list
+    
     
     def write_fitsfile(self):
         fits_dir = SF.read_fits_folder()
@@ -377,7 +383,8 @@ class Class_Camera(object):
         global outname
         outname = os.path.join(fits_dir,'SAMOS_image_'+today.strftime('%H%M%S')+'.fits')
         import shutil  
-        shutil.copy(os.path.join(parent_dir,'SAMOS_QL_images','newimage_fixed.fit'), outname)
+        #shutil.copy(os.path.join(parent_dir,'SAMOS_QL_images','newimage_fixed.fit'), outname)
+        shutil.copy(os.path.join(self.PAR.QL_images,'newimage_fixed.fit'), outname)
     
     def delete_fitsfile(self):
         os.remove(outname)

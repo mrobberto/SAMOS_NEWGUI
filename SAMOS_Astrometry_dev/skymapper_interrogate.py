@@ -5,7 +5,10 @@ Created on Sun Feb 19 22:05:04 2023
 
 @author: robberto
 """
+import pandas as pd
 import urllib.request
+import shutil
+import tempfile#import urllib.request
 
 def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
     POS = str(POSx)+","+str(POSy)   #"189.99763,-11.62305"
@@ -24,7 +27,6 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
        html = response.read()
     print(html)
     
-    import pandas as pd
     #v=pd.read_csv(html)
     v=html.decode('UTF-8')
     
@@ -49,8 +51,6 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, filter='r'):
     #Fetching URLs
     #FROM https://docs.python.org/3/howto/urllib2.html
     """
-    import shutil
-    import tempfile#import urllib.request
     
     with urllib.request.urlopen(string,timeout=30) as response:
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
