@@ -7042,7 +7042,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
-                 self.PAR.QL_images, "newimage.fit")
+                 self.PAR.QL_images, "newimage.fits")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7112,7 +7112,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
-                 self.PAR.QL_images, "newimage.fit")
+                 self.PAR.QL_images, "newimage.fits")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7225,7 +7225,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
-                 self.PAR.QL_images, "newimage.fit")
+                 self.PAR.QL_images, "newimage.fits")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7366,7 +7366,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
-                 self.PAR.QL_images, "newimage.fit")
+                 self.PAR.QL_images, "newimage.fits")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7564,7 +7564,7 @@ class MainPage(tk.Frame):
     def handle_QuickLook(self,QLfile):
         """ handle_light frame for Quick Look display, applying bias, dark and flat if necessary """
         # last received image
-#        light_file = os.path.join(self.PAR.QL_images, "newimage.fit")
+#        light_file = os.path.join(self.PAR.QL_images, "newimage.fits")
         light_file = QLfile
         
 

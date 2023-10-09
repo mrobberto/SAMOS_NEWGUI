@@ -328,7 +328,7 @@ class Class_Camera(object):
             if k>longest_cycle:
                 longest_cycle=k
             collected_images+=1
-            total_read_time+=(timeReceived - timeRequested)
+            total_read_time+=(timeReceived- timeRequested)
             total_read_bytes+=len(data)
             print(data[0:1000])
     
