@@ -6888,13 +6888,13 @@ class MainPage(tk.Frame):
         self.reset_progress_bars()
         
         # THE LAST ARRIVED FILE is latest_file
-        fits_dir = SF.read_fits_folder()
-        print(fits_dir)
-        list_of_files = glob.glob(
-             os.path.join(fits_dir,"*.fits") )  
-        latest_file = max(list_of_files, key=os.path.getctime)
-        print(latest_file)
-        self.fullpath_FITSfilename = latest_file # self.fits_image
+#        fits_dir = SF.read_fits_folder()
+#        print(fits_dir)
+#        list_of_files = glob.glob(
+#             os.path.join(fits_dir,"*.fits") )  
+#        latest_file = max(list_of_files, key=os.path.getctime)
+#        print(latest_file)
+#        self.fullpath_FITSfilename = latest_file # self.fits_image
         
         return newfiles
 
@@ -6983,8 +6983,8 @@ class MainPage(tk.Frame):
             main_fits_header.create_fits_header(main_fits_header.output_header)
 
             #update the final image
-            #fits.writeto(fname, data,
-            #                header=main_fits_header.output_header, overwrite=True)
+            fits.writeto(fname, data,
+                            header=main_fits_header.output_header, overwrite=True)
 
             # 
             self.most_recent_img_fullpath = fname  # e.g. dark_0s_Test_0004.fits
@@ -7112,6 +7112,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
+                 self.PAR.QL_images, "newimage.fit")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7224,6 +7225,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
+                 self.PAR.QL_images, "newimage.fit")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7364,6 +7366,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
+                 self.PAR.QL_images, "newimage.fit")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7429,53 +7432,38 @@ class MainPage(tk.Frame):
 
                 # search string for image
                 # glob.glob(night_dir_fname_search)[0]
-                #night_dir_fname = files[i]              # e.g. night_dir_fname: => '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231003/dark_0.01s_771nm_0033.fits'
+                night_dir_fname = files[i]              # e.g. night_dir_fname: => '/Users/samos_dev/GitHub/SISI_images/SAMOS_20231003/dark_0.01s_771nm_0033.fits'
 
-                #night_hdulist = fits.open(night_dir_fname)
-                #night_hdulist[0].header = main_fits_header.output_header
-                hdu[0].header = main_fits_header.output_header
+                night_hdulist = fits.open(night_dir_fname)
+                night_hdulist[0].header = main_fits_header.output_header
                 if dmd_hdu is not None:
-                    hdu.append(dmd_hdu)
-                    
-                # store the data array in the supercube
+                    night_hdulist.append(dmd_hdu)
                 superfile_cube[:, :, i] = hdu[0].data
-                superfile_header = hdu[0].header
-                
-                # do you want to save the running file?
-                # YES
                 if self.var_Light_saveall.get() == 1 or \
                    self.var_Bias_saveall.get() == 1 or \
                    self.var_Dark_saveall.get() == 1 or \
                    self.var_Flat_saveall.get() == 1 or \
                    self.var_Buffer_saveall.get() == 1:
                    # save every single frame
-                   # os.rename(files[i], os.path.join(
-                   #     self.PAR.QL_images+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
+                    os.rename(files[i], os.path.join(
+                        self.PAR.QL_images+self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     # os.rename(files[i],os.path.join(self.fits_dir,self.image_type+"_"+self.FW_filter.get()+'_'+str(i)+".fits"))
                     # self.entry_out_fnumber.invoke("buttonup")
-                    # night_hdulist.writeto(night_dir_fname, overwrite=True)
-                    # night_hdulist.close()
-                    hdu_copy = copy.deepcopy(hdu)
-                    hdu.close()
-                    os.remove(files[i])
-                    hdu_copy.writeto(files[i], overwrite=True)
-                    hdu_copy.close()
-                #NO
-                else: #close and kill the running file
-                    hdu.close()
+                    night_hdulist.writeto(night_dir_fname, overwrite=True)
+                    night_hdulist.close()
+                else:
                     os.remove(files[i])
                     # also remove the file that was put in the Night directory
-                    #try:
-                    #    os.remove(os.path.join(self.fits_dir, files[i]))
-                    #except FileNotFoundError:
-                    #    pass
-            #superfile_header = hdu[0].header
-            #hdu.close()             
+                    try:
+                        os.remove(os.path.join(self.fits_dir, night_dir_fname))
+                    except FileNotFoundError:
+                        pass
+                    
         #  => HERE WE DO THE COADD OF THE DATA            
         superfile_data = superfile_cube.mean(axis=2)
         
-        #superfile_header = hdu[0].header
-        
+        superfile_header = hdu[0].header
+        hdu.close()
         
         if self.image_type == "sci":
             self.obj_type = "SCI"
