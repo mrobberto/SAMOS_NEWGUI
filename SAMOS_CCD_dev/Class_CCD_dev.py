@@ -336,7 +336,7 @@ class Class_Camera(object):
             # write to file
             # 1) the last file is always saved as newimage.fit, and handled by ginga
 #            fileout = os.path.join(parent_dir,"SAMOS_QL_images","newimage.fit")
-            fileout = os.path.join(self.PAR.QL_images,"newimage.fit")
+            fileout = os.path.join(self.PAR.QL_images,"newimage.fits")
             newFile = open(fileout, "wb")
             newFile.write(data)
             newFile.close()
