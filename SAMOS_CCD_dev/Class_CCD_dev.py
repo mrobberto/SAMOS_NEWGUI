@@ -372,6 +372,7 @@ class Class_Camera(object):
             print("   ",fname)
         print("Longest image collection cycle was {:.3f} seconds.".format(longest_cycle))
         print("Read %u bytes in %.3f seconds (%.3f MB/s average)." % (total_read_bytes,total_read_time,(total_read_bytes/(1000000 * total_read_time))))
+        
         return self.img_night_dir_list
     
     
