@@ -70,7 +70,6 @@ from tkinter import filedialog
 # from tkinter.filedialog import askopenfilename
 # from tkinter.filedialog import asksaveasfile
 
-
 from astropy.coordinates import SkyCoord, FK4  # , ICRS, Galactic, FK5
 from astropy import units as u
 from astropy.io import fits, ascii
@@ -5180,7 +5179,7 @@ class MainPage(tk.Frame):
         entry_nrofstars.place(x=80, y=35)
         self.nrofstars.set('25')
 
-        """ twirl Astrometry"""_
+        """ twirl Astrometry"""
         button_twirl_Astrometry = tk.Button(labelframe_Query_Survey, text="twirl WCS", bd=3,
                                             command=self.twirl_Astrometry)
         button_twirl_Astrometry.place(x=120, y=35)
@@ -5244,7 +5243,8 @@ class MainPage(tk.Frame):
         canvas = self.canvas_types.DrawingCanvas()
         canvas.enable_draw(True)
         canvas.enable_edit(True)
-        canvas.set_drawtype('point', color='red')
+        canvas.set_drawtype('box', color='red')
+#        canvas.set_drawtype('point', color='red')
         canvas.register_for_cursor_drawing(fi)
         canvas.add_callback('draw-event', self.draw_cb)
         canvas.set_draw_mode('draw')
@@ -5282,7 +5282,7 @@ class MainPage(tk.Frame):
         # index = self.drawtypes.index('ruler')
         # wdrawtype.current(index)
         wdrawtype = tk.Entry(hbox, width=12)
-        wdrawtype.insert(0, 'point')
+        wdrawtype.insert(0, 'box')
         wdrawtype.bind("<Return>", self.set_drawparams)
         self.wdrawtype = wdrawtype
 
@@ -5316,7 +5316,8 @@ class MainPage(tk.Frame):
                           command=self.open_file)
         # pressing quit button freezes application and forces kernel restart.
         wquit = tk.Button(hbox, text="Quit",
-                          command=lambda: self.quit(self))
+                          #command=lambda: self.quit(self))
+                          command=self.MASTER_quit)
 
         for w in (wquit, wsave, wclear, wrun, walpha, tk.Label(hbox, text='Alpha:'),
                   #                  wfill, wdrawcolor, wslit, wdrawtype, wopen):
@@ -5429,7 +5430,7 @@ class MainPage(tk.Frame):
 #  #    SLIT POINTER ENABLED
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.vslit = tk.IntVar()
-        wslit = tk.Checkbutton(labelframe_SlitConf, text="Slit Pointer",
+        wslit = tk.Checkbutton(labelframe_SlitConf, text="Source Pickup",
                                variable=self.vslit, command=self.set_slit_drawtype)
         wslit.place(x=220, y=0)
 
@@ -6969,7 +6970,7 @@ class MainPage(tk.Frame):
             if DMD.current_dmd_shape is not None:
                 dmd_hdu = self.create_dmd_pattern_hdu(
                     main_fits_header.output_header)
-                hdulist.append(dmd_hdu)
+                hdul.append(dmd_hdu)
             
             print(main_fits_header.output_header)
     
@@ -8607,19 +8608,22 @@ class MainPage(tk.Frame):
         text = coords_text + coords_text_DEG + dmd_text + text
         self.readout.config(text=text)
 
-    def quit(self, root):
-        root.destroy()
+    def MASTER_quit(self):
+        self.ConfP.destroy()
+        self.destroy()
         return True
 
 ######
 
     def set_slit_drawtype(self):
-
-        if self.vslit != 0:
-            self.wdrawtype.delete(0, tk.END)
+        self.wdrawtype.delete(0, tk.END)
+        if self.vslit.get() == 1:
+            self.wdrawtype.insert(0, "point")
+        else:
             self.wdrawtype.insert(0, "box")
-            print("drawtype changed to ", self.wdrawtype.get())
-            self.canvas.set_drawtype(self.wdrawtype.get())
+        print("drawtype changed to ", self.wdrawtype.get())
+        self.canvas.set_drawtype(self.wdrawtype.get())
+            
 
     def set_mode_cb(self):
         """ to be written """
@@ -8662,7 +8666,7 @@ class MainPage(tk.Frame):
             except ValueError:
                 # if you just click instead of drawing a box, call the slit_handler
                 print("box")
-                obj.kind = "point"
+                obj.kind = "box"
 
             new_obj = self.slit_handler(obj)
             r = g2r(new_obj)
