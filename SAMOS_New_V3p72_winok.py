@@ -4633,7 +4633,7 @@ class MainPage(tk.Frame):
         tabControl.add(tab4, text='Flat')
         tabControl.add(tab5, text='Buffer')
         tabControl.pack(expand=1, fill="both")
-
+        self.var_acq_type = tk.StringVar()
         self.tabControl = tabControl
         self.tabControl.bind("<<NotebookTabChanged>>", self.change_acq_type)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -4649,17 +4649,17 @@ class MainPage(tk.Frame):
         label_ObjectName.place(x=4, y=10)
         self.ObjectName = tk.StringVar()
         self.ObjectName.set(self.PAR.PotN['Object Name'])
-        entry_ObjectName = tk.Entry(labelframe_Acquire, width=8,  bd=3,
+        entry_ObjectName = tk.Entry(labelframe_Acquire, width=16,  bd=3,
                                     textvariable=self.ObjectName)
         entry_ObjectName.place(x=100, y=8)
 
         label_Comment = tk.Label(labelframe_Acquire, text="Comments:")
-        label_Comment.place(x=4, y=50)
+        label_Comment.place(x=4, y=55)
         self.Comment = tk.StringVar()
         self.Comment.set(self.PAR.PotN['Comment'])
         self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd=3, 
                                       textvariable=self.Comment)
-        self.entry_Comment.place(x=100, y=48)
+        self.entry_Comment.place(x=100, y=53)
 
         self.Light_NofFrames = tk.IntVar()
         self.Light_NofFrames.set(1)
@@ -4707,12 +4707,12 @@ class MainPage(tk.Frame):
         entry_Bias_MasterFile.place(x=100, y=8)
 
         label_Comment = tk.Label(labelframe_Bias, text="Comments:")
-        label_Comment.place(x=4, y=50)
+        label_Comment.place(x=4, y=55)
         self.BiasComment = tk.StringVar()
         self.BiasComment.set(self.PAR.PotN['Comment'])
         self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd=3, 
                                           textvariable=self.BiasComment)
-        self.entry_BiasComment.place(x=100, y=48)
+        self.entry_BiasComment.place(x=100, y=53)
 
         label_Bias_NofFrames = tk.Label(labelframe_Bias, text="Nr. of Frames:")
         label_Bias_NofFrames.place(x=220, y=2)
@@ -4734,9 +4734,9 @@ class MainPage(tk.Frame):
 #        self.Bias_ExpT = tk.StringVar(value="0.00")
 #        entry_Bias_ExpT = tk.Entry(labelframe_Bias, width=6,  bd =3, textvariable=self.Bias_ExpT)
 #        #entry_Bias_ExpT.place(x=120, y=6)
-
-        button_ExpStart = tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-                                    command=self.expose_bias)
+#
+#        button_ExpStart = tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc', font=self.bigfont,
+#                                    command=self.expose_bias)
         # button_ExpStart.place(x=75,y=95)
 
 #        root.mainloop()
@@ -4759,12 +4759,12 @@ class MainPage(tk.Frame):
         entry_Dark_MasterFile.place(x=100, y=8)
 
         label_Comment = tk.Label(labelframe_Dark, text="Comments:")
-        label_Comment.place(x=4, y=50)
+        label_Comment.place(x=4, y=55)
         self.DarkComment = tk.StringVar()
         self.DarkComment.set(self.PAR.PotN['Comment'])
         self.entry_DarkComment = tk.Entry(labelframe_Dark, width=20,  bd=3, 
                                           textvariable = self.DarkComment)
-        self.entry_DarkComment.place(x=100, y=48)
+        self.entry_DarkComment.place(x=100, y=53)
 
         label_Dark_NofFrames = tk.Label(labelframe_Dark, text="Nr. of Frames:")
         label_Dark_NofFrames.place(x=220, y=2)
@@ -4787,8 +4787,8 @@ class MainPage(tk.Frame):
 #        entry_Dark_ExpT = tk.Entry(labelframe_Dark, width=6,  bd =3, textvariable=self.Dark_ExpT)
 #        #entry_Dark_ExpT.place(x=120, y=6)
 
-        button_ExpStart = tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-                                    command=self.expose_dark)
+#        button_ExpStart = tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc', font=self.bigfont,
+#                                    command=self.expose_dark)
         # button_ExpStart.place(x=75,y=95)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -4808,12 +4808,12 @@ class MainPage(tk.Frame):
         entry_Flat_MasterFile.place(x=100, y=8)
 
         label_Comment = tk.Label(labelframe_Flat, text="Comments:")
-        label_Comment.place(x=4, y=50)
+        label_Comment.place(x=4, y=55)
         self.FlatComment = tk.StringVar()
         self.FlatComment.set(self.PAR.PotN['Comment'])
         self.entry_FlatComment = tk.Entry(labelframe_Flat, width=20,  bd=3, 
                                           textvariable=self.FlatComment)
-        self.entry_FlatComment.place(x=100, y=48)
+        self.entry_FlatComment.place(x=100, y=53)
 
 #        label_Flat_ExpT =  tk.Label(labelframe_Flat, text="Exposure time (s):")
 #        #label_Flat_ExpT.place(x=4,y=10)
@@ -4835,9 +4835,9 @@ class MainPage(tk.Frame):
                                           variable=self.var_Flat_saveall, onvalue=1, offvalue=0)
         r1_Flat_saveall.place(x=218, y=27)
 
-        button_ExpStart = tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-                                    command=self.expose_flat)
-        button_ExpStart.place(x=75, y=95)
+#        button_ExpStart = tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc', font=self.bigfont,
+#                                    command=self.expose_flat)
+#        button_ExpStart.place(x=75, y=95)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Buffer
@@ -4848,12 +4848,12 @@ class MainPage(tk.Frame):
         labelframe_Buffer.pack(fill="both", expand="yes")
 
         label_Comment = tk.Label(labelframe_Buffer, text="Comments:")
-        label_Comment.place(x=4, y=50)
+        label_Comment.place(x=4, y=55)
         self.BufferComment = tk.StringVar()
         self.BufferComment.set(self.PAR.PotN['Comment'])
         self.entry_BufferComment = tk.Entry(labelframe_Buffer, width=20,  bd=3, 
                                             textvariable = self.BufferComment)
-        self.entry_BufferComment.place(x=100, y=48)
+        self.entry_BufferComment.place(x=100, y=53)
 
         label_Buffer_MasterFile = tk.Label(
             labelframe_Buffer, text="Master Buffer File:")
@@ -4884,21 +4884,21 @@ class MainPage(tk.Frame):
                                           variable=self.var_Buffer_saveall, onvalue=1, offvalue=0)
         r1_Buffer_saveall.place(x=218, y=27)
 
-        button_ExpStart = tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-                                    command=self.expose_buffer)
+#        button_ExpStart = tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc', font=self.bigfont,
+#                                    command=self.expose_buffer)
         # button_ExpStart.place(x=75,y=95)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
-#       ACQUIRE IMAGE FRAME
+#       ACQUISITION PANEL
 # Begin exposure with progress bars
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
-        self.ExposeBeginFrame = tk.Frame(
+        self.AcquisitionFrame = tk.Frame(
             self.frame_CCDInf, background="dark gray")
-        self.ExposeBeginFrame.place(x=5, y=175, width=420, height=172)
+        self.AcquisitionFrame.place(x=5, y=175, width=420, height=172)
 
-        labelframe_ExposeBegin = tk.LabelFrame(self.ExposeBeginFrame, text="Acquisition",
+        labelframe_ExposeBegin = tk.LabelFrame(self.AcquisitionFrame, text="Acquisition",
                                                font=self.bigfont)
         labelframe_ExposeBegin.pack(fill="both", expand="yes")
 
@@ -4911,30 +4911,32 @@ class MainPage(tk.Frame):
                                    width=8, bd=3)
         entry_out_fname.place(x=100, y=13)
 
-
+        # set exposure time
         label_ExpTime = tk.Label(labelframe_ExposeBegin, text="Exp. Time (s):")
         label_ExpTime.place(x=4, y=55)
         self.ExpTimeSet = tk.StringVar()
         self.ExpTimeSet.set("0.01")
         entry_ExpTime = tk.Entry(
-            labelframe_ExposeBegin, textvariable=self.ExpTimeSet, width=4,  bd=3)
+            labelframe_ExposeBegin, textvariable=self.ExpTimeSet, width=5,  bd=3)
         entry_ExpTime.place(x=100, y=53)
 
+        
         # Select Acquisition Type
-        label_Display = tk.Label(labelframe_ExposeBegin, text="Image Type:")
-        label_Display.place(x=205, y=0)
-        self.var_acq_type = tk.StringVar()
-        tab_selected = self.tabControl.tab(self.tabControl.select(), "text")
+        #label_Display = tk.Label(labelframe_ExposeBegin, text="Image Type:")
+        #label_Display.place(x=205, y=0)
+        #self.var_acq_type = tk.StringVar()
+        #tab_selected = self.tabControl.tab(self.tabControl.select(), "text")
 
-        self.var_acq_type.set(tab_selected)
-        self.acq_type_select = ttk.Combobox(labelframe_ExposeBegin, width=8,
-                                            textvariable=self.var_acq_type,
-                                            style="TCombobox")
-        self.acq_type_select["values"] = [
-            "Science", "Bias", "Dark", "Flat", "Buffer"]
-        self.acq_type_select["state"] = "readonly"
-        self.acq_type_select.place(x=295, y=0)
-
+        #self.var_acq_type.set(tab_selected)
+        #self.acq_type_select = ttk.Combobox(labelframe_ExposeBegin, width=8,
+        #                                    textvariable=self.var_acq_type,
+        #                                    style="TCombobox")
+        #self.acq_type_select["values"] = [
+        #    "Science", "Bias", "Dark", "Flat", "Buffer"]
+        #self.acq_type_select["state"] = "readonly"
+        #self.acq_type_select.place(x=295, y=0)
+        
+        
         # label each file name incrementally to keep track
         self.out_fnumber = tk.IntVar()
 
@@ -5066,8 +5068,8 @@ class MainPage(tk.Frame):
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
-        button_FITS_Load = tk.Button(labelframe_FITSmanager, text="Load last file", bd=3,
-                                     command=self.load_last_file)
+        button_FITS_Load = tk.Button(labelframe_FITSmanager, text="Load existing file", bd=3,
+                                     command=self.load_existing_file)
         button_FITS_Load.place(x=0, y=0)
 
         """ RA Entry box"""
@@ -5077,8 +5079,8 @@ class MainPage(tk.Frame):
         label_RA = tk.Label(labelframe_FITSmanager, text='RA:',  bd=3)
         self.entry_RA = tk.Entry(
             labelframe_FITSmanager, width=11,  bd=3, textvariable=self.string_RA)
-        label_RA.place(x=190, y=1)
-        self.entry_RA.place(x=230, y=-5)
+        label_RA.place(x=150, y=1)
+        self.entry_RA.place(x=190, y=-5)
 
         """ DEC Entry box"""
         self.string_DEC = tk.StringVar()
@@ -5087,8 +5089,12 @@ class MainPage(tk.Frame):
         label_DEC = tk.Label(labelframe_FITSmanager, text='Dec:',  bd=3)
         self.entry_DEC = tk.Entry(
             labelframe_FITSmanager, width=11,  bd=3, textvariable=self.string_DEC)
-        label_DEC.place(x=190, y=20)
-        self.entry_DEC.place(x=230, y=20)
+        label_DEC.place(x=150, y=20)
+        self.entry_DEC.place(x=190, y=20)
+        
+        button_RADEC_to_SOAR = tk.Button(labelframe_FITSmanager, text="Send to SOAR", bd=3,
+                             command=self.send_RADEC_to_SOAR)
+        button_RADEC_to_SOAR.place(x=300, y=8)
 
 # =============================================================================
 #      QUERY Server
@@ -5174,8 +5180,8 @@ class MainPage(tk.Frame):
         entry_nrofstars.place(x=80, y=35)
         self.nrofstars.set('25')
 
-        """ twirl Astrometry"""
-        button_twirl_Astrometry = tk.Button(labelframe_Query_Survey, text="twirl_WCS", bd=3,
+        """ twirl Astrometry"""_
+        button_twirl_Astrometry = tk.Button(labelframe_Query_Survey, text="twirl WCS", bd=3,
                                             command=self.twirl_Astrometry)
         button_twirl_Astrometry.place(x=120, y=35)
 
@@ -6741,9 +6747,9 @@ class MainPage(tk.Frame):
         self.handle_bias(newfiles)
         superfile = self.combine_files(newfiles)
         shutil.copy(superfile, os.path.join(self.PAR.QL_images,"superbias.fits"))
-        print("Superbias file created")
         self.handle_QuickLook(superfile)
         self.ExpTimeSet.set(save_Exp_time)
+        print("Superbias file created")
 
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -6774,7 +6780,8 @@ class MainPage(tk.Frame):
         
                 
         #by default we subtract the bias to create a superbias_s.fits file
-        #that will be needed for the quick look
+        #that will be needed for the quick look.
+        #Here wer RETURN to NO BIAS SUBTRACTION
         self.subtract_Bias.set(0)
 
 
@@ -6888,13 +6895,13 @@ class MainPage(tk.Frame):
         self.reset_progress_bars()
         
         # THE LAST ARRIVED FILE is latest_file
-        fits_dir = SF.read_fits_folder()
-        print(fits_dir)
-        list_of_files = glob.glob(
-             os.path.join(fits_dir,"*.fits") )  
-        latest_file = max(list_of_files, key=os.path.getctime)
-        print(latest_file)
-        self.fullpath_FITSfilename = latest_file # self.fits_image
+#        fits_dir = SF.read_fits_folder()
+#        print(fits_dir)
+#        list_of_files = glob.glob(
+#             os.path.join(fits_dir,"*.fits") )  
+#        latest_file = max(list_of_files, key=os.path.getctime)
+#        print(latest_file)
+#        self.fullpath_FITSfilename = latest_file # self.fits_image
         
         return newfiles
 
@@ -7056,8 +7063,8 @@ class MainPage(tk.Frame):
             main_fits_header.create_fits_header(main_fits_header.output_header)
 
             #update the final image
-            fits.writeto(fname, data,
-                            header=main_fits_header.output_header, overwrite=True)
+            #fits.writeto(fname, data,
+            #                header=main_fits_header.output_header, overwrite=True)
 
             # 
             self.most_recent_img_fullpath = fname  # e.g. dark_0s_Test_0004.fits
@@ -7127,8 +7134,8 @@ class MainPage(tk.Frame):
             main_fits_header.create_fits_header(main_fits_header.output_header)
 
             #update the final image
-            fits.writeto(fname, data,
-                            header=main_fits_header.output_header, overwrite=True)
+            #fits.writeto(fname, data,
+            #                header=main_fits_header.output_header, overwrite=True)
 
             # 
             self.most_recent_img_fullpath = fname  # e.g. dark_0s_Test_0004.fits
@@ -7240,8 +7247,8 @@ class MainPage(tk.Frame):
             main_fits_header.create_fits_header(main_fits_header.output_header)
 
             #update the final image
-            fits.writeto(fname, data,
-                            header=main_fits_header.output_header, overwrite=True)
+            #fits.writeto(fname, data,
+            #                header=main_fits_header.output_header, overwrite=True)
 
             # 
             self.most_recent_img_fullpath = fname  # e.g. dark_0s_Test_0004.fits
@@ -7380,8 +7387,8 @@ class MainPage(tk.Frame):
             main_fits_header.create_fits_header(main_fits_header.output_header)
 
             #update the final image
-            fits.writeto(fname, data,
-                            header=main_fits_header.output_header, overwrite=True)
+            #fits.writeto(fname, data,
+            #                header=main_fits_header.output_header, overwrite=True)
 
             # 
             self.most_recent_img_fullpath = fname  # e.g. dark_0s_Test_0004.fits
@@ -7854,19 +7861,33 @@ class MainPage(tk.Frame):
         self.readout_progbar_style.configure('text.Horizontal.RProgressbar',
                                              text='Readout {:g} %'.format(self.var_perc_read_done.get()))
 
-    def load_last_file(self):
+    def load_existing_file(self):
         """ to be written """
         FITSfiledir = os.path.join(self.PAR.QL_images)
-        self.fullpath_FITSfilename = os.path.join(
-            FITSfiledir, (os.listdir(FITSfiledir))[0])
+        self.last_fits_file_dialog = filedialog.askopenfilename(initialdir=self.fits_dir,                                                          title="Select a File",
+                                                                 filetypes=(("fits files",
+                                                                             "*.fits"),
+                                                                            ("all files",
+                                                                             "*.*")))
+        #self.loaded_fits_file = os.path.split(self.last_fits_file_dialog)[1]
+        
+
+
+        #self.fullpath_FITSfilename = os.path.join(
+        #    self.fits_dir, self.loaded_fits_file)
         # './fits_image/newimage_ql.fits'
         self.AstroImage = load_data(
-            self.fullpath_FITSfilename, logger=self.logger)
+            self.last_fits_file_dialog, logger=self.logger)
         # AstroImage object of ginga.AstroImage module
 
         # passes the image to the viewer through the set_image() method
         self.fitsimage.set_image(self.AstroImage)
 #        self.root.title(self.fullpath_FITSfilename)
+
+        #return self.filename_regfile_RADEC
+
+    def send_RADEC_to_SOAR(self):
+        pass
 
     def Query_Survey(self):
         """ to be written """
@@ -7878,16 +7899,18 @@ class MainPage(tk.Frame):
                 self.SkyMapper_query()
             except:
                 print("\n Sky mapper image server is down \n")
-                return
+            return
 
         if Survey == "SDSS":
             self.SDSS_query()
+            return
             
           
 
         else:       # SIMBAD database
             if Survey == "PanSTARRS/DR1/":
                 Survey = Survey+self.string_Filter.get()
+                print("\n Quering PanSTARRS/DR1")
             """    
             print("Survey selected: ",Survey,'\n')
             coord = SkyCoord(self.string_RA.get()+'  ' +
