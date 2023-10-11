@@ -62,6 +62,7 @@ class FITSHead(object):
     def __init__(self):
         
         self.main_dict = None # main dictionary will be the container for all params
+        self.main_astrometric_dict = None # main dictionary will be the container for all params
         
         self.filename = None # base filename e.g. 'NGC1976_83.819696	-5.390333'
         self.filedir = None # main directory to which output FITS are saved.
@@ -181,6 +182,21 @@ class FITSHead(object):
                 'NCOMBO': (self.ncombined, 'Number of combined images'),
                 'OBJECT': (self.objname,'User-defined name of object'),
                 'OBSTYPE': (self.obstype, 'Type of observation'),
+                'FILTER': (self.filter, 'Name of filter'),
+                'FILTPOS': (self.filtpos, 'Filter position'),
+                'GRATING' : (self.grating, 'VPH grating name'),
+                'DMDMAP' : (self.dmdmap, 'Name of corresponding DMD file')}
+        
+    def create_astrometric_params_dict(self):
+        
+        """
+        Combine all the attributes into a single dictionary 
+            that will be passed to the write_fits_header method.
+        """
+        
+        #TODO: Put these in a better order
+        
+        self.main_astrometric_dict = {  
                 'RADECSYS': (self.radecSys, 'Default coordinate system'),
                 'RADECEQ': (self.radecEq, 'Default equinox'),
                 'RA': (self.ra,'RA of object (hr)'), 
@@ -207,11 +223,7 @@ class FITSHead(object):
                 'CD1_2': self.cd12,
                 'CD2_1': self.cd21,
                 'CDELT1': self.cdelt1,
-                'CDELT2': self.cdelt2,
-                'FILTER': (self.filter, 'Name of filter'),
-                'FILTPOS': (self.filtpos, 'Filter position'),
-                'GRATING' : (self.grating, 'VPH grating name'),
-                'DMDMAP' : (self.dmdmap, 'Name of corresponding DMD file')}
+                'CDELT2': self.cdelt2}
         
         
     def create_fits_header(self, input_header):
@@ -244,6 +256,39 @@ class FITSHead(object):
                 output_header.set(key, value)
             
         self.output_header = output_header
+        return output_header
+        
+    def add_astrometric_fits_keywords(self, input_header):
+        
+        """
+        Set header keys based on main dictionary
+        For None values, replace with empty string.
+        Params:
+            input_header : the CCD will create its own FITS header,
+                this function will update/add values.
+        """
+        
+        output_header = input_header.copy()
+        
+        if self.main_astrometric_dict is None:
+            self.create_astrometric_params_dict()
+        
+        for key, value in self.main_astrometric_dict.items():
+            
+            if type(value)==tuple:
+                val = value[0]
+                comment = value[1]
+                if (val is None) or (val is ''):
+                    val='unavail '
+                
+                output_header.set(key,val,comment)
+            else:
+                if value is None:
+                    value = 'unavail '
+                output_header.set(key, value)
+            
+        self.output_header = output_header
+        return output_header        
         
     def load_DMD_grid(self, gridfnam):
         """ 

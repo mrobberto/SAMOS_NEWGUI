@@ -4370,6 +4370,8 @@ class MainPage(tk.Frame):
 #  #    OBSERVER/NIGHT INFO Label Frame
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        self.wcs_exist = None
+
         self.frame_ObsInf = tk.Frame(self, background="cyan")
         self.frame_ObsInf.place(x=10, y=0, anchor="nw", width=420, height=150)
 
@@ -4651,6 +4653,8 @@ class MainPage(tk.Frame):
         entry_ObjectName = tk.Entry(labelframe_Acquire, width=16,  bd=3,
                                     textvariable=self.ObjectName)
         entry_ObjectName.place(x=100, y=8)
+        #start keeping memory of the opbject name to handle WCS changes
+        self.Previous_ObjectName = self.ObjectName.get()
 
         label_Comment = tk.Label(labelframe_Acquire, text="Comments:")
         label_Comment.place(x=4, y=55)
@@ -6720,6 +6724,14 @@ class MainPage(tk.Frame):
         params = {'Exposure Time': ExpTime_ms, 'CCD Temperature': 2300,
                   'Trigger Mode': 4, 'NofFrames': int(self.Light_NofFrames.get())}
 
+        #are we observing a new target? BCS we may haave lost the WCS solution
+        if self.ObjectName.get() !=  self.Previous_ObjectName:
+            # yes,  we changed the target
+            # therefore we lost the WCS solution
+            self.wcs = None
+            WCS_global = None
+            self.Previous_ObjectName = self.ObjectName.get()
+
         newfiles = self.expose(params)
         self.handle_light(newfiles)
         # handle multiple files
@@ -6956,6 +6968,8 @@ class MainPage(tk.Frame):
             main_fits_header.set_param("combined", "F")
             main_fits_header.set_param("ncombined", 0)
             main_fits_header.create_fits_header(original_header)
+            if self.wcs_exist is True:
+                main_fits_header.add_astrometric_fits_keyowrds(original_header)
     
             # ADD THE DMD MAP HEADER, IF ANY
             try:
@@ -8044,9 +8058,22 @@ class MainPage(tk.Frame):
             self.hdu_res.header['RA'] = ra
             self.hdu_res.header['DEC'] = dec
 
+            output_header = copy.deepcopy(hdu_in[0].header)
+            main_fits_header.add_astrometric_fits_keywords(self.hdu_res.header)
 #            rebinned_filename = "./SkyMapper_g_20140408104645-29_150.171-54.790_1056x1032.fits"
  #           hdu.writeto(rebinned_filename,overwrite=True)
-
+            output_header['RA'] = ra
+            output_header['DEC'] = dec
+            output_header['NAXIS1'] = float(1056)
+            output_header['NAXIS2'] = float(1032)
+            output_header['CRVAL1'] = float(ra)
+            output_header['CRVAL2'] = float(dec)
+            output_header['CRPIX1'] = float(528)
+            output_header['CRPIX2'] = float(516)
+            
+            self.wcs =wcs.WCS(output_header)
+            self.wcs_exist = True        
+            
             img.load_hdu(self.hdu_res)
 
             self.fitsimage.set_image(img)
@@ -8057,7 +8084,11 @@ class MainPage(tk.Frame):
         self.fits_image_ql = os.path.join(
             self.PAR.QL_images, "newimage_ql.fits")
         fits.writeto(self.fits_image_ql, self.hdu_res.data,
-                     header=self.hdu_res.header, overwrite=True)
+##                     header=self.hdu_res.header, overwrite=True)
+                     header=output_header, overwrite=True)
+        self.Display(self.fits_image_ql)
+        self.button_find_stars['state'] = 'active'
+        self.wcs_exist = True
         
     def SDSS_query(self):
         """ get image from SDSS 
@@ -8163,6 +8194,7 @@ class MainPage(tk.Frame):
     def twirl_Astrometry(self):
         """ to be written """
 
+        self.wcs = None
         self.Display(self.fits_image_ql)
         # self.load_file()   #for ging
 
@@ -8220,7 +8252,7 @@ class MainPage(tk.Frame):
 
         self.wcs = twirl.compute_wcs(stars, gaias)
 
-        global WCS_global
+        global WCS_global   #used for HTS
         WCS_global = self.wcs
 
         # Lets check the WCS solution
@@ -8238,6 +8270,15 @@ class MainPage(tk.Frame):
             self.canvas.add(obj)
 
         print(self.wcs)
+        
+        if self.wcs is None:
+            self.wcs_exist = False
+            print("\n WCS solution not found, returning\n")
+            return
+        else:
+            self.wcs_exist = True            
+            print("\n WCS solution found!\n")
+            
         hdu_wcs = self.wcs.to_fits()
 
         if self.loaded_regfile is not None:
@@ -8251,6 +8292,8 @@ class MainPage(tk.Frame):
 
         self.Display(self.wcs_filename)
         self.button_find_stars['state'] = 'active'
+        
+        self.wcs_exist = True
         #
         # > to read:
         # hdu = fits_open(self.wcs_filename)
@@ -8609,7 +8652,7 @@ class MainPage(tk.Frame):
         self.readout.config(text=text)
 
     def MASTER_quit(self):
-        self.ConfP.destroy()
+        #self.ConfP.destroy()
         self.destroy()
         return True
 
