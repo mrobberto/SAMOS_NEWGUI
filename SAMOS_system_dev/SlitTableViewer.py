@@ -210,12 +210,12 @@ class SlitTableView(tk.Frame):
         df_indx = int(tag_num)-1
         
         row_vals = np.array([tag_num, ra, dec, x, y, x0, y0,
-            x1, y1, dmd_x, dmd_y, dmd_x0, dmd_y0,dmd_x1, dmd_y1])
+            x1, y1, dmd_x, dmd_y, dmd_x0, dmd_y0,dmd_x1, dmd_y1]).astype('float64')#
         
         self.slitDF.loc[df_indx] = row_vals
         
-        row_num = list(self.stab.get_column_data(0)).index(tag_num)
-        self.stab.set_row_data(r=row_num, values=row_vals, redraw=True)
+        row_num = list(self.stab.get_column_data(0)).index( int(tag_num) )
+        self.stab.set_row_data(r=row_num, values=tuple(row_vals), redraw=True)
         
                                  
         
@@ -303,7 +303,7 @@ class SlitTableView(tk.Frame):
         new_slitrow[0] = int(tag_val) # so row element needs to be tag val
         self.slitDF.loc[df_idx] = new_slitrow
         sheet_ind = self.stab.get_column_data(0).index(str(df_idx+1))
-        self.stab.set_row_data(sheet_ind, values=new_slitrow, redraw=True)
+        self.stab.set_row_data(sheet_ind, values=tuple(new_slitrow), redraw=True)
        
         
         

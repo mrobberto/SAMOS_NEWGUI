@@ -4332,8 +4332,11 @@ class MainPage(tk.Frame):
         self.DMDPage = DMDPage
         self.PAR = SAMOS_Parameters()
         self.ConfP = ConfigPage(parent,container)
-        
+
         self.container = container
+        
+        self.initialize_slit_table()
+
         logger = log.get_logger("example2", options=None)
         self.logger = logger
 
@@ -4359,11 +4362,13 @@ class MainPage(tk.Frame):
         self.wcs = None
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
-        self.SlitTabView = None
+        #self.SlitTabView = None
         self.loaded_regfile = None
         today = datetime.now()
         self.fits_dir = os.path.join(
             parent_dir, "SISI_images", "SAMOS_" + today.strftime('%Y%m%d'))
+
+
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -5373,22 +5378,22 @@ class MainPage(tk.Frame):
                                             font=self.bigfont)
         labelframe_SlitConf.pack(fill="both", expand="yes")
 
-        self.setChecked = tk.StringVar(None, "draw")
+        self.Draw_Edit_Pick_Checked = tk.StringVar(None, "draw")
         btn1 = tk.Radiobutton(labelframe_SlitConf, text="Draw", padx=6, pady=1,
-                              variable=self.setChecked, value="draw", command=self.set_mode_cb)
+                              variable=self.Draw_Edit_Pick_Checked, value="draw", command=self.set_mode_cb)
         # btn1.pack(anchor='ne')
         btn1.place(x=220, y=25)
         btn2 = tk.Radiobutton(labelframe_SlitConf, text="Edit", padx=10, pady=1,
-                              variable=self.setChecked, value="edit", command=self.set_mode_cb)
+                              variable=self.Draw_Edit_Pick_Checked, value="edit", command=self.set_mode_cb)
         btn2.place(x=220, y=50)  # pack(anchor='ne')
-        btn3 = tk.Radiobutton(labelframe_SlitConf, text="Pick", padx=9, pady=1,
-                              variable=self.setChecked, value="pick", command=self.set_mode_cb)
+        btn3 = tk.Radiobutton(labelframe_SlitConf, text="Delete", padx=9, pady=1,
+                              variable=self.Draw_Edit_Pick_Checked, value="pick", command=self.set_mode_cb)
         btn3.place(x=220, y=75)  # pack(anchor='ne')
 
-        self.deleteChecked = tk.IntVar()
-        btn4 = tk.Checkbutton(labelframe_SlitConf, text="Delete Picked", padx=5, pady=1,
-                              variable=self.deleteChecked)
-        btn4.place(x=280, y=75)
+#        self.deleteChecked = tk.IntVar()
+#        btn4 = tk.Checkbutton(labelframe_SlitConf, text="Delete Picked", padx=5, pady=1,
+#                              variable=self.deleteChecked)
+#        btn4.place(x=280, y=75)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT WIDTH in mirrors, dispersion direction (affects Resolving power)
@@ -5433,9 +5438,9 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT POINTER ENABLED
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.vslit = tk.IntVar()
+        self.CentroidPickup_Enabled = tk.IntVar()
         wslit = tk.Checkbutton(labelframe_SlitConf, text="Source Pickup",
-                               variable=self.vslit, command=self.set_slit_drawtype)
+                               variable=self.CentroidPickup_Enabled, command=self.set_slit_drawtype)
         wslit.place(x=220, y=0)
 
 
@@ -6244,7 +6249,7 @@ class MainPage(tk.Frame):
                 x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 self.slit_shape[x1, y1] = 0
-            elif self.vslit.get() != 0 and obj.kind == 'point':
+            elif self.CentroidPickup_Enabled.get() != 0 and obj.kind == 'point':
                 x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2, y2 = convert.CCD2DMD(ccd_x1, ccd_y1)
@@ -6330,6 +6335,9 @@ class MainPage(tk.Frame):
         push selected slits to DMD pattern
         Export all Ginga objects to Astropy region
         """
+        
+        # if someone forgot to remove the tracese, we do it here for safety
+        self.remove_traces()
         self.collect_slit_shape()
 
         """# 1. list of ginga objects
@@ -6358,7 +6366,7 @@ class MainPage(tk.Frame):
                 x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
                 x1,y1 = int(np.round(x1)), int(np.round(y1))
                 self.slit_shape[x1,y1]=0
-            elif  self.vslit.get() != 0 and obj.kind == 'point':
+            elif  self.CentroidPickup_Enabled.get() != 0 and obj.kind == 'point':
                 x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
                 x1,y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
@@ -6969,7 +6977,7 @@ class MainPage(tk.Frame):
             main_fits_header.set_param("ncombined", 0)
             main_fits_header.create_fits_header(original_header)
             if self.wcs_exist is True:
-                main_fits_header.add_astrometric_fits_keyowrds(original_header)
+                main_fits_header.add_astrometric_fits_keywords(original_header)
     
             # ADD THE DMD MAP HEADER, IF ANY
             try:
@@ -7745,6 +7753,8 @@ class MainPage(tk.Frame):
         TCS_dict = Class_SOAR_Page.SOAR_Page.infoa()
         main_fits_header.output_header.update(TCS_dict)
         """
+        
+        #
         pr_hdu = fits.PrimaryHDU(
             light_bias_dark_flat_buffer, main_fits_header.output_header)
         hdulist = fits.HDUList([pr_hdu])
@@ -7995,6 +8005,11 @@ class MainPage(tk.Frame):
             # No.    Name      Ver    Type      Cards   Dimensions   Format
             #  0  PRIMARY       1 PrimaryHDU      22   (500, 500)   int16
             print(hdul[0].header)
+            
+            #to make this robust, we neeed to add a couple of parameters to the FITS header
+            #(something like this may be needed by the other surveys...)
+            hdul[0].header["FILENAME"] = Survey + "_" + self.string_RA.get() +"_" + self.string_DEC.get() + ".fits"
+
             self.image = hdul
             hdul.writeto(os.path.join(dir_Astrometry,
                          'newtable.fits'), overwrite=True)
@@ -8020,7 +8035,9 @@ class MainPage(tk.Frame):
     
     #            rebinned_filename = "./SkyMapper_g_20140408104645-29_150.171-54.790_1056x1032.fits"
      #           hdu.writeto(rebinned_filename,overwrite=True)
-    
+     
+            self.button_find_stars['state'] = 'active'
+
             img.load_hdu(self.hdu_res)
             print('\n', self.hdu_res.header)
             self.fitsimage.set_image(img)
@@ -8185,6 +8202,7 @@ class MainPage(tk.Frame):
         self.AstroImage = img
         #self.fullpath_FITSfilename = os.path.join(cwd,fits_file)#filepath.name
         #hdu_in.close()
+        self.button_find_stars['state'] = 'active'
         
         self.fits_image_ql = os.path.join(
             self.PAR.QL_images, "newimage_ql.fits")
@@ -8660,17 +8678,19 @@ class MainPage(tk.Frame):
 
     def set_slit_drawtype(self):
         self.wdrawtype.delete(0, tk.END)
-        if self.vslit.get() == 1:
+        if self.CentroidPickup_Enabled.get() == 1:
             self.wdrawtype.insert(0, "point")
+            self.Draw_Edit_Pick_Checked.set("None")
         else:
             self.wdrawtype.insert(0, "box")
+            self.Draw_Edit_Pick_Checked.set("draw")
         print("drawtype changed to ", self.wdrawtype.get())
         self.canvas.set_drawtype(self.wdrawtype.get())
             
 
     def set_mode_cb(self):
         """ to be written """
-        mode = self.setChecked.get()
+        mode = self.Draw_Edit_Pick_Checked.get()
 #        self.logger.info("canvas mode changed (%s) %s" % (mode))
         self.logger.info("canvas mode changed (%s)" % (mode))
         try:
@@ -8699,11 +8719,17 @@ class MainPage(tk.Frame):
         # obj.add_callback('pick-key',self.delete_obj_cb, 'key')
         kind = self.wdrawtype.get()
         print("kind: ", kind)
-        if kind == "box" and self.vslit.get() != 0:
+        
+        # =============
+        #CASE A)
+        #this case should never run. 
+        #If we have enabled the slit pickup mode, the ob.kind is "point" 
+        if kind == "box" and self.CentroidPickup_Enabled.get() == 1:
             if self.SlitTabView is None:
                 self.initialize_slit_table()
             try:
                 kind == "box"
+                # the ginga object, a box, is converted to an astropy region
                 r = g2r(obj)
 
             except ValueError:
@@ -8719,47 +8745,73 @@ class MainPage(tk.Frame):
             self.SlitTabView.add_slit_obj(r, tag, self.fitsimage)
             # self.SlitTabView.slit_obj_tags.append(tag)
 
-        if self.vslit.get() != 0 and kind == 'point':  # or kind == 'box':
-            true_kind = 'Slit'
-            print("It is a slit")
-#            print("Handle the rectangle as a slit")
+        # =============
+        #CASE B)
+        # Pick up pode. obj.kind should always be point.
+        if self.CentroidPickup_Enabled.get() == 1 and kind == 'point':  # or kind == 'box':
 
+            #this case requires more sophisticated operations, hence a dedicated function            
             self.slit_handler(obj)
+
+        # =============
+        # CASE C)
+        # a box is drawn but centroid is not searched, just drawn... 
+        if kind == "box" and self.CentroidPickup_Enabled.get() == 0:
+            
+            #if table does not exist, create it (this should not happen as table previously created)
+            if self.SlitTabView is None:
+                self.initialize_slit_table()
+            
+            # the ginga object, a box, is converted to an astropy region
+            r = g2r(obj)
+            
+            # the astropy object is added to the table
+            self.SlitTabView.add_slit_obj(r, tag, self.fitsimage)
+            # self.SlitTabView.slit_obj_tags.append(tag)
+
+            
+            
 
     def slit_handler(self, obj):
         """ to be written """
         print('ready to associate a slit to ')
-        print(obj)
+        print(obj.kind)
         img_data = self.AstroImage.get_data()
 
+        #we are still a bit paranoid....
         if obj.kind == 'point':
-            # create box
+            
+            # Search centroid: Start creating box
             x_c = obj.points[0][0]-1  # really needed?
             y_c = obj.points[0][1]-1
-            # create area to search, using astropy instead of ginga (still unclear how you do it with ginga)
+            
+            # create area to search, use astropy and convert to ginga (historic reasons...)
             r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)),
                                      width=40, height=40,
                                      angle=0*u.deg)
-
-            obj = r2g(r)
             # and we convert it to ginga.
+            obj = r2g(r)
             # Note: r as an Astropy region is a RECTANGLE
             #      obj is a Ginga region type BOX
             # obj = r2g(r)
-            # this retuns a Box object
+            
+            # the Ginga Box object can be added to the canvas
             self.canvas.add(obj)
-
+        
+        # time to do the math; collect the pixels in the Ginga box
         data_box = self.AstroImage.cutout_shape(obj)
 
         # we can now remove the "pointer" object
         CM.CompoundMixin.delete_object(self.canvas, obj)
 
-    #      obj = self.canvas.get_draw_class('rectangle')
+  #      obj = self.canvas.get_draw_class('rectangle')
   #      obj(x1=x_c-20,y1=y_c-20,x2=x_c+20,y2=y_c+20,
   #                      width=100,
   #                      height=30,
   #                      angle = 0*u.deg)
   #      data_box = self.img.cutout_shape(obj)
+       
+        # find the peak within the Ginga box
         peaks = iq.find_bright_peaks(data_box)
         print(peaks[:20])  # subarea coordinates
         x1 = obj.x-obj.xradius
@@ -8767,6 +8819,8 @@ class MainPage(tk.Frame):
         px, py = round(peaks[0][0]+x1), round(peaks[0][1]+y1)
         print('peak found at: ', px, py)  # image coordinates
         print('with counts: ', img_data[px, py])  # actual counts
+        
+        # GINGA MAGIC!!! 
         # evaluate peaks to get FWHM, center of each peak, etc.
         objs = iq.evaluate_peaks(peaks, data_box)
         # from ginga.readthedocs.io
@@ -8807,6 +8861,8 @@ class MainPage(tk.Frame):
 #                        height=30,
 #                        angle = 0*u.deg))
 
+        #enogh with astronomy;
+        # having found the centroid, we need to draw the slit
         slit_box = self.canvas.get_draw_class('box')
         xradius = self.slit_w.get() * 0.5 * self.PAR.scale_DMD2PIXEL
         yradius = self.slit_l.get() * 0.5 * self.PAR.scale_DMD2PIXEL
@@ -8819,17 +8875,15 @@ class MainPage(tk.Frame):
                                                 fill=False,
                                                 angle=5*u.deg,
                                                 pickable=True))
-
-#           The below line is a repeat.
-        # CM.CompoundMixin.delete_object(self.canvas,obj)
+        #sing a victory song...
         print("slit added")
 
+        # some final stuff that must be here for some reason... to be reviewed?
         obj = self.canvas.get_object_by_tag(new_slit_tag)
         # obj.add_callback('pick-down', self.pick_cb, 'down')
         obj.add_callback('pick-up', self.pick_cb, 'up')
         obj.add_callback('pick-move', self.pick_cb, 'move')
         obj.add_callback('pick-key', self.pick_cb, 'key')
-
         obj.add_callback('edited', self.edit_cb)
         # self.cleanup_kind('point')
         # ssself.cleanup_kind('box')
@@ -8871,13 +8925,20 @@ class MainPage(tk.Frame):
             # create box
 
     def remove_traces(self):
-
-        if self.trace_boxes_objlist is not None and len(self.trace_boxes_objlist) > 0:
-
-            CM.CompoundMixin.delete_objects(
-                self.canvas, self.trace_boxes_objlist)
-            self.trace_boxes_objlist = []
-
+        """ 
+        Use "try:/except:"
+        We may call this function just to make sure that the field is clean, so
+        we do not need to assume that the traces have been created
+        """
+        try: 
+            self.trace_boxes_objlist
+            if len(self.trace_boxes_objlist) > 0:
+                CM.CompoundMixin.delete_objects(
+                    self.canvas, self.trace_boxes_objlist)
+                self.trace_boxes_objlist = []
+        except:
+            return
+        
     def save_all_sub_patterns(self):
 
         pattern_dirname = os.path.join(self.fits_dir, "SubPatterns")
@@ -8952,8 +9013,8 @@ class MainPage(tk.Frame):
         -------
         Series of patterns from a main FOV pattern where each new pattern
         contains slits with no risk of overlapping spectra.
-
         """
+        self.remove_traces()
         self.slits_only()
 
         print(self.base_pattern_name_entry.get())
@@ -9236,13 +9297,12 @@ class MainPage(tk.Frame):
             pass
 
         if ptype == 'up' or ptype == 'down':
-
-            self.SlitTabView.stab.select_row(row=self.tab_row_ind)
+            
             print("picked object with tag {}".format(obj.tag))
-        try:
-            if self.deleteChecked.get():#event.key == 'd':
-                # print(event.key)
-                canvas.delete_object(obj)
+            #if self.deleteChecked.get():#event.key == 'd':
+            canvas.delete_object(obj)
+            try:
+                self.SlitTabView.stab.select_row(row=self.tab_row_ind)          
                 print("start tab len", len(
                     self.SlitTabView.stab.get_sheet_data()))
                 self.SlitTabView.stab.delete_row(self.tab_row_ind)
@@ -9272,8 +9332,8 @@ class MainPage(tk.Frame):
                 except:
                     print("try again")
 
-        except:
-            pass
+            except:
+                print("No slit table created yet.")
 
         return True
 
@@ -9281,7 +9341,7 @@ class MainPage(tk.Frame):
         """ to be written """
         self.logger.info("object %s has been edited" % (obj.kind))
         tab_row_ind = list(self.SlitTabView.stab.get_column_data(
-            0)).index(obj.tag.strip("@"))
+            0)).index(int(obj.tag.strip("@")))
         self.SlitTabView.stab.select_row(row=tab_row_ind, redraw=True)
         # update slit table data to reflect the new edits
         self.SlitTabView.update_table_row_from_obj(obj, self.fitsimage)

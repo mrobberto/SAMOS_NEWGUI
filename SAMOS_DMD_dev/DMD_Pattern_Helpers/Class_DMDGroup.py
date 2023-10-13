@@ -113,7 +113,7 @@ class DMDGroup:
             # if no overlap, return True
             #is_good = self.check_any_overlap(input_df.loc[j], input_df.loc[i])
             #print(len(input_df))
-            while ((not self.check_any_overlap(input_df.loc[j], input_df.loc[i])) & (j<len(input_df)-1) & \
+            while ((not self.check_any_overlap(np.array(input_df.loc[j]), np.array(input_df.loc[i]))) & (j<len(input_df)-1) & \
                    (not all(np.array(list(map(self.check_any_overlap, 
                                               np.full(input_df.loc[good_inds].values.shape, input_df.loc[j]), 
                                               input_df.loc[good_inds].values)))))):
@@ -157,6 +157,7 @@ class DMDGroup:
     
     def check_any_overlap(self, row, comp_row):
         
+        # added the .iloc because of the annoying warning about indexing to be changed in the future
         row_y0 = int(row[-3])
         row_y1 = int(row[-1])
         
