@@ -53,7 +53,7 @@ class DigitalMicroMirrorDevice():
     def __init__(self):
         #read the IP addresses
         all_IPs = SF.read_IP_default()
-        #select the one for the DMD controller and split the ID and the port
+        #select the one for the DMD controller aand split the ID and the port
         i_columns=all_IPs['IP_DMD'].find(':')
         
         self.DMD_IP = all_IPs['IP_DMD'][0:i_columns]

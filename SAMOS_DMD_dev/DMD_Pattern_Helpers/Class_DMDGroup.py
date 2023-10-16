@@ -156,8 +156,9 @@ class DMDGroup:
         return good_pattern_df, redo_pattern_df
     
     def check_any_overlap(self, row, comp_row):
-        
-        # added the .iloc because of the annoying warning about indexing to be changed in the future
+        # force row and comp_row to be np_array to avoid occasional issues when they arrive as pandas table
+       # row = np.array(row)
+       # comp_row = np.array(row)
         row_y0 = int(row[-3])
         row_y1 = int(row[-1])
         

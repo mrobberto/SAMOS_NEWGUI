@@ -5195,7 +5195,7 @@ class MainPage(tk.Frame):
 
         """ find stars"""
         button_find_stars = tk.Button(labelframe_Query_Survey, text="Find stars", bd=3,
-                                            command=self.find_stars, state='disabled')
+                                            command=self.find_stars, state='active')#'disabled')
         button_find_stars.place(x=220, y=35)
         self.button_find_stars = button_find_stars
 
@@ -5438,9 +5438,9 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT POINTER ENABLED
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.CentroidPickup_Enabled = tk.IntVar()
+        self.CentroidPickup_ChkBox_Enabled = tk.IntVar()
         wslit = tk.Checkbutton(labelframe_SlitConf, text="Source Pickup",
-                               variable=self.CentroidPickup_Enabled, command=self.set_slit_drawtype)
+                               variable=self.CentroidPickup_ChkBox_Enabled, command=self.set_slit_drawtype)
         wslit.place(x=220, y=0)
 
 
@@ -6091,6 +6091,13 @@ class MainPage(tk.Frame):
         # Then extract the clean filename to get RA and DEC of the central point
         head, tail = os.path.split(self.filename_regfile_RADEC)
         self.textbox_filename_regfile_RADEC.insert(tk.END, tail)
+        
+        # find the opject t name reading all characters up to the first "_"
+        self.target_name = tail[0:tail.find("_")] 
+        
+        #write the object name in the Science tab
+        self.ObjectName.set(self.target_name)        
+                
         # the filename must carry the RADEC coordinates are "RADEC_". Find this string...
         s = re.search(r'RADEC=', tail)
         # extract RADEC
@@ -6249,7 +6256,7 @@ class MainPage(tk.Frame):
                 x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 self.slit_shape[x1, y1] = 0
-            elif self.CentroidPickup_Enabled.get() != 0 and obj.kind == 'point':
+            elif self.CentroidPickup_ChkBox_Enabled.get() == 1 and obj.kind == 'point':
                 x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2, y2 = convert.CCD2DMD(ccd_x1, ccd_y1)
@@ -6366,7 +6373,7 @@ class MainPage(tk.Frame):
                 x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
                 x1,y1 = int(np.round(x1)), int(np.round(y1))
                 self.slit_shape[x1,y1]=0
-            elif  self.CentroidPickup_Enabled.get() != 0 and obj.kind == 'point':
+            elif  self.CentroidPickup_ChkBox_Enabled.get() != 0 and obj.kind == 'point':
                 x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
                 x1,y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
@@ -6457,7 +6464,8 @@ class MainPage(tk.Frame):
         [host, port] = IP.split(":")
         DMD.initialize(address=host, port=int(port))
         DMD._open()
-        DMD.apply_shape(self.slit_shape)
+#        DMD.apply_shape(self.slit_shape)
+        DMD.apply_slits_old(self.slit_shape)
         # DMD.apply_invert()
 
     """
@@ -7894,9 +7902,7 @@ class MainPage(tk.Frame):
                                                                              "*.fits"),
                                                                             ("all files",
                                                                              "*.*")))
-        #self.loaded_fits_file = os.path.split(self.last_fits_file_dialog)[1]
-        
-
+        self.fits_image_ql  = self.last_fits_file_dialog
 
         #self.fullpath_FITSfilename = os.path.join(
         #    self.fits_dir, self.loaded_fits_file)
@@ -8678,12 +8684,12 @@ class MainPage(tk.Frame):
 
     def set_slit_drawtype(self):
         self.wdrawtype.delete(0, tk.END)
-        if self.CentroidPickup_Enabled.get() == 1:
+        if self.CentroidPickup_ChkBox_Enabled.get() == 1:
             self.wdrawtype.insert(0, "point")
-            self.Draw_Edit_Pick_Checked.set("None")
+            self.Draw_Edit_Pick_Checked.set("draw")
         else:
             self.wdrawtype.insert(0, "box")
-            self.Draw_Edit_Pick_Checked.set("draw")
+            self.Draw_Edit_Pick_Checked.set("None")
         print("drawtype changed to ", self.wdrawtype.get())
         self.canvas.set_drawtype(self.wdrawtype.get())
             
@@ -8691,6 +8697,11 @@ class MainPage(tk.Frame):
     def set_mode_cb(self):
         """ to be written """
         mode = self.Draw_Edit_Pick_Checked.get()
+        
+        #we turn off here the SourcePickup_ChkBox 
+        if mode != "Draw":
+            self.CentroidPickup_ChkBox_Enabled.set(0)
+            
 #        self.logger.info("canvas mode changed (%s) %s" % (mode))
         self.logger.info("canvas mode changed (%s)" % (mode))
         try:
@@ -8724,7 +8735,7 @@ class MainPage(tk.Frame):
         #CASE A)
         #this case should never run. 
         #If we have enabled the slit pickup mode, the ob.kind is "point" 
-        if kind == "box" and self.CentroidPickup_Enabled.get() == 1:
+        if kind == "box" and self.CentroidPickup_ChkBox_Enabled.get() == 1:
             if self.SlitTabView is None:
                 self.initialize_slit_table()
             try:
@@ -8747,8 +8758,8 @@ class MainPage(tk.Frame):
 
         # =============
         #CASE B)
-        # Pick up pode. obj.kind should always be point.
-        if self.CentroidPickup_Enabled.get() == 1 and kind == 'point':  # or kind == 'box':
+        # Pick up mode. obj.kind should always be point.
+        if self.CentroidPickup_ChkBox_Enabled.get() == 1 and kind == 'point':  # or kind == 'box':
 
             #this case requires more sophisticated operations, hence a dedicated function            
             self.slit_handler(obj)
@@ -8756,7 +8767,7 @@ class MainPage(tk.Frame):
         # =============
         # CASE C)
         # a box is drawn but centroid is not searched, just drawn... 
-        if kind == "box" and self.CentroidPickup_Enabled.get() == 0:
+        if kind == "box" and self.CentroidPickup_ChkBox_Enabled.get() == 0:
             
             #if table does not exist, create it (this should not happen as table previously created)
             if self.SlitTabView is None:
