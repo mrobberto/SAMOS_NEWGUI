@@ -1176,26 +1176,27 @@ class DMDPage(tk.Frame):
         """ Define custom slit """
 
         label_x0 = tk.Label(self.frame_startup, text="x0")
-        label_x0.place(x=5, y=230)
+        label_x0.place(x=5, y=200)
         self.x0 = tk.IntVar()
         self.x0.set(540)
         self.entry_x0 = tk.Entry(
             self.frame_startup, width=4, textvariable=self.x0)
-        self.entry_x0.place(x=30, y=228)
-
-        label_y0 = tk.Label(self.frame_startup, text="y0")
-        label_y0.place(x=90, y=230)
-        self.y0 = tk.IntVar()
-        self.y0.set(1024)
-        entry_y0 = tk.Entry(self.frame_startup, width=4, textvariable=self.y0)
-        entry_y0.place(x=115, y=228)
+        self.entry_x0.place(x=30, y=198)
 
         label_x1 = tk.Label(self.frame_startup, text="x1")
-        label_x1.place(x=125, y=200)
+        label_x1.place(x=85, y=200)
         self.x1 = tk.IntVar()
         self.x1.set(540)
         entry_x1 = tk.Entry(self.frame_startup, width=4, textvariable=self.x1)
-        entry_x1.place(x=150, y=198)
+        entry_x1.place(x=110, y=198)
+
+        label_y0 = tk.Label(self.frame_startup, text="y0")
+        label_y0.place(x=150, y=200)
+        self.y0 = tk.IntVar()
+        self.y0.set(1024)
+        entry_y0 = tk.Entry(self.frame_startup, width=4, textvariable=self.y0)
+        entry_y0.place(x=175, y=198)
+
 
         label_y1 = tk.Label(self.frame_startup, text="y1")
         label_y1.place(x=210, y=200)
@@ -1209,15 +1210,16 @@ class DMDPage(tk.Frame):
                                     command=self.AddSlit)
         button_add_slit.place(x=4, y=260)
 
-        button_push_slit = tk.Button(self.frame_startup,
-                                     text="Push",
-                                     command=self.PushCurrentMap)
-        button_push_slit.place(x=104, y=260)
-
         button_save_map = tk.Button(self.frame_startup,
                                     text="Save",
                                     command=self.SaveMap)
-        button_save_map.place(x=204, y=260)
+        button_save_map.place(x=104, y=260)
+
+        button_push_slit = tk.Button(self.frame_startup,
+                                     text="Push",
+                                     command=self.PushCurrentMap)
+        button_push_slit.place(x=204, y=260)
+
 
         """ Load Slit Table """
         button_load_slits = tk.Button(self.frame_startup,
@@ -1863,23 +1865,30 @@ class DMDPage(tk.Frame):
 
         # 1. read the current filename
         self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get())
-        # 2.
+            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get()+".csv")
+        
         myList = []
-        with open(self.map_filename, 'r') as file:
-            myFile = csv.reader(file)
-            for row in myFile:
-                myList.append(row)
-        file.close()
-        # 3
+        # 2. that's just a string! check if file exists to load what you already inherited
+        if os.path.isfile(self.map_filename) == True: 
+            with open(self.map_filename, 'r') as file:
+                myFile = csv.reader(file)
+                for row in myFile:
+                    myList.append(row)
+            file.close()
+ 
+        # 3. add the slit
         # set the four corners of the aperture
-        row = [str(int(self.x0.get())), str(int(self.y0.get())), str(
-            int(self.x1.get())), str(int(self.y1.get())), "0"]
+#        row = [str(int(self.x0.get())), str(int(self.y0.get())), str(
+#            int(self.x1.get())), str(int(self.y1.get())), "0"]
+        row = [str(int(self.x0.get())), str(int(self.x1.get())), str(
+            int(self.y0.get())), str(int(self.y1.get())), "0"]
         myList.append(row)
         self.map = myList
 
     def SaveMap(self):
         """ SaveMap """
+        self.map_filename = os.path.join(
+            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get()+".csv")
         pandas_map = pd.DataFrame(self.map)
         pandas_map.to_csv(self.map_filename, index=False, header=None)
 
@@ -1887,7 +1896,7 @@ class DMDPage(tk.Frame):
         """ Push to the DMD the file in Current DMD Map Textbox """
 
         self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get())
+            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get()+".csv")
 
         myList = []
         with open(self.map_filename, 'r') as file:
@@ -6464,8 +6473,7 @@ class MainPage(tk.Frame):
         [host, port] = IP.split(":")
         DMD.initialize(address=host, port=int(port))
         DMD._open()
-#        DMD.apply_shape(self.slit_shape)
-        DMD.apply_slits_old(self.slit_shape)
+        DMD.apply_shape(self.slit_shape)
         # DMD.apply_invert()
 
     """
@@ -8684,14 +8692,17 @@ class MainPage(tk.Frame):
 
     def set_slit_drawtype(self):
         self.wdrawtype.delete(0, tk.END)
+        mode = self.Draw_Edit_Pick_Checked.set("draw")
+        self.set_mode_cb()
         if self.CentroidPickup_ChkBox_Enabled.get() == 1:
             self.wdrawtype.insert(0, "point")
-            self.Draw_Edit_Pick_Checked.set("draw")
         else:
             self.wdrawtype.insert(0, "box")
-            self.Draw_Edit_Pick_Checked.set("None")
+#            self.Draw_Edit_Pick_Checked.set("None")
         print("drawtype changed to ", self.wdrawtype.get())
-        self.canvas.set_drawtype(self.wdrawtype.get())
+#        parameters = []
+#        parameters['color'] = 'red'
+        self.canvas.set_drawtype(self.wdrawtype.get())#,**parameters)
             
 
     def set_mode_cb(self):
@@ -8699,12 +8710,12 @@ class MainPage(tk.Frame):
         mode = self.Draw_Edit_Pick_Checked.get()
         
         #we turn off here the SourcePickup_ChkBox 
-        if mode != "Draw":
+        if mode != "draw":
             self.CentroidPickup_ChkBox_Enabled.set(0)
             
 #        self.logger.info("canvas mode changed (%s) %s" % (mode))
         self.logger.info("canvas mode changed (%s)" % (mode))
-        try:
+        try: #all object painted red, should not be true for the traces
             for obj in self.canvas.objects:
                 obj.color = 'red'
         except:
@@ -8759,7 +8770,7 @@ class MainPage(tk.Frame):
         # =============
         #CASE B)
         # Pick up mode. obj.kind should always be point.
-        if self.CentroidPickup_ChkBox_Enabled.get() == 1 and kind == 'point':  # or kind == 'box':
+        elif self.CentroidPickup_ChkBox_Enabled.get() == 1 and kind == 'point':  # or kind == 'box':
 
             #this case requires more sophisticated operations, hence a dedicated function            
             self.slit_handler(obj)
@@ -8767,7 +8778,7 @@ class MainPage(tk.Frame):
         # =============
         # CASE C)
         # a box is drawn but centroid is not searched, just drawn... 
-        if kind == "box" and self.CentroidPickup_ChkBox_Enabled.get() == 0:
+        elif kind == "box" and self.CentroidPickup_ChkBox_Enabled.get() == 0:
             
             #if table does not exist, create it (this should not happen as table previously created)
             if self.SlitTabView is None:

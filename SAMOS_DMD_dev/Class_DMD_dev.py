@@ -373,7 +373,7 @@ class DigitalMicroMirrorDevice():
         
         #self.update_dmd_plot(shape=dm_shape, plot_name='attempted_dmd_shape')
         
-        #Flip shape 
+        # flip the dmd shape to match the new orientation avoiding the pond mirrors
         dm_shape = self.flip_shape(dm_shape)    
 
 
