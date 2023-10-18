@@ -1721,7 +1721,12 @@ class DMDPage(tk.Frame):
                                                           "*.csv"),
                                                          ("all files",
                                                           "*.*")))
-        subprocess.call(['open', '-a', 'TextEdit', filename])
+        if platform != "win32":
+            subprocess.call(['open', '-a', 'TextEdit', filename])
+        else:        
+            cmd = 'start "excel" "%s"' %(filename)
+            os.system(cmd)
+            #"D:\\SAMOS_NEWGUI\\SAMOS_DMD_dev\\DMD_csv\\maps\\ThinCentralSlit.csv"')
         head, tail = os.path.split(filename)
         self.textbox_filename.insert(tk.END, tail)
         self.str_map_filename.set(tail)
@@ -1864,8 +1869,9 @@ class DMDPage(tk.Frame):
         """
 
         # 1. read the current filename
+        filename_in_text = self.textbox_filename.get("1.0",'end-1c')
         self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get()+".csv")
+            dir_DMD, "DMD_csv", "maps", filename_in_text+".csv")
         
         myList = []
         # 2. that's just a string! check if file exists to load what you already inherited
@@ -1887,16 +1893,18 @@ class DMDPage(tk.Frame):
 
     def SaveMap(self):
         """ SaveMap """
+        filename_in_text = self.textbox_filename.get("1.0",'end-1c')
         self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get()+".csv")
+            dir_DMD, "DMD_csv", "maps", filename_in_text+".csv")
         pandas_map = pd.DataFrame(self.map)
         pandas_map.to_csv(self.map_filename, index=False, header=None)
 
     def PushCurrentMap(self):
         """ Push to the DMD the file in Current DMD Map Textbox """
 
+        filename_in_text = self.textbox_filename.get("1.0",'end-1c')
         self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", self.str_map_filename.get()+".csv")
+            dir_DMD, "DMD_csv", "maps", filename_in_text+".csv")
 
         myList = []
         with open(self.map_filename, 'r') as file:
