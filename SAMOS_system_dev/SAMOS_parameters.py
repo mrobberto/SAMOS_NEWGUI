@@ -78,6 +78,10 @@ class SAMOS_Parameters(object):
         self.inoutvar = tk.StringVar()
         self.inoutvar.set("outside")
 
+        self.SAMOS_arcs_mm_scale = 206265./ (4100*4) # f/4  arcsec/mm
+        self.DMD_MirrorScale = self.SAMOS_arcs_mm_scale * 0.0137 # = 0.1723 #arcsecond/mirror  # 206265/
+        self.SISI_PixelScale = self.DMD_MirrorScale/1.125  # = 0.153  #arcsecond/pixel
+        self.SISI_FieldSize_pixel = 1000
         self.scale_DMD2PIXEL = 0.892  # mirros to pixel as per e-mail by RB  Jan 207, 2023
 
         self.dmd_map_filename = ""

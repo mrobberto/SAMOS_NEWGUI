@@ -24,9 +24,15 @@ class Class_SOAR:
         # self.SOAR_TCS_port = int(all_IPs['IP_SOAR'][i_columns+1:])
         # self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
         
+        """
+        According to SAMI User Manual:
+            The SAMI data acquisition software runs on the soarhrc computer (IP 139.229.15.163). 
+            It is accessed by VNC connection to soarhrc:9. To launch the SAMI GUI, u
+            se the icon in the desktop menu in the lower-right corner.
         #fake address using the motors
-        self.SOAR_TCS_IP = '172.16.0.128' 
-        self.SOAR_TCS_port=1000
+        """
+        self.SOAR_TCS_IP = '139.229.15.163'   #copied from above
+        self.SOAR_TCS_port=1000               # to be checked
         self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
         
         print('echo from server:') 
