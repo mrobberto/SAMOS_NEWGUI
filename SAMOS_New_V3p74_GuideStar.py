@@ -12399,7 +12399,7 @@ class GuideStarPage(tk.Frame):
         #parent is the local form
         parent.geometry("1700x1100")  #was ("1400x900")  # was("1280x900")
         if platform == "win32":
-            parent.geometry("1400(x1120") # was "1400x920")
+            parent.geometry("1400x1120") # was "1400x920")
         parent.title("SAMOS Main Page")
         self.PAR = SAMOS_Parameters()
 
