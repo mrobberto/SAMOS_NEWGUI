@@ -14,6 +14,7 @@ from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 # from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
 from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
+from SAMOS_Astrometry_dev.PanStarrs.Class_ps1image import PanStarrs as PS_image
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 from SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
 from SAMOS_ETC.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
@@ -34,6 +35,7 @@ import time
 import glob
 import pathlib
 import math
+import numpy
 from regions import Regions
 import aplpy
 import twirl
@@ -121,7 +123,8 @@ CCD = Class_Camera(dict_params=params)
 # Import the DMD class
 DMD = DigitalMicroMirrorDevice()  # config_id='pass')
 
-#
+# Instantiate the PanStarrs class
+PSima = PS_image()
 
 
 """
@@ -7973,28 +7976,34 @@ class MainPage(tk.Frame):
 
     def Query_Survey(self):
         """ to be written """
+        self.clear_canvas()
         from astroquery.hips2fits import hips2fits
         Survey = self.Survey_selected.get()
 
         if Survey == "SkyMapper":
             try:
                 self.SkyMapper_query()
+                #GuideStarPage.SkyMapper_query_GuideStar(self)
             except:
                 print("\n Sky mapper image server is down \n")
             return
 
-        if Survey == "SDSS":
+        elif Survey == "SDSS":
             self.SDSS_query()
             return
             
           
 
-        else:       # SIMBAD database
-            if Survey == "PanSTARRS/DR1/":
-                Survey = Survey+self.string_Filter.get()
-                print("\n Quering PanSTARRS/DR1")
-            """    
+        elif Survey == "PanSTARRS/DR1/":
+            try:
+                self.PanStarrs_query()
+            except:
+                print("\n PanStarrs image server is down \n")
+            return
+
+        else:
             print("Survey selected: ",Survey,'\n')
+            """
             coord = SkyCoord(self.string_RA.get()+'  ' +
                          self.string_DEC.get(), unit=(u.deg, u.deg), frame='fk5')
             # coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5')
@@ -8120,6 +8129,26 @@ class MainPage(tk.Frame):
         filt = self.string_Filter.get()
         filepath = skymapper_interrogate(Posx, Posy, 1058, 1032, filt)
         # filepath = skymapper_interrogate_VOTABLE(Posx, Posy, filt)
+        """
+        hdu_in = fits.open(filepath.name)
+            #            img.load_hdu(hdu_in[0])
+            
+        data = hdu_in[0].data
+        header = hdu_in[0].header
+        hdu_in.close()
+        
+        #for debug, write onfile the fits file returned by skymapper
+        """
+        self.fits_image_ql = os.path.join(
+            self.PAR.QL_images, "newimage_ql.fits")
+        os.remove(self.fits_image_ql)
+        shutil.move(filepath.name,self.fits_image_ql)  
+        #fits.writeto(self.fits_image_ql, data,
+        #                 header=header, overwrite=True)
+        self.Display(self.fits_image_ql)
+        
+            
+        """
         with fits.open(filepath.name) as hdu_in:
             #            img.load_hdu(hdu_in[0])
             data = hdu_in[0].data
@@ -8163,6 +8192,8 @@ class MainPage(tk.Frame):
         self.Display(self.fits_image_ql)
         self.button_find_stars['state'] = 'active'
         self.wcs_exist = True
+        """
+        
         
     def SDSS_query(self):
         """ get image from SDSS 
@@ -8266,6 +8297,31 @@ class MainPage(tk.Frame):
         fits.writeto(self.fits_image_ql, self.hdu_res.data,
                      header=self.hdu_res.header, overwrite=True)     
         
+    def PanStarrs_query(self):
+            
+            #get ra,dec and set image size
+            ra = float(self.string_RA.get())
+            dec = float(self.string_DEC.get())
+            if dec < -30:
+                print("Declination outside the PanStarrs survey")
+                return
+            filter = self.string_Filter.get()
+            size = int(180 / 0.25)   #
+            
+            #get the pan star image
+            fitsurl = PSima.geturl(ra, dec, size=size, filters=filter, format="fits")
+            fh = fits.open(fitsurl[0])
+            fim = fh[0].data
+            # replace NaN values with zero for display
+            fim[numpy.isnan(fim)] = 0.0
+            self.fits_image_ql = os.path.join(
+                self.PAR.QL_images, "newimage_ql.fits")
+            fits.writeto(self.fits_image_ql, fim,
+                         header=fh[0].header, overwrite=True)    
+            self.Display(self.fits_image_ql)
+           
+            
+           
     def twirl_Astrometry(self):
         """ to be written """
 
@@ -8278,14 +8334,23 @@ class MainPage(tk.Frame):
         header = hdu.header
         data = hdu.data
         hdu_Main.close()
-        ra, dec = header["RA"], header["DEC"]
+        
+        # not all headers use ra,dec
+        try:
+            ra, dec = header["RA"], header["DEC"]
+        except:
+            mywcs = wcs.WCS(header)
+            ra, dec = mywcs.all_pix2world([[data.shape[0]/2,data.shape[1]/2]], 0)[0]
+        print(ra,dec)
+        
+        
         center = SkyCoord(ra, dec, unit=["deg", "deg"])
         center = [center.ra.value, center.dec.value]
 
         # image shape and pixel size in "
         shape = data.shape
-        pixel = self.PAR.SISI_PixelScale * u.arcsec
-        fov = np.max(shape)*pixel.to(u.deg).value
+        #pixel = self.PAR.SISI_PixelScale * u.arcsec
+        fov = 0.05#np.max(shape)*pixel.to(u.deg).value 
 
         # Let's find some stars and display the image
 
@@ -8302,7 +8367,7 @@ class MainPage(tk.Frame):
              stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
 
 #        plt.figure(figsize=(8,8))
-        med = np.median(data)
+#        med = np.median(data)
 #        plt.imshow(data, cmap="Greys_r", vmax=np.std(data)*5 + med, vmin=med)
 #        plt.plot(*stars.T, "o", fillstyle="none", c="w", ms=12)
 
@@ -8310,7 +8375,7 @@ class MainPage(tk.Frame):
 #        xs=stars[0,0]
 #        ys=stars[0,1]
 #        center_pix = PixCoord(x=xs, y=ys)
-        radius_pix = 42
+        radius_pix = 12
 
 #        this_region = CirclePixelRegion(center_pix, radius_pix)
 
@@ -8319,13 +8384,18 @@ class MainPage(tk.Frame):
         regs = Regions(regions)
         for reg in regs:
             obj = r2g(reg)
+            obj.color="red"
         # add_region(self.canvas, obj, tag="twirlstars", draw=True)
             self.canvas.add(obj)
 
         # we can now compute the WCS
         gaias = twirl.gaia_radecs(center, fov, limit=self.nrofstars.get())
-
-        self.wcs = twirl.compute_wcs(stars, gaias)
+        
+#        stars_sorted = np.flip(np.sort(stars,axis=0))
+#        gaias_sorted = np.sort(gaias,axis=0)
+        #stars_sorted = np.sort(stars,axis=0)
+        #gaias_sorted = np.flip(np.sort(gaias,axis=0))
+        self.wcs = twirl.compute_wcs(stars, gaias)#,tolerance=0.1)
 
         global WCS_global   #used for HTS
         WCS_global = self.wcs
@@ -8333,14 +8403,14 @@ class MainPage(tk.Frame):
         # Lets check the WCS solution
 
 #        plt.figure(figsize=(8,8))
-        radius_pix = 25
+        radius_pix = 15
         gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.wcs)).T
         regions_gaia = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
                         for x, y in gaia_pixel]  # [(1, 2), (3, 4)]]
         regs_gaia = Regions(regions_gaia)
         for reg in regs_gaia:
             obj = r2g(reg)
-            obj.color = "red"
+            obj.color = "green"
         # add_region(self.canvas, obj, tag="twirlstars", redraw=True)
             self.canvas.add(obj)
 
@@ -8362,7 +8432,7 @@ class MainPage(tk.Frame):
 
         hdu_wcs[0].data = data  # add data to fits file
         self.wcs_filename = os.path.join(
-            ".", "SAMOS_Astrometry_dev", "WCS_"+ra+"_"+dec+".fits")
+            ".", "SAMOS_Astrometry_dev", "WCS_"+str(ra)+"_"+str(dec)+".fits")
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
         self.Display(self.wcs_filename)
@@ -12442,7 +12512,7 @@ class GuideStarPage(tk.Frame):
         #parent is the local form
         parent.geometry("1700x1100")  #was ("1400x900")  # was("1280x900")
         if platform == "win32":
-            parent.geometry("1400x1120") # was "1400x920")
+            parent.geometry("1260x930") # was "1400x920")
         parent.title("SAMOS Main Page")
         self.PAR = SAMOS_Parameters()
 

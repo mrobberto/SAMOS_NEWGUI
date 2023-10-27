@@ -30,8 +30,6 @@ size = 1280
 gim = PS.getgrayim(ra,dec,size=size,filter="i")
 # color image
 cim = PS.getcolorim(ra,dec,size=size,filters="grz")
-# color image
-cim1 = PS.getfitsimage(ra,dec,size=size,filter="r")
 
 plt.rcParams.update({'font.size':12})
 plt.figure(1,(12,6))

@@ -71,6 +71,14 @@ def skymapper_interrogate(POSx=189.99763, POSy=-11.62305, RA_Size=1058, DEC_Size
         
         hdu_in = fits.open(tmp_file.name)
         header = hdu_in[0].header
+        #data = hdu_in[0].data
+        
+        #import astropy.wcs as wcs
+        #mywcs = wcs.WCS(header)
+        #ra, dec = mywcs.all_pix2world([[data.shape[0]/2,data.shape[1]/2]], 0)[0]
+        #header['RA'] = ra
+        #header['DEC'] = dec
+        #fits.writeto(tmp_file, data, header=header, overwrite=True)
         if ((RA_Size == 1058) and (DEC_Size == 1032)):
             return(tmp_file)
         elif np.absolute(header['NAXIS1'] - header['NAXIS2']) <= 1:
