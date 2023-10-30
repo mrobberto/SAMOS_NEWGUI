@@ -104,4 +104,5 @@ class SAMOS_Parameters():
         self.Program_ID = self.PotN['Program ID']
         self.Telescope_Operator = self.PotN['Telescope Operator']
         #print(self.Observer)
-       
+        
+        self.Ginga_PA = 0

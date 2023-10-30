@@ -688,4 +688,3 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         #skycoord = SkyCoord(42, 43, unit='deg', frame='galactic')
         return RRR_RADec
 
-

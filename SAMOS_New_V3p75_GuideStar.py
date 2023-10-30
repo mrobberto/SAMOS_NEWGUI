@@ -15,6 +15,7 @@ from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
 from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
 from SAMOS_Astrometry_dev.PanStarrs.Class_ps1image import PanStarrs as PS_image
+from SAMOS_Astrometry_dev.PanStarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 from SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
 from SAMOS_ETC.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
@@ -125,6 +126,7 @@ DMD = DigitalMicroMirrorDevice()  # config_id='pass')
 
 # Instantiate the PanStarrs class
 PSima = PS_image()
+PStab = PS_table()
 
 
 """
@@ -7069,6 +7071,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fits_image.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7143,6 +7146,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fits_image.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7213,6 +7217,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fits_image.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7326,6 +7331,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fits_image.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7467,6 +7473,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fits_image.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7842,6 +7849,7 @@ class MainPage(tk.Frame):
         # WRITES TO => newimage_ql.fits
         fits.writeto(fits_image,light_bias_dark_flat_buffer,
                      main_fits_header.output_header,overwrite=True)
+        self.fits_image.rotate(self.PAR.Ginga_PA)  
         self.Display(fits_image)
         
             
@@ -8104,7 +8112,7 @@ class MainPage(tk.Frame):
      
             self.button_find_stars['state'] = 'active'
 
-            img.load_hdu(self.hdu_res)
+                   
             print('\n', self.hdu_res.header)
             self.fitsimage.set_image(img)
             self.AstroImage = img
@@ -8169,6 +8177,8 @@ class MainPage(tk.Frame):
         fits.writeto(self.fits_image_ql, self.hdu_res.data,
 ##                     header=self.hdu_res.header, overwrite=True)
                      header=output_header, overwrite=True)
+
+        self.fits_image.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         self.button_find_stars['state'] = 'active'
         self.wcs_exist = True
@@ -8200,6 +8210,7 @@ class MainPage(tk.Frame):
         shutil.move(filepath.name,self.fits_image_ql)  
         #fits.writeto(self.fits_image_ql, data,
         #                 header=header, overwrite=True)
+        self.fits_image.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         
             
@@ -8359,6 +8370,7 @@ class MainPage(tk.Frame):
         """ to be written """
 
         self.wcs = None
+        #self.fits_image_ql.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         # self.load_file()   #for ging
 
@@ -8468,6 +8480,7 @@ class MainPage(tk.Frame):
             ".", "SAMOS_Astrometry_dev", "WCS_"+str(ra)+"_"+str(dec)+".fits")
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
+        self.wcs_filename.rotate(self.PAR.Ginga_PA)  
         self.Display(self.wcs_filename)
         self.button_find_stars['state'] = 'active'
         
@@ -8483,7 +8496,9 @@ class MainPage(tk.Frame):
     def find_stars(self):
         """ to be written """
 
+        self.fits_image_ql.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
+        
         self.set_slit_drawtype()
         # self.load_file()   #for ging
 
@@ -9516,7 +9531,11 @@ class MainPage(tk.Frame):
         return True
 
     def cleanup_kind(self, kind):
-        """ to be written """
+        """  
+        REMOVE only a specific type of object
+        self.cleanup_kind('point')
+        self.cleanup_kind('box') 
+        """
         # check that we have created a compostition of objects:
         CM.CompoundMixin.is_compound(self.canvas.objects)     # True
 
@@ -10050,12 +10069,12 @@ class GuideStarPage(tk.Frame):
         entry_Filter = tk.Entry(labelframe_Query_Survey,
                                 width=2,  bd=3, textvariable=self.string_Filter)
         label_Filter.place(x=195, y=5)
-        entry_Filter.place(x=240, y=4)
+        entry_Filter.place(x=240, y=3)
         
         """ QUERY BUTTON"""
         button_Query_Survey = tk.Button(
             labelframe_Query_Survey, text="Query", bd=3, command=self.Query_Survey)
-        button_Query_Survey.place(x=300, y=5)
+        button_Query_Survey.place(x=300, y=3)
 
 
         """ Nr. of Stars Entry box"""
@@ -10209,7 +10228,7 @@ class GuideStarPage(tk.Frame):
                                 text="low mag")
         label_low_mag.place(x=4, y=4)
         self.low_mag = tk.IntVar()
-        self.low_mag.set(10)
+        self.low_mag.set(11)
         self.textbox_low_mag = tk.Entry(
             labelframe_SlitConf, textvariable=self.low_mag, width=4)
         # self.textbox_low_mag.place(x=130,y=5)
@@ -10260,46 +10279,56 @@ class GuideStarPage(tk.Frame):
         self.string_RA_GS = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA_GS.set("150.17110")  # NGC 3105
-        label_RA_GS = tk.Label(labelframe_SlitConf, text='RA:',  bd=3)
-        self.entry_RA_GS = tk.Entry(
+        Label_RA_GS = tk.Label(labelframe_SlitConf, text='RA:',  bd=3)
+        Entry_RA_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_RA_GS)
-        label_RA_GS.place(x=5, y=51)
-        self.entry_RA_GS.place(x=45, y=51)
+        Label_RA_GS.place(x=5, y=51)
+        Entry_RA_GS.place(x=45, y=51)
 
         """ DEC Entry box"""
         self.string_DEC_GS = tk.StringVar()
 #        self.string_DEC.set("-11.62305")#Sombrero
         self.string_DEC_GS.set("-54.79004")  # NGC 3105
-        label_DEC_GS = tk.Label(labelframe_SlitConf, text='Dec:',  bd=3)
-        self.entry_DEC_GS = tk.Entry(
+        Label_DEC_GS = tk.Label(labelframe_SlitConf, text='Dec:',  bd=3)
+        Entry_DEC_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_DEC_GS)
-        label_DEC_GS.place(x=5, y=71)
-        self.entry_DEC_GS.place(x=45, y=71)
+        Label_DEC_GS.place(x=5, y=71)
+        Entry_DEC_GS.place(x=45, y=71)
         
         """ X shift"""
         self.string_Xmm_GS = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_Xmm_GS.set("150.17110")  # NGC 3105
-        label_Xmm_GS = tk.Label(labelframe_SlitConf, text='X(mm)',  bd=3)
-        self.entry_Xmm_GS = tk.Entry(
+        Label_Xmm_GS = tk.Label(labelframe_SlitConf, text='X(mm)',  bd=3)
+        Entry_Xmm_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_Xmm_GS)
-        label_Xmm_GS.place(x=145, y=51)
-        self.entry_Xmm_GS.place(x=195, y=51)
+        Label_Xmm_GS.place(x=145, y=51)
+        Entry_Xmm_GS.place(x=195, y=51)
 
         """ Y shift"""
         self.string_Ymm_GS = tk.StringVar()
 #        self.string_DEC.set("-11.62305")#Sombrero
         self.string_Ymm_GS.set("-54.79004")  # NGC 3105
-        label_Ymm_GS = tk.Label(labelframe_SlitConf, text='Y(mm)',  bd=3)
-        self.entry_Ymm_GS = tk.Entry(
+        Label_Ymm_GS = tk.Label(labelframe_SlitConf, text='Y(mm)',  bd=3)
+        Entry_Ymm_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_Ymm_GS)
-        label_Ymm_GS.place(x=145, y=71)
-        self.entry_Ymm_GS.place(x=195, y=71)
+        Label_Ymm_GS.place(x=145, y=71)
+        Entry_Ymm_GS.place(x=195, y=71)
+
+        """ magnitude"""
+        self.string_mag_GS = tk.StringVar()
+#        self.string_DEC.set("-11.62305")#Sombrero
+#        self.string_mag_GS.set("-54.79004")  # NGC 3105
+        Label_mag_GS = tk.Label(labelframe_SlitConf, text='Mag',  bd=3)
+        Entry_mag_GS = tk.Entry(
+            labelframe_SlitConf, width=5,  bd=3, textvariable=self.string_mag_GS)
+        Label_mag_GS.place(x=295, y=65)
+        Entry_mag_GS.place(x=340, y=64)
 
 
         button_RADEC_to_SOAR = tk.Button(labelframe_SlitConf, text="Accept Guide Star", bd=3,
                              command=self.send_RADEC_to_SOAR)
-        button_RADEC_to_SOAR.place(x=280, y=61)
+        button_RADEC_to_SOAR.place(x=5, y=100)
 
 
 
@@ -10379,12 +10408,19 @@ class GuideStarPage(tk.Frame):
 #        """ to be written """
 #        pass
 
+    """
     def load_regfile_csv(self):
+    """
         """ to be written """
+        """
         self.LoadSlits()
         pass
-
+        """
+        
+        
+    """
     def save_regions_xy2xyfile(self):
+    """    
         """ Save (x,y) Astropy Regions to .reg file """
         """ converting Ginga Regions to AP/radec Regions
             - collects/compound all Ginga Regions in RRR_xyGA
@@ -10392,7 +10428,7 @@ class GuideStarPage(tk.Frame):
             - write to AP/xy .region file
                 => requires WCS
         """
-
+        """
         print("saving (x,y) Astropy Regions to .reg file")
         file = filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                         defaultextension=".reg",
@@ -10404,6 +10440,7 @@ class GuideStarPage(tk.Frame):
         # 3. Write astropy regions, pixels
         self.RRR_xyAP.write(file.name, overwrite=True)
         print("(x,y) Astropy Regions to .reg file:\n", file.name)
+        """
 
 #    def push_CCD(self):
 #        """ to be written """
@@ -10417,12 +10454,16 @@ class GuideStarPage(tk.Frame):
 #
 #        """
 #        return
-
+    
+    """
     def write_GingaRegions_ds9adFile(self):
+    """
         """ collect all Ginga regions and save to a ds9/ad .reg file
             - collect all Ginga xy Regions in a AP/ad list
                 uses convert_GAxy_APad()
             - wites the AP/ad on file list as set of ds9/ad region files
+        """
+        
         """
         if "RRR_RADec" not in dir(self):
             print("There are no (RA,Dec) regions to be written on file")
@@ -10440,6 +10481,7 @@ class GuideStarPage(tk.Frame):
             print("saved  AP/ad list to ds/ad region file file:\n", file.name)
             print(
                 "\ncollected all Ginga xy Regions to ads/ad region file file:\n", file.name)
+        """    
 
     """
     def save_RADECregions_AstropyXYRegFile(self):
@@ -10450,13 +10492,17 @@ class GuideStarPage(tk.Frame):
                                         initialdir=local_dir+"/SAMOS_regions/pixels")
         self.RRR_xyAP.write(file.name, overwrite=True)
     """
-
+    
+    """
     def display_ds9ad_Ginga(self):
+    """    
         """ converting ds9/radec Regions to AP/radec Regions
             - open ds9/radec region file and convert to AP/xy (aka RRR_xyAP)
                 -> requires WCS
             - convert AP/xy to Ginga/xy (aka RRR_xyGA)
             - convert AP/xy to AP/ad (aka RRR_RADec)
+        """
+        
         """
         print("displaying ds9/radec Regions on Ginga\n")
         # requires wcs: class AStrometry
@@ -10481,13 +10527,18 @@ class GuideStarPage(tk.Frame):
         print("displayed APradec regions on Ginga display")
 
         # return self.RRR_xyAP
+        """
 
+    """
     def convert_GAxy_APad(self):
+    """
         """ converting Ginga Regions to AP/radec Regions
             - collects/compound all Ginga Regions in RRR_xyGA
             - convert tho AP/xy   (aka RRR_xyAP)
             - convert to AP/radec (aka RRR_RADec)
                 => requires WCS
+        """
+        
         """
         print("converting Ginga Regions to AP/radec Regions")
         # requires wcs: class AStrometry
@@ -10505,15 +10556,18 @@ class GuideStarPage(tk.Frame):
         print("converted AP/xy converted to AP/ad (aka RRR_RADec")
         print("\nCompleted conversion Ginga Regions to AP/radec Regions ")
         return self.RRR_RADec
+        """
 
+    """
     def draw_slits(self):
-
+    """
+        """
         # all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         # color in RED all the regions loaded from .reg file
         CM.CompoundMixin.set_attr_all(self.canvas, color="red")
         # [print("draw-slits obj tags ", obj.tag) for obj in all_ginga_objects]
         CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
-
+        """
     """
     def convert_regions_xyAP2slit(self):
         [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
@@ -10524,14 +10578,21 @@ class GuideStarPage(tk.Frame):
         pass
     """
 
+    """
     def convert_regions_slit2xyAP(self):
+    """
         """ to be written """
+        """
         # requires Dana wcs
         # returns RRR_xyAP
         pass
+        """
 
+    """
     def convert_regions_xyAP2xyGA(self):
+    """
         """ converting (x,y) Astropy Regions to (x,y) Ginga Regions """
+        """
         print("converting (x,y) Astropy Regions to (x,y) Ginga Regions")
 
         # cleanup, keep only the slits
@@ -10561,9 +10622,13 @@ class GuideStarPage(tk.Frame):
         print("(x,y) Astropy regions converted to (x,y) Ginga regions\nRRR_xyGA created")
         return self.RRR_xyGA
         # self.RRR_xyGA is a self.canvas.objects
+        """
 
-    def convert_regions_xyGA2xyAP(self):
+     """
+     def convert_regions_xyGA2xyAP(self):
+     """    
         """ converting (x,y) Ginga Regions to (x,y) Astropy Regions """
+        """
         print("converting (x,y) Ginga Regions to (x,y) Astropy Regions")
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         list_all_ginga_objects = list(all_ginga_objects)
@@ -10573,9 +10638,12 @@ class GuideStarPage(tk.Frame):
                 self.RRR_xyAP.append(g2r(list_all_ginga_objects[i]))
         return self.RRR_xyAP
         print("(x,y) Ginga regions converted to (x,y) Astropy regions")
-        
+        """
+    """    
     def push_RADEC(self):
+    """
         """ to be written """
+        """
         self.string_RA = tk.StringVar(self, self.RA_regCNTR)
         self.string_DEC = tk.StringVar(self, self.DEC_regCNTR)
         self.entry_RA.delete(0, tk.END)
@@ -10583,11 +10651,15 @@ class GuideStarPage(tk.Frame):
         self.entry_RA.insert(0, self.RA_regCNTR)
         self.entry_DEC.insert(0, self.DEC_regCNTR)
         print("RADEC loaded")
+        """
 
+    """
     def load_regfile_RADEC(self):
+    """
         """ read (RA,DEC) Regions from .reg file
         - open ds9/ad file and read the regions files creating a AP/ad list of regions (aka RRR_RADec)
         - extract center RA, Dec
+        """
         """
         print("read ds9/ad .reg file to create AP/ad regions (aka RRR_RADec")
         self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
@@ -10631,8 +10703,11 @@ class GuideStarPage(tk.Frame):
         print("(RA,DEC) Regions loaded from .reg file")
 
         return self.filename_regfile_RADEC
+        """
 
+    """
     def load_ds9regfile_xyAP(self):
+    """
         """ read (x,y) Astropy  Regions from ds9 .reg file
             - open ds9 .reg file in pixels units
             - extract the clean filename to get RA and DEC of the central point
@@ -10640,6 +10715,8 @@ class GuideStarPage(tk.Frame):
             - visualize xyAP regions on GINGA display\n
                 => WCS solution needed
             - convert xyAP regions to GINGA regions (aka RRR_xyGA)
+        """
+        
         """
         print("\n Load ds9/xy reg. file")
         reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
@@ -10684,7 +10761,7 @@ class GuideStarPage(tk.Frame):
         # self.display_region_file()
         print("ds9/xy regions loaded in Ginga")
         # regfile = open(regfileName, "r")
-
+        """
     """
     def display_region_file(self):
         [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
@@ -10696,7 +10773,7 @@ class GuideStarPage(tk.Frame):
 # DONE WITH THE FIELDS
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     """
-
+    
     def regfname_handle_focus_out(self, _):
         """ to be written """
 
@@ -11218,6 +11295,10 @@ class GuideStarPage(tk.Frame):
 
     def Query_Survey(self):
         """ to be written """
+        #cleanup the canfas
+        CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
+        self.clear_canvas()
+
         from astroquery.hips2fits import hips2fits
         Survey = self.Survey_selected.get()
 
@@ -11234,7 +11315,7 @@ class GuideStarPage(tk.Frame):
     
         elif Survey == "PanSTARRS/DR1/":
             print("\n Quering PanSTARRS/DR1")
-            self.PanStarrs_query()
+            self.PanStarrs_query_GuideStars()
 
         else:
             Survey = Survey+self.string_Filter.get()
@@ -11381,73 +11462,9 @@ class GuideStarPage(tk.Frame):
             #for debug, write onfile the fits file returned by skymapper
             SkyMapperProduced = os.path.join(self.PAR.QL_images, "SkyMapperProduced.fits")
             fits.writeto(SkyMapperProduced, self.data_GS,
-                         header=self.header_GS, overwrite=True)
-            
-            #Needed?
-            #NAXIS1 = header['NAXIS1']  # pixels
-            #NAXIS12= header['NAXIS2']
-            #SkyMapper_Xscale = header['CD1_1']   # degrees/pixel
-            #SkyMapper_Yscale = header['CD2_2']
-            #SkyMapper_XFoV = NAXIS1 * SkyMapper_Xscale  # degrees 
-            #SkyMapper_YFoV = NAXIS12* SkyMapper_Yscale
-            
-            """
-            image_data = Image.fromarray(data)
-            #img_res = image_data.resize(size=(SAMI_GUIDE_FoV_SISIpix, SAMI_GUIDE_FoV_SISIpix))
-            img_res = image_data
-            
-            self.hdu_res = fits.PrimaryHDU(img_res)
-#            main_fits_header.add_astrometric_fits_keywords(self.hdu_res)
-            self.hdu_res.header = copy.deepcopy(hdu_in[0].header)
-            """
-            
-            """
-            # ADD ra, dec in degrees
-            ra = Posx
-            dec = Posy
-            self.hdu_res.header['RA'] = ra
-            self.hdu_res.header['DEC'] = dec
-            
-            #ADD OTHER INFO GRABBED BY SKYMapper
-            #main_fits_header.add_astrometric_fits_keywords(self.hdu_res_header)
-
-#            rebinned_filename = "./SkyMapper_g_20140408104645-29_150.171-54.790_1056x1032.fits"
-#           hdu.writeto(rebinned_filename,overwrite=True)
-            self.hdu_res.header['RA'] = ra
-            self.hdu_res.header['DEC'] = dec
-            self.hdu_res.header['NAXIS1'] = int(float( SAMI_GUIDE_FoV_SISIpix))
-            self.hdu_res.header['NAXIS2'] = int(float( SAMI_GUIDE_FoV_SISIpix))
-            self.hdu_res.header['CRVAL1'] = float(ra)
-            self.hdu_res.header['CRVAL2'] = float(dec)
-            self.hdu_res.header['CRPIX1'] = float( SAMI_GUIDE_FoV_SISIpix/2)
-            self.hdu_res.header['CRPIX2'] = float( SAMI_GUIDE_FoV_SISIpix/2)
-            self.hdu_res.header['CD1_1'] = self.hdu_res.header['CD1_1'] / (SAMI_GUIDE_FoV_SISIpix/data.shape[0])
-            self.hdu_res.header['CD2_2'] = self.hdu_res.header['CD1_1'] / (SAMI_GUIDE_FoV_SISIpix/data.shape[1])
-            """
-            
-            """
-            self.wcs =wcs.WCS(self.hdu_res.header)
-            self.wcs_exist = True        
-            
-            img.load_hdu(self.hdu_res)
-
-            self.fitsimage.set_image(img)
-            self.AstroImage = img
-            self.fullpath_FITSfilename = filepath.name
-            
-        hdu_in.close()
-        
-        self.field_GuideStar = os.path.join(
-            self.PAR.QL_images, "Field_GuideStar.fits")
-        fits.writeto(self.field_GuideStar, self.hdu_res.data,
-                     header=self.hdu_res.header, overwrite=True)
-#                     header=output_header, overwrite=True)
-
-        #self.Display(self.field_GuideStar)
-        """
+                         header=self.header_GS, overwrite=True)            
+        self.fitsimage.rotate(self.PAR.Ginga_PA)    
         self.Display(SkyMapperProduced)
-        #self.button_find_stars['state'] = 'active'
-        #self.wcs_exist = True
         
         """
         TABLE CONSTRUCTION
@@ -11463,35 +11480,46 @@ class GuideStarPage(tk.Frame):
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 shutil.copyfileobj(response, tmp_file)
         self.table_full = pd.read_csv(tmp_file.name)
-        
+        #rename the magnitudes using the general band names
+        self.table_full = self.table_full.rename(columns={"g_psf": "g_band","r_psf": "r_band","i_psf": "i_band","z_psf": "z_band","raj2000":"RA","dej2000":"DEC"})
         
         
         
     def Pick_GuideStar(self):        
         """ to be written, but it seems rather obvious"""
+        CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
         self.clear_canvas()
-        #self.table = self.table_full[ (self.table_full['i_psf']>self.low_mag.get()) & (self.table_full['i_psf']<self.high_mag.get()) ]
+        filt = self.string_Filter.get()
+        if filt == "g":
+            self.table_full['star_mag'] = self.table_full['g_band']
+        elif filt == "r":
+            self.table_full['star_mag'] = self.table_full['r_band']
+        elif filt == "i":
+            self.table_full['star_mag'] = self.table_full['i_band']
+        elif filt == "z":
+            self.table_full['star_mag'] = self.table_full['z_band']
+        self.table = self.table_full[ (self.table_full['star_mag']>self.low_mag.get()) & (self.table_full['star_mag']<self.high_mag.get()) ]
         
         viewer=self.fitsimage
         image = viewer.get_image()
         x_SkyMap = [] 
         y_SkyMap = []
-#        i=0
-#        nstar = self.table.shape[0]
-#        i_drop=[]
-#        for i in range(nstar):
-#            x, y = image.radectopix(self.table.raj2000.iloc[i], self.table.dej2000.iloc[i], format='str', coords='fits')
-#            #CHECK IF THE STAR IS OUTSIDE THE CENTRAL REGION
-#            if  ( (x>round(self.data_GS.shape[0]/4)) and (x<round(self.data_GS.shape[0]*3/4)) and (y>round(self.data_GS.shape[0]/4)) and (y<round(self.data_GS.shape[0]*3/4)) ):
-#                i_drop.append(self.table.index[i])
-#                continue
-#            elif  ( (x<0) or (x>round(self.data_GS.shape[0])) or (y<0) or (y>round(self.data_GS.shape[0])) ):
-#                i_drop.append(self.table.index[i])
-#                continue
-#            print(i,self.table.raj2000.iloc[i], self.table.dej2000.iloc[i],x,y)
-#            x_SkyMap.append(x)
-#            y_SkyMap.append(y)
-#        self.table = self.table.drop(i_drop)
+        i=0
+        nstar = self.table.shape[0]
+        i_drop=[]
+        for i in range(nstar):
+            x, y = image.radectopix(self.table.RA.iloc[i], self.table.DEC.iloc[i], format='str', coords='fits')
+            #CHECK IF THE STAR IS OUTSIDE THE CENTRAL REGION
+            if  ( (x>round(self.data_GS.shape[0]/4)) and (x<round(self.data_GS.shape[0]*3/4)) and (y>round(self.data_GS.shape[0]/4)) and (y<round(self.data_GS.shape[0]*3/4)) ):
+                i_drop.append(self.table.index[i])
+                continue
+            elif  ( (x<0) or (x>round(self.data_GS.shape[0])) or (y<0) or (y>round(self.data_GS.shape[0])) ):
+                i_drop.append(self.table.index[i])
+                continue
+            print(i,self.table.RA.iloc[i], self.table.DEC.iloc[i],x,y)
+            x_SkyMap.append(x)
+            y_SkyMap.append(y)
+        self.table = self.table.drop(i_drop)
         
         print("Converted RADEC to XY for display")   
         
@@ -11546,12 +11574,8 @@ class GuideStarPage(tk.Frame):
         print("done")
 
         
-
         
     def SDSS_query(self):
-        """ get image from SDSS 
-            Follow https://github.com/behrouzz/sdss
-        """
 
 #        img = AstroImage()
         Posx = self.string_RA.get()
@@ -11561,96 +11585,83 @@ class GuideStarPage(tk.Frame):
         from astropy import units as u
         from astropy import coordinates as coords
         from astroquery.sdss import SDSS
+        from astropy.nddata import Cutout2D
+
 
         pos = coords.SkyCoord(Posx,Posy, unit=(u.deg, u.deg))
-        #pos = coords.SkyCoord(RA_HMS +' ' + DEG_HMS,frame='icrs')
-        #xid = SDSS.query_region(pos, radius='5 arcsec', spectro=True)
-        # we search a large area around the target position
-        xid = SDSS.query_region(pos, radius='150 arcsec', spectro=True)
-        print(xid)
-        if xid is None:
-            #messagebox.showinfo(title='INFO', message='Not in SDSS')
-            print("\n\n\n**** FIELD NOT IN SDSS *****\n\n\n")
-            return
-        else:
-            self.SDSS_stars = np.transpose([xid['ra'],xid['dec']])
+        #xid = SDSS.query_region(pos, radius='10 arcsec', spectro=True)
+        #print(xid)
+        #if xid is None:
+        #    print("\n\n\n**** FIELD NOT IN SDSS *****\n\n\n")
+        #    return
+        #else:
+        #    self.SDSS_stars = np.transpose([xid['ra'],xid['dec']])
             
         
-        im = SDSS.get_images(matches=xid, band=filt)
-        hdu_0 = im[0]
-        data = hdu_0[0].data
-        header = hdu_0[0].header
+        im = SDSS.get_images(coordinates=pos, radius='170 arcsec', band=filt)
+        number_of_nans=758*758
+        for i in range(len(im)):
+            hdu = im[i]
+            data = hdu[0].data
+            header = hdu[0].header
+            """
+            2D Cutout Images
+            https://docs.astropy.org/en/stable/nddata/utils.html
+            """
+            w = wcs.WCS(header)
+            xc, yc = np.round(w.world_to_pixel(pos))   
+            position = (xc, yc)
+            SDSS_pixel_scale = 0.396 #arcsec_pix - https://classic.sdss.org/dr3/instruments/imager/
+            size = np.round((300/SDSS_pixel_scale, 300/SDSS_pixel_scale))     # pixels
+            try:
+                cutout = Cutout2D(data, position, size, wcs=w,mode='partial')
+            except:
+                continue
+            if np.count_nonzero(np.isnan(cutout.data)) < number_of_nans:
+                number_of_nans = np.count_nonzero(np.isnan(cutout.data))
+                best_data = cutout.data
+                best_header = copy.deepcopy(header)
+                d=dict(cutout.wcs.to_header())
+                best_header.update(d)
         
-        #or pick up the best tile?
-    
-        
-        #fits.writeto(os.path.join(cwd,'input_file.fits'), data, header, overwrite=True)
+        #always needd for Pick Guide Stars
+        self.data_GS = best_data
+        self.header_GS = best_header
 
-        from scipy import ndimage
-        data_rotated = ndimage.rotate(data, 270, reshape=True)
-
-        
-        header_rotated = copy.deepcopy(header)
-        tmp = header['NAXIS1'] ; header_rotated['NAXIS2'] = tmp
-        tmp = header['NAXIS2'] ; header_rotated['NAXIS1'] = tmp
-        tmp = header['CRPIX1'] ; header_rotated['CRPIX2'] = tmp
-        tmp = header['CRPIX2'] ; header_rotated['CRPIX1'] = tmp
-        tmp = header['CD1_1'] ; header_rotated['CD1_2'] = tmp
-        tmp = header['CD1_2'] ; header_rotated['CD1_1'] = -tmp
-        tmp = header['CD2_1'] ; header_rotated['CD2_2'] = tmp
-        tmp = header['CD2_2'] ; header_rotated['CD2_1'] = -tmp
-        
-#        fits.writeto(os.path.join(cwd,'output_file.fits'), data_rotated, header_rotated, overwrite=True)
-#
-        # Resize image
-        SDSS_NaturalScale = 0.396127 # arcsec/pix from https://skyserver.sdss.org/dr12/en/tools/chart/chartinfo.aspx
-        SAMOS_SISIScale = self.PAR.SISI_PixelScale#arcesc/pix, from 1/6" * 1.125
-        FoV_SAMOS_X = 1032 * SAMOS_SISIScale #arcsec
-        FoV_SAMOS_Y = 1056 * SAMOS_SISIScale #arcsec
-        FoV_SDSS_Xpix = np.round(FoV_SAMOS_X/SDSS_NaturalScale)  # 488
-        FoV_SDSS_Ypix = np.round(FoV_SAMOS_Y/SDSS_NaturalScale)  # 500
-
-        #get target xy coordinatex on      
-        from astropy.wcs import WCS
-        w = WCS(header_rotated)
-        xc, yc = np.round(w.world_to_pixel(pos))       
-        data_rotated_framed  = np.zeros( (3048,2489) )
-        pedestal = 500
-        data_rotated_framed[pedestal:pedestal+2048, pedestal:pedestal+1489] = data_rotated
-
-        #SDSS_cutout
-        #SDSS_cutout = data_rotated[ int(xc-FoV_SDSS_Xpix/2) : int(xc+FoV_SDSS_Xpix/2),  
-        #                            int(yc-FoV_SDSS_Ypix/2) : int(yc+FoV_SDSS_Ypix/2) ]
-        SDSS_cutout = data_rotated_framed[ pedestal+int(yc-FoV_SDSS_Ypix/2) : pedestal+int(yc+FoV_SDSS_Ypix/2),  
-                                            pedestal+int(xc-FoV_SDSS_Xpix/2) : pedestal+int(xc+FoV_SDSS_Xpix/2) ]
-        
-#       with fits.open(fits_file) as hdu_in:
-            #            img.load_hdu(hdu_in[0])
-#            data = hdu_in[0].data
-        image_data = Image.fromarray(SDSS_cutout)
-        img_res = image_data.resize(size=(1032, 1056))
-        self.hdu_res = fits.PrimaryHDU(img_res)
-        
-        # ra, dec in degrees
-        ra = Posx
-        dec = Posy
-        self.hdu_res.header['RA'] = ra
-        self.hdu_res.header['DEC'] = dec
-        
-        img.load_hdu(self.hdu_res)
-
-        self.fitsimage.setPa_image(img)
-        self.AstroImage = img
-        #self.fullpath_FITSfilename = os.path.join(cwd,fits_file)#filepath.name
-        #hdu_in.close()
-        #self.button_find_stars['state'] = 'active'
-        
         self.fits_image_ql = os.path.join(
             self.PAR.QL_images, "newimage_ql.fits")
-        fits.writeto(self.fits_image_ql, self.hdu_res.data,
-                     header=self.hdu_res.header, overwrite=True)     
+        fits.writeto(self.fits_image_ql, best_data,
+                     header=best_header, overwrite=True)    
+
+        #hdu = fits.open(self.fits_image_ql)
+        #img.load_hdu(hdu)
+        #self.fitsimage.set_image(img)
+        #self.AstroImage = img
         
-    def PanStarrs_query(self):
+        self.fitsimage.rotate(90)
+        
+        self.Display(self.fits_image_ql)
+        
+        
+        """
+        TABLE CONSTRUCTION
+        """
+        
+        result = SDSS.query_region(pos,fields={'ra','dec','psfMag_g','psfMag_r','psfMag_i','psfMag_z'},radius=180*u.arcsec)
+        
+        self.table_full = result.to_pandas()
+        #rename the magnitudes using the general band names;
+        self.table_full = self.table_full.rename(columns={"ra":"RA", "dec":"DEC", "psfMag_g": "g_band", "psfMag_r":"r_band", "psfMag_i":"i_band", "psfMag_z":"z_band"})
+        
+        # not that elegant, but this is how  we convert the table to a pandas table
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            shutil.copyfileobj(result, tmp_file)
+        self.table_full = pd.read_csv(tmp_file.name)        
+   
+
+        
+    def PanStarrs_query_GuideStars(self):
         
         #get ra,dec and set image size
         ra = float(self.string_RA.get())
@@ -11658,230 +11669,67 @@ class GuideStarPage(tk.Frame):
         if dec < -30:
             print("\n Declination outside the PanStarrs survey \n")
             return
+        
         filter = self.string_Filter.get()
-        size = int(180 / 0.25)   #
+        size = int(300 / 0.25)   # create an image 5'x5'
         
         #get the pan star image
         fitsurl = PSima.geturl(ra, dec, size=size, filters=filter, format="fits")
         fh = fits.open(fitsurl[0])
         fim = fh[0].data
+        
+        #also a couple of variables for the Pick_GuideStar
+        self.data_GS = fh[0].data
+        self.header_GS = fh[0].header
+        
         # replace NaN values with zero for display
         fim[numpy.isnan(fim)] = 0.0
         self.fits_image_ql = os.path.join(
             self.PAR.QL_images, "newimage_ql.fits")
         fits.writeto(self.fits_image_ql, fim,
                      header=fh[0].header, overwrite=True)    
+        
         self.Display(self.fits_image_ql)
+        self.fitsimage.rotate(self.PAR.Ginga_PA)
+ 
     
+        """
+        TABLE CONSTRUCTION
+        """
+        
+        """Simple positional query
+        Search mean object table with nDetections > 1.
+
+        This searches the mean object catalog for objects within 212 arcsec of radec). 
+        Note that the results are restricted to objects with nDetections>1, 
+        where nDetections is the total number of times the object was detected on the single-epoch images 
+        in any filter at any time. Objects with nDetections=1 tend to be artifacts, so this is a quick way 
+        to eliminate most spurious objects from the catalog.
+        """
+        radius = 212.0/3600.0
+        constraints = {'nDetections.gt':1}
+        # strip blanks and weed out blank and commented-out values
+        columns = """objID,raMean,decMean,nDetections,ng,nr,ni,nz,ny,
+            gMeanPSFMag,rMeanPSFMag,iMeanPSFMag,zMeanPSFMag,yMeanPSFMag""".split(',')
+        columns = [x.strip() for x in columns]
+        columns = [x for x in columns if x and not x.startswith('#')]
+        results = PStab.ps1cone(ra,dec,radius,release='dr2',columns=columns,verbose=True,**constraints)
+        
+        tab = ascii.read(results)
+        # improve the format
+        for filter in 'grizy':
+            col = filter+'MeanPSFMag'
+            try:
+                tab[col].format = ".4f"
+                tab[col][tab[col] == -999.0] = np.nan
+            except KeyError:
+                print("{} not found".format(col))
+        print(tab)
+        self.table_full = tab.to_pandas()
+        self.table_full = self.table_full.rename(columns={"gMeanPSFMag": "g_band","rMeanPSFMag": "r_band","iMeanPSFMag": "i_band","zMeanPSFMag": "z_band","raMean":"RA", "decMean":"DEC"})
+
+
        
-        """
-    def twirl_Astrometry(self):
-        """
-        
-        """ to be written """
-        
-        """
-        self.wcs = None
-        self.Display(self.field_GuideStar)
-        # self.load_file()   #for ging
-
-        hdu_Main = fits.open(self.field_GuideStar)  # for this function to work
-        hdu = hdu_Main[0]
-        header = hdu.header
-        data = hdu.data
-        hdu_Main.close()
-        ra, dec = header["RA"], header["DEC"]
-        center = SkyCoord(ra, dec, unit=["deg", "deg"])
-        center = [center.ra.value, center.dec.value]
-
-        # image shape and pixel size in "
-        shape = data.shape
-        pixel = self.PAR.SISI_PixelScale * u.arcsec
-        fov = np.max(shape)*pixel.to(u.deg).value
-
-        # Let's find some stars and display the image
-
-        self.canvas.delete_all_objects(redraw=True)
-        #check first if it exist, as we may have not yet queried SDSS        
-        try:  
-            if self.SDSS_stars is None:  #if it exist but is none, we just check the current image
-                stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
-            else: #if it exist, we are coming from SDSS and therefore we use the SDSS stars
-                import copy
-                stars = copy.deepcopy(self.SDSS_stars)
-                SDSS_stars = None  #and immediately delete them so we are free for the next searh
-        except:  #if self.SDSS has never been created, we go to the basic search
-             stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
-
-#        plt.figure(figsize=(8,8))
-        med = np.median(data)
-#        plt.imshow(data, cmap="Greys_r", vmax=np.std(data)*5 + med, vmin=med)
-#        plt.plot(*stars.T, "o", fillstyle="none", c="w", ms=12)
-
-        from regions import PixCoord, CirclePixelRegion
-#        xs=stars[0,0]
-#        ys=stars[0,1]
-#        center_pix = PixCoord(x=xs, y=ys)
-        radius_pix = 42
-
-#        this_region = CirclePixelRegion(center_pix, radius_pix)
-
-        regions = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
-                   for x, y in stars]  # [(1, 2), (3, 4)]]
-        regs = Regions(regions)
-        for reg in regs:
-            obj = r2g(reg)
-        # add_region(self.canvas, obj, tag="twirlstars", draw=True)
-            self.canvas.add(obj)
-
-        # we can now compute the WCS
-        gaias = twirl.gaia_radecs(center, fov, limit=self.nrofstars.get())
-
-        self.wcs = twirl.compute_wcs(stars, gaias)
-
-        global WCS_global   #used for HTS
-        WCS_global = self.wcs
-
-        # Lets check the WCS solution
-
-#        plt.figure(figsize=(8,8))
-        radius_pix = 25
-        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.wcs)).T
-        regions_gaia = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
-                        for x, y in gaia_pixel]  # [(1, 2), (3, 4)]]
-        regs_gaia = Regions(regions_gaia)
-        for reg in regs_gaia:
-            obj = r2g(reg)
-            obj.color = "red"
-        # add_region(self.canvas, obj, tag="twirlstars", redraw=True)
-            self.canvas.add(obj)
-
-        print(self.wcs)
-        
-        if self.wcs is None:
-            self.wcs_exist = False
-            print("\n WCS solution not found, returning\n")
-            return
-        else:
-            self.wcs_exist = True            
-            print("\n WCS solution found!\n")
-            
-        hdu_wcs = self.wcs.to_fits()
-
-        if self.loaded_regfile is not None:
-            hdu_wcs[0].header.set(
-                "dmdmap", os.path.split(self.loaded_regfile)[1])
-
-        hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = os.path.join(
-            ".", "SAMOS_Astrometry_dev", "WCS_"+ra+"_"+dec+".fits")
-        hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
-
-        self.Display(self.wcs_filename)
-        self.button_find_stars['state'] = 'active'
-        
-        self.wcs_exist = True
-        #
-        # > to read:
-        # hdu = fits_open(self.wcs_filename)
-        # hdr = hdu[0].header
-        # import astropy.wcs as apwcs
-        # wcs = apwcs.WCS(hdu[('sci',1)].header)
-        """
-        
-        """
-    def find_stars(self):
-        pass
-        """
-    
-        """ to be written """
-
-        """
-        self.Display(self.fits_image_ql)
-        self.Pickup_GuideStar()
-        # self.load_file()   #for ging
-
-        hdu = fits.open(self.fits_image_ql)  # for this function to work
-        
-        header = hdu[0].header
-        data = hdu[0].data
-        hdu.close()
-        ra, dec = header["RA"], header["DEC"]
-        center = SkyCoord(ra, dec, unit=["deg", "deg"])
-        center = [center.ra.value, center.dec.value]
-
-        # image shape and pixel size in "
-        shape = data.shape
-        pixel = self.PAR.SISI_PixelScale * u.arcsec
-        fov = np.max(shape)*pixel.to(u.deg).value
-
-        # Let's find some stars and display the image
-
-        self.canvas.delete_all_objects(redraw=True)
-        threshold = 0.1
-        stars = twirl.find_peaks(data, threshold)[0:self.nrofstars.get()]
-
-#        plt.figure(figsize=(8,8))
-        med = np.median(data)
-#        plt.imshow(data, cmap="Greys_r", vmax=np.std(data)*5 + med, vmin=med)
-#        plt.plot(*stars.T, "o", fillstyle="none", c="w", ms=12)
-
-        from regions import PixCoord, CirclePixelRegion
-#        xs=stars[0,0]
-#        ys=stars[0,1]
-#        center_pix = PixCoord(x=xs, y=ys)
-        radius_pix = 20
-
-#        this_region = CirclePixelRegion(center_pix, radius_pix)
-
-#        regions = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
-        regions = [RectanglePixelRegion(center=PixCoord(x=round(x), y=round(y)),
-                           width=self.low_mag.get(), height=self.high_mag.get(),
-                           angle=0*u.deg)
-                   for x, y in stars]  # [(1, 2), (3, 4)]]
-
-        #if self.SlitTabView is None:
-        #    self.initialize_slit_table()
-
-        regs = Regions(regions)
-        for reg in regs:
-            obj = r2g(reg)
-        # add_region(self.canvas, obj, tag="twirlstars", draw=True)
-            self.canvas.add(obj)
-
-            obj.pickable = True
-            obj.add_callback('pick-up', self.pick_cb, 'up')
-            # obj.add_callback('pick-down', self.pick_cb, 'down')
-            obj.add_callback('edited', self.edit_cb)
-
-        #    self.SlitTabView.add_slit_obj(reg, obj.tag, self.fitsimage)
-    
-        self.draw_slits()
-        pass
-
-     """
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#     def start_the_loop(self):
-#         while self.stop_it == 0:
-#             threading.Timer(1.0, self.load_manager_last_file).start()
-#
-#     def load_manager_last_file(self):
-#         FITSfiledir = './fits_image/'
-#         self.fullpath_FITSfilename = FITSfiledir + (os.listdir(FITSfiledir))[0]
-#         print(self.fullpath_FITSfilename)
-#
-#     def stop_the_loop(self):
-#         self.stop_it == 1
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#         image = load_data(self.fullpath_FITSfilename, logger=self.logger)
-#         self.fitsimage.set_image(image)
-#         self.root.title(self.fullpath_FITSfilename)
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
   
     def load_file(self):
         """ to be written """
@@ -12187,6 +12035,7 @@ class GuideStarPage(tk.Frame):
 
         self.canvas.set_draw_mode(mode)
 
+        """
     def draw_cb(self, canvas, tag):
         """ to be written """
         self.Pickup_GuideStar()
@@ -12210,12 +12059,10 @@ class GuideStarPage(tk.Frame):
         # Pick up mode. obj.kind should always be point.
             #this case requires more sophisticated operations, hence a dedicated function            
         self.slit_handler(obj)
-
-
-    def slit_handler(self, obj):
-        """ to be written """
-        pass
         """
+
+        """
+    def slit_handler(self, obj):
         print('ready to associate a slit to ')
         print(obj.kind)
         img_data = self.AstroImage.get_data()
@@ -12326,6 +12173,8 @@ class GuideStarPage(tk.Frame):
 
         # some final stuff that must be here for some reason... to be reviewed?
         """
+        
+        """
         #obj = self.canvas.get_object_by_tag(new_slit_tag)
         # obj.add_callback('pick-down', self.pick_cb, 'down')
         obj.add_callback('pick-up', self.pick_cb, 'up')
@@ -12337,8 +12186,9 @@ class GuideStarPage(tk.Frame):
         return self.canvas.objects[-1]
 
              # create box
+        """     
 
-
+        """
     def create_astropy_RectangleSkyRegion(self, pattern_row):
         # given
         ra, dec = pattern_row[1:3]
@@ -12353,20 +12203,23 @@ class GuideStarPage(tk.Frame):
             center=center, width=ra_width*u.deg, height=dec_length*u.arcsec, )
 
         return sky_region
-
+        """
+        
+        """
     def set_pattern_entry_text_color(self, event):
 
         if self.base_pattern_name_entry.get() != "Base Pattern Name":
 
             # self.base_pattern_name_entry.foreground="black"
             self.base_pattern_name_entry.config(fg="black")
+        """    
 
 
-
-
+        """
     def get_dmd_coords_of_picked_slit(self, picked_slit):
+        """
         """ get_dmd_coords_of_picked_slit """
-
+        """
         x0, y0, x1, y1 = picked_slit.get_llur()
         fits_x0 = x0+1
         fits_y0 = y0+1
@@ -12383,10 +12236,12 @@ class GuideStarPage(tk.Frame):
         dmd_length = int(np.ceil(dmd_y1-dmd_y0))
 
         return dmd_xc, dmd_yc, dmd_x0, dmd_y0, dmd_x1, dmd_y1, dmd_width, dmd_length
-
+        """
+        
     def check_valid_mags(self, event=None):
         """ to be written """
-     
+        
+        """
     def delete_obj_cb(self, obj, canvas, event, pt, ptype):
         try:
             if event.key == 'd':
@@ -12423,7 +12278,7 @@ class GuideStarPage(tk.Frame):
 
         except:
             pass
-
+        """
     def pick_cb(self, obj, canvas, event, pt, ptype):
         """ to be written """
 
@@ -12473,15 +12328,19 @@ class GuideStarPage(tk.Frame):
             index = int(obj.tag[1:]) - int(self.circle_tags[0][1:]) 
             
             #print(self.table.iloc[index])
-            self.string_RA_GS.set(self.table['raj2000'].iloc[index])
-            self.string_DEC_GS.set(self.table['dej2000'].iloc[index])
-            Delta_RA = float(self.table['raj2000'].iloc[index]) - float(self.string_RA.get()) 
-            Delta_DEC = float(self.table['dej2000'].iloc[index]) - float(self.string_DEC.get()) 
+            self.string_RA_GS.set(self.table['RA'].iloc[index])
+            self.string_DEC_GS.set(self.table['DEC'].iloc[index])
+            Delta_RA = float(self.table['RA'].iloc[index]) - float(self.string_RA.get()) 
+            Delta_DEC = float(self.table['DEC'].iloc[index]) - float(self.string_DEC.get()) 
             Delta_RA_mm = round(Delta_RA * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
             Delta_DEC_mm = round(Delta_DEC * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
             self.string_Xmm_GS.set(Delta_RA_mm)
             self.string_Ymm_GS.set(Delta_DEC_mm)
-             
+            
+            #print the magntude of the selected star
+#            print(self.star_mag)
+            self.string_mag_GS.set(round(self.table.star_mag.iloc[index],3))
+            
             #if self.deleteChecked.get():#event.key == 'd':
             # canvas.delete_object(obj)
             #try:
@@ -12519,6 +12378,7 @@ class GuideStarPage(tk.Frame):
             #    print("No slit table created yet.")
 
         return True
+        
 
     def edit_cb(self, obj):
         """ to be written """
@@ -12530,8 +12390,15 @@ class GuideStarPage(tk.Frame):
         #self.SlitTabView.update_table_row_from_obj(obj, self.fitsimage)
         return True
 
+        """
     def cleanup_kind(self, kind):
-        """ to be written """
+        """
+        """  
+        REMOVE only a specific type of object
+        self.cleanup_kind('point')
+        self.cleanup_kind('box') 
+        """
+        """
         # check that we have created a compostition of objects:
         CM.CompoundMixin.is_compound(self.canvas.objects)     # True
 
@@ -12541,7 +12408,7 @@ class GuideStarPage(tk.Frame):
         list_found = list(found)
         CM.CompoundMixin.delete_objects(self.canvas, list_found)
         self.canvas.objects  # check that the points are gone
-
+        """
 
 
 
@@ -12565,7 +12432,7 @@ class GuideStarPage(tk.Frame):
         """ to be written """
         
         #parent is the local form
-        parent.geometry("1700x1100")  #was ("1400x900")  # was("1280x900")
+        parent.geometry("1290x920")  #was ("1400x900")  # was("1280x900")
         if platform == "win32":
             parent.geometry("1260x930") # was "1400x920")
         parent.title("SAMOS Main Page")
