@@ -6888,13 +6888,13 @@ class MainPage(tk.Frame):
         self.reset_progress_bars()
         
         # THE LAST ARRIVED FILE is latest_file
-        fits_dir = SF.read_fits_folder()
-        print(fits_dir)
-        list_of_files = glob.glob(
-             os.path.join(fits_dir,"*.fits") )  
-        latest_file = max(list_of_files, key=os.path.getctime)
-        print(latest_file)
-        self.fullpath_FITSfilename = latest_file # self.fits_image
+#        fits_dir = SF.read_fits_folder()
+#        print(fits_dir)
+#        list_of_files = glob.glob(
+#             os.path.join(fits_dir,"*.fits") )  
+#        latest_file = max(list_of_files, key=os.path.getctime)
+#        print(latest_file)
+#        self.fullpath_FITSfilename = latest_file # self.fits_image
         
         return newfiles
 
@@ -6968,7 +6968,7 @@ class MainPage(tk.Frame):
     
             # QUICK LOOK IMAGE     
             self.fits_image = os.path.join(
-                 self.PAR.QL_images, "newimage.fit")
+                 self.PAR.QL_images, "newimage.fits")
             
             # update header for new filename/filepath
             main_fits_header.create_fits_header(main_fits_header.output_header)

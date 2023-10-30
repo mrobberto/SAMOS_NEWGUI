@@ -1,4 +1,4 @@
-"""#!/usr/bin/env python3
+ """#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 Created on Tue Feb 25 13:21:00 2023
 
@@ -4638,10 +4638,14 @@ class MainPage(tk.Frame):
 #         vbox = tk.Frame(self.frame0l, relief=tk.RAISED, borderwidth=1)
 #         vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       CCD SETUP
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         self.frame_CCDInf = tk.Frame(self, background="cyan")
         self.frame_CCDInf.place(
-            x=10, y=265, anchor="nw", width=430, height=350)
+            x=10, y=265, anchor="nw", width=430, height=330)
         labelframe_CCDInf = tk.LabelFrame(
             self.frame_CCDInf, text="CCD Setup", font=self.bigfont)
         labelframe_CCDInf.pack(fill="both", expand="yes")
@@ -4654,7 +4658,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         # , width=400, height=800)
         self.frame2l = tk.Frame(self.frame_CCDInf, background="cyan")
-        self.frame2l.place(x=4, y=30, anchor="nw", width=420, height=150)
+        self.frame2l.place(x=4, y=30, anchor="nw", width=422, height=150)
 
 #        root = tk.Tk()
 #        root.title("Tab Widget")
@@ -4681,85 +4685,63 @@ class MainPage(tk.Frame):
         self.var_acq_type = tk.StringVar()
         self.tabControl = tabControl
         self.tabControl.bind("<<NotebookTabChanged>>", self.change_acq_type)
+
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      SCIENCE
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
         labelframe_Acquire = tk.LabelFrame(
-            tab1, text="Science", font=self.bigfont)
-        # labelframe_Acquire.place(x=2, y=0, anchor="nw", width=410, height=115)
-        labelframe_Acquire.pack(fill="both", expand="yes")
+                                            tab1, 
+                                            text="Science", 
+                                            font=self.bigfont)
+        labelframe_Acquire.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_ObjectName = tk.Label(labelframe_Acquire, text="Object Name:")
-        label_ObjectName.place(x=4, y=10)
+        label_ObjectName.place(x=4, y=2)
         self.ObjectName = tk.StringVar()
         self.ObjectName.set(self.PAR.PotN['Object Name'])
         entry_ObjectName = tk.Entry(labelframe_Acquire, width=16,  bd=3,
                                     textvariable=self.ObjectName)
-        entry_ObjectName.place(x=100, y=8)
+        entry_ObjectName.place(x=100, y=0)
         #start keeping memory of the opbject name to handle WCS changes
         self.Previous_ObjectName = self.ObjectName.get()
 
-        label_Comment = tk.Label(labelframe_Acquire, text="Comments:")
-        label_Comment.place(x=4, y=55)
-        self.Comment = tk.StringVar()
-        self.Comment.set(self.PAR.PotN['Comment'])
-        self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd=3, 
-                                      textvariable=self.Comment)
-        self.entry_Comment.place(x=100, y=53)
 
         self.Light_NofFrames = tk.IntVar()
         self.Light_NofFrames.set(1)
         label_Light_NofFrames = tk.Label(
-            labelframe_Acquire, text="Nr. Exposures:")
+            labelframe_Acquire, text="Nr. of Frames:")
         label_Light_NofFrames.place(x=220, y=2)
         entry_Light_NofFrames = tk.Entry(labelframe_Acquire, textvariable=self.Light_NofFrames,
                                          width=3, bd=3)
         entry_Light_NofFrames.place(x=315, y=0)
 
+        label_Comment = tk.Label(labelframe_Acquire, text="Comments:")
+        label_Comment.place(x=4, y=35)
+        self.Comment = tk.StringVar()
+        self.Comment.set(self.PAR.PotN['Comment'])
+        self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd=3, 
+                                      textvariable=self.Comment)
+        self.entry_Comment.place(x=100, y=33)
+
         self.var_Light_saveall = tk.IntVar()
-#        r1_Light_saveall = tk.Radiobutton(labelframe_Acquire, text="Save single frames",
-#                                          variable=self.var_Light_saveall, value=1)
         r1_Light_saveall = tk.Checkbutton(labelframe_Acquire, text="Save single frames",
                                           variable=self.var_Light_saveall, onvalue=1, offvalue=0)
-        r1_Light_saveall.place(x=218, y=27)
-
-#        label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
-#        #label_ExpTime.place(x=4,y=40)
-#        self.Light_ExpT=tk.StringVar()
-#        self.Light_ExpT.set("0.01")
-#        entry_ExpTime = tk.Entry(labelframe_Acquire, textvariable=self.Light_ExpT, width=5,  bd =3)
-#        #entry_ExpTime.place(x=100, y=38)
-
+        r1_Light_saveall.place(x=250, y=35)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      BIAS
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        labelframe_Bias = tk.LabelFrame(tab2, text="Bias",
-                                        width=300, height=150,
+        labelframe_Bias = tk.LabelFrame(tab2,
+                                        text="Bias",
                                         font=self.bigfont)
-        labelframe_Bias.pack(fill="both", expand="yes")
-
-#        labelframe_Bias.place(x=5,y=5)
-
-#        labelframe_Bias =  tk.LabelFrame(self.frame_CCDInf, text="Bias", font=self.bigfont)
-#        labelframe_Bias.place(x=5, y=53, anchor="nw", width=410, height=115)
-#                        # .pack(fill="both", expand="yes")
+        labelframe_Bias.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_Bias_MasterFile = tk.Label(labelframe_Bias, text="Master Bias:")
-        label_Bias_MasterFile.place(x=4, y=10)
+        label_Bias_MasterFile.place(x=4, y=2)
         self.Bias_MasterFile = tk.StringVar(value="Bias")
         entry_Bias_MasterFile = tk.Entry(
             labelframe_Bias, width=8,  bd=3, textvariable=self.Bias_MasterFile)
-        entry_Bias_MasterFile.place(x=100, y=8)
-
-        label_Comment = tk.Label(labelframe_Bias, text="Comments:")
-        label_Comment.place(x=4, y=55)
-        self.BiasComment = tk.StringVar()
-        self.BiasComment.set(self.PAR.PotN['Comment'])
-        self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd=3, 
-                                          textvariable=self.BiasComment)
-        self.entry_BiasComment.place(x=100, y=53)
+        entry_Bias_MasterFile.place(x=100, y=0)
 
         label_Bias_NofFrames = tk.Label(labelframe_Bias, text="Nr. of Frames:")
         label_Bias_NofFrames.place(x=220, y=2)
@@ -4768,50 +4750,42 @@ class MainPage(tk.Frame):
             labelframe_Bias, width=3,  bd=3, textvariable=self.Bias_NofFrames)
         entry_Bias_NofFrames.place(x=315, y=0)
 
+        label_Comment = tk.Label(labelframe_Bias, text="Comments:")
+        label_Comment.place(x=4, y=35)
+        self.BiasComment = tk.StringVar()
+        self.BiasComment.set(self.PAR.PotN['Comment'])
+        self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd=3, 
+                                          textvariable=self.BiasComment)
+        self.entry_BiasComment.place(x=100, y=33)
+
+
         self.var_Bias_saveall = tk.IntVar()
-#        r1_Bias_saveall = tk.Radiobutton(
-#            labelframe_Bias, text="Save single frames", variable=self.var_Bias_saveall, value=1)
         r1_Bias_saveall = tk.Checkbutton(labelframe_Bias, text="Save single frames",
                                           variable=self.var_Bias_saveall, onvalue=1, offvalue=0)
-        r1_Bias_saveall.place(x=218, y=27)
-
-
-#        label_Bias_ExpT =  tk.Label(labelframe_Bias, text="Exposure time (s):")
-#        #label_Bias_ExpT.place(x=4,y=10)
-#        self.Bias_ExpT = tk.StringVar(value="0.00")
-#        entry_Bias_ExpT = tk.Entry(labelframe_Bias, width=6,  bd =3, textvariable=self.Bias_ExpT)
-#        #entry_Bias_ExpT.place(x=120, y=6)
-#
-#        button_ExpStart = tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-#                                    command=self.expose_bias)
-        # button_ExpStart.place(x=75,y=95)
-
-#        root.mainloop()
-
-
+        r1_Bias_saveall.place(x=250, y=35)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Dark
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Dark = tk.LabelFrame(tab3, text="Dark",
-                                        width=300, height=170,
+                                    #    width=300, height=170,
                                         font=self.bigfont)
-        labelframe_Dark.pack(fill="both", expand="yes")
+        labelframe_Dark.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_Dark_MasterFile = tk.Label(labelframe_Dark, text="Master Dark:")
-        label_Dark_MasterFile.place(x=4, y=10)
+        label_Dark_MasterFile.place(x=4, y=2)
         self.Dark_MasterFile = tk.StringVar(value="Dark")
         entry_Dark_MasterFile = tk.Entry(
             labelframe_Dark, width=8,  bd=3, textvariable=self.Dark_MasterFile)
-        entry_Dark_MasterFile.place(x=100, y=8)
+        entry_Dark_MasterFile.place(x=100, y=0)
 
         label_Comment = tk.Label(labelframe_Dark, text="Comments:")
-        label_Comment.place(x=4, y=55)
+        label_Comment.place(x=4, y=35)
         self.DarkComment = tk.StringVar()
         self.DarkComment.set(self.PAR.PotN['Comment'])
         self.entry_DarkComment = tk.Entry(labelframe_Dark, width=20,  bd=3, 
                                           textvariable = self.DarkComment)
-        self.entry_DarkComment.place(x=100, y=53)
+        self.entry_DarkComment.place(x=100, y=33)
 
         label_Dark_NofFrames = tk.Label(labelframe_Dark, text="Nr. of Frames:")
         label_Dark_NofFrames.place(x=220, y=2)
@@ -4821,46 +4795,33 @@ class MainPage(tk.Frame):
         entry_Dark_NofFrames.place(x=315, y=0)
 
         self.var_Dark_saveall = tk.IntVar()
-#        r1_Dark_saveall = tk.Radiobutton(
-#            labelframe_Dark, text="Save single frames", variable=self.var_Dark_saveall, value=1)
         r1_Dark_saveall = tk.Checkbutton(labelframe_Dark, text="Save single frames",
                                           variable=self.var_Dark_saveall, onvalue=1, offvalue=0)
-        r1_Dark_saveall.place(x=218, y=27)
-
-
-#        label_Dark_ExpT =  tk.Label(labelframe_Dark, text="Exposure time (s):")
-#        #label_Dark_ExpT.place(x=4,y=10)
-#        self.Dark_ExpT = tk.StringVar(value="0.00")
-#        entry_Dark_ExpT = tk.Entry(labelframe_Dark, width=6,  bd =3, textvariable=self.Dark_ExpT)
-#        #entry_Dark_ExpT.place(x=120, y=6)
-
-#        button_ExpStart = tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-#                                    command=self.expose_dark)
-        # button_ExpStart.place(x=75,y=95)
+        r1_Dark_saveall.place(x=250, y=35)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Flat
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Flat = tk.LabelFrame(tab4, text="Flat",
-                                        width=300, height=170,
+                                       # width=300, height=170,
                                         font=self.bigfont)
-        labelframe_Flat.pack(fill="both", expand="yes")
+        labelframe_Flat.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_Flat_MasterFile = tk.Label(
             labelframe_Flat, text="Master Flat File:")
-        label_Flat_MasterFile.place(x=4, y=10)
+        label_Flat_MasterFile.place(x=4, y=2)
         self.Flat_MasterFile = tk.StringVar(value="Flat")
         entry_Flat_MasterFile = tk.Entry(
-            labelframe_Flat, width=11,  bd=3, textvariable=self.Flat_MasterFile)
-        entry_Flat_MasterFile.place(x=100, y=8)
+            labelframe_Flat, width=8,  bd=3, textvariable=self.Flat_MasterFile)
+        entry_Flat_MasterFile.place(x=100, y=0)
 
         label_Comment = tk.Label(labelframe_Flat, text="Comments:")
-        label_Comment.place(x=4, y=55)
+        label_Comment.place(x=4, y=35)
         self.FlatComment = tk.StringVar()
         self.FlatComment.set(self.PAR.PotN['Comment'])
         self.entry_FlatComment = tk.Entry(labelframe_Flat, width=20,  bd=3, 
                                           textvariable=self.FlatComment)
-        self.entry_FlatComment.place(x=100, y=53)
+        self.entry_FlatComment.place(x=100, y=33)
 
 #        label_Flat_ExpT =  tk.Label(labelframe_Flat, text="Exposure time (s):")
 #        #label_Flat_ExpT.place(x=4,y=10)
@@ -4880,7 +4841,7 @@ class MainPage(tk.Frame):
 #            labelframe_Flat, text="Save single frames", variable=self.var_Flat_saveall, value=1)
         r1_Flat_saveall = tk.Checkbutton(labelframe_Flat, text="Save single frames",
                                           variable=self.var_Flat_saveall, onvalue=1, offvalue=0)
-        r1_Flat_saveall.place(x=218, y=27)
+        r1_Flat_saveall.place(x=250, y=35)
 
 #        button_ExpStart = tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc', font=self.bigfont,
 #                                    command=self.expose_flat)
@@ -4890,25 +4851,26 @@ class MainPage(tk.Frame):
 #      Buffer
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Buffer = tk.LabelFrame(tab5, text="Buffer",
-                                          width=300, height=180,
+                                         # width=300, height=180,
                                           font=self.bigfont)
-        labelframe_Buffer.pack(fill="both", expand="yes")
+        labelframe_Buffer.place(x=2, y=5, anchor="nw", width=420, height=90)
+
+        label_Buffer_MasterFile = tk.Label(
+            labelframe_Buffer, text="Master Buffer File:")
+        label_Buffer_MasterFile.place(x=4, y=2)
+        self.Buffer_MasterFile = tk.StringVar(value="Buffer")
+        entry_Buffer_MasterFile = tk.Entry(
+            labelframe_Buffer, width=8,  bd=3, textvariable=self.Buffer_MasterFile)
+        entry_Buffer_MasterFile.place(x=100, y=0)
 
         label_Comment = tk.Label(labelframe_Buffer, text="Comments:")
-        label_Comment.place(x=4, y=55)
+        label_Comment.place(x=4, y=35)
         self.BufferComment = tk.StringVar()
         self.BufferComment.set(self.PAR.PotN['Comment'])
         self.entry_BufferComment = tk.Entry(labelframe_Buffer, width=20,  bd=3, 
                                             textvariable = self.BufferComment)
-        self.entry_BufferComment.place(x=100, y=53)
+        self.entry_BufferComment.place(x=100, y=33)
 
-        label_Buffer_MasterFile = tk.Label(
-            labelframe_Buffer, text="Master Buffer File:")
-        label_Buffer_MasterFile.place(x=4, y=10)
-        self.Buffer_MasterFile = tk.StringVar(value="Buffer")
-        entry_Buffer_MasterFile = tk.Entry(
-            labelframe_Buffer, width=11,  bd=3, textvariable=self.Buffer_MasterFile)
-        entry_Buffer_MasterFile.place(x=100, y=8)
 
 #        label_Buffer_ExpT =  tk.Label(labelframe_Buffer, text="Exposure time (s):")
 #        #label_Buffer_ExpT.place(x=4,y=10)
@@ -4929,7 +4891,7 @@ class MainPage(tk.Frame):
 #            labelframe_Buffer, text="Save single frames", variable=self.var_Buffer_saveall, value=1)
         r1_Buffer_saveall = tk.Checkbutton(labelframe_Buffer, text="Save single frames",
                                           variable=self.var_Buffer_saveall, onvalue=1, offvalue=0)
-        r1_Buffer_saveall.place(x=218, y=27)
+        r1_Buffer_saveall.place(x=250, y=35)
 
 #        button_ExpStart = tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc', font=self.bigfont,
 #                                    command=self.expose_buffer)
@@ -4943,7 +4905,7 @@ class MainPage(tk.Frame):
 
         self.AcquisitionFrame = tk.Frame(
             self.frame_CCDInf, background="dark gray")
-        self.AcquisitionFrame.place(x=5, y=175, width=420, height=172)
+        self.AcquisitionFrame.place(x=5, y=150, width=420, height=172)
 
         labelframe_ExposeBegin = tk.LabelFrame(self.AcquisitionFrame, text="Acquisition",
                                                font=self.bigfont)
@@ -5094,7 +5056,7 @@ class MainPage(tk.Frame):
         # , width=400, height=800)
         self.frame_FITSmanager = tk.Frame(self, background="pink")
         self.frame_FITSmanager.place(
-            x=10, y=620, anchor="nw", width=420, height=190)
+            x=10, y=600, anchor="nw", width=430, height=210)
 
         labelframe_FITSmanager = tk.LabelFrame(
             self.frame_FITSmanager, text="FITS manager", font=self.bigfont)
@@ -5119,14 +5081,18 @@ class MainPage(tk.Frame):
                                      command=self.load_existing_file)
         button_FITS_Load.place(x=0, y=0)
 
-        """ RA Entry box"""
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       RA, DEC Entry box
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.string_RA = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA.set("150.17110")  # NGC 3105
         label_RA = tk.Label(labelframe_FITSmanager, text='RA:',  bd=3)
         self.entry_RA = tk.Entry(
             labelframe_FITSmanager, width=11,  bd=3, textvariable=self.string_RA)
-        label_RA.place(x=150, y=1)
+        label_RA.place(x=150, y=-1)
         self.entry_RA.place(x=190, y=-5)
 
         """ DEC Entry box"""
@@ -5148,7 +5114,7 @@ class MainPage(tk.Frame):
 #
 # =============================================================================
         labelframe_Query_Survey = tk.LabelFrame(labelframe_FITSmanager, text="Query Image Server",
-                                                width=400, height=110,
+                                                width=420, height=140,
                                                 font=self.bigfont)
         labelframe_Query_Survey.place(x=5, y=45)
 
@@ -5177,7 +5143,7 @@ class MainPage(tk.Frame):
         # add bar to split menu, see
         # https://stackoverflow.com/questions/55621073/add-a-separator-to-an-option-menu-in-python-with-tkinter
         self.menu_Survey['menu'].insert_separator(3)
-        self.menu_Survey.place(x=65, y=5)
+        self.menu_Survey.place(x=55, y=4)
 
 #        self.readout_Simbad = tk.Label(self.frame0l, text='')
 
@@ -5230,13 +5196,55 @@ class MainPage(tk.Frame):
         """ twirl Astrometry"""
         button_twirl_Astrometry = tk.Button(labelframe_Query_Survey, text="twirl WCS", bd=3,
                                             command=self.twirl_Astrometry)
-        button_twirl_Astrometry.place(x=120, y=35)
+        button_twirl_Astrometry.place(x=125, y=35)
+        
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       RA, DEC cente display
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        self.string_RA_cntr = tk.StringVar()
+#        self.string_RA.set("189.99763")  #Sombrero
+        self.string_RA_cntr.set(self.string_RA.get())  # NGC 3105
+        label_RA_cntr = tk.Label(labelframe_Query_Survey, text='CNTR RA:',  bd=3)
+        self.entry_RA_cntr = tk.Entry(
+            labelframe_Query_Survey, width=11,  bd=3, textvariable=self.string_RA_cntr)
+        label_RA_cntr.place(x=5, y=65)
+        self.entry_RA_cntr.place(x=80,y=65)
+        
+        self.string_RA_cntr_mm = tk.StringVar()
+        self.string_RA_cntr_mm.set(0)
+        label_RA_cntr_mm = tk.Label(labelframe_Query_Survey, text='X(mm):',  bd=3)
+        self.entry_RA_cntr_mm = tk.Entry(
+            labelframe_Query_Survey, width=5,  bd=3, textvariable=self.string_RA_cntr_mm)
+        label_RA_cntr_mm.place(x=150, y=65)
+        self.entry_RA_cntr_mm.place(x=200, y=65)
 
-        """ find stars"""
-        button_find_stars = tk.Button(labelframe_Query_Survey, text="Find stars", bd=3,
-                                            command=self.find_stars, state='active')#'disabled')
-        button_find_stars.place(x=220, y=35)
-        self.button_find_stars = button_find_stars
+        """ DEC Entry box"""
+        self.string_DEC_cntr = tk.StringVar()
+#        self.string_DEC.set("-11.62305")#Sombrero
+        self.string_DEC_cntr.set(self.string_DEC.get())  # NGC 3105
+        label_DEC_cntr = tk.Label(labelframe_Query_Survey, text='CNTR Dec:',  bd=3)
+        self.entry_DEC_cntr = tk.Entry(
+            labelframe_Query_Survey, width=11,  bd=3, textvariable=self.string_DEC_cntr)
+        label_DEC_cntr.place(x=5, y=90)
+        self.entry_DEC_cntr.place(x=80, y=90)
+        
+        self.string_DEC_cntr_mm = tk.StringVar()
+        self.string_DEC_cntr_mm.set(0)
+        label_DEC_cntr_mm = tk.Label(labelframe_Query_Survey, text='Y(mm):',  bd=3)
+        self.entry_DEC_cntr_mm = tk.Entry(
+            labelframe_Query_Survey, width=5,  bd=3, textvariable=self.string_DEC_cntr_mm)
+        label_DEC_cntr_mm.place(x=150, y=90)
+        self.entry_DEC_cntr_mm.place(x=200, y=90)
+        
+        button_RADEC_to_SOAR = tk.Button(labelframe_Query_Survey, text="Send to Guider", bd=3,
+                             command=self.send_RADEC_to_SOAR)
+        button_RADEC_to_SOAR.place(x=270, y=70)
+        
+        
+        
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #        button_Astrometry =  tk.Button(labelframe_FITSmanager, text="Astrometry", bd=3,
@@ -5428,6 +5436,7 @@ class MainPage(tk.Frame):
         btn3 = tk.Radiobutton(labelframe_SlitConf, text="Delete", padx=9, pady=1,
                               variable=self.Draw_Edit_Pick_Checked, value="pick", command=self.set_mode_cb)
         btn3.place(x=220, y=75)  # pack(anchor='ne')
+    
 
 #        self.deleteChecked = tk.IntVar()
 #        btn4 = tk.Checkbutton(labelframe_SlitConf, text="Delete Picked", padx=5, pady=1,
@@ -5493,7 +5502,24 @@ class MainPage(tk.Frame):
 
         remove_traces_button = tk.Button(
             labelframe_SlitConf, text="Remove Traces", command=self.remove_traces, padx=0, pady=0)
-        remove_traces_button.place(x=330, y=27)
+        remove_traces_button.place(x=330, y=24)
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#  #    View Slit Table
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        view_slit_tab_button = tk.Button(
+            labelframe_SlitConf, text="View Slit Table", command=self.show_slit_table, padx=0, pady=0)
+        view_slit_tab_button.place(x=330, y=51)
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#  #    Find Stars
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+
+        button_find_stars = tk.Button(labelframe_SlitConf, text="Find stars", bd=3,
+                                            command=self.find_stars, state='active', padx=0, pady=0)#'disabled')
+        button_find_stars.place(x=330, y=78)
+        self.button_find_stars = button_find_stars
+        
 
         #### check overlapping slits and create a series of new DMD patterns with slits that do not overlap #####
 
@@ -5550,12 +5576,7 @@ class MainPage(tk.Frame):
                                variable=self.Orthonormal_ChkBox_Enabled)
         Orthonormal_checkbox.place(x=100, y=55)
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#  #    View Slit Table
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        view_slit_tab_button = tk.Button(
-            labelframe_SlitConf, text="View Slit Table", command=self.show_slit_table, padx=0, pady=0)
-        view_slit_tab_button.place(x=330, y=55)
+
         """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -7049,14 +7070,21 @@ class MainPage(tk.Frame):
                 print("DMDMAP is ", main_fits_header.dmdmap)
             except:
                 print("no slit grid loaded")   
-           # try:
-           #     DMD.current_dmd_shape
-           # except NameError:
-           #     DMD.current_dmd_shape = None
-            if DMD.current_dmd_shape is not None:
+            #try:
+            #    DMD.current_dmd_shape
+            #except NameError:
+            #    DMD.current_dmd_shape = None
+            #if DMD.current_dmd_shape is not None:
+            #    dmd_hdu = self.create_dmd_pattern_hdu(
+            #        main_fits_header.output_header)
+            #    hdul.append(dmd_hdu)
+            try:
                 dmd_hdu = self.create_dmd_pattern_hdu(
                     main_fits_header.output_header)
                 hdul.append(dmd_hdu)
+            except:
+                print("no DMD mask")
+            
             
             print(main_fits_header.output_header)
     
@@ -7071,7 +7099,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
-            self.fits_image.rotate(self.PAR.Ginga_PA)  
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7146,7 +7174,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
-            self.fits_image.rotate(self.PAR.Ginga_PA)  
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7217,7 +7245,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
-            self.fits_image.rotate(self.PAR.Ginga_PA)  
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7331,7 +7359,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
-            self.fits_image.rotate(self.PAR.Ginga_PA)  
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7473,7 +7501,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
-            self.fits_image.rotate(self.PAR.Ginga_PA)  
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7849,7 +7877,7 @@ class MainPage(tk.Frame):
         # WRITES TO => newimage_ql.fits
         fits.writeto(fits_image,light_bias_dark_flat_buffer,
                      main_fits_header.output_header,overwrite=True)
-        self.fits_image.rotate(self.PAR.Ginga_PA)  
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(fits_image)
         
             
@@ -8178,7 +8206,7 @@ class MainPage(tk.Frame):
 ##                     header=self.hdu_res.header, overwrite=True)
                      header=output_header, overwrite=True)
 
-        self.fits_image.rotate(self.PAR.Ginga_PA)  
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         self.button_find_stars['state'] = 'active'
         self.wcs_exist = True
@@ -8370,7 +8398,7 @@ class MainPage(tk.Frame):
         """ to be written """
 
         self.wcs = None
-        #self.fits_image_ql.rotate(self.PAR.Ginga_PA)  
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         # self.load_file()   #for ging
 
@@ -8480,11 +8508,26 @@ class MainPage(tk.Frame):
             ".", "SAMOS_Astrometry_dev", "WCS_"+str(ra)+"_"+str(dec)+".fits")
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
-        self.wcs_filename.rotate(self.PAR.Ginga_PA)  
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.wcs_filename)
         self.button_find_stars['state'] = 'active'
         
         self.wcs_exist = True
+        
+        #calculate the offset in mm between pointed and actual position for the GS
+        mywcs = wcs.WCS(header)
+        ra_cntr, dec_cntr = mywcs.all_pix2world([[data.shape[0]/2,data.shape[1]/2]], 0)[0]
+        print(ra,dec)
+
+        self.string_RA_cntr.set(ra)
+        self.string_DEC_cntr.set(dec)
+        Delta_RA = float(ra) - float(self.string_RA.get()) 
+        Delta_DEC = float(dec) - float(self.string_DEC.get()) 
+        Delta_RA_mm = round(Delta_RA * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
+        Delta_DEC_mm = round(Delta_DEC * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
+        self.string_RA_cntr_mm.set(Delta_RA_mm)
+        self.string_DEC_cntr_mm.set(Delta_DEC_mm)
+        
         #
         # > to read:
         # hdu = fits_open(self.wcs_filename)
@@ -8496,7 +8539,7 @@ class MainPage(tk.Frame):
     def find_stars(self):
         """ to be written """
 
-        self.fits_image_ql.rotate(self.PAR.Ginga_PA)  
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         
         self.set_slit_drawtype()
@@ -9976,7 +10019,11 @@ class GuideStarPage(tk.Frame):
 #                                     command=self.load_existing_file)
 #        button_FITS_Load.place(x=0, y=0)
 
-        """ RA Entry box"""
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       RA, DEC Entry box
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.string_RA = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA.set("150.17110")  # NGC 3105
@@ -10408,9 +10455,9 @@ class GuideStarPage(tk.Frame):
 #        """ to be written """
 #        pass
 
-    """
+        """
     def load_regfile_csv(self):
-    """
+        """
         """ to be written """
         """
         self.LoadSlits()
@@ -10418,9 +10465,9 @@ class GuideStarPage(tk.Frame):
         """
         
         
-    """
+        """
     def save_regions_xy2xyfile(self):
-    """    
+        """    
         """ Save (x,y) Astropy Regions to .reg file """
         """ converting Ginga Regions to AP/radec Regions
             - collects/compound all Ginga Regions in RRR_xyGA
@@ -10455,9 +10502,9 @@ class GuideStarPage(tk.Frame):
 #        """
 #        return
     
-    """
+        """
     def write_GingaRegions_ds9adFile(self):
-    """
+        """
         """ collect all Ginga regions and save to a ds9/ad .reg file
             - collect all Ginga xy Regions in a AP/ad list
                 uses convert_GAxy_APad()
@@ -10483,7 +10530,7 @@ class GuideStarPage(tk.Frame):
                 "\ncollected all Ginga xy Regions to ads/ad region file file:\n", file.name)
         """    
 
-    """
+        """
     def save_RADECregions_AstropyXYRegFile(self):
         print("saving (x,y) Astropy Regions to .reg file")
         self.display_ds9ad_GingaAP()
@@ -10491,11 +10538,11 @@ class GuideStarPage(tk.Frame):
                                         defaultextension = ".reg",
                                         initialdir=local_dir+"/SAMOS_regions/pixels")
         self.RRR_xyAP.write(file.name, overwrite=True)
-    """
+        """
     
-    """
+        """
     def display_ds9ad_Ginga(self):
-    """    
+        """    
         """ converting ds9/radec Regions to AP/radec Regions
             - open ds9/radec region file and convert to AP/xy (aka RRR_xyAP)
                 -> requires WCS
@@ -10529,9 +10576,9 @@ class GuideStarPage(tk.Frame):
         # return self.RRR_xyAP
         """
 
-    """
+        """
     def convert_GAxy_APad(self):
-    """
+        """
         """ converting Ginga Regions to AP/radec Regions
             - collects/compound all Ginga Regions in RRR_xyGA
             - convert tho AP/xy   (aka RRR_xyAP)
@@ -10558,9 +10605,9 @@ class GuideStarPage(tk.Frame):
         return self.RRR_RADec
         """
 
-    """
+        """
     def draw_slits(self):
-    """
+        """
         """
         # all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         # color in RED all the regions loaded from .reg file
@@ -10568,7 +10615,7 @@ class GuideStarPage(tk.Frame):
         # [print("draw-slits obj tags ", obj.tag) for obj in all_ginga_objects]
         CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
         """
-    """
+        """
     def convert_regions_xyAP2slit(self):
         [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
@@ -10576,11 +10623,11 @@ class GuideStarPage(tk.Frame):
         # requires Dana wcs
         # returns .csv map file
         pass
-    """
+        """
 
-    """
+        """
     def convert_regions_slit2xyAP(self):
-    """
+        """
         """ to be written """
         """
         # requires Dana wcs
@@ -10588,9 +10635,9 @@ class GuideStarPage(tk.Frame):
         pass
         """
 
-    """
+        """
     def convert_regions_xyAP2xyGA(self):
-    """
+        """
         """ converting (x,y) Astropy Regions to (x,y) Ginga Regions """
         """
         print("converting (x,y) Astropy Regions to (x,y) Ginga Regions")
@@ -10624,9 +10671,9 @@ class GuideStarPage(tk.Frame):
         # self.RRR_xyGA is a self.canvas.objects
         """
 
-     """
+        """
      def convert_regions_xyGA2xyAP(self):
-     """    
+         """    
         """ converting (x,y) Ginga Regions to (x,y) Astropy Regions """
         """
         print("converting (x,y) Ginga Regions to (x,y) Astropy Regions")
@@ -10639,9 +10686,9 @@ class GuideStarPage(tk.Frame):
         return self.RRR_xyAP
         print("(x,y) Ginga regions converted to (x,y) Astropy regions")
         """
-    """    
+        """    
     def push_RADEC(self):
-    """
+        """
         """ to be written """
         """
         self.string_RA = tk.StringVar(self, self.RA_regCNTR)
@@ -10653,9 +10700,9 @@ class GuideStarPage(tk.Frame):
         print("RADEC loaded")
         """
 
-    """
+        """
     def load_regfile_RADEC(self):
-    """
+        """
         """ read (RA,DEC) Regions from .reg file
         - open ds9/ad file and read the regions files creating a AP/ad list of regions (aka RRR_RADec)
         - extract center RA, Dec
@@ -10705,9 +10752,9 @@ class GuideStarPage(tk.Frame):
         return self.filename_regfile_RADEC
         """
 
-    """
+        """
     def load_ds9regfile_xyAP(self):
-    """
+        """
         """ read (x,y) Astropy  Regions from ds9 .reg file
             - open ds9 .reg file in pixels units
             - extract the clean filename to get RA and DEC of the central point
@@ -12035,7 +12082,7 @@ class GuideStarPage(tk.Frame):
 
         self.canvas.set_draw_mode(mode)
 
-        """
+
     def draw_cb(self, canvas, tag):
         """ to be written """
         self.Pickup_GuideStar()
@@ -12059,9 +12106,8 @@ class GuideStarPage(tk.Frame):
         # Pick up mode. obj.kind should always be point.
             #this case requires more sophisticated operations, hence a dedicated function            
         self.slit_handler(obj)
-        """
 
-        """
+
     def slit_handler(self, obj):
         print('ready to associate a slit to ')
         print(obj.kind)
@@ -12113,7 +12159,6 @@ class GuideStarPage(tk.Frame):
         # evaluate peaks to get FWHM, center of each peak, etc.
         objs = iq.evaluate_peaks(peaks, data_box)
         # from ginga.readthedocs.io
-        """
         
         
         """
@@ -12240,7 +12285,8 @@ class GuideStarPage(tk.Frame):
         
     def check_valid_mags(self, event=None):
         """ to be written """
-        
+        pass
+    
         """
     def delete_obj_cb(self, obj, canvas, event, pt, ptype):
         try:
@@ -12415,6 +12461,8 @@ class GuideStarPage(tk.Frame):
 
     def save(file_type):
         """ to be written """
+        pass
+        """
         if file_type == None:
             files = [('All Files', '*.*')]
         elif file_type == 'py':
@@ -12427,7 +12475,8 @@ class GuideStarPage(tk.Frame):
             filetypes=files, defaultextension=files)
 
         # btn = ttk.Button(self, text = 'Save', command = lambda : save())
-
+        """
+        
     def create_menubar(self, parent):
         """ to be written """
         

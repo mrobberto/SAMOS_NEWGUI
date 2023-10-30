@@ -1,4 +1,4 @@
-"""#!/usr/bin/env python3
+ """#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 Created on Tue Feb 25 13:21:00 2023
 
@@ -14,6 +14,8 @@ from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 # from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
 from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
+from SAMOS_Astrometry_dev.PanStarrs.Class_ps1image import PanStarrs as PS_image
+from SAMOS_Astrometry_dev.PanStarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 from SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
 from SAMOS_ETC.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
@@ -34,6 +36,7 @@ import time
 import glob
 import pathlib
 import math
+import numpy
 from regions import Regions
 import aplpy
 import twirl
@@ -121,7 +124,9 @@ CCD = Class_Camera(dict_params=params)
 # Import the DMD class
 DMD = DigitalMicroMirrorDevice()  # config_id='pass')
 
-#
+# Instantiate the PanStarrs class
+PSima = PS_image()
+PStab = PS_table()
 
 
 """
@@ -4633,10 +4638,14 @@ class MainPage(tk.Frame):
 #         vbox = tk.Frame(self.frame0l, relief=tk.RAISED, borderwidth=1)
 #         vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       CCD SETUP
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         self.frame_CCDInf = tk.Frame(self, background="cyan")
         self.frame_CCDInf.place(
-            x=10, y=265, anchor="nw", width=430, height=350)
+            x=10, y=265, anchor="nw", width=430, height=330)
         labelframe_CCDInf = tk.LabelFrame(
             self.frame_CCDInf, text="CCD Setup", font=self.bigfont)
         labelframe_CCDInf.pack(fill="both", expand="yes")
@@ -4649,7 +4658,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         # , width=400, height=800)
         self.frame2l = tk.Frame(self.frame_CCDInf, background="cyan")
-        self.frame2l.place(x=4, y=30, anchor="nw", width=420, height=150)
+        self.frame2l.place(x=4, y=30, anchor="nw", width=422, height=150)
 
 #        root = tk.Tk()
 #        root.title("Tab Widget")
@@ -4676,85 +4685,63 @@ class MainPage(tk.Frame):
         self.var_acq_type = tk.StringVar()
         self.tabControl = tabControl
         self.tabControl.bind("<<NotebookTabChanged>>", self.change_acq_type)
+
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      SCIENCE
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
         labelframe_Acquire = tk.LabelFrame(
-            tab1, text="Science", font=self.bigfont)
-        # labelframe_Acquire.place(x=2, y=0, anchor="nw", width=410, height=115)
-        labelframe_Acquire.pack(fill="both", expand="yes")
+                                            tab1, 
+                                            text="Science", 
+                                            font=self.bigfont)
+        labelframe_Acquire.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_ObjectName = tk.Label(labelframe_Acquire, text="Object Name:")
-        label_ObjectName.place(x=4, y=10)
+        label_ObjectName.place(x=4, y=2)
         self.ObjectName = tk.StringVar()
         self.ObjectName.set(self.PAR.PotN['Object Name'])
         entry_ObjectName = tk.Entry(labelframe_Acquire, width=16,  bd=3,
                                     textvariable=self.ObjectName)
-        entry_ObjectName.place(x=100, y=8)
+        entry_ObjectName.place(x=100, y=0)
         #start keeping memory of the opbject name to handle WCS changes
         self.Previous_ObjectName = self.ObjectName.get()
 
-        label_Comment = tk.Label(labelframe_Acquire, text="Comments:")
-        label_Comment.place(x=4, y=55)
-        self.Comment = tk.StringVar()
-        self.Comment.set(self.PAR.PotN['Comment'])
-        self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd=3, 
-                                      textvariable=self.Comment)
-        self.entry_Comment.place(x=100, y=53)
 
         self.Light_NofFrames = tk.IntVar()
         self.Light_NofFrames.set(1)
         label_Light_NofFrames = tk.Label(
-            labelframe_Acquire, text="Nr. Exposures:")
+            labelframe_Acquire, text="Nr. of Frames:")
         label_Light_NofFrames.place(x=220, y=2)
         entry_Light_NofFrames = tk.Entry(labelframe_Acquire, textvariable=self.Light_NofFrames,
                                          width=3, bd=3)
         entry_Light_NofFrames.place(x=315, y=0)
 
+        label_Comment = tk.Label(labelframe_Acquire, text="Comments:")
+        label_Comment.place(x=4, y=35)
+        self.Comment = tk.StringVar()
+        self.Comment.set(self.PAR.PotN['Comment'])
+        self.entry_Comment = tk.Entry(labelframe_Acquire, width=20,  bd=3, 
+                                      textvariable=self.Comment)
+        self.entry_Comment.place(x=100, y=33)
+
         self.var_Light_saveall = tk.IntVar()
-#        r1_Light_saveall = tk.Radiobutton(labelframe_Acquire, text="Save single frames",
-#                                          variable=self.var_Light_saveall, value=1)
         r1_Light_saveall = tk.Checkbutton(labelframe_Acquire, text="Save single frames",
                                           variable=self.var_Light_saveall, onvalue=1, offvalue=0)
-        r1_Light_saveall.place(x=218, y=27)
-
-#        label_ExpTime =  tk.Label(labelframe_Acquire, text="Exp. Time (s):")
-#        #label_ExpTime.place(x=4,y=40)
-#        self.Light_ExpT=tk.StringVar()
-#        self.Light_ExpT.set("0.01")
-#        entry_ExpTime = tk.Entry(labelframe_Acquire, textvariable=self.Light_ExpT, width=5,  bd =3)
-#        #entry_ExpTime.place(x=100, y=38)
-
+        r1_Light_saveall.place(x=250, y=35)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      BIAS
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        labelframe_Bias = tk.LabelFrame(tab2, text="Bias",
-                                        width=300, height=150,
+        labelframe_Bias = tk.LabelFrame(tab2,
+                                        text="Bias",
                                         font=self.bigfont)
-        labelframe_Bias.pack(fill="both", expand="yes")
-
-#        labelframe_Bias.place(x=5,y=5)
-
-#        labelframe_Bias =  tk.LabelFrame(self.frame_CCDInf, text="Bias", font=self.bigfont)
-#        labelframe_Bias.place(x=5, y=53, anchor="nw", width=410, height=115)
-#                        # .pack(fill="both", expand="yes")
+        labelframe_Bias.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_Bias_MasterFile = tk.Label(labelframe_Bias, text="Master Bias:")
-        label_Bias_MasterFile.place(x=4, y=10)
+        label_Bias_MasterFile.place(x=4, y=2)
         self.Bias_MasterFile = tk.StringVar(value="Bias")
         entry_Bias_MasterFile = tk.Entry(
             labelframe_Bias, width=8,  bd=3, textvariable=self.Bias_MasterFile)
-        entry_Bias_MasterFile.place(x=100, y=8)
-
-        label_Comment = tk.Label(labelframe_Bias, text="Comments:")
-        label_Comment.place(x=4, y=55)
-        self.BiasComment = tk.StringVar()
-        self.BiasComment.set(self.PAR.PotN['Comment'])
-        self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd=3, 
-                                          textvariable=self.BiasComment)
-        self.entry_BiasComment.place(x=100, y=53)
+        entry_Bias_MasterFile.place(x=100, y=0)
 
         label_Bias_NofFrames = tk.Label(labelframe_Bias, text="Nr. of Frames:")
         label_Bias_NofFrames.place(x=220, y=2)
@@ -4763,50 +4750,42 @@ class MainPage(tk.Frame):
             labelframe_Bias, width=3,  bd=3, textvariable=self.Bias_NofFrames)
         entry_Bias_NofFrames.place(x=315, y=0)
 
+        label_Comment = tk.Label(labelframe_Bias, text="Comments:")
+        label_Comment.place(x=4, y=35)
+        self.BiasComment = tk.StringVar()
+        self.BiasComment.set(self.PAR.PotN['Comment'])
+        self.entry_BiasComment = tk.Entry(labelframe_Bias, width=20,  bd=3, 
+                                          textvariable=self.BiasComment)
+        self.entry_BiasComment.place(x=100, y=33)
+
+
         self.var_Bias_saveall = tk.IntVar()
-#        r1_Bias_saveall = tk.Radiobutton(
-#            labelframe_Bias, text="Save single frames", variable=self.var_Bias_saveall, value=1)
         r1_Bias_saveall = tk.Checkbutton(labelframe_Bias, text="Save single frames",
                                           variable=self.var_Bias_saveall, onvalue=1, offvalue=0)
-        r1_Bias_saveall.place(x=218, y=27)
-
-
-#        label_Bias_ExpT =  tk.Label(labelframe_Bias, text="Exposure time (s):")
-#        #label_Bias_ExpT.place(x=4,y=10)
-#        self.Bias_ExpT = tk.StringVar(value="0.00")
-#        entry_Bias_ExpT = tk.Entry(labelframe_Bias, width=6,  bd =3, textvariable=self.Bias_ExpT)
-#        #entry_Bias_ExpT.place(x=120, y=6)
-#
-#        button_ExpStart = tk.Button(labelframe_Bias, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-#                                    command=self.expose_bias)
-        # button_ExpStart.place(x=75,y=95)
-
-#        root.mainloop()
-
-
+        r1_Bias_saveall.place(x=250, y=35)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Dark
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Dark = tk.LabelFrame(tab3, text="Dark",
-                                        width=300, height=170,
+                                    #    width=300, height=170,
                                         font=self.bigfont)
-        labelframe_Dark.pack(fill="both", expand="yes")
+        labelframe_Dark.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_Dark_MasterFile = tk.Label(labelframe_Dark, text="Master Dark:")
-        label_Dark_MasterFile.place(x=4, y=10)
+        label_Dark_MasterFile.place(x=4, y=2)
         self.Dark_MasterFile = tk.StringVar(value="Dark")
         entry_Dark_MasterFile = tk.Entry(
             labelframe_Dark, width=8,  bd=3, textvariable=self.Dark_MasterFile)
-        entry_Dark_MasterFile.place(x=100, y=8)
+        entry_Dark_MasterFile.place(x=100, y=0)
 
         label_Comment = tk.Label(labelframe_Dark, text="Comments:")
-        label_Comment.place(x=4, y=55)
+        label_Comment.place(x=4, y=35)
         self.DarkComment = tk.StringVar()
         self.DarkComment.set(self.PAR.PotN['Comment'])
         self.entry_DarkComment = tk.Entry(labelframe_Dark, width=20,  bd=3, 
                                           textvariable = self.DarkComment)
-        self.entry_DarkComment.place(x=100, y=53)
+        self.entry_DarkComment.place(x=100, y=33)
 
         label_Dark_NofFrames = tk.Label(labelframe_Dark, text="Nr. of Frames:")
         label_Dark_NofFrames.place(x=220, y=2)
@@ -4816,46 +4795,33 @@ class MainPage(tk.Frame):
         entry_Dark_NofFrames.place(x=315, y=0)
 
         self.var_Dark_saveall = tk.IntVar()
-#        r1_Dark_saveall = tk.Radiobutton(
-#            labelframe_Dark, text="Save single frames", variable=self.var_Dark_saveall, value=1)
         r1_Dark_saveall = tk.Checkbutton(labelframe_Dark, text="Save single frames",
                                           variable=self.var_Dark_saveall, onvalue=1, offvalue=0)
-        r1_Dark_saveall.place(x=218, y=27)
-
-
-#        label_Dark_ExpT =  tk.Label(labelframe_Dark, text="Exposure time (s):")
-#        #label_Dark_ExpT.place(x=4,y=10)
-#        self.Dark_ExpT = tk.StringVar(value="0.00")
-#        entry_Dark_ExpT = tk.Entry(labelframe_Dark, width=6,  bd =3, textvariable=self.Dark_ExpT)
-#        #entry_Dark_ExpT.place(x=120, y=6)
-
-#        button_ExpStart = tk.Button(labelframe_Dark, text="START", bd=3, bg='#0052cc', font=self.bigfont,
-#                                    command=self.expose_dark)
-        # button_ExpStart.place(x=75,y=95)
+        r1_Dark_saveall.place(x=250, y=35)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #      Flat
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Flat = tk.LabelFrame(tab4, text="Flat",
-                                        width=300, height=170,
+                                       # width=300, height=170,
                                         font=self.bigfont)
-        labelframe_Flat.pack(fill="both", expand="yes")
+        labelframe_Flat.place(x=2, y=5, anchor="nw", width=420, height=90)
 
         label_Flat_MasterFile = tk.Label(
             labelframe_Flat, text="Master Flat File:")
-        label_Flat_MasterFile.place(x=4, y=10)
+        label_Flat_MasterFile.place(x=4, y=2)
         self.Flat_MasterFile = tk.StringVar(value="Flat")
         entry_Flat_MasterFile = tk.Entry(
-            labelframe_Flat, width=11,  bd=3, textvariable=self.Flat_MasterFile)
-        entry_Flat_MasterFile.place(x=100, y=8)
+            labelframe_Flat, width=8,  bd=3, textvariable=self.Flat_MasterFile)
+        entry_Flat_MasterFile.place(x=100, y=0)
 
         label_Comment = tk.Label(labelframe_Flat, text="Comments:")
-        label_Comment.place(x=4, y=55)
+        label_Comment.place(x=4, y=35)
         self.FlatComment = tk.StringVar()
         self.FlatComment.set(self.PAR.PotN['Comment'])
         self.entry_FlatComment = tk.Entry(labelframe_Flat, width=20,  bd=3, 
                                           textvariable=self.FlatComment)
-        self.entry_FlatComment.place(x=100, y=53)
+        self.entry_FlatComment.place(x=100, y=33)
 
 #        label_Flat_ExpT =  tk.Label(labelframe_Flat, text="Exposure time (s):")
 #        #label_Flat_ExpT.place(x=4,y=10)
@@ -4875,7 +4841,7 @@ class MainPage(tk.Frame):
 #            labelframe_Flat, text="Save single frames", variable=self.var_Flat_saveall, value=1)
         r1_Flat_saveall = tk.Checkbutton(labelframe_Flat, text="Save single frames",
                                           variable=self.var_Flat_saveall, onvalue=1, offvalue=0)
-        r1_Flat_saveall.place(x=218, y=27)
+        r1_Flat_saveall.place(x=250, y=35)
 
 #        button_ExpStart = tk.Button(labelframe_Flat, text="START", bd=3, bg='#0052cc', font=self.bigfont,
 #                                    command=self.expose_flat)
@@ -4885,25 +4851,26 @@ class MainPage(tk.Frame):
 #      Buffer
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         labelframe_Buffer = tk.LabelFrame(tab5, text="Buffer",
-                                          width=300, height=180,
+                                         # width=300, height=180,
                                           font=self.bigfont)
-        labelframe_Buffer.pack(fill="both", expand="yes")
+        labelframe_Buffer.place(x=2, y=5, anchor="nw", width=420, height=90)
+
+        label_Buffer_MasterFile = tk.Label(
+            labelframe_Buffer, text="Master Buffer File:")
+        label_Buffer_MasterFile.place(x=4, y=2)
+        self.Buffer_MasterFile = tk.StringVar(value="Buffer")
+        entry_Buffer_MasterFile = tk.Entry(
+            labelframe_Buffer, width=8,  bd=3, textvariable=self.Buffer_MasterFile)
+        entry_Buffer_MasterFile.place(x=100, y=0)
 
         label_Comment = tk.Label(labelframe_Buffer, text="Comments:")
-        label_Comment.place(x=4, y=55)
+        label_Comment.place(x=4, y=35)
         self.BufferComment = tk.StringVar()
         self.BufferComment.set(self.PAR.PotN['Comment'])
         self.entry_BufferComment = tk.Entry(labelframe_Buffer, width=20,  bd=3, 
                                             textvariable = self.BufferComment)
-        self.entry_BufferComment.place(x=100, y=53)
+        self.entry_BufferComment.place(x=100, y=33)
 
-        label_Buffer_MasterFile = tk.Label(
-            labelframe_Buffer, text="Master Buffer File:")
-        label_Buffer_MasterFile.place(x=4, y=10)
-        self.Buffer_MasterFile = tk.StringVar(value="Buffer")
-        entry_Buffer_MasterFile = tk.Entry(
-            labelframe_Buffer, width=11,  bd=3, textvariable=self.Buffer_MasterFile)
-        entry_Buffer_MasterFile.place(x=100, y=8)
 
 #        label_Buffer_ExpT =  tk.Label(labelframe_Buffer, text="Exposure time (s):")
 #        #label_Buffer_ExpT.place(x=4,y=10)
@@ -4924,7 +4891,7 @@ class MainPage(tk.Frame):
 #            labelframe_Buffer, text="Save single frames", variable=self.var_Buffer_saveall, value=1)
         r1_Buffer_saveall = tk.Checkbutton(labelframe_Buffer, text="Save single frames",
                                           variable=self.var_Buffer_saveall, onvalue=1, offvalue=0)
-        r1_Buffer_saveall.place(x=218, y=27)
+        r1_Buffer_saveall.place(x=250, y=35)
 
 #        button_ExpStart = tk.Button(labelframe_Buffer, text="START", bd=3, bg='#0052cc', font=self.bigfont,
 #                                    command=self.expose_buffer)
@@ -4938,7 +4905,7 @@ class MainPage(tk.Frame):
 
         self.AcquisitionFrame = tk.Frame(
             self.frame_CCDInf, background="dark gray")
-        self.AcquisitionFrame.place(x=5, y=175, width=420, height=172)
+        self.AcquisitionFrame.place(x=5, y=150, width=420, height=172)
 
         labelframe_ExposeBegin = tk.LabelFrame(self.AcquisitionFrame, text="Acquisition",
                                                font=self.bigfont)
@@ -5089,7 +5056,7 @@ class MainPage(tk.Frame):
         # , width=400, height=800)
         self.frame_FITSmanager = tk.Frame(self, background="pink")
         self.frame_FITSmanager.place(
-            x=10, y=620, anchor="nw", width=420, height=190)
+            x=10, y=600, anchor="nw", width=430, height=210)
 
         labelframe_FITSmanager = tk.LabelFrame(
             self.frame_FITSmanager, text="FITS manager", font=self.bigfont)
@@ -5114,14 +5081,18 @@ class MainPage(tk.Frame):
                                      command=self.load_existing_file)
         button_FITS_Load.place(x=0, y=0)
 
-        """ RA Entry box"""
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       RA, DEC Entry box
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.string_RA = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA.set("150.17110")  # NGC 3105
         label_RA = tk.Label(labelframe_FITSmanager, text='RA:',  bd=3)
         self.entry_RA = tk.Entry(
             labelframe_FITSmanager, width=11,  bd=3, textvariable=self.string_RA)
-        label_RA.place(x=150, y=1)
+        label_RA.place(x=150, y=-1)
         self.entry_RA.place(x=190, y=-5)
 
         """ DEC Entry box"""
@@ -5143,7 +5114,7 @@ class MainPage(tk.Frame):
 #
 # =============================================================================
         labelframe_Query_Survey = tk.LabelFrame(labelframe_FITSmanager, text="Query Image Server",
-                                                width=400, height=110,
+                                                width=420, height=140,
                                                 font=self.bigfont)
         labelframe_Query_Survey.place(x=5, y=45)
 
@@ -5154,13 +5125,13 @@ class MainPage(tk.Frame):
 #        # Dropdown menu options
         Survey_options = [
             "SkyMapper",
-            "SDSS",
-            "PanSTARRS/DR1/", #SIMBAD - 
-            "DSS",          #SIMBAD - 
-            "DSS2/red",     #SIMBAD - 
-            "CDS/P/AKARI/FIS/N160", #SIMBAD - 
-            "2MASS/J",      #SIMBAD -  
-            "GALEX",        # SIMBAD - 
+#            "SDSS",
+#            "PanSTARRS/DR1/", #SIMBAD - 
+#            "DSS",          #SIMBAD - 
+#            "DSS2/red",     #SIMBAD - 
+#            "CDS/P/AKARI/FIS/N160", #SIMBAD - 
+#            "2MASS/J",      #SIMBAD -  
+#            "GALEX",        # SIMBAD - 
             "AllWISE/W3"]   # SIMBAD - 
 #        # datatype of menu text
         self.Survey_selected = tk.StringVar()
@@ -5172,7 +5143,7 @@ class MainPage(tk.Frame):
         # add bar to split menu, see
         # https://stackoverflow.com/questions/55621073/add-a-separator-to-an-option-menu-in-python-with-tkinter
         self.menu_Survey['menu'].insert_separator(3)
-        self.menu_Survey.place(x=65, y=5)
+        self.menu_Survey.place(x=55, y=4)
 
 #        self.readout_Simbad = tk.Label(self.frame0l, text='')
 
@@ -5225,13 +5196,55 @@ class MainPage(tk.Frame):
         """ twirl Astrometry"""
         button_twirl_Astrometry = tk.Button(labelframe_Query_Survey, text="twirl WCS", bd=3,
                                             command=self.twirl_Astrometry)
-        button_twirl_Astrometry.place(x=120, y=35)
+        button_twirl_Astrometry.place(x=125, y=35)
+        
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       RA, DEC cente display
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        self.string_RA_cntr = tk.StringVar()
+#        self.string_RA.set("189.99763")  #Sombrero
+        self.string_RA_cntr.set(self.string_RA.get())  # NGC 3105
+        label_RA_cntr = tk.Label(labelframe_Query_Survey, text='CNTR RA:',  bd=3)
+        self.entry_RA_cntr = tk.Entry(
+            labelframe_Query_Survey, width=11,  bd=3, textvariable=self.string_RA_cntr)
+        label_RA_cntr.place(x=5, y=65)
+        self.entry_RA_cntr.place(x=80,y=65)
+        
+        self.string_RA_cntr_mm = tk.StringVar()
+        self.string_RA_cntr_mm.set(0)
+        label_RA_cntr_mm = tk.Label(labelframe_Query_Survey, text='X(mm):',  bd=3)
+        self.entry_RA_cntr_mm = tk.Entry(
+            labelframe_Query_Survey, width=5,  bd=3, textvariable=self.string_RA_cntr_mm)
+        label_RA_cntr_mm.place(x=150, y=65)
+        self.entry_RA_cntr_mm.place(x=200, y=65)
 
-        """ find stars"""
-        button_find_stars = tk.Button(labelframe_Query_Survey, text="Find stars", bd=3,
-                                            command=self.find_stars, state='active')#'disabled')
-        button_find_stars.place(x=220, y=35)
-        self.button_find_stars = button_find_stars
+        """ DEC Entry box"""
+        self.string_DEC_cntr = tk.StringVar()
+#        self.string_DEC.set("-11.62305")#Sombrero
+        self.string_DEC_cntr.set(self.string_DEC.get())  # NGC 3105
+        label_DEC_cntr = tk.Label(labelframe_Query_Survey, text='CNTR Dec:',  bd=3)
+        self.entry_DEC_cntr = tk.Entry(
+            labelframe_Query_Survey, width=11,  bd=3, textvariable=self.string_DEC_cntr)
+        label_DEC_cntr.place(x=5, y=90)
+        self.entry_DEC_cntr.place(x=80, y=90)
+        
+        self.string_DEC_cntr_mm = tk.StringVar()
+        self.string_DEC_cntr_mm.set(0)
+        label_DEC_cntr_mm = tk.Label(labelframe_Query_Survey, text='Y(mm):',  bd=3)
+        self.entry_DEC_cntr_mm = tk.Entry(
+            labelframe_Query_Survey, width=5,  bd=3, textvariable=self.string_DEC_cntr_mm)
+        label_DEC_cntr_mm.place(x=150, y=90)
+        self.entry_DEC_cntr_mm.place(x=200, y=90)
+        
+        button_RADEC_to_SOAR = tk.Button(labelframe_Query_Survey, text="Send to Guider", bd=3,
+                             command=self.send_RADEC_to_SOAR)
+        button_RADEC_to_SOAR.place(x=270, y=70)
+        
+        
+        
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #        button_Astrometry =  tk.Button(labelframe_FITSmanager, text="Astrometry", bd=3,
@@ -5423,6 +5436,7 @@ class MainPage(tk.Frame):
         btn3 = tk.Radiobutton(labelframe_SlitConf, text="Delete", padx=9, pady=1,
                               variable=self.Draw_Edit_Pick_Checked, value="pick", command=self.set_mode_cb)
         btn3.place(x=220, y=75)  # pack(anchor='ne')
+    
 
 #        self.deleteChecked = tk.IntVar()
 #        btn4 = tk.Checkbutton(labelframe_SlitConf, text="Delete Picked", padx=5, pady=1,
@@ -5488,7 +5502,24 @@ class MainPage(tk.Frame):
 
         remove_traces_button = tk.Button(
             labelframe_SlitConf, text="Remove Traces", command=self.remove_traces, padx=0, pady=0)
-        remove_traces_button.place(x=330, y=27)
+        remove_traces_button.place(x=330, y=24)
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#  #    View Slit Table
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        view_slit_tab_button = tk.Button(
+            labelframe_SlitConf, text="View Slit Table", command=self.show_slit_table, padx=0, pady=0)
+        view_slit_tab_button.place(x=330, y=51)
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#  #    Find Stars
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+
+        button_find_stars = tk.Button(labelframe_SlitConf, text="Find stars", bd=3,
+                                            command=self.find_stars, state='active', padx=0, pady=0)#'disabled')
+        button_find_stars.place(x=330, y=78)
+        self.button_find_stars = button_find_stars
+        
 
         #### check overlapping slits and create a series of new DMD patterns with slits that do not overlap #####
 
@@ -5545,12 +5576,7 @@ class MainPage(tk.Frame):
                                variable=self.Orthonormal_ChkBox_Enabled)
         Orthonormal_checkbox.place(x=100, y=55)
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#  #    View Slit Table
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        view_slit_tab_button = tk.Button(
-            labelframe_SlitConf, text="View Slit Table", command=self.show_slit_table, padx=0, pady=0)
-        view_slit_tab_button.place(x=330, y=55)
+
         """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #
@@ -7044,14 +7070,21 @@ class MainPage(tk.Frame):
                 print("DMDMAP is ", main_fits_header.dmdmap)
             except:
                 print("no slit grid loaded")   
-           # try:
-           #     DMD.current_dmd_shape
-           # except NameError:
-           #     DMD.current_dmd_shape = None
-            if DMD.current_dmd_shape is not None:
+            #try:
+            #    DMD.current_dmd_shape
+            #except NameError:
+            #    DMD.current_dmd_shape = None
+            #if DMD.current_dmd_shape is not None:
+            #    dmd_hdu = self.create_dmd_pattern_hdu(
+            #        main_fits_header.output_header)
+            #    hdul.append(dmd_hdu)
+            try:
                 dmd_hdu = self.create_dmd_pattern_hdu(
                     main_fits_header.output_header)
                 hdul.append(dmd_hdu)
+            except:
+                print("no DMD mask")
+            
             
             print(main_fits_header.output_header)
     
@@ -7066,6 +7099,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7140,6 +7174,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7210,6 +7245,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7323,6 +7359,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
 
             #create fits header for final image
@@ -7464,6 +7501,7 @@ class MainPage(tk.Frame):
             hdul.close()
     
             # self.Display(fits_image_converted)
+            self.fitsimage.rotate(self.PAR.Ginga_PA)  
             self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7839,6 +7877,7 @@ class MainPage(tk.Frame):
         # WRITES TO => newimage_ql.fits
         fits.writeto(fits_image,light_bias_dark_flat_buffer,
                      main_fits_header.output_header,overwrite=True)
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(fits_image)
         
             
@@ -7973,28 +8012,34 @@ class MainPage(tk.Frame):
 
     def Query_Survey(self):
         """ to be written """
+        self.clear_canvas()
         from astroquery.hips2fits import hips2fits
         Survey = self.Survey_selected.get()
 
         if Survey == "SkyMapper":
             try:
                 self.SkyMapper_query()
+                #GuideStarPage.SkyMapper_query_GuideStar(self)
             except:
                 print("\n Sky mapper image server is down \n")
             return
 
-        if Survey == "SDSS":
+        elif Survey == "SDSS":
             self.SDSS_query()
             return
             
           
 
-        else:       # SIMBAD database
-            if Survey == "PanSTARRS/DR1/":
-                Survey = Survey+self.string_Filter.get()
-                print("\n Quering PanSTARRS/DR1")
-            """    
+        elif Survey == "PanSTARRS/DR1/":
+            try:
+                self.PanStarrs_query()
+            except:
+                print("\n PanStarrs image server is down \n")
+            return
+
+        else:
             print("Survey selected: ",Survey,'\n')
+            """
             coord = SkyCoord(self.string_RA.get()+'  ' +
                          self.string_DEC.get(), unit=(u.deg, u.deg), frame='fk5')
             # coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5')
@@ -8095,7 +8140,7 @@ class MainPage(tk.Frame):
      
             self.button_find_stars['state'] = 'active'
 
-            img.load_hdu(self.hdu_res)
+                   
             print('\n', self.hdu_res.header)
             self.fitsimage.set_image(img)
             self.AstroImage = img
@@ -8160,9 +8205,89 @@ class MainPage(tk.Frame):
         fits.writeto(self.fits_image_ql, self.hdu_res.data,
 ##                     header=self.hdu_res.header, overwrite=True)
                      header=output_header, overwrite=True)
+
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         self.button_find_stars['state'] = 'active'
         self.wcs_exist = True
+ 
+    
+ 
+    def SkyMapper_query_old(self):
+        """ get image from SkyMapper """
+
+        img = AstroImage()
+        Posx = self.string_RA.get()
+        Posy = self.string_DEC.get()
+        filt = self.string_Filter.get()
+        filepath = skymapper_interrogate(Posx, Posy, 1058, 1032, filt)
+        # filepath = skymapper_interrogate_VOTABLE(Posx, Posy, filt)
+        """
+        hdu_in = fits.open(filepath.name)
+            #            img.load_hdu(hdu_in[0])
+            
+        data = hdu_in[0].data
+        header = hdu_in[0].header
+        hdu_in.close()
+        
+        #for debug, write onfile the fits file returned by skymapper
+        """
+        self.fits_image_ql = os.path.join(
+            self.PAR.QL_images, "newimage_ql.fits")
+        os.remove(self.fits_image_ql)
+        shutil.move(filepath.name,self.fits_image_ql)  
+        #fits.writeto(self.fits_image_ql, data,
+        #                 header=header, overwrite=True)
+        self.fits_image.rotate(self.PAR.Ginga_PA)  
+        self.Display(self.fits_image_ql)
+        
+            
+        """
+        with fits.open(filepath.name) as hdu_in:
+            #            img.load_hdu(hdu_in[0])
+            data = hdu_in[0].data
+            image_data = Image.fromarray(data)
+            img_res = image_data.resize(size=(1032, 1056))
+            self.hdu_res = fits.PrimaryHDU(img_res)
+            # ra, dec in degrees
+            ra = Posx
+            dec = Posy
+            self.hdu_res.header['RA'] = ra
+            self.hdu_res.header['DEC'] = dec
+
+            output_header = copy.deepcopy(hdu_in[0].header)
+            main_fits_header.add_astrometric_fits_keywords(self.hdu_res.header)
+#            rebinned_filename = "./SkyMapper_g_20140408104645-29_150.171-54.790_1056x1032.fits"
+ #           hdu.writeto(rebinned_filename,overwrite=True)
+            output_header['RA'] = ra
+            output_header['DEC'] = dec
+            output_header['NAXIS1'] = float(1056)
+            output_header['NAXIS2'] = float(1032)
+            output_header['CRVAL1'] = float(ra)
+            output_header['CRVAL2'] = float(dec)
+            output_header['CRPIX1'] = float(528)
+            output_header['CRPIX2'] = float(516)
+            
+            self.wcs =wcs.WCS(output_header)
+            self.wcs_exist = True        
+            
+            img.load_hdu(self.hdu_res)
+
+            self.fitsimage.set_image(img)
+            self.AstroImage = img
+            self.fullpath_FITSfilename = filepath.name
+        hdu_in.close()
+        
+        self.fits_image_ql = os.path.join(
+            self.PAR.QL_images, "newimage_ql.fits")
+        fits.writeto(self.fits_image_ql, self.hdu_res.data,
+##                     header=self.hdu_res.header, overwrite=True)
+                     header=output_header, overwrite=True)
+        self.Display(self.fits_image_ql)
+        self.button_find_stars['state'] = 'active'
+        self.wcs_exist = True
+        """
+        
         
     def SDSS_query(self):
         """ get image from SDSS 
@@ -8266,10 +8391,14 @@ class MainPage(tk.Frame):
         fits.writeto(self.fits_image_ql, self.hdu_res.data,
                      header=self.hdu_res.header, overwrite=True)     
         
+           
+            
+           
     def twirl_Astrometry(self):
         """ to be written """
 
         self.wcs = None
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         # self.load_file()   #for ging
 
@@ -8278,14 +8407,23 @@ class MainPage(tk.Frame):
         header = hdu.header
         data = hdu.data
         hdu_Main.close()
-        ra, dec = header["RA"], header["DEC"]
+        
+        # not all headers use ra,dec
+        try:
+            ra, dec = header["RA"], header["DEC"]
+        except:
+            mywcs = wcs.WCS(header)
+            ra, dec = mywcs.all_pix2world([[data.shape[0]/2,data.shape[1]/2]], 0)[0]
+        print(ra,dec)
+        
+        
         center = SkyCoord(ra, dec, unit=["deg", "deg"])
         center = [center.ra.value, center.dec.value]
 
         # image shape and pixel size in "
         shape = data.shape
-        pixel = self.PAR.SISI_PixelScale * u.arcsec
-        fov = np.max(shape)*pixel.to(u.deg).value
+        #pixel = self.PAR.SISI_PixelScale * u.arcsec
+        fov = 0.05#np.max(shape)*pixel.to(u.deg).value 
 
         # Let's find some stars and display the image
 
@@ -8302,7 +8440,7 @@ class MainPage(tk.Frame):
              stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
 
 #        plt.figure(figsize=(8,8))
-        med = np.median(data)
+#        med = np.median(data)
 #        plt.imshow(data, cmap="Greys_r", vmax=np.std(data)*5 + med, vmin=med)
 #        plt.plot(*stars.T, "o", fillstyle="none", c="w", ms=12)
 
@@ -8310,7 +8448,7 @@ class MainPage(tk.Frame):
 #        xs=stars[0,0]
 #        ys=stars[0,1]
 #        center_pix = PixCoord(x=xs, y=ys)
-        radius_pix = 42
+        radius_pix = 7
 
 #        this_region = CirclePixelRegion(center_pix, radius_pix)
 
@@ -8319,13 +8457,18 @@ class MainPage(tk.Frame):
         regs = Regions(regions)
         for reg in regs:
             obj = r2g(reg)
+            obj.color="red"
         # add_region(self.canvas, obj, tag="twirlstars", draw=True)
             self.canvas.add(obj)
 
         # we can now compute the WCS
         gaias = twirl.gaia_radecs(center, fov, limit=self.nrofstars.get())
-
-        self.wcs = twirl.compute_wcs(stars, gaias)
+        
+#        stars_sorted = np.flip(np.sort(stars,axis=0))
+#        gaias_sorted = np.sort(gaias,axis=0)
+        #stars_sorted = np.sort(stars,axis=0)
+        #gaias_sorted = np.flip(np.sort(gaias,axis=0))
+        self.wcs = twirl.compute_wcs(stars, gaias)#,tolerance=0.1)
 
         global WCS_global   #used for HTS
         WCS_global = self.wcs
@@ -8333,14 +8476,14 @@ class MainPage(tk.Frame):
         # Lets check the WCS solution
 
 #        plt.figure(figsize=(8,8))
-        radius_pix = 25
+        radius_pix = 21
         gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.wcs)).T
         regions_gaia = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
                         for x, y in gaia_pixel]  # [(1, 2), (3, 4)]]
         regs_gaia = Regions(regions_gaia)
         for reg in regs_gaia:
             obj = r2g(reg)
-            obj.color = "red"
+            obj.color = "green"
         # add_region(self.canvas, obj, tag="twirlstars", redraw=True)
             self.canvas.add(obj)
 
@@ -8362,13 +8505,29 @@ class MainPage(tk.Frame):
 
         hdu_wcs[0].data = data  # add data to fits file
         self.wcs_filename = os.path.join(
-            ".", "SAMOS_Astrometry_dev", "WCS_"+ra+"_"+dec+".fits")
+            ".", "SAMOS_Astrometry_dev", "WCS_"+str(ra)+"_"+str(dec)+".fits")
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.wcs_filename)
         self.button_find_stars['state'] = 'active'
         
         self.wcs_exist = True
+        
+        #calculate the offset in mm between pointed and actual position for the GS
+        mywcs = wcs.WCS(header)
+        ra_cntr, dec_cntr = mywcs.all_pix2world([[data.shape[0]/2,data.shape[1]/2]], 0)[0]
+        print(ra,dec)
+
+        self.string_RA_cntr.set(ra)
+        self.string_DEC_cntr.set(dec)
+        Delta_RA = float(ra) - float(self.string_RA.get()) 
+        Delta_DEC = float(dec) - float(self.string_DEC.get()) 
+        Delta_RA_mm = round(Delta_RA * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
+        Delta_DEC_mm = round(Delta_DEC * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
+        self.string_RA_cntr_mm.set(Delta_RA_mm)
+        self.string_DEC_cntr_mm.set(Delta_DEC_mm)
+        
         #
         # > to read:
         # hdu = fits_open(self.wcs_filename)
@@ -8380,7 +8539,9 @@ class MainPage(tk.Frame):
     def find_stars(self):
         """ to be written """
 
+        self.fitsimage.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
+        
         self.set_slit_drawtype()
         # self.load_file()   #for ging
 
@@ -9413,7 +9574,11 @@ class MainPage(tk.Frame):
         return True
 
     def cleanup_kind(self, kind):
-        """ to be written """
+        """  
+        REMOVE only a specific type of object
+        self.cleanup_kind('point')
+        self.cleanup_kind('box') 
+        """
         # check that we have created a compostition of objects:
         CM.CompoundMixin.is_compound(self.canvas.objects)     # True
 
@@ -9854,7 +10019,11 @@ class GuideStarPage(tk.Frame):
 #                                     command=self.load_existing_file)
 #        button_FITS_Load.place(x=0, y=0)
 
-        """ RA Entry box"""
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#       RA, DEC Entry box
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         self.string_RA = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA.set("150.17110")  # NGC 3105
@@ -9947,12 +10116,12 @@ class GuideStarPage(tk.Frame):
         entry_Filter = tk.Entry(labelframe_Query_Survey,
                                 width=2,  bd=3, textvariable=self.string_Filter)
         label_Filter.place(x=195, y=5)
-        entry_Filter.place(x=240, y=4)
+        entry_Filter.place(x=240, y=3)
         
         """ QUERY BUTTON"""
         button_Query_Survey = tk.Button(
             labelframe_Query_Survey, text="Query", bd=3, command=self.Query_Survey)
-        button_Query_Survey.place(x=300, y=5)
+        button_Query_Survey.place(x=300, y=3)
 
 
         """ Nr. of Stars Entry box"""
@@ -10106,7 +10275,7 @@ class GuideStarPage(tk.Frame):
                                 text="low mag")
         label_low_mag.place(x=4, y=4)
         self.low_mag = tk.IntVar()
-        self.low_mag.set(10)
+        self.low_mag.set(11)
         self.textbox_low_mag = tk.Entry(
             labelframe_SlitConf, textvariable=self.low_mag, width=4)
         # self.textbox_low_mag.place(x=130,y=5)
@@ -10157,46 +10326,56 @@ class GuideStarPage(tk.Frame):
         self.string_RA_GS = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_RA_GS.set("150.17110")  # NGC 3105
-        label_RA_GS = tk.Label(labelframe_SlitConf, text='RA:',  bd=3)
-        self.entry_RA_GS = tk.Entry(
+        Label_RA_GS = tk.Label(labelframe_SlitConf, text='RA:',  bd=3)
+        Entry_RA_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_RA_GS)
-        label_RA_GS.place(x=5, y=51)
-        self.entry_RA_GS.place(x=45, y=51)
+        Label_RA_GS.place(x=5, y=51)
+        Entry_RA_GS.place(x=45, y=51)
 
         """ DEC Entry box"""
         self.string_DEC_GS = tk.StringVar()
 #        self.string_DEC.set("-11.62305")#Sombrero
         self.string_DEC_GS.set("-54.79004")  # NGC 3105
-        label_DEC_GS = tk.Label(labelframe_SlitConf, text='Dec:',  bd=3)
-        self.entry_DEC_GS = tk.Entry(
+        Label_DEC_GS = tk.Label(labelframe_SlitConf, text='Dec:',  bd=3)
+        Entry_DEC_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_DEC_GS)
-        label_DEC_GS.place(x=5, y=71)
-        self.entry_DEC_GS.place(x=45, y=71)
+        Label_DEC_GS.place(x=5, y=71)
+        Entry_DEC_GS.place(x=45, y=71)
         
         """ X shift"""
         self.string_Xmm_GS = tk.StringVar()
 #        self.string_RA.set("189.99763")  #Sombrero
         self.string_Xmm_GS.set("150.17110")  # NGC 3105
-        label_Xmm_GS = tk.Label(labelframe_SlitConf, text='X(mm)',  bd=3)
-        self.entry_Xmm_GS = tk.Entry(
+        Label_Xmm_GS = tk.Label(labelframe_SlitConf, text='X(mm)',  bd=3)
+        Entry_Xmm_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_Xmm_GS)
-        label_Xmm_GS.place(x=145, y=51)
-        self.entry_Xmm_GS.place(x=195, y=51)
+        Label_Xmm_GS.place(x=145, y=51)
+        Entry_Xmm_GS.place(x=195, y=51)
 
         """ Y shift"""
         self.string_Ymm_GS = tk.StringVar()
 #        self.string_DEC.set("-11.62305")#Sombrero
         self.string_Ymm_GS.set("-54.79004")  # NGC 3105
-        label_Ymm_GS = tk.Label(labelframe_SlitConf, text='Y(mm)',  bd=3)
-        self.entry_Ymm_GS = tk.Entry(
+        Label_Ymm_GS = tk.Label(labelframe_SlitConf, text='Y(mm)',  bd=3)
+        Entry_Ymm_GS = tk.Entry(
             labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_Ymm_GS)
-        label_Ymm_GS.place(x=145, y=71)
-        self.entry_Ymm_GS.place(x=195, y=71)
+        Label_Ymm_GS.place(x=145, y=71)
+        Entry_Ymm_GS.place(x=195, y=71)
+
+        """ magnitude"""
+        self.string_mag_GS = tk.StringVar()
+#        self.string_DEC.set("-11.62305")#Sombrero
+#        self.string_mag_GS.set("-54.79004")  # NGC 3105
+        Label_mag_GS = tk.Label(labelframe_SlitConf, text='Mag',  bd=3)
+        Entry_mag_GS = tk.Entry(
+            labelframe_SlitConf, width=5,  bd=3, textvariable=self.string_mag_GS)
+        Label_mag_GS.place(x=295, y=65)
+        Entry_mag_GS.place(x=340, y=64)
 
 
         button_RADEC_to_SOAR = tk.Button(labelframe_SlitConf, text="Accept Guide Star", bd=3,
                              command=self.send_RADEC_to_SOAR)
-        button_RADEC_to_SOAR.place(x=280, y=61)
+        button_RADEC_to_SOAR.place(x=5, y=100)
 
 
 
@@ -10276,12 +10455,19 @@ class GuideStarPage(tk.Frame):
 #        """ to be written """
 #        pass
 
+        """
     def load_regfile_csv(self):
+        """
         """ to be written """
+        """
         self.LoadSlits()
         pass
-
+        """
+        
+        
+        """
     def save_regions_xy2xyfile(self):
+        """    
         """ Save (x,y) Astropy Regions to .reg file """
         """ converting Ginga Regions to AP/radec Regions
             - collects/compound all Ginga Regions in RRR_xyGA
@@ -10289,7 +10475,7 @@ class GuideStarPage(tk.Frame):
             - write to AP/xy .region file
                 => requires WCS
         """
-
+        """
         print("saving (x,y) Astropy Regions to .reg file")
         file = filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                         defaultextension=".reg",
@@ -10301,6 +10487,7 @@ class GuideStarPage(tk.Frame):
         # 3. Write astropy regions, pixels
         self.RRR_xyAP.write(file.name, overwrite=True)
         print("(x,y) Astropy Regions to .reg file:\n", file.name)
+        """
 
 #    def push_CCD(self):
 #        """ to be written """
@@ -10314,12 +10501,16 @@ class GuideStarPage(tk.Frame):
 #
 #        """
 #        return
-
+    
+        """
     def write_GingaRegions_ds9adFile(self):
+        """
         """ collect all Ginga regions and save to a ds9/ad .reg file
             - collect all Ginga xy Regions in a AP/ad list
                 uses convert_GAxy_APad()
             - wites the AP/ad on file list as set of ds9/ad region files
+        """
+        
         """
         if "RRR_RADec" not in dir(self):
             print("There are no (RA,Dec) regions to be written on file")
@@ -10337,8 +10528,9 @@ class GuideStarPage(tk.Frame):
             print("saved  AP/ad list to ds/ad region file file:\n", file.name)
             print(
                 "\ncollected all Ginga xy Regions to ads/ad region file file:\n", file.name)
+        """    
 
-    """
+        """
     def save_RADECregions_AstropyXYRegFile(self):
         print("saving (x,y) Astropy Regions to .reg file")
         self.display_ds9ad_GingaAP()
@@ -10346,14 +10538,18 @@ class GuideStarPage(tk.Frame):
                                         defaultextension = ".reg",
                                         initialdir=local_dir+"/SAMOS_regions/pixels")
         self.RRR_xyAP.write(file.name, overwrite=True)
-    """
-
+        """
+    
+        """
     def display_ds9ad_Ginga(self):
+        """    
         """ converting ds9/radec Regions to AP/radec Regions
             - open ds9/radec region file and convert to AP/xy (aka RRR_xyAP)
                 -> requires WCS
             - convert AP/xy to Ginga/xy (aka RRR_xyGA)
             - convert AP/xy to AP/ad (aka RRR_RADec)
+        """
+        
         """
         print("displaying ds9/radec Regions on Ginga\n")
         # requires wcs: class AStrometry
@@ -10378,13 +10574,18 @@ class GuideStarPage(tk.Frame):
         print("displayed APradec regions on Ginga display")
 
         # return self.RRR_xyAP
+        """
 
+        """
     def convert_GAxy_APad(self):
+        """
         """ converting Ginga Regions to AP/radec Regions
             - collects/compound all Ginga Regions in RRR_xyGA
             - convert tho AP/xy   (aka RRR_xyAP)
             - convert to AP/radec (aka RRR_RADec)
                 => requires WCS
+        """
+        
         """
         print("converting Ginga Regions to AP/radec Regions")
         # requires wcs: class AStrometry
@@ -10402,16 +10603,19 @@ class GuideStarPage(tk.Frame):
         print("converted AP/xy converted to AP/ad (aka RRR_RADec")
         print("\nCompleted conversion Ginga Regions to AP/radec Regions ")
         return self.RRR_RADec
+        """
 
+        """
     def draw_slits(self):
-
+        """
+        """
         # all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         # color in RED all the regions loaded from .reg file
         CM.CompoundMixin.set_attr_all(self.canvas, color="red")
         # [print("draw-slits obj tags ", obj.tag) for obj in all_ginga_objects]
         CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
-
-    """
+        """
+        """
     def convert_regions_xyAP2slit(self):
         [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
@@ -10419,16 +10623,23 @@ class GuideStarPage(tk.Frame):
         # requires Dana wcs
         # returns .csv map file
         pass
-    """
+        """
 
+        """
     def convert_regions_slit2xyAP(self):
+        """
         """ to be written """
+        """
         # requires Dana wcs
         # returns RRR_xyAP
         pass
+        """
 
+        """
     def convert_regions_xyAP2xyGA(self):
+        """
         """ converting (x,y) Astropy Regions to (x,y) Ginga Regions """
+        """
         print("converting (x,y) Astropy Regions to (x,y) Ginga Regions")
 
         # cleanup, keep only the slits
@@ -10458,9 +10669,13 @@ class GuideStarPage(tk.Frame):
         print("(x,y) Astropy regions converted to (x,y) Ginga regions\nRRR_xyGA created")
         return self.RRR_xyGA
         # self.RRR_xyGA is a self.canvas.objects
+        """
 
-    def convert_regions_xyGA2xyAP(self):
+        """
+     def convert_regions_xyGA2xyAP(self):
+         """    
         """ converting (x,y) Ginga Regions to (x,y) Astropy Regions """
+        """
         print("converting (x,y) Ginga Regions to (x,y) Astropy Regions")
         all_ginga_objects = CM.CompoundMixin.get_objects(self.canvas)
         list_all_ginga_objects = list(all_ginga_objects)
@@ -10470,9 +10685,12 @@ class GuideStarPage(tk.Frame):
                 self.RRR_xyAP.append(g2r(list_all_ginga_objects[i]))
         return self.RRR_xyAP
         print("(x,y) Ginga regions converted to (x,y) Astropy regions")
-        
+        """
+        """    
     def push_RADEC(self):
+        """
         """ to be written """
+        """
         self.string_RA = tk.StringVar(self, self.RA_regCNTR)
         self.string_DEC = tk.StringVar(self, self.DEC_regCNTR)
         self.entry_RA.delete(0, tk.END)
@@ -10480,11 +10698,15 @@ class GuideStarPage(tk.Frame):
         self.entry_RA.insert(0, self.RA_regCNTR)
         self.entry_DEC.insert(0, self.DEC_regCNTR)
         print("RADEC loaded")
+        """
 
+        """
     def load_regfile_RADEC(self):
+        """
         """ read (RA,DEC) Regions from .reg file
         - open ds9/ad file and read the regions files creating a AP/ad list of regions (aka RRR_RADec)
         - extract center RA, Dec
+        """
         """
         print("read ds9/ad .reg file to create AP/ad regions (aka RRR_RADec")
         self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
@@ -10528,8 +10750,11 @@ class GuideStarPage(tk.Frame):
         print("(RA,DEC) Regions loaded from .reg file")
 
         return self.filename_regfile_RADEC
+        """
 
+        """
     def load_ds9regfile_xyAP(self):
+        """
         """ read (x,y) Astropy  Regions from ds9 .reg file
             - open ds9 .reg file in pixels units
             - extract the clean filename to get RA and DEC of the central point
@@ -10537,6 +10762,8 @@ class GuideStarPage(tk.Frame):
             - visualize xyAP regions on GINGA display\n
                 => WCS solution needed
             - convert xyAP regions to GINGA regions (aka RRR_xyGA)
+        """
+        
         """
         print("\n Load ds9/xy reg. file")
         reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
@@ -10581,7 +10808,7 @@ class GuideStarPage(tk.Frame):
         # self.display_region_file()
         print("ds9/xy regions loaded in Ginga")
         # regfile = open(regfileName, "r")
-
+        """
     """
     def display_region_file(self):
         [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]
@@ -10593,7 +10820,7 @@ class GuideStarPage(tk.Frame):
 # DONE WITH THE FIELDS
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
     """
-
+    
     def regfname_handle_focus_out(self, _):
         """ to be written """
 
@@ -11115,6 +11342,10 @@ class GuideStarPage(tk.Frame):
 
     def Query_Survey(self):
         """ to be written """
+        #cleanup the canfas
+        CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
+        self.clear_canvas()
+
         from astroquery.hips2fits import hips2fits
         Survey = self.Survey_selected.get()
 
@@ -11125,16 +11356,16 @@ class GuideStarPage(tk.Frame):
                 print("\n Sky mapper image server is down \n")
             return
 
-        if Survey == "SDSS":
+        elif Survey == "SDSS":
             self.SDSS_query()
             return
-            
-          
+    
+        elif Survey == "PanSTARRS/DR1/":
+            print("\n Quering PanSTARRS/DR1")
+            self.PanStarrs_query_GuideStars()
 
-        else:       # SIMBAD database
-            if Survey == "PanSTARRS/DR1/":
-                Survey = Survey+self.string_Filter.get()
-                print("\n Quering PanSTARRS/DR1")
+        else:
+            Survey = Survey+self.string_Filter.get()
             """    
             print("Survey selected: ",Survey,'\n')
             coord = SkyCoord(self.string_RA.get()+'  ' +
@@ -11278,73 +11509,9 @@ class GuideStarPage(tk.Frame):
             #for debug, write onfile the fits file returned by skymapper
             SkyMapperProduced = os.path.join(self.PAR.QL_images, "SkyMapperProduced.fits")
             fits.writeto(SkyMapperProduced, self.data_GS,
-                         header=self.header_GS, overwrite=True)
-            
-            #Needed?
-            #NAXIS1 = header['NAXIS1']  # pixels
-            #NAXIS12= header['NAXIS2']
-            #SkyMapper_Xscale = header['CD1_1']   # degrees/pixel
-            #SkyMapper_Yscale = header['CD2_2']
-            #SkyMapper_XFoV = NAXIS1 * SkyMapper_Xscale  # degrees 
-            #SkyMapper_YFoV = NAXIS12* SkyMapper_Yscale
-            
-            """
-            image_data = Image.fromarray(data)
-            #img_res = image_data.resize(size=(SAMI_GUIDE_FoV_SISIpix, SAMI_GUIDE_FoV_SISIpix))
-            img_res = image_data
-            
-            self.hdu_res = fits.PrimaryHDU(img_res)
-#            main_fits_header.add_astrometric_fits_keywords(self.hdu_res)
-            self.hdu_res.header = copy.deepcopy(hdu_in[0].header)
-            """
-            
-            """
-            # ADD ra, dec in degrees
-            ra = Posx
-            dec = Posy
-            self.hdu_res.header['RA'] = ra
-            self.hdu_res.header['DEC'] = dec
-            
-            #ADD OTHER INFO GRABBED BY SKYMapper
-            #main_fits_header.add_astrometric_fits_keywords(self.hdu_res_header)
-
-#            rebinned_filename = "./SkyMapper_g_20140408104645-29_150.171-54.790_1056x1032.fits"
-#           hdu.writeto(rebinned_filename,overwrite=True)
-            self.hdu_res.header['RA'] = ra
-            self.hdu_res.header['DEC'] = dec
-            self.hdu_res.header['NAXIS1'] = int(float( SAMI_GUIDE_FoV_SISIpix))
-            self.hdu_res.header['NAXIS2'] = int(float( SAMI_GUIDE_FoV_SISIpix))
-            self.hdu_res.header['CRVAL1'] = float(ra)
-            self.hdu_res.header['CRVAL2'] = float(dec)
-            self.hdu_res.header['CRPIX1'] = float( SAMI_GUIDE_FoV_SISIpix/2)
-            self.hdu_res.header['CRPIX2'] = float( SAMI_GUIDE_FoV_SISIpix/2)
-            self.hdu_res.header['CD1_1'] = self.hdu_res.header['CD1_1'] / (SAMI_GUIDE_FoV_SISIpix/data.shape[0])
-            self.hdu_res.header['CD2_2'] = self.hdu_res.header['CD1_1'] / (SAMI_GUIDE_FoV_SISIpix/data.shape[1])
-            """
-            
-            """
-            self.wcs =wcs.WCS(self.hdu_res.header)
-            self.wcs_exist = True        
-            
-            img.load_hdu(self.hdu_res)
-
-            self.fitsimage.set_image(img)
-            self.AstroImage = img
-            self.fullpath_FITSfilename = filepath.name
-            
-        hdu_in.close()
-        
-        self.field_GuideStar = os.path.join(
-            self.PAR.QL_images, "Field_GuideStar.fits")
-        fits.writeto(self.field_GuideStar, self.hdu_res.data,
-                     header=self.hdu_res.header, overwrite=True)
-#                     header=output_header, overwrite=True)
-
-        #self.Display(self.field_GuideStar)
-        """
+                         header=self.header_GS, overwrite=True)            
+        self.fitsimage.rotate(self.PAR.Ginga_PA)    
         self.Display(SkyMapperProduced)
-        #self.button_find_stars['state'] = 'active'
-        #self.wcs_exist = True
         
         """
         TABLE CONSTRUCTION
@@ -11360,14 +11527,25 @@ class GuideStarPage(tk.Frame):
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 shutil.copyfileobj(response, tmp_file)
         self.table_full = pd.read_csv(tmp_file.name)
-        
+        #rename the magnitudes using the general band names
+        self.table_full = self.table_full.rename(columns={"g_psf": "g_band","r_psf": "r_band","i_psf": "i_band","z_psf": "z_band","raj2000":"RA","dej2000":"DEC"})
         
         
         
     def Pick_GuideStar(self):        
         """ to be written, but it seems rather obvious"""
+        CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
         self.clear_canvas()
-        self.table = self.table_full[ (self.table_full['i_psf']>self.low_mag.get()) & (self.table_full['i_psf']<self.high_mag.get()) ]
+        filt = self.string_Filter.get()
+        if filt == "g":
+            self.table_full['star_mag'] = self.table_full['g_band']
+        elif filt == "r":
+            self.table_full['star_mag'] = self.table_full['r_band']
+        elif filt == "i":
+            self.table_full['star_mag'] = self.table_full['i_band']
+        elif filt == "z":
+            self.table_full['star_mag'] = self.table_full['z_band']
+        self.table = self.table_full[ (self.table_full['star_mag']>self.low_mag.get()) & (self.table_full['star_mag']<self.high_mag.get()) ]
         
         viewer=self.fitsimage
         image = viewer.get_image()
@@ -11377,7 +11555,7 @@ class GuideStarPage(tk.Frame):
         nstar = self.table.shape[0]
         i_drop=[]
         for i in range(nstar):
-            x, y = image.radectopix(self.table.raj2000.iloc[i], self.table.dej2000.iloc[i], format='str', coords='fits')
+            x, y = image.radectopix(self.table.RA.iloc[i], self.table.DEC.iloc[i], format='str', coords='fits')
             #CHECK IF THE STAR IS OUTSIDE THE CENTRAL REGION
             if  ( (x>round(self.data_GS.shape[0]/4)) and (x<round(self.data_GS.shape[0]*3/4)) and (y>round(self.data_GS.shape[0]/4)) and (y<round(self.data_GS.shape[0]*3/4)) ):
                 i_drop.append(self.table.index[i])
@@ -11385,7 +11563,7 @@ class GuideStarPage(tk.Frame):
             elif  ( (x<0) or (x>round(self.data_GS.shape[0])) or (y<0) or (y>round(self.data_GS.shape[0])) ):
                 i_drop.append(self.table.index[i])
                 continue
-            print(i,self.table.raj2000.iloc[i], self.table.dej2000.iloc[i],x,y)
+            print(i,self.table.RA.iloc[i], self.table.DEC.iloc[i],x,y)
             x_SkyMap.append(x)
             y_SkyMap.append(y)
         self.table = self.table.drop(i_drop)
@@ -11443,12 +11621,8 @@ class GuideStarPage(tk.Frame):
         print("done")
 
         
-
         
     def SDSS_query(self):
-        """ get image from SDSS 
-            Follow https://github.com/behrouzz/sdss
-        """
 
 #        img = AstroImage()
         Posx = self.string_RA.get()
@@ -11458,305 +11632,151 @@ class GuideStarPage(tk.Frame):
         from astropy import units as u
         from astropy import coordinates as coords
         from astroquery.sdss import SDSS
+        from astropy.nddata import Cutout2D
+
 
         pos = coords.SkyCoord(Posx,Posy, unit=(u.deg, u.deg))
-        #pos = coords.SkyCoord(RA_HMS +' ' + DEG_HMS,frame='icrs')
-        #xid = SDSS.query_region(pos, radius='5 arcsec', spectro=True)
-        # we search a large area around the target position
-        xid = SDSS.query_region(pos, radius='150 arcsec', spectro=True)
-        print(xid)
-        if xid is None:
-            #messagebox.showinfo(title='INFO', message='Not in SDSS')
-            print("\n\n\n**** FIELD NOT IN SDSS *****\n\n\n")
-            return
-        else:
-            self.SDSS_stars = np.transpose([xid['ra'],xid['dec']])
+        #xid = SDSS.query_region(pos, radius='10 arcsec', spectro=True)
+        #print(xid)
+        #if xid is None:
+        #    print("\n\n\n**** FIELD NOT IN SDSS *****\n\n\n")
+        #    return
+        #else:
+        #    self.SDSS_stars = np.transpose([xid['ra'],xid['dec']])
             
         
-        im = SDSS.get_images(matches=xid, band=filt)
-        hdu_0 = im[0]
-        data = hdu_0[0].data
-        header = hdu_0[0].header
+        im = SDSS.get_images(coordinates=pos, radius='170 arcsec', band=filt)
+        number_of_nans=758*758
+        for i in range(len(im)):
+            hdu = im[i]
+            data = hdu[0].data
+            header = hdu[0].header
+            """
+            2D Cutout Images
+            https://docs.astropy.org/en/stable/nddata/utils.html
+            """
+            w = wcs.WCS(header)
+            xc, yc = np.round(w.world_to_pixel(pos))   
+            position = (xc, yc)
+            SDSS_pixel_scale = 0.396 #arcsec_pix - https://classic.sdss.org/dr3/instruments/imager/
+            size = np.round((300/SDSS_pixel_scale, 300/SDSS_pixel_scale))     # pixels
+            try:
+                cutout = Cutout2D(data, position, size, wcs=w,mode='partial')
+            except:
+                continue
+            if np.count_nonzero(np.isnan(cutout.data)) < number_of_nans:
+                number_of_nans = np.count_nonzero(np.isnan(cutout.data))
+                best_data = cutout.data
+                best_header = copy.deepcopy(header)
+                d=dict(cutout.wcs.to_header())
+                best_header.update(d)
         
-        #or pick up the best tile?
-    
-        
-        #fits.writeto(os.path.join(cwd,'input_file.fits'), data, header, overwrite=True)
+        #always needd for Pick Guide Stars
+        self.data_GS = best_data
+        self.header_GS = best_header
 
-        from scipy import ndimage
-        data_rotated = ndimage.rotate(data, 270, reshape=True)
-
-        
-        header_rotated = copy.deepcopy(header)
-        tmp = header['NAXIS1'] ; header_rotated['NAXIS2'] = tmp
-        tmp = header['NAXIS2'] ; header_rotated['NAXIS1'] = tmp
-        tmp = header['CRPIX1'] ; header_rotated['CRPIX2'] = tmp
-        tmp = header['CRPIX2'] ; header_rotated['CRPIX1'] = tmp
-        tmp = header['CD1_1'] ; header_rotated['CD1_2'] = tmp
-        tmp = header['CD1_2'] ; header_rotated['CD1_1'] = -tmp
-        tmp = header['CD2_1'] ; header_rotated['CD2_2'] = tmp
-        tmp = header['CD2_2'] ; header_rotated['CD2_1'] = -tmp
-        
-#        fits.writeto(os.path.join(cwd,'output_file.fits'), data_rotated, header_rotated, overwrite=True)
-#
-        # Resize image
-        SDSS_NaturalScale = 0.396127 # arcsec/pix from https://skyserver.sdss.org/dr12/en/tools/chart/chartinfo.aspx
-        SAMOS_SISIScale = self.PAR.SISI_PixelScale#arcesc/pix, from 1/6" * 1.125
-        FoV_SAMOS_X = 1032 * SAMOS_SISIScale #arcsec
-        FoV_SAMOS_Y = 1056 * SAMOS_SISIScale #arcsec
-        FoV_SDSS_Xpix = np.round(FoV_SAMOS_X/SDSS_NaturalScale)  # 488
-        FoV_SDSS_Ypix = np.round(FoV_SAMOS_Y/SDSS_NaturalScale)  # 500
-
-        #get target xy coordinatex on      
-        from astropy.wcs import WCS
-        w = WCS(header_rotated)
-        xc, yc = np.round(w.world_to_pixel(pos))       
-        data_rotated_framed  = np.zeros( (3048,2489) )
-        pedestal = 500
-        data_rotated_framed[pedestal:pedestal+2048, pedestal:pedestal+1489] = data_rotated
-
-        #SDSS_cutout
-        #SDSS_cutout = data_rotated[ int(xc-FoV_SDSS_Xpix/2) : int(xc+FoV_SDSS_Xpix/2),  
-        #                            int(yc-FoV_SDSS_Ypix/2) : int(yc+FoV_SDSS_Ypix/2) ]
-        SDSS_cutout = data_rotated_framed[ pedestal+int(yc-FoV_SDSS_Ypix/2) : pedestal+int(yc+FoV_SDSS_Ypix/2),  
-                                            pedestal+int(xc-FoV_SDSS_Xpix/2) : pedestal+int(xc+FoV_SDSS_Xpix/2) ]
-        
-#       with fits.open(fits_file) as hdu_in:
-            #            img.load_hdu(hdu_in[0])
-#            data = hdu_in[0].data
-        image_data = Image.fromarray(SDSS_cutout)
-        img_res = image_data.resize(size=(1032, 1056))
-        self.hdu_res = fits.PrimaryHDU(img_res)
-        
-        # ra, dec in degrees
-        ra = Posx
-        dec = Posy
-        self.hdu_res.header['RA'] = ra
-        self.hdu_res.header['DEC'] = dec
-        
-        img.load_hdu(self.hdu_res)
-
-        self.fitsimage.set_image(img)
-        self.AstroImage = img
-        #self.fullpath_FITSfilename = os.path.join(cwd,fits_file)#filepath.name
-        #hdu_in.close()
-        #self.button_find_stars['state'] = 'active'
-        
         self.fits_image_ql = os.path.join(
             self.PAR.QL_images, "newimage_ql.fits")
-        fits.writeto(self.fits_image_ql, self.hdu_res.data,
-                     header=self.hdu_res.header, overwrite=True)     
+        fits.writeto(self.fits_image_ql, best_data,
+                     header=best_header, overwrite=True)    
+
+        #hdu = fits.open(self.fits_image_ql)
+        #img.load_hdu(hdu)
+        #self.fitsimage.set_image(img)
+        #self.AstroImage = img
         
+        self.fitsimage.rotate(90)
         
-       
-        """
-    def twirl_Astrometry(self):
-        """
-        
-        """ to be written """
-        
-        """
-        self.wcs = None
-        self.Display(self.field_GuideStar)
-        # self.load_file()   #for ging
-
-        hdu_Main = fits.open(self.field_GuideStar)  # for this function to work
-        hdu = hdu_Main[0]
-        header = hdu.header
-        data = hdu.data
-        hdu_Main.close()
-        ra, dec = header["RA"], header["DEC"]
-        center = SkyCoord(ra, dec, unit=["deg", "deg"])
-        center = [center.ra.value, center.dec.value]
-
-        # image shape and pixel size in "
-        shape = data.shape
-        pixel = self.PAR.SISI_PixelScale * u.arcsec
-        fov = np.max(shape)*pixel.to(u.deg).value
-
-        # Let's find some stars and display the image
-
-        self.canvas.delete_all_objects(redraw=True)
-        #check first if it exist, as we may have not yet queried SDSS        
-        try:  
-            if self.SDSS_stars is None:  #if it exist but is none, we just check the current image
-                stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
-            else: #if it exist, we are coming from SDSS and therefore we use the SDSS stars
-                import copy
-                stars = copy.deepcopy(self.SDSS_stars)
-                SDSS_stars = None  #and immediately delete them so we are free for the next searh
-        except:  #if self.SDSS has never been created, we go to the basic search
-             stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
-
-#        plt.figure(figsize=(8,8))
-        med = np.median(data)
-#        plt.imshow(data, cmap="Greys_r", vmax=np.std(data)*5 + med, vmin=med)
-#        plt.plot(*stars.T, "o", fillstyle="none", c="w", ms=12)
-
-        from regions import PixCoord, CirclePixelRegion
-#        xs=stars[0,0]
-#        ys=stars[0,1]
-#        center_pix = PixCoord(x=xs, y=ys)
-        radius_pix = 42
-
-#        this_region = CirclePixelRegion(center_pix, radius_pix)
-
-        regions = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
-                   for x, y in stars]  # [(1, 2), (3, 4)]]
-        regs = Regions(regions)
-        for reg in regs:
-            obj = r2g(reg)
-        # add_region(self.canvas, obj, tag="twirlstars", draw=True)
-            self.canvas.add(obj)
-
-        # we can now compute the WCS
-        gaias = twirl.gaia_radecs(center, fov, limit=self.nrofstars.get())
-
-        self.wcs = twirl.compute_wcs(stars, gaias)
-
-        global WCS_global   #used for HTS
-        WCS_global = self.wcs
-
-        # Lets check the WCS solution
-
-#        plt.figure(figsize=(8,8))
-        radius_pix = 25
-        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.wcs)).T
-        regions_gaia = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
-                        for x, y in gaia_pixel]  # [(1, 2), (3, 4)]]
-        regs_gaia = Regions(regions_gaia)
-        for reg in regs_gaia:
-            obj = r2g(reg)
-            obj.color = "red"
-        # add_region(self.canvas, obj, tag="twirlstars", redraw=True)
-            self.canvas.add(obj)
-
-        print(self.wcs)
-        
-        if self.wcs is None:
-            self.wcs_exist = False
-            print("\n WCS solution not found, returning\n")
-            return
-        else:
-            self.wcs_exist = True            
-            print("\n WCS solution found!\n")
-            
-        hdu_wcs = self.wcs.to_fits()
-
-        if self.loaded_regfile is not None:
-            hdu_wcs[0].header.set(
-                "dmdmap", os.path.split(self.loaded_regfile)[1])
-
-        hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = os.path.join(
-            ".", "SAMOS_Astrometry_dev", "WCS_"+ra+"_"+dec+".fits")
-        hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
-
-        self.Display(self.wcs_filename)
-        self.button_find_stars['state'] = 'active'
-        
-        self.wcs_exist = True
-        #
-        # > to read:
-        # hdu = fits_open(self.wcs_filename)
-        # hdr = hdu[0].header
-        # import astropy.wcs as apwcs
-        # wcs = apwcs.WCS(hdu[('sci',1)].header)
-        """
-        
-        """
-    def find_stars(self):
-        pass
-        """
-    
-        """ to be written """
-
-        """
         self.Display(self.fits_image_ql)
-        self.Pickup_GuideStar()
-        # self.load_file()   #for ging
-
-        hdu = fits.open(self.fits_image_ql)  # for this function to work
         
-        header = hdu[0].header
-        data = hdu[0].data
-        hdu.close()
-        ra, dec = header["RA"], header["DEC"]
-        center = SkyCoord(ra, dec, unit=["deg", "deg"])
-        center = [center.ra.value, center.dec.value]
+        
+        """
+        TABLE CONSTRUCTION
+        """
+        
+        result = SDSS.query_region(pos,fields={'ra','dec','psfMag_g','psfMag_r','psfMag_i','psfMag_z'},radius=180*u.arcsec)
+        
+        self.table_full = result.to_pandas()
+        #rename the magnitudes using the general band names;
+        self.table_full = self.table_full.rename(columns={"ra":"RA", "dec":"DEC", "psfMag_g": "g_band", "psfMag_r":"r_band", "psfMag_i":"i_band", "psfMag_z":"z_band"})
+        
+        # not that elegant, but this is how  we convert the table to a pandas table
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            shutil.copyfileobj(result, tmp_file)
+        self.table_full = pd.read_csv(tmp_file.name)        
+   
 
-        # image shape and pixel size in "
-        shape = data.shape
-        pixel = self.PAR.SISI_PixelScale * u.arcsec
-        fov = np.max(shape)*pixel.to(u.deg).value
-
-        # Let's find some stars and display the image
-
-        self.canvas.delete_all_objects(redraw=True)
-        threshold = 0.1
-        stars = twirl.find_peaks(data, threshold)[0:self.nrofstars.get()]
-
-#        plt.figure(figsize=(8,8))
-        med = np.median(data)
-#        plt.imshow(data, cmap="Greys_r", vmax=np.std(data)*5 + med, vmin=med)
-#        plt.plot(*stars.T, "o", fillstyle="none", c="w", ms=12)
-
-        from regions import PixCoord, CirclePixelRegion
-#        xs=stars[0,0]
-#        ys=stars[0,1]
-#        center_pix = PixCoord(x=xs, y=ys)
-        radius_pix = 20
-
-#        this_region = CirclePixelRegion(center_pix, radius_pix)
-
-#        regions = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
-        regions = [RectanglePixelRegion(center=PixCoord(x=round(x), y=round(y)),
-                           width=self.low_mag.get(), height=self.high_mag.get(),
-                           angle=0*u.deg)
-                   for x, y in stars]  # [(1, 2), (3, 4)]]
-
-        #if self.SlitTabView is None:
-        #    self.initialize_slit_table()
-
-        regs = Regions(regions)
-        for reg in regs:
-            obj = r2g(reg)
-        # add_region(self.canvas, obj, tag="twirlstars", draw=True)
-            self.canvas.add(obj)
-
-            obj.pickable = True
-            obj.add_callback('pick-up', self.pick_cb, 'up')
-            # obj.add_callback('pick-down', self.pick_cb, 'down')
-            obj.add_callback('edited', self.edit_cb)
-
-        #    self.SlitTabView.add_slit_obj(reg, obj.tag, self.fitsimage)
+        
+    def PanStarrs_query_GuideStars(self):
+        
+        #get ra,dec and set image size
+        ra = float(self.string_RA.get())
+        dec = float(self.string_DEC.get())
+        if dec < -30:
+            print("\n Declination outside the PanStarrs survey \n")
+            return
+        
+        filter = self.string_Filter.get()
+        size = int(300 / 0.25)   # create an image 5'x5'
+        
+        #get the pan star image
+        fitsurl = PSima.geturl(ra, dec, size=size, filters=filter, format="fits")
+        fh = fits.open(fitsurl[0])
+        fim = fh[0].data
+        
+        #also a couple of variables for the Pick_GuideStar
+        self.data_GS = fh[0].data
+        self.header_GS = fh[0].header
+        
+        # replace NaN values with zero for display
+        fim[numpy.isnan(fim)] = 0.0
+        self.fits_image_ql = os.path.join(
+            self.PAR.QL_images, "newimage_ql.fits")
+        fits.writeto(self.fits_image_ql, fim,
+                     header=fh[0].header, overwrite=True)    
+        
+        self.Display(self.fits_image_ql)
+        self.fitsimage.rotate(self.PAR.Ginga_PA)
+ 
     
-        self.draw_slits()
-        pass
+        """
+        TABLE CONSTRUCTION
+        """
+        
+        """Simple positional query
+        Search mean object table with nDetections > 1.
 
-     """
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#     def start_the_loop(self):
-#         while self.stop_it == 0:
-#             threading.Timer(1.0, self.load_manager_last_file).start()
-#
-#     def load_manager_last_file(self):
-#         FITSfiledir = './fits_image/'
-#         self.fullpath_FITSfilename = FITSfiledir + (os.listdir(FITSfiledir))[0]
-#         print(self.fullpath_FITSfilename)
-#
-#     def stop_the_loop(self):
-#         self.stop_it == 1
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        This searches the mean object catalog for objects within 212 arcsec of radec). 
+        Note that the results are restricted to objects with nDetections>1, 
+        where nDetections is the total number of times the object was detected on the single-epoch images 
+        in any filter at any time. Objects with nDetections=1 tend to be artifacts, so this is a quick way 
+        to eliminate most spurious objects from the catalog.
+        """
+        radius = 212.0/3600.0
+        constraints = {'nDetections.gt':1}
+        # strip blanks and weed out blank and commented-out values
+        columns = """objID,raMean,decMean,nDetections,ng,nr,ni,nz,ny,
+            gMeanPSFMag,rMeanPSFMag,iMeanPSFMag,zMeanPSFMag,yMeanPSFMag""".split(',')
+        columns = [x.strip() for x in columns]
+        columns = [x for x in columns if x and not x.startswith('#')]
+        results = PStab.ps1cone(ra,dec,radius,release='dr2',columns=columns,verbose=True,**constraints)
+        
+        tab = ascii.read(results)
+        # improve the format
+        for filter in 'grizy':
+            col = filter+'MeanPSFMag'
+            try:
+                tab[col].format = ".4f"
+                tab[col][tab[col] == -999.0] = np.nan
+            except KeyError:
+                print("{} not found".format(col))
+        print(tab)
+        self.table_full = tab.to_pandas()
+        self.table_full = self.table_full.rename(columns={"gMeanPSFMag": "g_band","rMeanPSFMag": "r_band","iMeanPSFMag": "i_band","zMeanPSFMag": "z_band","raMean":"RA", "decMean":"DEC"})
 
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#         image = load_data(self.fullpath_FITSfilename, logger=self.logger)
-#         self.fitsimage.set_image(image)
-#         self.root.title(self.fullpath_FITSfilename)
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+       
   
     def load_file(self):
         """ to be written """
@@ -12062,6 +12082,7 @@ class GuideStarPage(tk.Frame):
 
         self.canvas.set_draw_mode(mode)
 
+
     def draw_cb(self, canvas, tag):
         """ to be written """
         self.Pickup_GuideStar()
@@ -12088,9 +12109,6 @@ class GuideStarPage(tk.Frame):
 
 
     def slit_handler(self, obj):
-        """ to be written """
-        pass
-        """
         print('ready to associate a slit to ')
         print(obj.kind)
         img_data = self.AstroImage.get_data()
@@ -12141,7 +12159,6 @@ class GuideStarPage(tk.Frame):
         # evaluate peaks to get FWHM, center of each peak, etc.
         objs = iq.evaluate_peaks(peaks, data_box)
         # from ginga.readthedocs.io
-        """
         
         
         """
@@ -12201,6 +12218,8 @@ class GuideStarPage(tk.Frame):
 
         # some final stuff that must be here for some reason... to be reviewed?
         """
+        
+        """
         #obj = self.canvas.get_object_by_tag(new_slit_tag)
         # obj.add_callback('pick-down', self.pick_cb, 'down')
         obj.add_callback('pick-up', self.pick_cb, 'up')
@@ -12212,8 +12231,9 @@ class GuideStarPage(tk.Frame):
         return self.canvas.objects[-1]
 
              # create box
+        """     
 
-
+        """
     def create_astropy_RectangleSkyRegion(self, pattern_row):
         # given
         ra, dec = pattern_row[1:3]
@@ -12228,20 +12248,23 @@ class GuideStarPage(tk.Frame):
             center=center, width=ra_width*u.deg, height=dec_length*u.arcsec, )
 
         return sky_region
-
+        """
+        
+        """
     def set_pattern_entry_text_color(self, event):
 
         if self.base_pattern_name_entry.get() != "Base Pattern Name":
 
             # self.base_pattern_name_entry.foreground="black"
             self.base_pattern_name_entry.config(fg="black")
+        """    
 
 
-
-
+        """
     def get_dmd_coords_of_picked_slit(self, picked_slit):
+        """
         """ get_dmd_coords_of_picked_slit """
-
+        """
         x0, y0, x1, y1 = picked_slit.get_llur()
         fits_x0 = x0+1
         fits_y0 = y0+1
@@ -12258,10 +12281,13 @@ class GuideStarPage(tk.Frame):
         dmd_length = int(np.ceil(dmd_y1-dmd_y0))
 
         return dmd_xc, dmd_yc, dmd_x0, dmd_y0, dmd_x1, dmd_y1, dmd_width, dmd_length
-
+        """
+        
     def check_valid_mags(self, event=None):
         """ to be written """
-     
+        pass
+    
+        """
     def delete_obj_cb(self, obj, canvas, event, pt, ptype):
         try:
             if event.key == 'd':
@@ -12298,7 +12324,7 @@ class GuideStarPage(tk.Frame):
 
         except:
             pass
-
+        """
     def pick_cb(self, obj, canvas, event, pt, ptype):
         """ to be written """
 
@@ -12348,15 +12374,19 @@ class GuideStarPage(tk.Frame):
             index = int(obj.tag[1:]) - int(self.circle_tags[0][1:]) 
             
             #print(self.table.iloc[index])
-            self.string_RA_GS.set(self.table['raj2000'].iloc[index])
-            self.string_DEC_GS.set(self.table['dej2000'].iloc[index])
-            Delta_RA = float(self.table['raj2000'].iloc[index]) - float(self.string_RA.get()) 
-            Delta_DEC = float(self.table['dej2000'].iloc[index]) - float(self.string_DEC.get()) 
+            self.string_RA_GS.set(self.table['RA'].iloc[index])
+            self.string_DEC_GS.set(self.table['DEC'].iloc[index])
+            Delta_RA = float(self.table['RA'].iloc[index]) - float(self.string_RA.get()) 
+            Delta_DEC = float(self.table['DEC'].iloc[index]) - float(self.string_DEC.get()) 
             Delta_RA_mm = round(Delta_RA * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
             Delta_DEC_mm = round(Delta_DEC * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
             self.string_Xmm_GS.set(Delta_RA_mm)
             self.string_Ymm_GS.set(Delta_DEC_mm)
-             
+            
+            #print the magntude of the selected star
+#            print(self.star_mag)
+            self.string_mag_GS.set(round(self.table.star_mag.iloc[index],3))
+            
             #if self.deleteChecked.get():#event.key == 'd':
             # canvas.delete_object(obj)
             #try:
@@ -12394,6 +12424,7 @@ class GuideStarPage(tk.Frame):
             #    print("No slit table created yet.")
 
         return True
+        
 
     def edit_cb(self, obj):
         """ to be written """
@@ -12405,8 +12436,15 @@ class GuideStarPage(tk.Frame):
         #self.SlitTabView.update_table_row_from_obj(obj, self.fitsimage)
         return True
 
+        """
     def cleanup_kind(self, kind):
-        """ to be written """
+        """
+        """  
+        REMOVE only a specific type of object
+        self.cleanup_kind('point')
+        self.cleanup_kind('box') 
+        """
+        """
         # check that we have created a compostition of objects:
         CM.CompoundMixin.is_compound(self.canvas.objects)     # True
 
@@ -12416,13 +12454,15 @@ class GuideStarPage(tk.Frame):
         list_found = list(found)
         CM.CompoundMixin.delete_objects(self.canvas, list_found)
         self.canvas.objects  # check that the points are gone
-
+        """
 
 
 
 
     def save(file_type):
         """ to be written """
+        pass
+        """
         if file_type == None:
             files = [('All Files', '*.*')]
         elif file_type == 'py':
@@ -12435,14 +12475,15 @@ class GuideStarPage(tk.Frame):
             filetypes=files, defaultextension=files)
 
         # btn = ttk.Button(self, text = 'Save', command = lambda : save())
-
+        """
+        
     def create_menubar(self, parent):
         """ to be written """
         
         #parent is the local form
-        parent.geometry("1700x1100")  #was ("1400x900")  # was("1280x900")
+        parent.geometry("1290x920")  #was ("1400x900")  # was("1280x900")
         if platform == "win32":
-            parent.geometry("1265x885") # was "1400x920")
+            parent.geometry("1260x930") # was "1400x920")
         parent.title("SAMOS Main Page")
         self.PAR = SAMOS_Parameters()
 
