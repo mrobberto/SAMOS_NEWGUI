@@ -1555,7 +1555,7 @@ class DMDPage(tk.Frame):
         self.calculate_field_width()
         print(self.order)
         print(self.mask_arrays)
-        self.mask_check_menu['values'] = list(self.mask_arrays)
+        #self.mask_check_menu['values'] = list(self.mask_arrays)
         # self.mask_check_menu['menu'].delete(0, 'end')
         # for choice in self.mask_arrays:
         #    self.mask_check_menu['menu'].add_command(label=choice, command=tk._setit(self.mask_checked,self.mask_arrays))
