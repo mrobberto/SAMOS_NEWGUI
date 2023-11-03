@@ -105,4 +105,5 @@ class SAMOS_Parameters():
         self.Telescope_Operator = self.PotN['Telescope Operator']
         #print(self.Observer)
         
+        self.logbook_exists = 0
         self.Ginga_PA = 0

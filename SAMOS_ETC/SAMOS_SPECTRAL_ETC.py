@@ -26,7 +26,7 @@ from scipy import interpolate
 import math as math
 
 from SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
-import SAMOS_system_dev.utils as U
+#import SAMOS_system_dev.utils as U
 
 import sys
 from sys import platform

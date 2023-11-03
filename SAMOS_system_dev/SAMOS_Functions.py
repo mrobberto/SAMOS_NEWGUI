@@ -29,6 +29,7 @@ sys.path.append(parent_dir)
 class Class_SAMOS_Functions:
     def __init__(self):
         self.system_files = local_dir 
+        super().__init__(self)
     
 # =============================================================================
 #     def read_IP_default(self):
@@ -128,3 +129,49 @@ class Class_SAMOS_Functions:
 
 #print(SF.read_IP_user())    
 
+# =============================================================================
+# create directoy to store the data
+# =============================================================================
+    def create_log_file(Telescope='SOAR',
+                        ProgramID='1',
+                        ProposalTitle="Test",
+                        PI="MR", 
+                        Observer="SAMOS team",
+                        Operator="Operator"):       
+        """ Invoked to create log file"""
+        today = datetime.now()
+        #
+        SISI_images_dir = "../SISI_Images"
+        logfile_name = os.path.join( parent_dir, SISI_images_dir, "SAMOS_LOGFILE_" + today.strftime('%Y%m%d')+ '.csv' )
+        logfile = open(logfile_name, 'w+')
+
+        logfile.write("SAMOS LOGBOOK for " + today.strftime('%Y%m%d')+'\n') 
+        logfile.write("Telescope" + "," + Telescope + "\n")
+        logfile.write("Program ID," + ProgramID + "," + "Proposal Title," + ProposalTitle + "," + "PI," + PI + '\n' )
+        logfile.write("Observer," +  Observer + "," + "Telescope Operator," + Operator +'\n')
+        logfile.write("Date," + 
+                      "Local Time," +
+                      "Target," + 
+                      "Filter," +
+                      "Repeats," +
+                      "Im. Exp.T," + 
+                      "Im. Filename," +
+                      "MaskName," +
+                      "Grating," +
+                      "Sp. Exp.T," + 
+                      "Sp. Filename," +
+                      "Comment\n")
+        logfile.close()
+        return logfile_name
+        
+    def check_log_file():
+        """ Invoked to check if log file exists"""
+        today = datetime.now()
+        #
+        SISI_images_dir = "../SISI_Images"
+        logfile_name = os.path.join( parent_dir, SISI_images_dir, "SAMOS_LOGFILE_" + today.strftime('%Y%m%d')+ '.csv' )
+        if os.path.isfile(logfile_name) is True:
+            return logfile_name
+        else:
+            return False
+        

@@ -1,4 +1,4 @@
- """#!/usr/bin/env python3
+"""#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 Created on Tue Feb 25 13:21:00 2023
 
@@ -646,6 +646,17 @@ class ConfigPage(tk.Frame):
         Initialize_Button = tk.Button(self.Initialize_frame, text="Initialize",
                                       relief="raised", command=self.startup, font=self.bigfont)  # ("Arial", 24))
         Initialize_Button.place(x=230, y=5)
+        
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
+#  #    Initialize Logbook
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        
+        LogBookInitialize_Button = tk.Button(self.Initialize_frame, text="Initialize Logbook",
+                                      relief="raised", command=self.LogBookstartup)  # ("Arial", 24))
+        LogBookInitialize_Button.place(x=100, y=5)
+        
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -654,13 +665,26 @@ class ConfigPage(tk.Frame):
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+    def LogBookstartup(self):
+        """ to be written """
+        SF.create_log_file(
+                        Telescope=self.Telescope.get(),
+                        ProgramID=self.Program_ID.get(),
+                        ProposalTitle=self.Proposal_Title.get(),
+                        PI=self.Principal_Investigator.get(), 
+                        Observer=self.Observer.get(),
+                        Operator=self.TO_var.get()
+                        )
+        self.PAR.logboo_exist = True
+    
     def startup(self):
         """ to be written """
         print("CONFIG_GUI: entering startup()\n")
         self.load_IP_default()
         self.IP_echo()
         SF.create_fits_folder()
-
+        
+        
         if self.PAR.IP_status_dict['IP_DMD'] == True:
             IP = self.PAR.IP_dict['IP_DMD']
             [host, port] = IP.split(":")
@@ -670,6 +694,7 @@ class ConfigPage(tk.Frame):
         if self.PAR.IP_status_dict['IP_Motors'] == True:
             PCM.power_on()
             # PCM.check_if_power_is_on()
+        
         print("\n*** CONFIG_GUI: exiting startup() ***\n")
 
     # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -1028,7 +1053,7 @@ class ConfigPage(tk.Frame):
         """ to be written """
 
         # the size of the window is controlled when the menu is loaded
-        parent.geometry("1000x500")
+        parent.geometry("1000x520")
 
         parent.title("SAMOS Configuration")
 
@@ -4976,11 +5001,19 @@ class MainPage(tk.Frame):
         # command=self.change_out_fnumber)
         entry_out_fnumber.place(x=205, y=53)
         self.entry_out_fnumber = entry_out_fnumber
+        
+        #write to LogBook Checkbox
+        self.Logbook_Yes = tk.IntVar()
+        self.Logbook_Yes.set(0)
+        check_Logbook_Yes = tk.Checkbutton(
+            labelframe_ExposeBegin, text="Logbook Save", variable=self.Logbook_Yes, onvalue=1, offvalue=0)
+        check_Logbook_Yes.place(x=285, y=3)
+        
         # To begin the exposure
         button_ExpStart = tk.Button(labelframe_ExposeBegin, text="START", bd=3,
                                     bg='#0052cc', font=self.bigfont,
                                     command=self.start_an_exposure)
-        button_ExpStart.place(x=285, y=25)
+        button_ExpStart.place(x=285, y=30)
 
         #### Include progress bars for exposure and readout. ####
         # Most of this so we can update the label during an exposure.
@@ -6753,6 +6786,7 @@ class MainPage(tk.Frame):
         self.start_combo_obj_number = int(self.entry_out_fnumber.get())
         # if a set of images, save the number suffix of the first
         # image in the set
+        self.start_time = time.localtime()
         if self.obj_type == "Science":
             self.expose_light()
         elif self.obj_type == "Bias":
@@ -6827,12 +6861,51 @@ class MainPage(tk.Frame):
 
         newfiles = self.expose(params)
         self.handle_light(newfiles)
+        self.handle_log(newfiles)
         # handle multiple files
         superfile = self.combine_files(newfiles)
         self.handle_QuickLook(superfile)
         print("science file created")
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+# # Handle Logbook
+#
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+    def handle_log(self,newfiles):
+        """ 
+        handles the writeup of an entry line in the loogbook
+        """
+        #1) Do we want to write?
+        if self.Logbook_Yes.get() != 1:
+            return
+        
+        # here write = yes.
+        # if log does not exist, create log file"""
+        logbook_name = SF.check_log_file()
+        if logbook_name == False:
+            logbook_name = SF.create_log_file(Telescope=self.PAR.PotN["Telescope"],
+                                ProgramID=self.PAR.PotN["Program ID"],
+                                ProposalTitle=self.PAR.PotN["Proposal Title"],
+                                PI=self.PAR.PotN["Principal Investigator"], 
+                                Observer=self.PAR.PotN["Observer"],
+                                Operator=self.PAR.PotN["Telescope Operator"])
+            
+        # now open logfile to write the writeup
+        logbook = open(logbook_name, 'a')
+        for i in range(len(newfiles)):
+            today = datetime.now()
+            logbook.write(today.strftime('%Y-%m-%d')+",")
+            logbook.write(time.strftime("%H:%M:%S", self.start_time)+",")
+            logbook.write(self.PAR.PotN['Object Name']+",")
+            logbook.write(self.FW_filter.get()+",")
+            logbook.write(str(len(newfiles))+",")
+            logbook.write(self.ExpTimeSet.get()+",")
+            logbook.write(os.path.split(newfiles[i])[-1]+",")
+            logbook.write("\n")
+        
+        logbook.close()
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#
 # # Expose_bias
 #
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
