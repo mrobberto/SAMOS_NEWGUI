@@ -7542,7 +7542,9 @@ class MainPage(tk.Frame):
         self.canvas.delete_all_objects(redraw=True)
 
         stars = twirl.find_peaks(data)[0:self.nrofstars.get()]
-
+        from SAMOS_Astrometry_dev.testTwirlFix import find_stars
+        from astropy.nddata import CCDData
+        test_stars = find_stars(CCDData(data, unit="adu"))
 #        plt.figure(figsize=(8,8))
         med = np.median(data)
 #        plt.imshow(data, cmap="Greys_r", vmax=np.std(data)*5 + med, vmin=med)
