@@ -5089,7 +5089,7 @@ class MainPage(tk.Frame):
         # , width=400, height=800)
         self.frame_FITSmanager = tk.Frame(self, background="pink")
         self.frame_FITSmanager.place(
-            x=10, y=600, anchor="nw", width=430, height=210)
+            x=10, y=600, anchor="nw", width=430, height=240)
 
         labelframe_FITSmanager = tk.LabelFrame(
             self.frame_FITSmanager, text="FITS manager", font=self.bigfont)
@@ -5147,7 +5147,7 @@ class MainPage(tk.Frame):
 #
 # =============================================================================
         labelframe_Query_Survey = tk.LabelFrame(labelframe_FITSmanager, text="Query Image Server",
-                                                width=420, height=140,
+                                                width=420, height=160,
                                                 font=self.bigfont)
         labelframe_Query_Survey.place(x=5, y=45)
 
@@ -5302,7 +5302,7 @@ class MainPage(tk.Frame):
         # self.vb = vbox
 
 #        canvas = tk.Canvas(vbox, bg="grey", height=514, width=522)
-        canvas = tk.Canvas(vbox, bg="grey", height=516, width=528)
+        canvas = tk.Canvas(vbox, bg="grey", height=528, width=528)
         canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
         # => ImageViewTk -- a backend for Ginga using a Tk canvas widget
@@ -5423,7 +5423,7 @@ class MainPage(tk.Frame):
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 
         self.canvas_Indicator = tk.Canvas(self, background="gray")
-        self.canvas_Indicator.place(x=60, y=810, width=310, height=85)
+        self.canvas_Indicator.place(x=60, y=850, width=310, height=80)
 
         self.canvas_Indicator.create_oval(20, 20, 60, 60, fill=indicator_light_on_color,
                                           outline=None, tags=["filter_ind"])
