@@ -1,0 +1,43 @@
+# This file describes a conda environment that can be to install samos
+#
+# Run the following command to set up this environment:
+# $ conda env create -f samos_env.yml
+#
+# The environment name can be overridden with the following command:
+# $ conda env create -n <custom name> -f samos_env.yml
+#
+# Run the following command to activate the environment:
+# $ conda activate samos
+#
+# To deactivate the environment run the following command:
+# $ conda deactivate
+#
+# To remove the environment entirely, run the following command:
+# $ conda env remove -n samos
+
+name: samos
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python
+  - pip
+
+  - pip:
+    - matplotlib
+    # REVISIT: Once aplpy doesn't depend on astropy.configuration.update_default_config
+    - astropy<6
+    - photutils
+    - ginga
+    - astroquery
+    - numpy
+    - pandas
+    - aplpy
+    - regions
+    - tksheet
+    - twirl
+
+    # Current package
+#    - -e .
