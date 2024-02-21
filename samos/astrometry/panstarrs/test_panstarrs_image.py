@@ -17,7 +17,7 @@ import numpy
 #from io import BytesIO
 import matplotlib.pyplot as plt
 
-from Class_ps1image import PanStarrs as PS
+from .Class_ps1image import PanStarrs as PS
 
 PS = PS()
 

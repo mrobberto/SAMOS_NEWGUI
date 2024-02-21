@@ -16,7 +16,7 @@ from tkinter import *
 
 #from Class_PCM_module import Class_PCM_module
 #import Class_PCM_module as PCM
-from Class_PCM import Class_PCM
+from .Class_PCM import Class_PCM
 PCM = Class_PCM()
 
 

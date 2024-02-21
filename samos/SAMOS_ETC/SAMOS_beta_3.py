@@ -3114,7 +3114,7 @@ class ETC_Spectral_Page(Frame):
         """ to be written """
         parent.geometry("1000x720")
         parent.title("SAMOS Specroscopic ETC at SOAR")
-        from SAMOS_New_V3p5 import SAMOS_Parameters
+        from samos.SAMOS_New_V3p5 import SAMOS_Parameters
         self.PAR = SAMOS_Parameters()
 
         menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,

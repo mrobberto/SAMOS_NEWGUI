@@ -40,7 +40,7 @@ os.sys.path.append(SF_path)
 
 
 
-from Class_DMD_dev import DigitalMicroMirrorDevice
+from .Class_DMD_dev import DigitalMicroMirrorDevice
 DMD = DigitalMicroMirrorDevice()
 
 

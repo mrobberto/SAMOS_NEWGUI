@@ -13,7 +13,7 @@ import numpy as np
 #from photutils import CircularAperture
 
 # Actually import the controller
-from Class_DMD_dev import DigitalMicroMirrorDevice
+from .Class_DMD_dev import DigitalMicroMirrorDevice
 import time
 
 import pandas as pd

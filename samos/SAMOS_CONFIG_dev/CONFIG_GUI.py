@@ -29,12 +29,12 @@ parent_dir = str(path.parent)
 sys.path.append(parent_dir)
 
 #load the functions
-from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
+from ..SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 # =============================================================================
 # Import classes
 # 
 # =============================================================================
-from  SAMOS_MOTORS_dev.Class_PCM import Class_PCM 
+from  ..SAMOS_MOTORS_dev.Class_PCM import Class_PCM 
 PCM = Class_PCM()
 
 #at the moment the Class Camera must be called with a few parameters...
@@ -45,7 +45,7 @@ params = {'Exposure Time':0,'CCD Temperature':2300,'Trigger Mode': 4}
 CCD = Class_Camera(dict_params=params)
 
 #Import the DMD class
-from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
+from ..SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
 dmd = DigitalMicroMirrorDevice()#config_id='pass') 
 
 

@@ -15,7 +15,7 @@ from pathlib import Path
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
 sys.path.append(os.path.join(path.parent,'SAMOS_system_dev'))
-from SAMOS_Functions import Class_SAMOS_Functions as SF
+from samos.SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 
 
 #class DigitalMicroMirrorDevice(DeformableMirrorController):

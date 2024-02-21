@@ -16,7 +16,7 @@ sys.path.append(parent_dir)
 params = {'Exposure Time':5000,'CCD Temperature':2300,'Trigger Mode': 4, 'NofFrames': 1}
 from samos.ccd.Class_CCD_dev import Class_Camera
 Camera= Class_Camera(dict_params=params)
-from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
+from ..SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 PCM = Class_PCM()
 if PCM.MOTORS_onoff == 0:
     print('MOTORS NOT CONNECTED!!')
@@ -26,7 +26,7 @@ print(PCM.echo_client())
 PCM.power_on()
 
 # Actually import the controller
-from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
+from ..SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
 dmd = DigitalMicroMirrorDevice()#config_id='pass') 
 dmd.initialize()
 

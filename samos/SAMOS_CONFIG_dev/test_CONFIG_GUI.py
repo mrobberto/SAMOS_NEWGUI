@@ -14,7 +14,7 @@
 # 
 # =============================================================================
 
-from CONFIG_GUI import Config as CF
+from .CONFIG_GUI import Config as CF
 
 #print(CF.load_IP_default())
 

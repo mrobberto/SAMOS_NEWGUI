@@ -5,24 +5,24 @@ Created on Tue Feb 25 13:21:00 2023
 """
 from sys import platform
 from samos.utilities import get_data_file
-from SAMOS_DMD_dev.DMD_get_pixel_mapping_GUI_dana import Coord_Transform_Helpers as CTH
-from SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT
-from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
-from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
-from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
-from SAMOS_SOAR_dev.Class_SOAR import Class_SOAR
+from samos.SAMOS_DMD_dev.DMD_get_pixel_mapping_GUI_dana import Coord_Transform_Helpers as CTH
+from samos.SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT
+from samos.SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
+from samos.SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.SAMOS_MOTORS_dev.Class_PCM import Class_PCM
+from samos.SAMOS_SOAR_dev.Class_SOAR import Class_SOAR
 from samos.ccd.Class_CCD_dev import Class_Camera
 from astrometry.skymapper_interrogate import skymapper_interrogate
 from astrometry.tk_class_astrometry_V5 import Astrometry
 from astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
 from astrometry.panstarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
-from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
-from SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
-from SAMOS_ETC.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
-import SAMOS_system_dev.utils as U
-import SAMOS_system_dev.WriteFITSHead as WFH
+from samos.SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
+from samos.SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
+from samos.SAMOS_ETC.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
+import samos.SAMOS_system_dev.utils as U
+import samos.SAMOS_system_dev.WriteFITSHead as WFH
 
-from SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
+from samos.SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
 
 
 import re  # re module of the standard library handles strings, e.g. use re.search() to extract substrings
@@ -89,7 +89,7 @@ import copy
 # from esutil import htm
 
 from PIL import Image, ImageTk  # , ImageOps
-from Hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
+from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
 
 import os
 import sys
@@ -201,35 +201,11 @@ os.sys.path.append(dir_SYSTEM)
 
 # print(Config.return_directories)
 
-"""
-from samos.ccd.GUI_CCD_dev import GUI_CCD
-from samos.ccd.Class_CCD_dev import Class_Camera as CCD
-
-
-from SAMOS_MOTORS_dev.SAMOS_MOTORS_GUI_dev  import Window as SM_GUI
-"""
 Motors = Class_PCM()
 SOAR = Class_SOAR()
-"""
-from SAMOS_DMD_dev.SAMOS_DMD_GUI_dev import GUI_DMD
-# from SAMOS_DMD_dev.Class_DMD import DigitalMicroMirrorDevice as DMD
-from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
-"""
 convert = CONVERT()
 
 main_fits_header = WFH.FITSHead()
-"""
-DMD = DigitalMicroMirrorDevice()#config_id='pass')
-
-from SAMOS_SOAR_dev.tk_class_SOAR_V0 import SOAR as SOAR
-
-from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
-
-
-# from ginga.misc import widgets
-# import PCM_module_GUI as Motors
-
-"""
 
 indicator_light_on_color = "#08F903"
 indicator_light_off_color = "#194A18"

@@ -37,8 +37,8 @@ sys.path.append(parent_dir)
 
 
 #load the functions
-from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
-from SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
+from ..SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
+from ..SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
 
 
 class Class_Camera(object):

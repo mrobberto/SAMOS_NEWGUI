@@ -56,7 +56,8 @@ import regions
 from regions import Regions
 from regions import PixCoord, RectanglePixelRegion, PointPixelRegion, RegionVisual, RectangleSkyRegion
  
-from SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT
+from ..SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT
+from samos.utilities import get_data_file
 convert = CONVERT()
  
 from astropy.wcs import WCS

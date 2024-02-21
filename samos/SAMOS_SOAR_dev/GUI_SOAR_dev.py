@@ -40,7 +40,7 @@ os.sys.path.append(SF_path)
 
 
 
-from Class_SOAR_TCS_dev import SOAR_TCS
+from .Class_SOAR_TCS_dev import SOAR_TCS
 SOAR = SOAR_TCS()
 
 

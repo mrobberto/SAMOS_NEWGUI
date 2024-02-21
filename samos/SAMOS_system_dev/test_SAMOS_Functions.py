@@ -14,6 +14,6 @@ Created on Tue Mar 15 22:56:22 2022
 # 
 # =============================================================================
 
-from SAMOS_Functions import Class_SAMOS_Functions as SF
+from .SAMOS_Functions import Class_SAMOS_Functions as SF
 
 print(SF.read_IP_status())

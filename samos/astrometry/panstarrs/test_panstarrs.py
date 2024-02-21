@@ -8,7 +8,7 @@ Created on Thu Oct 26 23:16:23 2023
 
 from astropy.io import ascii
 import numpy as np
-from Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_dr2cat 
+from .Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_dr2cat 
 PS_dr2 = PS_dr2cat()
 
 

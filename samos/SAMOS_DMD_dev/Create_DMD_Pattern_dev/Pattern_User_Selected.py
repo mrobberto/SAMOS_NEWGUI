@@ -59,7 +59,7 @@ from astropy.visualization import simple_norm
 sys.path.insert(0,"../")
 import setup_slits
 importlib.reload(setup_slits)
-from setup_slits import DMDSlit, DMD_Pattern_from_SlitList
+from .setup_slits import DMDSlit, DMD_Pattern_from_SlitList
 
 
 
