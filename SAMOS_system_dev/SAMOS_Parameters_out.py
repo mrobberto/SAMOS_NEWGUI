@@ -43,7 +43,7 @@ class SAMOS_Parameters():
                          'dir_DMD': '/SAMOS_DMD_dev',
                          'dir_SOAR': '/SAMOS_SOAR_dev',
                          'dir_SAMI': '/SAMOS_SAMI_dev',
-                         'dir_Astrom': '/SAMOS_Astrometry_dev',
+                         'dir_Astrom': '/astrometry',
                          'dir_system': '/SAMOS_system_dev',
                          }
         #add the directory of the QL images

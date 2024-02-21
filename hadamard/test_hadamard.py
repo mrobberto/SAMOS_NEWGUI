@@ -33,6 +33,7 @@ sys.path.append(os.path.join(path.parent,'Hadamard/sandbox'))
 from hadamard_class_v3 import *
 HTSI = HTSI_Models()
 
+from samos.utilities import get_data_file
 from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
 dmd = DigitalMicroMirrorDevice()#config_id='pass') 
 dmd.initialize()
@@ -70,7 +71,7 @@ def make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
 #        pd_mask = pd.DataFrame(mask)
 #        pd_mask.to_bmp(folder+name)
 
-        imageio.imwrite(folder+name, mask)
+        imageio.imwrite(folder / name, mask)
         
     return mask_set, matrix
 
@@ -129,8 +130,8 @@ def make_H_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder):
 #        pd_mask_a.to_bmp(folder+name_a)
 #        pd_mask_b = pd.DataFrame(mask_b)
 #        pd_mask_b.to_bmp(folder+name_b)
-        imageio.imwrite(folder+name_a, mask_a)
-        imageio.imwrite(folder+name_b, mask_b)
+        imageio.imwrite(folder / name_a, mask_a)
+        imageio.imwrite(folder / name_b, mask_b)
         
         return mask_set_a, mask_set_b, matrix
 
@@ -142,8 +143,7 @@ order = 11 # Order of the hadamard matrix (or S matrix)
 Xo, Yo = DMD_size[1]/2, DMD_size[0]/2   # Coordinates on the DMD to center the Hadamard matrix around
 
 slit_width = 3 # Slit width in number of micromirrors 
-#folder = 'C:/Users/Kate/Documents/hadamard/mask_sets/' # Change path to fit user needs
-folder = os.path.join(path.parent,'Hadamard/mask_sets/')
+folder = get_data_file('hadamard.mask_sets')
 if matrix_type == 'S':
     mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, Xo, Yo, folder)
 if matrix_type == 'H':
@@ -159,7 +159,7 @@ plt.title(str(matrix_type)+'-matrix, n= '+str(order))
 #name = 'H16_4w_mask_a1.bmp'
 #name = 'S83_4w_mask_34.bmp'
 name = 'S11_3w_mask_9.bmp'
-im =np.asarray(Image.open(folder+name), dtype='int')
+im =np.asarray(Image.open(folder / name), dtype='int')
 plt.imshow(im, cmap='gray')
 
 #dmd.initialize()

@@ -4,6 +4,7 @@ Created on Tue Feb 25 13:21:00 2023
 
 """
 from sys import platform
+from samos.utilities import get_data_file
 from SAMOS_DMD_dev.DMD_get_pixel_mapping_GUI_dana import Coord_Transform_Helpers as CTH
 from SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT
 from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
@@ -12,10 +13,10 @@ from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 from SAMOS_SOAR_dev.Class_SOAR import Class_SOAR
 from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
 # from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
-from SAMOS_Astrometry_dev.skymapper_interrogate import skymapper_interrogate
-from SAMOS_Astrometry_dev.tk_class_astrometry_V5 import Astrometry
-from SAMOS_Astrometry_dev.PanStarrs.Class_ps1image import PanStarrs as PS_image
-from SAMOS_Astrometry_dev.PanStarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
+from astrometry.skymapper_interrogate import skymapper_interrogate
+from astrometry.tk_class_astrometry_V5 import Astrometry
+from astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
+from astrometry.panstarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
 from SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 from SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
 from SAMOS_ETC.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
@@ -32,7 +33,6 @@ from astroquery.simbad import Simbad
 # from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 import time
 
-# from SAMOS_Astrometry_dev.skymapper_interrogate_fLoad VOTABLE import skymapper_interrogate_VOTABLE
 import glob
 import pathlib
 import math
@@ -180,7 +180,7 @@ STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcNa
 # sys.path.append(local_dir)
 
 
-dir_Astrometry = os.path.join(local_dir, "SAMOS_Astrometry_dev")
+dir_Astrometry = os.path.join(local_dir, "astrometry")
 dir_CCD = os.path.join(local_dir, "SAMOS_CCD_dev")
 dir_DMD = os.path.join(local_dir, "SAMOS_DMD_dev")
 dir_MOTORS = os.path.join(local_dir, "SAMOS_MOTORS_dev")
@@ -363,7 +363,7 @@ class ConfigPage(tk.Frame):
                          'dir_DMD'   : '/SAMOS_DMD_dev',
                          'dir_SOAR'  : '/SAMOS_SOAR_dev',
                          'dir_SAMI'  : '/SAMOS_SAMI_dev',
-                         'dir_Astrom': '/SAMOS_Astrometry_dev',
+                         'dir_Astrom': '/astrometry',
                          'dir_system': '/SAMOS_system_dev',
                         }
         """
@@ -1515,9 +1515,9 @@ class DMDPage(tk.Frame):
 
         old = str(oldfilename_masks[0:i_[-1]])
         new_string = self.entrybox_newmasknames.get()
-        file_names = os.path.join(
-            local_dir, "Hadamard", "mask_sets", old+"*.bmp")
-        files = sorted(glob.glob(file_names))
+        mask_set_dir = get_data_file('hadamard.mask_sets')
+        file_names = mask_set_dir.glob('{}+*.bmp'.format(old))
+        files = sorted(file_names)
         for ifile in range(len(files)):
             path, tail = os.path.split(files[ifile])
             oldName = files[ifile]
@@ -1605,7 +1605,7 @@ class DMDPage(tk.Frame):
 
 #        folder = os.path.join(local_dir,'Hadamard','mask_sets',os.path.sep)
         # above line was not allowing to write data
-        folder = os.path.join(local_dir, 'Hadamard', 'mask_sets/')
+        folder = get_data_file('hadamard.mask_sets')
         if matrix_type == 'S':
             mask_set, matrix = make_S_matrix_masks(
                 order, DMD_size, slit_width, slit_length, Xo, Yo, folder)  # mask_set.shape (1080,2048,7)
@@ -8186,9 +8186,7 @@ class MainPage(tk.Frame):
             hdul[0].header["FILENAME"] = Survey + "_" + self.string_RA.get() +"_" + self.string_DEC.get() + ".fits"
 
             self.image = hdul
-            hdul.writeto(os.path.join(dir_Astrometry,
-                         'newtable.fits'), overwrite=True)
-    
+            hdul.writeto(get_data_file('astrometry.general') / 'newtable.fits', overwrite=True)
             img = AstroImage()
             Posx = self.string_RA.get()
             Posy = self.string_DEC.get()
@@ -8577,8 +8575,7 @@ class MainPage(tk.Frame):
                 "dmdmap", os.path.split(self.loaded_regfile)[1])
 
         hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = os.path.join(
-            ".", "SAMOS_Astrometry_dev", "WCS_"+str(ra)+"_"+str(dec)+".fits")
+        self.wcs_filename = get_data_file('astrometry.general') / "WCS_{}_{}.fits".format(ra, dec)
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
         self.fitsimage.rotate(self.PAR.Ginga_PA)  
@@ -9835,7 +9832,7 @@ class MainPage(tk.Frame):
     def load_masks_file_HTS(self):
         """load_masks_file for upload on DMD"""
         self.textbox_filename_masks_HTS.delete('1.0', tk.END)
-        filename_masks = filedialog.askopenfilename(initialdir=os.path.join(local_dir, "Hadamard", "mask_sets"),
+        filename_masks = filedialog.askopenfilename(initialdir=get_data_file('hadamard.mask_sets'),
                                                     title="Select a File",
                                                     filetypes=(("Text files",
                                                                 "*.bmp"),
@@ -11514,9 +11511,7 @@ class GuideStarPage(tk.Frame):
             hdul[0].header["FILENAME"] = Survey + "_" + self.string_RA.get() +"_" + self.string_DEC.get() + ".fits"
 
             self.image = hdul
-            hdul.writeto(os.path.join(dir_Astrometry,
-                         'newtable.fits'), overwrite=True)
-    
+            hdul.writeto(get_data_file('astrometry.general') / 'newtable.fits', overwrite=True)
             img = AstroImage()
             Posx = self.string_RA.get()
             Posy = self.string_DEC.get()

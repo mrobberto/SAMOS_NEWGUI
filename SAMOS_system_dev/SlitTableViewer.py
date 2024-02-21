@@ -70,7 +70,7 @@ import astropy.units as u
 # when user selects a slit on the canvas, it should highlight that row.
  
 
-test_img_twirled = fits.open("SAMOS_Astrometry_dev/WCS_150.1679077_-54.7886346.fits")
+test_img_twirled = fits.open(get_data_file("astrometry.general", "WCS_150.1679077_-54.7886346.fits"))
 test_wcs = WCS(test_img_twirled[0].header)
 
 test_regf = "SAMOS_regions/RADEC/NGC3105_V2.RADEC=150.1679077-54.7886346.reg"
