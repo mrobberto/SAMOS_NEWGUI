@@ -36,10 +36,10 @@ version = {attr = "samos.VERSION"}
 samos = "samos.SAMOS_New_SHIPPED:run_samos"
 
 [tool.setuptools.packages.find]
-where = ["data", "SAMOS_CONFIG_dev", "SAMOS_DMD_dev", "SAMOS_ETC", "SAMOS_MOTORS_dev",
-         "SAMOS_QL_images", "SAMOS_regions", "SAMOS_SOAR_dev", "SAMOS_system_dev"]
+where = ["samos.data", "samos.SAMOS_CONFIG_dev", "samos.SAMOS_DMD_dev", "samos.SAMOS_ETC", 
+         "samos.SAMOS_MOTORS_dev", "samos.SAMOS_QL_images", "samos.SAMOS_regions", 
+         "samos.SAMOS_SOAR_dev", "samos.SAMOS_system_dev"]
 
 [tool.setuptools.package-data]
 "*" = ["*.fit", "*.fits", "*.bmp", "*.reg", "*.png", "*.mp3", "*.csv", "*.pdf", "*.PDF",
        "*.pro"]
-data = ["*"]
