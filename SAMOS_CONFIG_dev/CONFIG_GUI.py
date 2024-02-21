@@ -38,7 +38,7 @@ from  SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 PCM = Class_PCM()
 
 #at the moment the Class Camera must be called with a few parameters...
-from  SAMOS_CCD_dev.Class_CCD import Class_Camera
+from  samos.ccd.Class_CCD import Class_Camera
 params = {'Exposure Time':0,'CCD Temperature':2300,'Trigger Mode': 4}
         #Trigger Mode = 4: light
         #Trigger Mode = 5: dark
@@ -88,7 +88,7 @@ class Config(tk.Frame):
         self.Image_off = tk.PhotoImage(file = os.path.join(local_dir,"Images","off.png") ) 
         
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
-                         'dir_CCD'   : '/SAMOS_CCD_dev',
+                         'dir_CCD'   : '/ccd',
                          'dir_DMD'   : '/SAMOS_DMD_dev',
                          'dir_SOAR'  : '/SAMOS_SOAR_dev',
                          'dir_SAMI'  : '/SAMOS_SAMI_dev',

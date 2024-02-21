@@ -39,7 +39,7 @@ class SAMOS_Parameters():
             parent_dir, "tk_utilities", "Images", "off.png"))
 
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
-                         'dir_CCD': '/SAMOS_CCD_dev',
+                         'dir_CCD': '/ccd',
                          'dir_DMD': '/SAMOS_DMD_dev',
                          'dir_SOAR': '/SAMOS_SOAR_dev',
                          'dir_SAMI': '/SAMOS_SAMI_dev',

@@ -11,8 +11,7 @@ from SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
 from SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
 from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 from SAMOS_SOAR_dev.Class_SOAR import Class_SOAR
-from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
-# from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera
+from samos.ccd.Class_CCD_dev import Class_Camera
 from astrometry.skymapper_interrogate import skymapper_interrogate
 from astrometry.tk_class_astrometry_V5 import Astrometry
 from astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
@@ -181,7 +180,7 @@ STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcNa
 
 
 dir_Astrometry = os.path.join(local_dir, "astrometry")
-dir_CCD = os.path.join(local_dir, "SAMOS_CCD_dev")
+dir_CCD = os.path.join(local_dir, "ccd")
 dir_DMD = os.path.join(local_dir, "SAMOS_DMD_dev")
 dir_MOTORS = os.path.join(local_dir, "SAMOS_MOTORS_dev")
 dir_SOAR = os.path.join(local_dir, "SAMOS_SOAR_dev")
@@ -203,8 +202,8 @@ os.sys.path.append(dir_SYSTEM)
 # print(Config.return_directories)
 
 """
-from SAMOS_CCD_dev.GUI_CCD_dev import GUI_CCD
-from SAMOS_CCD_dev.Class_CCD_dev import Class_Camera as CCD
+from samos.ccd.GUI_CCD_dev import GUI_CCD
+from samos.ccd.Class_CCD_dev import Class_Camera as CCD
 
 
 from SAMOS_MOTORS_dev.SAMOS_MOTORS_GUI_dev  import Window as SM_GUI
@@ -359,7 +358,7 @@ class ConfigPage(tk.Frame):
 
         """
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
-                         'dir_CCD'   : '/SAMOS_CCD_dev',
+                         'dir_CCD'   : '/ccd',
                          'dir_DMD'   : '/SAMOS_DMD_dev',
                          'dir_SOAR'  : '/SAMOS_SOAR_dev',
                          'dir_SAMI'  : '/SAMOS_SAMI_dev',
