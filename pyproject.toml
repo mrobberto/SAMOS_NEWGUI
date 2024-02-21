@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61.0", "matplotlib", "astropy<6", "photutils", "ginga",
+            "astroquery", "numpy", "pandas", "aplpy", "regions", "tksheet", "twirl"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "samos"
+authors = [
+  { name="Brian York", email="york@stsci.edu" },
+  { name="Massimo Robberto", email="robberto@stsci.edu" },
+  { name="Jonathan Hoover", email="unknown@example.com" },
+  { name="Kathleen Lorraine Oram", email="kxo3594@g.rit.edu" }
+]
+maintainers = [
+  { name="Brian York", email="york@stsci.edu" },
+  { name="Massimo Robberto", email="robberto@stsci.edu" },
+]
+description = "Control Software for the SAMOS astronomical instrument"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/mrobberto/SAMOS_NEWGUI"
+Issues = "https://github.com/mrobberto/SAMOS_NEWGUI/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "samos.VERSION"}
+
+[project.scripts]
+samos = "samos.SAMOS_New_SHIPPED:run_samos"
+
+[tool.setuptools.packages.find]
+where = ["data", "SAMOS_CONFIG_dev", "SAMOS_DMD_dev", "SAMOS_ETC", "SAMOS_MOTORS_dev",
+         "SAMOS_QL_images", "SAMOS_regions", "SAMOS_SOAR_dev", "SAMOS_system_dev"]
+
+[tool.setuptools.package-data]
+"*" = ["*.fit", "*.fits", "*.bmp", "*.reg", "*.png", "*.mp3", "*.csv", "*.pdf", "*.PDF",
+       "*.pro"]
+data = ["*"]

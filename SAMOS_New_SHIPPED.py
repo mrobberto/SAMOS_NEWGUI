@@ -12600,12 +12600,7 @@ class GuideStarPage(tk.Frame):
         return menubar
 
 
-
-
-
-
-
-if __name__ == "__main__":
+def run_samos():
     app = App()
     # set a style for the application so it works on various desktop themes
     # ttk.Style().theme_use("clam")
@@ -12614,4 +12609,6 @@ if __name__ == "__main__":
                          foreground="black", background="white")
     app.mainloop()
 
-    # IF you find this useful >> Claps on Medium >> Stars on Github >> Subscription on youtube will help me
+
+if __name__ == "__main__":
+    run_samos()
