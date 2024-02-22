@@ -335,7 +335,6 @@ class Class_Camera(object):
             
             # write to file
             # 1) the last file is always saved as newimage.fit, and handled by ginga
-#            fileout = os.path.join(parent_dir,"SAMOS_QL_images","newimage.fit")
             fileout = os.path.join(self.PAR.QL_images,"newimage.fits")
             #os.remove(fileout)
             newFile = open(fileout, "wb")
@@ -353,7 +352,6 @@ class Class_Camera(object):
             self.FrameSuff.invoke("buttonup")
             # 2) if there is a request for iterations, the serial number is appended; use setimage_ to isolate the set
 #            if iterations > 1:
-#                fileout = os.path.join(parent_dir,"SAMOS_QL_images","setimage_" + str(image) +".fit")
 #                newFile = open(fileout, "wb")
 #                newFile.write(data)
 #                newFile.close()
@@ -385,7 +383,6 @@ class Class_Camera(object):
         global outname
         outname = os.path.join(fits_dir,'SAMOS_image_'+today.strftime('%H%M%S')+'.fits')
         import shutil  
-        #shutil.copy(os.path.join(parent_dir,'SAMOS_QL_images','newimage_fixed.fit'), outname)
         shutil.copy(os.path.join(self.PAR.QL_images,'newimage_fixed.fit'), outname)
     
     def delete_fitsfile(self):

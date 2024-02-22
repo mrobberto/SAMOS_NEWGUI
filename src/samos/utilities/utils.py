@@ -49,7 +49,8 @@ def get_data_file(mod_path, filename=None):
     for subpath in mod_path.split("."):
         if subpath != "samos":
             file_path = file_path / subpath
-    file_path = file_path / filename
+    if filename is not None:
+        file_path = file_path / filename
     
     if not file_path.exists():
         raise FileNotFoundError("File {} does not exist".format(file_path))

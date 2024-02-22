@@ -1781,8 +1781,7 @@ class DMDPage(tk.Frame):
         # 1. instantiate the convert class
         c = CONVERT()
 
-        f = open(os.path.join(local_dir, 'SAMOS_regions',
-                 'pixels', tail[:-3]+'reg'), 'w')
+        f = open(get_data_file("regions.pixels", tail[:-3]+'reg'), 'w')
 
         # 2. loop over the lines to create ds9 region files
         header = "# Region file format: DS9 astropy/regions\nglobal edit=1 width=1 font=Sans Serif fill=0 color=red\nimage"
@@ -5932,7 +5931,7 @@ class MainPage(tk.Frame):
         print("saving (x,y) Astropy Regions to .reg file")
         file = filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                         defaultextension=".reg",
-                                        initialdir=os.path.join(local_dir, "SAMOS_regions", "pixels"))
+                                        initialdir=get_data_file("regions.pixels"))
         # 1. Collect all
         self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
         # 2. convert to Astropy, pixels
@@ -5967,7 +5966,7 @@ class MainPage(tk.Frame):
             print("saving (RA,DEC) Astropy Regions to .reg file")
             file = filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                             defaultextension=".reg",
-                                            initialdir=os.path.join(local_dir, "SAMOS_regions", "RADEC"))
+                                            initialdir=get_data_file("regions.radec"))
         # we want to scoop all objects on the canvas
         # obj_all = CM.CompoundMixin.get_objects(self.canvas)
             self.RRR_RADec = self.convert_GAxy_APad()
@@ -5976,16 +5975,6 @@ class MainPage(tk.Frame):
             print("saved  AP/ad list to ds/ad region file file:\n", file.name)
             print(
                 "\ncollected all Ginga xy Regions to ads/ad region file file:\n", file.name)
-
-    """
-    def save_RADECregions_AstropyXYRegFile(self):
-        print("saving (x,y) Astropy Regions to .reg file")
-        self.display_ds9ad_GingaAP()
-        file = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")],
-                                        defaultextension = ".reg",
-                                        initialdir=local_dir+"/SAMOS_regions/pixels")
-        self.RRR_xyAP.write(file.name, overwrite=True)
-    """
 
     def display_ds9ad_Ginga(self):
         """ converting ds9/radec Regions to AP/radec Regions
@@ -6128,7 +6117,7 @@ class MainPage(tk.Frame):
         print("read ds9/ad .reg file to create AP/ad regions (aka RRR_RADec")
         self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
 #        self.textbox_filename_slits.delete('1.0', tk.END)
-        self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir=os.path.join(local_dir, "SAMOS_regions", "RADEC"),
+        self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir=get_data_file("regions.radec"),
                                                                  title="Select a File",
                                                                  filetypes=(("Text files",
                                                                              "*.reg"),
@@ -6179,7 +6168,7 @@ class MainPage(tk.Frame):
         """
         print("\n Load ds9/xy reg. file")
         reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
-                                         initialdir=os.path.join(local_dir, 'SAMOS_regions', 'pixels'))
+                                         initialdir=get_data_file("regions.pixels"))
         print("reading (x,y) Astropy region file")
         if isinstance(reg, tuple):
             regfileName = reg[0]
@@ -7120,7 +7109,7 @@ class MainPage(tk.Frame):
     
             # self.Display(fits_image_converted)
             self.fitsimage.rotate(self.PAR.Ginga_PA)  
-            self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
+            self.Display(self.fits_image)
 
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7195,7 +7184,7 @@ class MainPage(tk.Frame):
     
             # self.Display(fits_image_converted)
             self.fitsimage.rotate(self.PAR.Ginga_PA)  
-            self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
+            self.Display(self.fits_image)
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
 
@@ -7266,7 +7255,7 @@ class MainPage(tk.Frame):
     
             # self.Display(fits_image_converted)
             self.fitsimage.rotate(self.PAR.Ginga_PA)  
-            self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
+            self.Display(self.fits_image)
 
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7380,7 +7369,7 @@ class MainPage(tk.Frame):
     
             # self.Display(fits_image_converted)
             self.fitsimage.rotate(self.PAR.Ginga_PA)  
-            self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
+            self.Display(self.fits_image)
 
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
@@ -7455,8 +7444,6 @@ class MainPage(tk.Frame):
 
         dir_hdul1 = os.path.join(
             self.PAR.QL_images, "superflat_"+self.FW_filter.get()+".fits")
-#        hdulist.writeto(os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits"),overwrite=True)
-        # fits.writeto( os.path.join(local_dir,"SAMOS_QL_images","superflat_"+self.FW_filter.get()+"_norm.fits"),flat_norm,hdr,overwrite=True)
 
 #        main_fits_header.create_fits_header(hdr)
         pr_hdu = fits.PrimaryHDU(superflat, main_fits_header.output_header)
@@ -7522,7 +7509,7 @@ class MainPage(tk.Frame):
     
             # self.Display(fits_image_converted)
             self.fitsimage.rotate(self.PAR.Ginga_PA)  
-            self.Display(self.fits_image)                   # '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/newimage.fit'
+            self.Display(self.fits_image)
             #create fits header for final image
             main_fits_header.create_fits_header(main_fits_header.output_header)
 
@@ -7645,7 +7632,7 @@ class MainPage(tk.Frame):
             # fits.writeto(,superfile_data,supefrfile_header,overwrite=True)
         else: 
             superfile_dirname = os.path.join(
-                self.PAR.QL_images, self.image_type+"_coadd.fits")   # e.g. superfile_name:  => '/Users/samos_dev/GitHub/SAMOS_NEWGUI/SAMOS_QL_images/dark_coadd.fits'
+                self.PAR.QL_images, self.image_type+"_coadd.fits")
 
         # save combined file in Night directory
         # self.entry_out_fnumber.invoke("buttonup")
@@ -10491,19 +10478,6 @@ class GuideStarPage(tk.Frame):
             - write to AP/xy .region file
                 => requires WCS
         """
-        """
-        print("saving (x,y) Astropy Regions to .reg file")
-        file = filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
-                                        defaultextension=".reg",
-                                        initialdir=os.path.join(local_dir, "SAMOS_regions", "pixels"))
-        # 1. Collect all
-        self.RRR_xyGA = CM.CompoundMixin.get_objects(self.canvas)
-        # 2. convert to Astropy, pixels
-        self.RRR_xyAP = self.convert_regions_xyGA2xyAP()
-        # 3. Write astropy regions, pixels
-        self.RRR_xyAP.write(file.name, overwrite=True)
-        print("(x,y) Astropy Regions to .reg file:\n", file.name)
-        """
 
 #    def push_CCD(self):
 #        """ to be written """
@@ -10527,34 +10501,7 @@ class GuideStarPage(tk.Frame):
             - wites the AP/ad on file list as set of ds9/ad region files
         """
         
-        """
-        if "RRR_RADec" not in dir(self):
-            print("There are no (RA,Dec) regions to be written on file")
-            return
-        else:
-            print("saving (RA,DEC) Astropy Regions to .reg file")
-            file = filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
-                                            defaultextension=".reg",
-                                            initialdir=os.path.join(local_dir, "SAMOS_regions", "RADEC"))
-        # we want to scoop all objects on the canvas
-        # obj_all = CM.CompoundMixin.get_objects(self.canvas)
-            self.RRR_RADec = self.convert_GAxy_APad()
-            print("\ncollected all Ginga xy Regions in a AP/ad list (aka RRR_RADec")
-            self.RRR_RADec.write(file.name, overwrite=True)
-            print("saved  AP/ad list to ds/ad region file file:\n", file.name)
-            print(
-                "\ncollected all Ginga xy Regions to ads/ad region file file:\n", file.name)
-        """    
 
-        """
-    def save_RADECregions_AstropyXYRegFile(self):
-        print("saving (x,y) Astropy Regions to .reg file")
-        self.display_ds9ad_GingaAP()
-        file = filedialog.asksaveasfile(filetypes = [("txt file", ".reg")],
-                                        defaultextension = ".reg",
-                                        initialdir=local_dir+"/SAMOS_regions/pixels")
-        self.RRR_xyAP.write(file.name, overwrite=True)
-        """
     
         """
     def display_ds9ad_Ginga(self):
@@ -10723,50 +10670,6 @@ class GuideStarPage(tk.Frame):
         - open ds9/ad file and read the regions files creating a AP/ad list of regions (aka RRR_RADec)
         - extract center RA, Dec
         """
-        """
-        print("read ds9/ad .reg file to create AP/ad regions (aka RRR_RADec")
-        self.textbox_filename_regfile_RADEC.delete('1.0', tk.END)
-#        self.textbox_filename_slits.delete('1.0', tk.END)
-        self.filename_regfile_RADEC = filedialog.askopenfilename(initialdir=os.path.join(local_dir, "SAMOS_regions", "RADEC"),
-                                                                 title="Select a File",
-                                                                 filetypes=(("Text files",
-                                                                             "*.reg"),
-                                                                            ("all files",
-                                                                             "*.*")))
-        self.loaded_regfile = os.path.split(self.filename_regfile_RADEC)[1]
-        # First read the file and set the regions in original RADEC units
-        self.RRR_RADec = Regions.read(
-            self.filename_regfile_RADEC, format='ds9')
-        filtered_duplicates_regions = []
-        for reg in self.RRR_RADec:
-            if reg not in filtered_duplicates_regions:
-                filtered_duplicates_regions.append(reg)
-
-        self.RRR_RADec = filtered_duplicates_regions
-        #
-        # Then extract the clean filename to get RA and DEC of the central point
-        head, tail = os.path.split(self.filename_regfile_RADEC)
-        self.textbox_filename_regfile_RADEC.insert(tk.END, tail)
-        
-        # find the opject t name reading all characters up to the first "_"
-        self.target_name = tail[0:tail.find("_")] 
-        
-        #write the object name in the Science tab
-        self.ObjectName.set(self.target_name)        
-                
-        # the filename must carry the RADEC coordinates are "RADEC_". Find this string...
-        s = re.search(r'RADEC=', tail)
-        # extract RADEC
-        RADEC = tail[s.end():-4]
-        RA_cut = (re.findall('.*-', RADEC))
-        # and RA, DEC as strings at disposal
-        self.RA_regCNTR = RA_cut[0][:-1]
-        self.DEC_regCNTR = (re.findall('-.*', RADEC))[0]
-        # we return the filename
-        print("(RA,DEC) Regions loaded from .reg file")
-
-        return self.filename_regfile_RADEC
-        """
 
         """
     def load_ds9regfile_xyAP(self):
@@ -10780,51 +10683,6 @@ class GuideStarPage(tk.Frame):
             - convert xyAP regions to GINGA regions (aka RRR_xyGA)
         """
         
-        """
-        print("\n Load ds9/xy reg. file")
-        reg = filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
-                                         initialdir=os.path.join(local_dir, 'SAMOS_regions', 'pixels'))
-        print("reading (x,y) Astropy region file")
-        if isinstance(reg, tuple):
-            regfileName = reg[0]
-        else:
-            regfileName = str(reg)
-        # if len(regfileName) != 0:
-
-        # Then
-        head, tail = os.path.split(regfileName)
-        self.loaded_regfile = regfileName
-        self.textbox_filename_regfile_xyAP.insert(tk.END, tail)
-
-        self.RRR_xyAP = Regions.read(regfileName, format='ds9')
-        print("created AP.xy regions (aka RRR_xyAP)")
-        filtered_duplicates_regions = []
-        for reg in self.RRR_xyAP:
-            if reg not in filtered_duplicates_regions:
-                filtered_duplicates_regions.append(reg)
-
-        self.RRR_xyAP = filtered_duplicates_regions
-        print("eliminated duplicated regions")
-
-        if self.SlitTabView is None:
-            # self.SlitTabView = STView()
-            self.initialize_slit_table()
-
-        self.SlitTabView.load_table_from_regfile_CCD(regs_CCD=self.RRR_xyAP,
-                                                     img_wcs=self.wcs)
-        # if the image has a wcs, it will be used to get sky coords
-        print("xyAP regions visualized on GINGA display\n   => WCS solution needed")
-
-        self.RRR_xyGA = self.convert_regions_xyAP2xyGA()
-        print("convert xyAP regions to GINGA regions (aka RRR_xyGA)")
-        # [print("first 10 xyAP obj tags ", obj.tag) for obj in self.canvas.get_objects()[:10]]
-
-        # [print("last 10 xyAP obj tags ", obj.tag) for obj in self.canvas.get_objects()[-10:]]
-        print("number of regions: ", len(self.canvas.get_objects()))
-        # self.display_region_file()
-        print("ds9/xy regions loaded in Ginga")
-        # regfile = open(regfileName, "r")
-        """
     """
     def display_region_file(self):
         [ap_region.add_region(self.canvas, reg) for reg in self.RRR_xyAP]

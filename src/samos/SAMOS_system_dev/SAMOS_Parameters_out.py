@@ -47,7 +47,7 @@ class SAMOS_Parameters():
                          'dir_system': '/SAMOS_system_dev',
                          }
         #add the directory of the QL images
-        self.QL_images = os.path.join(parent_dir,'SAMOS_QL_images')
+        self.QL_images = get_data_file("ql")
         
         """ Default IP address imported for all forms"""
         ip_file_default = os.path.join(local_dir, "IP_addresses_default.csv")
