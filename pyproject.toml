@@ -33,16 +33,7 @@ Issues = "https://github.com/mrobberto/SAMOS_NEWGUI/issues"
 version = {attr = "samos.VERSION"}
 
 [project.scripts]
-samos = "samos.SAMOS_New_SHIPPED:run_samos"
+run_samos = "samos.SAMOS_New_SHIPPED:run_samos"
 
 [tool.setuptools.packages.find]
-where = ["samos.data", "samos.SAMOS_CONFIG_dev", "samos.SAMOS_DMD_dev", "samos.SAMOS_ETC", 
-         "samos.SAMOS_MOTORS_dev", "samos.SAMOS_QL_images", "samos.SAMOS_regions", 
-         "samos.SAMOS_SOAR_dev", "samos.SAMOS_system_dev"]
-
-[tool.setuptools.package-data]
-"*" = ["*.fit", "*.fits", "*.bmp", "*.reg", "*.png", "*.mp3", "*.csv", "*.pdf", "*.PDF",
-       "*.pro"]
-
-[tool.setuptools.package-dir]
-samos = "samos"
+where = ["samos.data"]
