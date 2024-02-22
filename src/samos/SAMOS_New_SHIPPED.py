@@ -5,11 +5,11 @@ Created on Tue Feb 25 13:21:00 2023
 """
 from sys import platform
 from samos.utilities import get_data_file
-from samos.SAMOS_DMD_dev.DMD_get_pixel_mapping_GUI_dana import Coord_Transform_Helpers as CTH
-from samos.SAMOS_DMD_dev.CONVERT.CONVERT_class import CONVERT
-from samos.SAMOS_DMD_dev.DMD_Pattern_Helpers.Class_DMDGroup import DMDGroup
-from samos.SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
-from samos.SAMOS_MOTORS_dev.Class_PCM import Class_PCM
+from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
+from samos.dmd.convert.CONVERT_class import CONVERT
+from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
+from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.motors.Class_PCM import Class_PCM
 from samos.SAMOS_SOAR_dev.Class_SOAR import Class_SOAR
 from samos.ccd.Class_CCD_dev import Class_Camera
 from astrometry.skymapper_interrogate import skymapper_interrogate
@@ -18,7 +18,7 @@ from astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
 from astrometry.panstarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
 from samos.SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
-from samos.SAMOS_ETC.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
+from samos.etc.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
 import samos.SAMOS_system_dev.utils as U
 import samos.SAMOS_system_dev.WriteFITSHead as WFH
 
@@ -29,7 +29,6 @@ import re  # re module of the standard library handles strings, e.g. use re.sear
 # , PointPixelRegion, RegionVisual
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion
 from astroquery.simbad import Simbad
-# from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 import time
 
 import glob
@@ -181,8 +180,8 @@ STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcNa
 
 dir_Astrometry = os.path.join(local_dir, "astrometry")
 dir_CCD = os.path.join(local_dir, "ccd")
-dir_DMD = os.path.join(local_dir, "SAMOS_DMD_dev")
-dir_MOTORS = os.path.join(local_dir, "SAMOS_MOTORS_dev")
+dir_DMD = os.path.join(local_dir, "dmd")
+dir_MOTORS = os.path.join(local_dir, "motors")
 dir_SOAR = os.path.join(local_dir, "SAMOS_SOAR_dev")
 dir_CONFIG = os.path.join(local_dir, "SAMOS_CONFIG_dev")
 dir_SYSTEM = os.path.join(local_dir, "SAMOS_system_dev")
@@ -328,9 +327,9 @@ class ConfigPage(tk.Frame):
 
 
         """
-        self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
+        self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD'   : '/ccd',
-                         'dir_DMD'   : '/SAMOS_DMD_dev',
+                         'dir_DMD'   : '/dmd',
                          'dir_SOAR'  : '/SAMOS_SOAR_dev',
                          'dir_SAMI'  : '/SAMOS_SAMI_dev',
                          'dir_Astrom': '/astrometry',
@@ -1718,7 +1717,7 @@ class DMDPage(tk.Frame):
     def BrowseMapFiles(self):
         """ BrowseMapFiles """
         self.textbox_filename.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir=os.path.join(dir_DMD, "DMD_csv", "maps"),
+        filename = filedialog.askopenfilename(initialdir=get_data_file("dmd.csv.maps"),
                                               title="Select a File",
                                               filetypes=(("Text files",
                                                           "*.csv"),
@@ -1729,7 +1728,6 @@ class DMDPage(tk.Frame):
         else:        
             cmd = 'start "excel" "%s"' %(filename)
             os.system(cmd)
-            #"D:\\SAMOS_NEWGUI\\SAMOS_DMD_dev\\DMD_csv\\maps\\ThinCentralSlit.csv"')
         head, tail = os.path.split(filename)
         self.textbox_filename.insert(tk.END, tail)
         self.str_map_filename.set(tail)
@@ -1745,7 +1743,7 @@ class DMDPage(tk.Frame):
         """ LoadMap """
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir=os.path.join(dir_DMD, "DMD_csv", "maps"),
+        filename = filedialog.askopenfilename(initialdir=get_data_file("dmd.csv.maps"),
                                               title="Select a File",
                                               filetypes=(("Text files",
                                                           "*.csv"),
@@ -1824,7 +1822,7 @@ class DMDPage(tk.Frame):
         """ LoadSlits """
         self.textbox_filename.delete('1.0', tk.END)
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir=os.path.join(dir_DMD, "DMD_csv", "slits"),
+        filename_slits = filedialog.askopenfilename(initialdir=get_data_file("dmd.csv.slits"),
                                                     title="Select a File",
                                                     filetypes=(("Text files",
                                                                 "*.csv"),
@@ -1875,8 +1873,7 @@ class DMDPage(tk.Frame):
         filename_in_text = self.textbox_filename.get("1.0",'end-1c')
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
-        self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", filename_in_text)
+        self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
         
         myList = []
         # 2. that's just a string! check if file exists to load what you already inherited
@@ -1902,8 +1899,7 @@ class DMDPage(tk.Frame):
         filename_in_text = self.textbox_filename.get("1.0",'end-1c')
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
-        self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", filename_in_text)
+        self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
         pandas_map = pd.DataFrame(self.map)
         pandas_map.to_csv(self.map_filename, index=False, header=None)
         print("Map Saved")
@@ -1914,8 +1910,7 @@ class DMDPage(tk.Frame):
         filename_in_text = self.textbox_filename.get("1.0",'end-1c')
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
-        self.map_filename = os.path.join(
-            dir_DMD, "DMD_csv", "maps", filename_in_text)
+        self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
 
         myList = []
         with open(self.map_filename, 'r') as file:
@@ -2150,8 +2145,6 @@ class Motors(tk.Frame):
             "B5",
             "B6",
         ]
-#        data = ascii.read(local_dir+'/IDG_filter_positions.txt')
-#        print(data)
 
 #        # datatype of menu text
         self.selected_FW_pos = tk.StringVar()
@@ -2179,8 +2172,6 @@ class Motors(tk.Frame):
             "O[III]",
             "S[II]",
         ]
-#        data = ascii.read(local_dir+'/IDG_Filter_positions.txt')
-#        print(data)
 
 #        # datatype of menu text
         self.selected_filter = tk.StringVar()
@@ -3567,8 +3558,7 @@ class CCD2DMD_RecalPage(tk.Frame):
         dmd_pattern_text = "DMD Pattern: {}".format(self.grid_pattern_name)
         self.dmd_pattern_label["text"] = dmd_pattern_text
 
-        self.grid_pattern_fullPath = os.path.join(
-            "SAMOS_DMD_dev", "DMD_csv", "slits", "{}".format(self.grid_pattern_name))
+        self.grid_pattern_fullPath = get_data_file("dmd.csv.slits", self.grid_pattern_name)
         dmd_table = pd.read_csv(self.grid_pattern_fullPath)
         # .sort_values(by="y", ascending=False).reset_index(drop=True)
         self.dmd_table = dmd_table
@@ -3698,10 +3688,8 @@ class CCD2DMD_RecalPage(tk.Frame):
         new_hdu = fits.PrimaryHDU(data=self.AstroImage.as_nddata().data,
                                   header=new_hdr)
 
-        img_Mapping_fpath = os.path.join("SAMOS_DMD_dev", "CONVERT",
-                        "DMD_Mapping_WCS.fits")
-        prev_Mapping_fname = os.path.join("SAMOS_DMD_dev", "CONVERT",
-                                          "DMD_Mapping_WCS_prev.fits")
+        img_Mapping_fpath = get_data_file("dmd.convert", "DMD_Mapping_WCS.fits")
+        prev_Mapping_fname = get_data_file("dmd.convert", "DMD_Mapping_WCS_prev.fits")
         # change name of previous FITS file with the coordinate transformation
         # to save it just in case recalibration went wrong.
         os.rename(img_Mapping_fpath, prev_Mapping_fname)
@@ -7110,14 +7098,6 @@ class MainPage(tk.Frame):
                 print("DMDMAP is ", main_fits_header.dmdmap)
             except:
                 print("no slit grid loaded")   
-            #try:
-            #    DMD.current_dmd_shape
-            #except NameError:
-            #    DMD.current_dmd_shape = None
-            #if DMD.current_dmd_shape is not None:
-            #    dmd_hdu = self.create_dmd_pattern_hdu(
-            #        main_fits_header.output_header)
-            #    hdul.append(dmd_hdu)
             try:
                 dmd_hdu = self.create_dmd_pattern_hdu(
                     main_fits_header.output_header)
@@ -9691,7 +9671,7 @@ class MainPage(tk.Frame):
     def LoadMap(self):
         """ to be written """
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename = filedialog.askopenfilename(initialdir=os.path.join(dir_DMD, "DMD_csv", "maps"),
+        filename = filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.maps"),
                                               title="Select a File",
                                               filetypes=(("Text files",
                                                           "*.csv"),
@@ -9738,7 +9718,7 @@ class MainPage(tk.Frame):
     def LoadSlits(self):
         """ to be written """
         self.textbox_filename_slits.delete('1.0', tk.END)
-        filename_slits = filedialog.askopenfilename(initialdir=os.path.join(dir_DMD, "DMD_csv", "slits"),
+        filename_slits = filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.slits"),
                                                     title="Select a File",
                                                     filetypes=(("Text files",
                                                                 "*.csv"),
@@ -9782,8 +9762,7 @@ class MainPage(tk.Frame):
             return
         file = filedialog.asksaveasfile(filetypes=[("csv file", ".csv")],
                                         defaultextension=".csv",
-                                        initialdir=os.path.join(
-                                            dir_DMD, "DMD_csv", "slits"),
+                                        initialdir=get_data_file("dmd.scv.slits"),
                                         initialfile=self.filename_regfile_RADEC[0:-4]+".csv")
         pandas_slit_shape = pd.DataFrame(self.slit_shape)
         pandas_slit_shape.to_csv(file.name)

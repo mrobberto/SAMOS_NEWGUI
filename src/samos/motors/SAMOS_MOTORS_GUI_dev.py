@@ -30,22 +30,23 @@ os.sys.path.append(SF_path)
 
 #from Class_PCM_module import Class_PCM_module
 #import Class_PCM_module as PCM
-from Class_PCM import Class_PCM
+from .Class_PCM import Class_PCM
 PCM = Class_PCM()
 
 #Here, we are creating our class, Window, and inheriting from the Frame class. 
 #Frame is a class from the tkinter module. (see Lib/tkinter/__init__)
 
-class Window(Frame):
+class Window(Toplevel):
 
     # Define the settings upon initialization. Here you can specify
     def __init__(self, master=None):
         
-        # parameters that you want to send through the Frame class
-        Frame.__init__(self, master)   
+ 
+        super().__init__(master = master) 
+        #super() recalls and includes the __init__() of the master class (tk.Topelevel), so one can use that stuff there without copying the code.
 
         #reference to the master widget, which is the tk window                 
-        self.master = master 
+#        self.master = master 
 
         #with that, we want to then run init_window, which doesn't yet exist
 #        self.init_window()
@@ -56,15 +57,16 @@ class Window(Frame):
 #The above is really all we need to do to get a window instance started.
         
     #Creation of init_window
+        self.geometry("400x330")
 
         # changing the title of our master widget      
-        self.master.title("IDG - PCM module driver")
+        self.title("IDG - PCM module driver")
 
         # allowing the widget to take the full space of the root window
-        self.pack(fill=BOTH, expand=1)
+#        self.pack(fill=BOTH, expand=1)
 
         self.Echo_String = StringVar()         
-        self.check_if_power_is_on()
+        #self.check_if_power_is_on()
 
 # =============================================================================
 #         
@@ -81,6 +83,7 @@ class Window(Frame):
 #         
 #        # Power on/odd 
 # =============================================================================
+        self.is_on = False
         if self.is_on == False:
             text = "Turn power ON"
             color = "green"
@@ -112,7 +115,10 @@ class Window(Frame):
 
         r3 = Radiobutton(self, text='GR_B', variable=self.r1_v, value=4, command=self.Choose_FWorGR)
         r3.place(x=190,y=70) 
-
+   
+        #start with FW1 
+        self.r1_v.set(1)
+        self.Choose_FWorGR()
 # =============================================================================
 #       home
 # =============================================================================
@@ -162,8 +168,6 @@ class Window(Frame):
              "B5",
              "B6",
              ]
-#        data = ascii.read(local_dir+'/IDG_filter_positions.txt')
-#        print(data)
         
 #        # datatype of menu text
         self.selected_FW_pos = StringVar()
@@ -181,16 +185,14 @@ class Window(Frame):
 # =============================================================================
         filter_options = [
              "open",
-             "SLOAN-g\'",
-             "SLOAN-r\'",
-             "SLOAN-i\'",
-             "SLOAN-a\'",
+             "SLOAN-g",
+             "SLOAN-r",
+             "SLOAN-i",
+             "SLOAN-z",
              "Ha",
              "O[III]",
              "S[II]",
              ]
-#        data = ascii.read(local_dir+'/IDG_Filter_positions.txt')
-#        print(data)
         
 #        # datatype of menu text
         self.selected_filter = StringVar()
@@ -244,21 +246,27 @@ class Window(Frame):
         quitButton = Button(self, text="Exit",command=self.client_exit)
         quitButton.place(x=280, y=300)
         
+        
+        
     def get_widget(self):
        return self.root
         
-  
+    """ 
     def check_if_power_is_on(self):       
         print('at startup, get echo from server:')
         t = PCM.echo_client() 
         self.Echo_String.set(t)
-        if t[2:13] == "NO RESPONSE":
-            self.is_on = False
-            self.Echo_String.set(t[2:13])
+        if t!= None:
+            print(t[2:13])
+            if t[2:13] == "NO RESPONSE":
+                self.is_on = False
+                self.Echo_String.set(t[2:13])
+            else:
+                self.is_on = True
+                self.Echo_String.set(t)
         else:
-            self.is_on = True
-            self.Echo_String.set(t)
-    
+            print("No echo from the server")
+    """        
 
     def call_echo_PCM(self):       
         print('echo from server:')
@@ -299,7 +307,8 @@ class Window(Frame):
 
     def FW_initialize(self):       
         print('Initialize:')
-        t = PCM.initialize_filter_wheel()
+        t = PCM.initialize_filter_wheel("FW1")
+        t = PCM.initialize_filter_wheel("FW2")
         self.Echo_String.set(t)
         print(t)
 
@@ -333,14 +342,14 @@ class Window(Frame):
         print(t)
 
     def FW_move_to_position(self):       
-        print('moving to FW position:') 
+        print('moving to FW position:',self.selected_FW_pos.get()) 
         FW_pos = self.selected_FW_pos.get()
         t = PCM.move_FW_pos_wheel(FW_pos)
         self.Echo_String.set(t)
         print(t)
         
     def FW_move_to_filter(self):       
-        print('moving to filter:') 
+        print('moving to filter:',self.selected_filter.get()) 
         filter = self.selected_filter.get()
         t = PCM.move_filter_wheel(filter)
         self.Echo_String.set(t)
@@ -361,17 +370,22 @@ class Window(Frame):
         
     def client_exit(self):
         print("destroy")
-        root.destroy() 
-        
-#Root window created. 
-#Here, that would be the only window, but you can later have windows within windows.
+        self.destroy() 
+    
+'''
+# #Root window created. 
+# #Here, that would be the only window, but you can later have windows within windows.
 root = Tk()
-
-#size of the window
-root.geometry("400x0")
-
-#Then we actually create the instance.
+# 
+# #size of the window
+root.geometry("400x330")
+# 
+# #Then we actually create the instance.
 app = Window(root)    
-
-#Finally, show it and begin the mainloop.
+# 
+# #Finally, show it and begin the mainloop.
 root.mainloop()
+'''
+if __name__ == "__main__":
+    testObj = Window()
+    testObj.mainloop()

@@ -34,7 +34,7 @@ from .hadamard_class_v3 import *
 HTSI = HTSI_Models()
 
 from samos.utilities import get_data_file
-from ..SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
 dmd = DigitalMicroMirrorDevice()#config_id='pass') 
 dmd.initialize()
 

@@ -64,6 +64,7 @@ parent_dir = str(path.parent)
 sys.path.append(parent_dir)
 
 from samos.SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
+from samos.utilities import get_data_file
 
 #PCM = Class_PCM()
 #SF = Class_SAMOS_Functions()
@@ -109,8 +110,7 @@ class Class_PCM():
                 
 
     #       cwd = os.getcwd()
- #       dir_motors = '/SAMOS_MOTORS_dev'
-        data = ascii.read(local_dir+'/IDG_Filter_positions.txt')
+        data = ascii.read(get_data_file("motors", 'IDG_Filter_positions.txt'))
         #print(data)
         self.FW1_counts_pos1 = data['Counts'][0]
         self.FW1_counts_pos2 = data['Counts'][1]
@@ -990,8 +990,6 @@ class Class_PCM():
         self.canvas_Indicator.itemconfig("filter_ind", 
                                          fill=indicator_light_pending_color)
         self.canvas_Indicator.update()
-#        data = ascii.read(local_dir+'/IDG_filter_positions.txt')
-#        print(data)
 # =============================================================================
 # Position Counts Filter
 # FW_A1 46667  SLOAN-g
@@ -1767,7 +1765,7 @@ class Class_PCM():
         data['wheel']= ['FW1','FW2','GR_A','GR_B']
         data['counts']= [FW1_steps,FW2_steps,GR_A_steps,GR_B_steps]
         #cwd = os.getcwd()
-        ascii.write(data,os.path.join(local_dir,'FW_GR_status.dat'),overwrite=True)
+        ascii.write(data, get_data_file("motors",'FW_GR_status.dat'), overwrite=True)
 # =============================================================================
 #     def timed_query_current_count_monitor(self, FW):
 #         while self.stop_timer == False:

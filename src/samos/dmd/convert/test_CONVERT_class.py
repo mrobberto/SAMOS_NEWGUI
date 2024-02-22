@@ -14,7 +14,7 @@ class CONVERT():
     
     def __init__(self):
         # FITS file with the WCS parameters to convert between CCD and DMD pixels
-        ccd2dmd_file = "../flipped_DMD_Mapping_WCS.fits"
+        ccd2dmd_file = get_data_file("dmd.convert", "flipped_DMD_Mapping_WCS.fits")
         
         # extract the astrometric WCS 
         hdul = fits.open(ccd2dmd_file)

@@ -38,9 +38,9 @@ class SAMOS_Parameters():
         self.Image_on = tk.PhotoImage(file=get_data_file("tk.icons", "on.png"))
         self.Image_off = tk.PhotoImage(file=get_data_file("tk.icons", "off.png"))
 
-        self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
+        self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD': '/ccd',
-                         'dir_DMD': '/SAMOS_DMD_dev',
+                         'dir_DMD': '/dmd',
                          'dir_SOAR': '/SAMOS_SOAR_dev',
                          'dir_SAMI': '/SAMOS_SAMI_dev',
                          'dir_Astrom': '/astrometry',

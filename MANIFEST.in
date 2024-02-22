@@ -1,1 +1,4 @@
 graft src/samos/data
+graft src/samos/notebooks
+include *.md
+include *.rst

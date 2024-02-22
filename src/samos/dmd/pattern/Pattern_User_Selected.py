@@ -60,6 +60,7 @@ sys.path.insert(0,"../")
 import setup_slits
 importlib.reload(setup_slits)
 from .setup_slits import DMDSlit, DMD_Pattern_from_SlitList
+from samos.utilities import get_data_file
 
 
 
@@ -93,7 +94,7 @@ sys.path.append(local_dir)
 # can be changed to any image
 test_file_name = "../../IMAGES/grid11x11"
 
-ccd2dmd_file = "./DMD_Mapping_WCS.fits"
+ccd2dmd_file = get_data_file("dmd.pattern", "DMD_Mapping_WCS.fits")
 
 class FitsViewer(QtGui.QMainWindow):
     def __init__(self, logger, render='widget'):

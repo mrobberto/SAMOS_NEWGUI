@@ -23,8 +23,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from astropy.table import Table
 from scipy import interpolate
+from pathlib import Path
 import math as math
 
+from samos.utilities import get_data_file
 from samos.SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
 #import SAMOS_system_dev.utils as U
 
@@ -37,7 +39,7 @@ class ETC_Spectral_Page(Frame):
     def __init__(self, parent, container):
         super().__init__(container)
         
-        self.homedir = os.getcwd()+'/SAMOS_ETC'
+        self.homedir = Path(__file__).parent.absolute()
 
         # Constructing the left/right frames
         # , width=400, height=800)
@@ -1728,7 +1730,7 @@ class ETC_Spectral_Page(Frame):
 #
         #homedir = os.getcwd() #+ '/XTcalc_dir'
        # mos_path = homedir + '/mosfire/'
-        sky_path = self.homedir + '/Paranal_sky_VIS/'
+        sky_path = get_data_file("etc.Paranal_sky_VIS")
         #tp_path = homedir + '/MosfireSpecEff/'
         #bk_path = homedir + '/MosfireSkySpec/'
         self.results_path = self.homedir + '/SAMOS_Results/'
@@ -1760,7 +1762,7 @@ class ETC_Spectral_Page(Frame):
 #==============================================================================
 #0) Metals for telescope optics (and possibly other mirrors)
 # Al from National Bureau of Standards, certainly optimistic
-        Al_reflectivity = np.loadtxt(os.path.join(self.homedir,"coating_throughput","Al_reflectance_NBS.txt")) #lambda[nm], transmission
+        Al_reflectivity = np.loadtxt(get_data_file("etc.coating_throughput", "Al_reflectance_NBS.txt")) #lambda[nm], transmission
         Al_reflectivity[:,0] =  Al_reflectivity[:,0] * 1E-3 #nm -< [micron]
         Al_reflectivity_Wave = Al_reflectivity[:,0].astype(float)
         Al_reflectivity_Flux = Al_reflectivity[:,1].astype(float)

@@ -6,7 +6,6 @@ Created on Thu Jan  6 18:11:10 2022
 @author: robberto
 """
 import sys
-#from SAMOS_MOTORS_dev.Class_PCM import Class_PCM
 from .Class_PCM import Class_PCM
 
 PCM = Class_PCM()

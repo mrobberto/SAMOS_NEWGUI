@@ -35,7 +35,7 @@ from ..SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 # Import classes
 # 
 # =============================================================================
-from  ..SAMOS_MOTORS_dev.Class_PCM import Class_PCM 
+from  samos.motors.Class_PCM import Class_PCM 
 PCM = Class_PCM()
 
 #at the moment the Class Camera must be called with a few parameters...
@@ -46,7 +46,7 @@ params = {'Exposure Time':0,'CCD Temperature':2300,'Trigger Mode': 4}
 CCD = Class_Camera(dict_params=params)
 
 #Import the DMD class
-from ..SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
 dmd = DigitalMicroMirrorDevice()#config_id='pass') 
 
 
@@ -88,9 +88,9 @@ class Config(tk.Frame):
         self.Image_on = tk.PhotoImage(file = get_data_file("tk.icons", "on.png"))
         self.Image_off = tk.PhotoImage(file = get_data_file("tk.icons", "off.png")) 
         
-        self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
+        self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD'   : '/ccd',
-                         'dir_DMD'   : '/SAMOS_DMD_dev',
+                         'dir_DMD'   : '/dmd',
                          'dir_SOAR'  : '/SAMOS_SOAR_dev',
                          'dir_SAMI'  : '/SAMOS_SAMI_dev',
                          'dir_Astrom': '/astrometry',

@@ -14,13 +14,15 @@ from pathlib import Path
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
 
+from samos.utilities import get_data_file
+
 
 class CONVERT():
 #define the local directory, absolute so it is not messed up when this is called
     
     def __init__(self):
         # FITS file with the WCS parameters to convert between CCD and DMD pixels
-        ccd2dmd_file = local_dir+"/DMD_Mapping_WCS.fits"
+        ccd2dmd_file = get_data_file("dmd.convert", "DMD_Mapping_WCS.fits")
         
         # extract the astrometric WCS 
         hdul = fits.open(ccd2dmd_file)

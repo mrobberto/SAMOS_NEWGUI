@@ -61,6 +61,7 @@ sys.path.insert(0,"../")
 import setup_slits
 importlib.reload(setup_slits)
 from setup_slits import DMDSlit, write_DMD_pattern
+from samos.utilities import get_data_file
 
 STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcName)s) | %(message)s'
 
@@ -79,7 +80,7 @@ sys.path.append(local_dir)
 import ap_region_massimoshacked as apreg
 from regions import PixCoord, RectanglePixelRegion, PointPixelRegion, RegionVisual
 
-ccd2dmd_file = "./DMD_Mapping_WCS.fits"
+ccd2dmd_file = get_data_file("dmd.pattern", "DMD_Mapping_WCS.fits")
 
 
 class FitsViewer(QtGui.QMainWindow):

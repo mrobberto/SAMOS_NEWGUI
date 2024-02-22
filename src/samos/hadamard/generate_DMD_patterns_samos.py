@@ -33,7 +33,7 @@ sys.path.append(os.path.join(path.parent,'Hadamard/sandbox'))
 from .hadamard_class_v3 import *
 HTSI = HTSI_Models()
 
-from samos.SAMOS_DMD_dev.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
 dmd = DigitalMicroMirrorDevice()#config_id='pass') 
 dmd.initialize()
 
