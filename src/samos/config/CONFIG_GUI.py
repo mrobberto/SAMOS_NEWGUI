@@ -30,7 +30,7 @@ sys.path.append(parent_dir)
 
 #load the functions
 from samos.utilities import get_data_file
-from ..SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
+from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 # =============================================================================
 # Import classes
 # 
@@ -91,10 +91,10 @@ class Config(tk.Frame):
         self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD'   : '/ccd',
                          'dir_DMD'   : '/dmd',
-                         'dir_SOAR'  : '/SAMOS_SOAR_dev',
+                         'dir_SOAR'  : '/soar',
                          'dir_SAMI'  : '/SAMOS_SAMI_dev',
                          'dir_Astrom': '/astrometry',
-                         'dir_system': '/SAMOS_system_dev',
+                         'dir_system': '/system',
                         }
         
        
@@ -312,25 +312,6 @@ class Config(tk.Frame):
         SF.create_fits_folder()
         print("CONFIG_GUI: exiting startup()\n")
         
-    """
-    # =============================================================================
-    # create directoy to store the data
-    # =============================================================================
-        def create_fits_folder(self) :       
-    
-            today = datetime.now()
-            
-            #name of the directory    
-            self.fits_dir = self.parent_dir + "/SAMOS_" + today.strftime('%Y%m%d')
-            
-            isdir = os.path.isdir(self.fits_dir)
-            if isdir == False:  
-                os.mkdir(self.fits_dir)
-                
-            fits_directory_file = open(self.parent_dir+"/SAMOS_system_dev/fits_current_dir_name.txt", "w")
-            fits_directory_file.write(self.fits_dir)
-            fits_directory_file.close()    
-    """
 
 
 
@@ -338,9 +319,7 @@ class Config(tk.Frame):
     def load_dir_default(self):
         dict_from_csv = {}
 
-
-        #with open(self.parent_dir+"/SAMOS_system_dev/dirlist_default.csv", mode='r') as inp:
-        with open(self.parent_dir + self.dir_dict['dir_system'] +"/SAMOS_system_dev/dirlist_default.csv", mode='r') as inp:
+        with open(get_data_file("system", "dirlist_default.csv")) as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
 
@@ -370,7 +349,7 @@ class Config(tk.Frame):
     def load_dir_user(self):
         dict_from_csv = {}
 
-        with open( os.path.join(self.parent_dir,"SAMOS_system_dev","dirlist_user.csv"), mode='r') as inp:
+        with open( get_data_file("system", "dirlist_user.csv")) as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
 
@@ -411,8 +390,7 @@ class Config(tk.Frame):
         self.dir_dict['dir_system'] = self.dir_system.get()
         
         # open file for writing, "w" is writing
-        w = csv.writer(open(os.path.join(self.parent_dir,"SAMOS_system_dev","dirlist_user.csv"), "w"))
-        print(os.path.join(self.parent_dir,"SAMOS_system_dev","dirlist_user.csv"))
+        w = csv.writer(open(get_data_file("system", "dirlist_user.csv"), "w"))
 
         # loop over dictionary keys and values
         for key, val in self.dir_dict.items():
@@ -422,7 +400,7 @@ class Config(tk.Frame):
            
 
     def load_IP_user(self):
-        local_path = os.path.join(self.parent_dir,"SAMOS_system_dev")
+        local_path = get_data_file("system")
         if self.inoutvar.get() == 'inside':
             ip_file = os.path.join(local_path,"IP_addresses_default_inside.csv")
         else:
@@ -465,7 +443,7 @@ class Config(tk.Frame):
 #         
 # =============================================================================
 # open file for writing, "w" is writing
-        local_path = os.path.join(self.parent_dir,"/SAMOS_system_dev")
+        local_path = get_data_file("system")
         if self.inoutvar.get() == 'inside':
             ip_file = os.path.join(local_path,"IP_addresses_default_inside.csv")
         else:
@@ -488,7 +466,7 @@ class Config(tk.Frame):
         
     def load_IP_default(self):
         
-        local_path = os.path.join(self.parent_dir,"/SAMOS_system_dev")
+        local_path = get_data_file("system")
         if self.inoutvar.get() == 'inside':
             ip_file = os.path.join(local_path,"IP_addresses_default_inside.csv")
         else:
@@ -520,7 +498,7 @@ class Config(tk.Frame):
 
     def save_IP_status(self):
 
-        w = csv.writer(open(os.path.join(self.parent_dir,"SAMOS_system_dev","IP_status_dict.csv"), "w"))
+        w = csv.writer(open(get_data_file("system", "IP_status_dict.csv"), "w"))
 
         # loop over dictionary keys and values
         for key, val in self.IP_status_dict.items():

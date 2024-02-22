@@ -33,4 +33,4 @@ Issues = "https://github.com/mrobberto/SAMOS_NEWGUI/issues"
 version = {attr = "samos.VERSION"}
 
 [project.scripts]
-run_samos = "samos.SAMOS_New_SHIPPED:run_samos"
+run_samos = "samos.main:run_samos"

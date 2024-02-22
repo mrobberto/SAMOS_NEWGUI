@@ -74,7 +74,7 @@ import astropy.units as u
 test_img_twirled = fits.open(get_data_file("astrometry.general", "WCS_150.1679077_-54.7886346.fits"))
 test_wcs = WCS(test_img_twirled[0].header)
 
-test_regf = get_data_file("regions.radec", "NGC3105_V2.RADEC=150.1679077-54.7886346.reg")
+test_regf = get_data_file("regions.radec", "NGC3105_RADEC=150.1674444-54.788541.reg")
 
 class SlitTableView(tk.Frame):
    

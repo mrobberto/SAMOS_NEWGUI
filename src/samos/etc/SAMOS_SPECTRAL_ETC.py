@@ -27,8 +27,7 @@ from pathlib import Path
 import math as math
 
 from samos.utilities import get_data_file
-from samos.SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
-#import SAMOS_system_dev.utils as U
+from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 
 import sys
 from sys import platform

@@ -19,6 +19,8 @@ from pathlib import Path
 import os, sys
 from datetime import datetime
 
+from samos.utilities import get_data_file
+
 
 #define the local directory, absolute so it is not messed up when this is called
 path = Path(__file__).parent.absolute()
@@ -37,7 +39,7 @@ class Class_SAMOS_Functions:
     def read_IP_default():
         dict_from_csv = {}
 
-        with open(os.path.join(local_dir,"IP_addresses_default.csv"), mode='r') as inp:
+        with open(get_data_file("system", "IP_addresses_default.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
 
@@ -51,7 +53,7 @@ class Class_SAMOS_Functions:
     def read_IP_user():
         dict_from_csv = {}
 
-        with open(os.path.join(local_dir,"IP_addresses_user.csv"), mode='r') as inp:
+        with open(get_data_file("system", "IP_addresses_user.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
 
@@ -63,7 +65,7 @@ class Class_SAMOS_Functions:
     def read_dir_default():
         dict_from_csv = {}
 
-        with open(os.path.join(local_dir,"dirlist_default.csv"), mode='r') as inp:
+        with open(get_data_file("system", "dirlist_default.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
 
@@ -75,7 +77,7 @@ class Class_SAMOS_Functions:
     def read_dir_user():
         dict_from_csv = {}
 
-        with open(os.path.join(local_dir,"dirlist_user.csv"), mode='r') as inp:
+        with open(get_data_file("system", "dirlist_user.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
 
@@ -87,7 +89,7 @@ class Class_SAMOS_Functions:
     def read_IP_initial_status():
         dict_from_csv = {}
 
-        with open(os.path.join(local_dir,"IP_initial_status_dict.csv"), mode='r') as inp:
+        with open(get_data_file("system", "IP_initial_status_dict.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]:rows[1] for rows in reader}
             
@@ -114,14 +116,14 @@ class Class_SAMOS_Functions:
             os.mkdir(SISI_QL_images_dir)
         
         #write on a file the name of the directory hosting the image    
-        fits_directory_file = open(os.path.join(parent_dir,"SAMOS_system_dev","fits_current_dir_name.txt"), "w")
+        fits_directory_file = open(get_data_file("system", "fits_current_dir_name.txt"), "w")
         fits_directory_file.write(fits_dir)
         fits_directory_file.close()    
         
         return fits_dir
     
     def read_fits_folder():
-        fits_directory_file = os.path.join(parent_dir,"SAMOS_system_dev","fits_current_dir_name.txt")
+        fits_directory_file = get_data_file("system", "fits_current_dir_name.txt")
         fits_dir_open = open(fits_directory_file,'r')
         fits_dir = fits_dir_open.read()
         fits_dir_open.close() 

@@ -1,4 +1,3 @@
 *.pyc
 .DS_Store
-SAMOS_system_dev/fits_current_dir_name.txt
 *.egg-info

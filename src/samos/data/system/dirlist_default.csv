@@ -1,7 +1,7 @@
 dir_Motors,motors
 dir_CCD,ccd
 dir_DMD,dmd
-dir_SOAR,SAMOS_SOAR_dev
+dir_SOAR,soar
 dir_SAMI,SAMOS_SAMI_dev
 dir_Astrom,astrometry
-dir_system,SAMOS_system_dev
+dir_system,system

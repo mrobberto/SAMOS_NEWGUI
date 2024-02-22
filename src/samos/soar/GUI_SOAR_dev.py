@@ -30,12 +30,9 @@ import pandas as pd
 
 from pathlib import Path
 path = Path(__file__).parent.absolute()
-local_dir = str(path.absolute()) #  .../SAMOS_SOAR_dev
+local_dir = str(path.absolute()) 
 parent_dir = str(path.parent)  
 sys.path.append(parent_dir)
-
-SF_path = parent_dir+"/SAMOS_system_dev"
-os.sys.path.append(SF_path)
 
 
 

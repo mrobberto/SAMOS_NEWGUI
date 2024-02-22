@@ -19,8 +19,6 @@ sys.path.append(parent_dir)
 
 from samos.utilities import get_data_file
 
-dir_SYSTEM = os.path.join(local_dir, "SAMOS_system_dev")
-
 class SAMOS_Parameters():
     """ Collection of paramaeters to be shared by the classes """
 
@@ -41,17 +39,16 @@ class SAMOS_Parameters():
         self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD': '/ccd',
                          'dir_DMD': '/dmd',
-                         'dir_SOAR': '/SAMOS_SOAR_dev',
+                         'dir_SOAR': '/soar',
                          'dir_SAMI': '/SAMOS_SAMI_dev',
                          'dir_Astrom': '/astrometry',
-                         'dir_system': '/SAMOS_system_dev',
+                         'dir_system': '/system',
                          }
         #add the directory of the QL images
         self.QL_images = get_data_file("ql")
         
         """ Default IP address imported for all forms"""
-        ip_file_default = os.path.join(local_dir, "IP_addresses_default.csv")
-        with open(ip_file_default, mode='r') as inp:
+        with open(get_data_file("system", "IP_addresses_default.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]: rows[1] for rows in reader}
         inp.close()
@@ -95,8 +92,7 @@ class SAMOS_Parameters():
         that has to be handled as a json file. 
         See Prameters_README.py for further info on how to handle it
         """
-        Parameters_of_the_night = os.path.join(local_dir, "Parameters_of_the_night.txt")
-        with open(Parameters_of_the_night) as f:
+        with open(get_data_file("system", "Parameters_of_the_night.txt")) as f:
             data= f.read()
         self.PotN = json.loads(data)    
         self.Observer = self.PotN['Observer']

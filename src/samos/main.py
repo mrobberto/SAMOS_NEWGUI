@@ -10,19 +10,19 @@ from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
 from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
-from samos.SAMOS_SOAR_dev.Class_SOAR import Class_SOAR
+from samos.soar.Class_SOAR import Class_SOAR
 from samos.ccd.Class_CCD_dev import Class_Camera
 from astrometry.skymapper_interrogate import skymapper_interrogate
 from astrometry.tk_class_astrometry_V5 import Astrometry
 from astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
 from astrometry.panstarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
-from samos.SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
-from samos.SAMOS_system_dev.SlitTableViewer import SlitTableView as STView
+from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
+from samos.system.SlitTableViewer import SlitTableView as STView
 from samos.etc.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
-import samos.SAMOS_system_dev.utils as U
-import samos.SAMOS_system_dev.WriteFITSHead as WFH
+import samos.system.utils as U
+import samos.system.WriteFITSHead as WFH
 
-from samos.SAMOS_system_dev.SAMOS_Parameters_out import SAMOS_Parameters
+from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 
 
 import re  # re module of the standard library handles strings, e.g. use re.search() to extract substrings
@@ -182,19 +182,9 @@ dir_Astrometry = os.path.join(local_dir, "astrometry")
 dir_CCD = os.path.join(local_dir, "ccd")
 dir_DMD = os.path.join(local_dir, "dmd")
 dir_MOTORS = os.path.join(local_dir, "motors")
-dir_SOAR = os.path.join(local_dir, "SAMOS_SOAR_dev")
-dir_CONFIG = os.path.join(local_dir, "SAMOS_CONFIG_dev")
-dir_SYSTEM = os.path.join(local_dir, "SAMOS_system_dev")
-
-os.sys.path.append(local_dir)
-os.sys.path.append(dir_Astrometry)
-os.sys.path.append(dir_CCD)
-os.sys.path.append(dir_DMD)
-os.sys.path.append(dir_MOTORS)
-os.sys.path.append(dir_SOAR)
-os.sys.path.append(dir_CONFIG)
-os.sys.path.append(dir_SYSTEM)
-
+dir_SOAR = os.path.join(local_dir, "soar")
+dir_CONFIG = os.path.join(local_dir, "config")
+dir_SYSTEM = os.path.join(local_dir, "system")
 
 # from SAMOS_CONFIG_dev.CONFIG_GUI import Config
 
@@ -330,10 +320,10 @@ class ConfigPage(tk.Frame):
         self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD'   : '/ccd',
                          'dir_DMD'   : '/dmd',
-                         'dir_SOAR'  : '/SAMOS_SOAR_dev',
+                         'dir_SOAR'  : '/soar',
                          'dir_SAMI'  : '/SAMOS_SAMI_dev',
                          'dir_Astrom': '/astrometry',
-                         'dir_system': '/SAMOS_system_dev',
+                         'dir_system': '/system',
                         }
         """
 
@@ -690,8 +680,7 @@ class ConfigPage(tk.Frame):
         """ to be written """
         dict_from_csv = {}
 
-        # with open(self.parent_dir+"/SAMOS_system_dev/dirlist_default.csv", mode='r') as inp:
-        with open(os.path.join(dir_SYSTEM, "dirlist_default.csv"), mode='r') as inp:
+        with open(get_data_file("system", "dirlist_default.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]: rows[1] for rows in reader}
         inp.close()
@@ -4447,8 +4436,7 @@ class MainPage(tk.Frame):
 #        label_FW1.place(x=4,y=10)
 
         all_dirs = SF.read_dir_user()
-        filter_data = ascii.read(os.path.join(
-            local_dir, all_dirs['dir_system'], 'SAMOS_Filter_positions.txt'))
+        filter_data = ascii.read(get_data_file("system", 'SAMOS_Filter_positions.txt'))
         filter_names = list(filter_data[0:12]['Filter'])
         self.filter_data = filter_data
         # print(filter_names)
@@ -4536,8 +4524,7 @@ class MainPage(tk.Frame):
 #        labelframe_Grating.place(x=4, y=10)
 
         all_dirs = SF.read_dir_user()
-        Grating_data = ascii.read(os.path.join(
-            local_dir, all_dirs['dir_system'], 'SAMOS_Filter_positions.txt'))
+        Grating_data = ascii.read(get_data_file("system",  'SAMOS_Filter_positions.txt'))
         self.Grating_names = list(Grating_data[12:18]['Filter'])
         self.Grating_positions = list(Grating_data[12:18]['Position'])
 #        print(Grating_names)
@@ -6522,49 +6509,6 @@ class MainPage(tk.Frame):
         DMD.apply_shape(self.slit_shape)
         # DMD.apply_invert()
 
-    """
-    def push_slits(self):
-        # push selected slits to DMD pattern
-        # Export all Ginga objects to Astropy region
-        # 1. list of ginga objects
-        objects = CM.CompoundMixin.get_objects(self.canvas)
-        # counter = 0
-        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
-        for obj in objects:
-            ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
-
-            x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
-            x1,y1 = int(np.floor(x1)), int(np.floor(y1))
-            x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
-            x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
-            # dmd_corners[:][1] = corners[:][1]+500
-            ####
-            # x1 = round(dmd_corners[0][0])
-            # y1 = round(dmd_corners[0][1])+400
-            # x2 = round(dmd_corners[2][0])
-            # y2 = round(dmd_corners[2][1])+400
-        # 3 load the slit pattern
-            self.slit_shape[x1:x2,y1:y2]=0
-        IP = self.PAR.IP_dict['IP_DMD']
-        [host,port] = IP.split(":")
-        DMD.initialize(address=host, port=int(port))
-
-#        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
-        DMD._open()
-        DMD.apply_shape(self.slit_shape)
-        # DMD.apply_invert()
-
-        print("check")
-
-
-    def get_IP(self,device='DMD'):
-        v=pd.read_csv("SAMOS_system_dev/IP_addresses_default.csv",header=None)
-        if device == 'DMD':
-            return(v[2][1])
-
-        IPs = Config.load_IP_user(self)
-        # print(IPs)
-    """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #     def open_Astrometry(self):
 #         btn = tk.Button(master,
@@ -6765,7 +6709,7 @@ class MainPage(tk.Frame):
         self.PAR.PotN['Base Filename'] = self.out_fname.get()
         
         # ..open the json file and read all...
-        PotN_file = os.path.join(local_dir,'SAMOS_system_dev','Parameters_of_the_night.txt')
+        PotN_file = get_data_file("system", 'Parameters_of_the_night.txt')
         with open(PotN_file, "r") as jsonFile:
             data = json.load(jsonFile)
         #... change what has to be changed...
@@ -10995,49 +10939,6 @@ class GuideStarPage(tk.Frame):
         DMD.apply_shape(self.slit_shape)
         # DMD.apply_invert()
 
-    """
-    def push_slits(self):
-        # push selected slits to DMD pattern
-        # Export all Ginga objects to Astropy region
-        # 1. list of ginga objects
-        objects = CM.CompoundMixin.get_objects(self.canvas)
-        # counter = 0
-        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
-        for obj in objects:
-            ccd_x0,ccd_y0,ccd_x1,ccd_y1 = obj.get_llur()
-
-            x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
-            x1,y1 = int(np.floor(x1)), int(np.floor(y1))
-            x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
-            x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
-            # dmd_corners[:][1] = corners[:][1]+500
-            ####
-            # x1 = round(dmd_corners[0][0])
-            # y1 = round(dmd_corners[0][1])+400
-            # x2 = round(dmd_corners[2][0])
-            # y2 = round(dmd_corners[2][1])+400
-        # 3 load the slit pattern
-            self.slit_shape[x1:x2,y1:y2]=0
-        IP = self.PAR.IP_dict['IP_DMD']
-        [host,port] = IP.split(":")
-        DMD.initialize(address=host, port=int(port))
-
-#        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
-        DMD._open()
-        DMD.apply_shape(self.slit_shape)
-        # DMD.apply_invert()
-
-        print("check")
-
-
-    def get_IP(self,device='DMD'):
-        v=pd.read_csv("SAMOS_system_dev/IP_addresses_default.csv",header=None)
-        if device == 'DMD':
-            return(v[2][1])
-
-        IPs = Config.load_IP_user(self)
-        # print(IPs)
-    """
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #     def open_Astrometry(self):
 #         btn = tk.Button(master,
@@ -11146,7 +11047,7 @@ class GuideStarPage(tk.Frame):
         self.PAR.PotN['Base Filename'] = self.out_fname.get()
         
         # ..open the json file and read all...
-        PotN_file = os.path.join(local_dir,'SAMOS_system_dev','Parameters_of_the_night.txt')
+        PotN_file = get_data_file("system", 'Parameters_of_the_night.txt')
         with open(PotN_file, "r") as jsonFile:
             data = json.load(jsonFile)
         #... change what has to be changed...
