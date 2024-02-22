@@ -12,10 +12,10 @@ from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.ccd.Class_CCD_dev import Class_Camera
-from astrometry.skymapper_interrogate import skymapper_interrogate
-from astrometry.tk_class_astrometry_V5 import Astrometry
-from astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
-from astrometry.panstarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
+from samos.astrometry.skymapper_interrogate import skymapper_interrogate
+from samos.astrometry.tk_class_astrometry_V5 import Astrometry
+from samos.astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
+from samos.astrometry.panstarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
 from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SlitTableViewer import SlitTableView as STView
 from samos.etc.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
@@ -101,7 +101,6 @@ print(cwd)
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
 parent_dir = str(path.parent)
-sys.path.append(parent_dir)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 # Import classes
@@ -134,7 +133,6 @@ from tkinter.filedialog import askopenfilename
 from tkinter.filedialog import asksaveasfile
 
 import sys
-# sys.path.append('/opt/anaconda3/envs/samos_env/lib/python3.10/site-packages')
 
 import os
 from os.path import exists as file_exists
@@ -175,7 +173,6 @@ STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcNa
 # define the local directory, absolute so it is not messed up when this is called
 # path = Path(__file__).parent.absolute()
 # local_dir = str(path.absolute())
-# sys.path.append(local_dir)
 
 
 dir_Astrometry = os.path.join(local_dir, "astrometry")

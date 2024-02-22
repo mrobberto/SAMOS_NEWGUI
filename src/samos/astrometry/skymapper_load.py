@@ -11,7 +11,6 @@ from pathlib import Path
 #define the local directory, absolute so it is not messed up when this is called
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
-sys.path.append(local_dir)
 
 
 

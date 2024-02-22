@@ -25,11 +25,7 @@ from pathlib import Path
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
 parent_dir = str(path.parent)   
-sys.path.append(parent_dir)
 
-sys.path.append(os.path.join(path.parent,'Hadamard'))
-
-sys.path.append(os.path.join(path.parent,'Hadamard/sandbox'))
 from .hadamard_class_v3 import *
 HTSI = HTSI_Models()
 

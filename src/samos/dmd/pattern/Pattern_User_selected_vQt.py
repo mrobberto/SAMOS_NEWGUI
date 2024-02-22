@@ -57,10 +57,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 
-sys.path.insert(0,"../")
-import setup_slits
-importlib.reload(setup_slits)
-from setup_slits import DMDSlit, write_DMD_pattern
+from .setup_slits import DMDSlit, write_DMD_pattern
 from samos.utilities import get_data_file
 
 STD_FORMAT = '%(asctime)s | %(levelname)1.1s | %(filename)s:%(lineno)d (%(funcName)s) | %(message)s'
@@ -74,7 +71,6 @@ import csv
 #define the local directory, absolute so it is not messed up when this is called
 path = pathlib.Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
-sys.path.append(local_dir)
 
 
 import ap_region_massimoshacked as apreg

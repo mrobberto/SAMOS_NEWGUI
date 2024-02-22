@@ -6,7 +6,6 @@ Created on Tue Aug  2 12:49:02 2022
 @author: danakoeppe
 """
 import sys
-sys.path.append('/opt/anaconda3/envs/samos_env/lib/python3.10/site-packages')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -57,8 +56,6 @@ from pandastable import Table
 import pandas as pd
 import os
 
-#sys.path.insert(0,"/Users/danakoeppe/allSAMOS/SI_camera_tests/PIX_to_DMD_mapping")
-#print(sys.path)
 import Coord_Transform_Helpers as CTH
 
 

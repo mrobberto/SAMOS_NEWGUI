@@ -32,7 +32,6 @@ from pathlib import Path
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
 parent_dir = str(path.parent)  
-sys.path.append(parent_dir)
 
 
 

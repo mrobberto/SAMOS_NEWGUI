@@ -56,9 +56,6 @@ from astropy import coordinates, units as u, wcs
 from astropy.wcs import WCS
 from astropy.visualization import simple_norm
 
-sys.path.insert(0,"../")
-import setup_slits
-importlib.reload(setup_slits)
 from .setup_slits import DMDSlit, DMD_Pattern_from_SlitList
 from samos.utilities import get_data_file
 
@@ -89,7 +86,6 @@ from pathlib import Path
 #define the local directory, absolute so it is not messed up when this is called
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
-sys.path.append(local_dir)
 
 # can be changed to any image
 test_file_name = "../../IMAGES/grid11x11"
