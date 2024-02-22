@@ -43,3 +43,6 @@ where = ["samos.data", "samos.SAMOS_CONFIG_dev", "samos.SAMOS_DMD_dev", "samos.S
 [tool.setuptools.package-data]
 "*" = ["*.fit", "*.fits", "*.bmp", "*.reg", "*.png", "*.mp3", "*.csv", "*.pdf", "*.PDF",
        "*.pro"]
+
+[tool.setuptools.package-dir]
+samos = "samos"

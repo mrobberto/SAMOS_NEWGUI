@@ -17,6 +17,8 @@ local_dir = str(path.absolute())
 parent_dir = str(path.parent)
 sys.path.append(parent_dir)
 
+from samos.utilities import get_data_file
+
 dir_SYSTEM = os.path.join(local_dir, "SAMOS_system_dev")
 
 class SAMOS_Parameters():
@@ -33,10 +35,8 @@ class SAMOS_Parameters():
             self.scale_DMD2PIXEL = 0.892
         """
 
-        self.Image_on = tk.PhotoImage(file=os.path.join(
-            parent_dir, "tk_utilities", "Images", "on.png"))
-        self.Image_off = tk.PhotoImage(file=os.path.join(
-            parent_dir, "tk_utilities", "Images", "off.png"))
+        self.Image_on = tk.PhotoImage(file=get_data_file("tk.icons", "on.png"))
+        self.Image_off = tk.PhotoImage(file=get_data_file("tk.icons", "off.png"))
 
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
                          'dir_CCD': '/ccd',

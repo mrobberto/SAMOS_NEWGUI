@@ -12,12 +12,13 @@ from tkinter import ttk
 from ginga.tkw.ImageViewTk import CanvasView
 from ginga.misc import log
 
+from samos.utilities import get_data_file
+
 import os
 cwd = os.getcwd()
 print(cwd)
 
 
-#to load the on/off images
 #absolute path of this file
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -315,8 +316,8 @@ class GUI_CCD(tk.Toplevel):     #the GUI_CCD class inherits from the tk.Toplevel
         self.label_camera_ON.place(x=4,y=8)
         
         # Define Our Images
-        self.on_png = tk.PhotoImage(file = dir_path + "/tk_CCD_utilities/on.png")
-        self.off_png = tk.PhotoImage(file = dir_path + "/tk_CCD_utilities/off.png")
+        self.on_png = tk.PhotoImage(file = get_data_file("tk.icons", "on.png"))
+        self.off_png = tk.PhotoImage(file = get_data_file("tk.icons", "off.png"))
         self.button_open_camera= tk.Button(labelframe_Setup, image=self.off_png, bd=0, command=self.turn_camera_ON)
                                                         #command = open_close_camera)
         self.button_open_camera.place(x=180, y=0)

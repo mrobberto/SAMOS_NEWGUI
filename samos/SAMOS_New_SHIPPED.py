@@ -243,7 +243,6 @@ class App(tk.Tk):
         self.title("SAMOS Control System")
         self.geometry("1100x500")
         self.resizable(True, True)
-        # self.iconphoto(False, tk.PhotoImage(file="assets/title_icon.png"))
 
         # Creating a container
         container = tk.Frame(self, bg="#8AA7A9", width=1100)
@@ -327,10 +326,6 @@ class ConfigPage(tk.Frame):
  #       self.Motors_is_on = True
         # Define Our Images
 
-        """
-        self.Image_on = tk.PhotoImage(file = local_dir+"/Images/on.png")
-        self.Image_off = tk.PhotoImage(file = local_dir+"/Images/off.png")
-        """
 
         """
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
@@ -523,7 +518,6 @@ class ConfigPage(tk.Frame):
                           textvariable=self.IP_SAMI)
         Entry5.place(x=120, y=135)
 
- #       self.Image_on = Image.open("/Users/robberto/Box/@Massimo/_Python/SAMOS_GUI_dev/SAMOS_CONFIG_dev/Images/on.jpg")
 #        self.python_image = ImageTk.PhotoImage(self.image)
         # self.Label(self, image=self.python_image).pack()
 
@@ -2785,10 +2779,8 @@ class CCDPage(tk.Frame):
         self.label_camera_ON.place(x=4, y=8)
 
         # Define Our Images
-        self.on_png = tk.PhotoImage(file=os.path.join(
-            local_dir, "tk_utilities", "on.png"))
-        self.off_png = tk.PhotoImage(file=os.path.join(
-            local_dir, "tk_utilities", "off.png"))
+        self.on_png = tk.PhotoImage(file=get_data_file("tk.icons", "on.png"))
+        self.off_png = tk.PhotoImage(file=get_data_file("tk.icons", "off.png"))
         self.button_open_camera = tk.Button(
             labelframe_Setup, image=self.off_png, bd=0, command=self.turn_camera_ON)
         # command = open_close_camera)

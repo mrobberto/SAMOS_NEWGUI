@@ -29,6 +29,7 @@ parent_dir = str(path.parent)
 sys.path.append(parent_dir)
 
 #load the functions
+from samos.utilities import get_data_file
 from ..SAMOS_system_dev.SAMOS_Functions import Class_SAMOS_Functions as SF
 # =============================================================================
 # Import classes
@@ -84,8 +85,8 @@ class Config(tk.Frame):
         # Keep track of the button state on/off
  #       self.Motors_is_on = True
         # Define Our Images 
-        self.Image_on = tk.PhotoImage(file = os.path.join(local_dir,"Images","on.png") )
-        self.Image_off = tk.PhotoImage(file = os.path.join(local_dir,"Images","off.png") ) 
+        self.Image_on = tk.PhotoImage(file = get_data_file("tk.icons", "on.png"))
+        self.Image_off = tk.PhotoImage(file = get_data_file("tk.icons", "off.png")) 
         
         self.dir_dict = {'dir_Motors': '/SAMOS_MOTORS_dev',
                          'dir_CCD'   : '/ccd',
@@ -241,7 +242,6 @@ class Config(tk.Frame):
         Entry5 = tk.Entry(self.labelframe_Servers,width=20, textvariable = self.IP_SAMI)
         Entry5.place(x=120, y=135)
 
- #       self.Image_on = Image.open("/Users/robberto/Box/@Massimo/_Python/SAMOS_GUI_dev/SAMOS_CONFIG_dev/Images/on.jpg")
 #        self.python_image = ImageTk.PhotoImage(self.image)
         #self.Label(self, image=self.python_image).pack()
 

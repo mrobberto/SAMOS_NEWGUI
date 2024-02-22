@@ -40,4 +40,4 @@ dependencies:
     - twirl
 
     # Current package
-    - -e .
+#    - -e .
