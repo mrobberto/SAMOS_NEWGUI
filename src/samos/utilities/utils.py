@@ -55,3 +55,17 @@ def get_data_file(mod_path, filename=None):
     if not file_path.exists():
         raise FileNotFoundError("File {} does not exist".format(file_path))
     return file_path
+
+
+def get_temporary_dir():
+    """
+    Return a Path to a directory for storing temporary files that shouldn't be included 
+    by either github or the package installer.
+    
+    Returns
+    -------
+    dir_path : pathlib.Path
+        Path to the directory
+    """
+    dir_path = Path(__file__).parent.parent.absolute() / "data" / "tmp"
+    return dir_path
