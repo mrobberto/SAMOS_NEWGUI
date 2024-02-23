@@ -1,4 +1,6 @@
 graft src/samos/data
+prune src/samos/data/tmp
 graft src/samos/notebooks
 include *.md
 include *.rst
+include src/samos/data/tmp/README.md
