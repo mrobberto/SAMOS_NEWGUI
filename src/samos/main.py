@@ -14,8 +14,8 @@ from samos.soar.Class_SOAR import Class_SOAR
 from samos.ccd.Class_CCD_dev import Class_Camera
 from samos.astrometry.skymapper_interrogate import skymapper_interrogate
 from samos.astrometry.tk_class_astrometry_V5 import Astrometry
-from samos.astrometry.panstarrs.Class_ps1image import PanStarrs as PS_image
-from samos.astrometry.panstarrs.Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_table
+from samos.astrometry.panstarrs.image import PanStarrsImage as PS_image
+from samos.astrometry.panstarrs.catalog import PanStarrsCatalog as PS_table
 from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SlitTableViewer import SlitTableView as STView
 from samos.etc.SAMOS_SPECTRAL_ETC import ETC_Spectral_Page as ETCPage
@@ -11491,7 +11491,7 @@ class GuideStarPage(tk.Frame):
         size = int(300 / 0.25)   # create an image 5'x5'
         
         #get the pan star image
-        fitsurl = PSima.geturl(ra, dec, size=size, filters=filter, format="fits")
+        fitsurl = PSima.get_url(ra, dec, size=size, filters=filter, format="fits")
         fh = fits.open(fitsurl[0])
         fim = fh[0].data
         
@@ -11530,7 +11530,7 @@ class GuideStarPage(tk.Frame):
             gMeanPSFMag,rMeanPSFMag,iMeanPSFMag,zMeanPSFMag,yMeanPSFMag""".split(',')
         columns = [x.strip() for x in columns]
         columns = [x for x in columns if x and not x.startswith('#')]
-        results = PStab.ps1cone(ra,dec,radius,release='dr2',columns=columns,verbose=True,**constraints)
+        results = PStab.ps_cone(ra,dec,radius,release='dr2',columns=columns,verbose=True,**constraints)
         
         tab = ascii.read(results)
         # improve the format

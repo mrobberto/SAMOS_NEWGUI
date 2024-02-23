@@ -8,7 +8,7 @@ Created on Thu Oct 26 23:16:23 2023
 
 from astropy.io import ascii
 import numpy as np
-from .Class_ps1_dr2_catalog import PS_DR2_Catalog as PS_dr2cat 
+from samos.astrometry.panstarrs.catalog import PanStarrsCatalog as PS_dr2cat 
 PS_dr2 = PS_dr2cat()
 
 
@@ -17,7 +17,7 @@ Use metadata query to get information on available columns
 This query works for any of the tables in the API (mean, stack, detection).
 """
 
-meta = PS_dr2.ps1metadata("mean","dr2")
+meta = PS_dr2.ps_metadata("mean","dr2")
 print(meta)
 
 """Simple positional query
@@ -35,7 +35,7 @@ columns = """objID,raMean,decMean,nDetections,ng,nr,ni,nz,ny,
     gMeanPSFMag,rMeanPSFMag,iMeanPSFMag,zMeanPSFMag,yMeanPSFMag""".split(',')
 columns = [x.strip() for x in columns]
 columns = [x for x in columns if x and not x.startswith('#')]
-results = PS_dr2.ps1cone(ra,dec,radius,release='dr2',columns=columns,verbose=True,**constraints)
+results = PS_dr2.ps_cone(ra,dec,radius,release='dr2',columns=columns,verbose=True,**constraints)
 # print first few lines
 lines = results.split('\n')
 print(len(lines),"rows in results -- first 5 rows:")

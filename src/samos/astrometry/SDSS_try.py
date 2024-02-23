@@ -41,6 +41,9 @@ if __name__ == "__main__":
 
     header_rotated = copy.deepcopy(header)
 
+    # *****
+    # Is there a reason that tmp is being created here? It seems like, now that 
+    # header_rotated is being deepcopied, it shouldn't be needed.
     tmp = header['NAXIS1'] ; header_rotated['NAXIS2'] = tmp
     tmp = header['NAXIS2'] ; header_rotated['NAXIS1'] = tmp
     tmp = header['CRPIX1'] ; header_rotated['CRPIX2'] = tmp
