@@ -148,10 +148,9 @@ class ConfigPage(ttk.Frame):
         tk.Entry(frame, width=20, textvariable=self.TO_var).place(x=140, y=135)
 
         # Initialize
-        frame = tk.Frame(self)
-        frame.place(x=4, y=440, anchor="nw", width=592, height=48)
-        tk.Button(frame, text="Initialize", relief="raised", command=self.startup, font=BIGFONT).place(x=230, y=5)
-        tk.Button(frame, text="Initialize Logbook", relief="raised", command=self.LogBookstartup).place(x=100, y=5)
+        frame = tk.LabelFrame(self.right_frame, text="Logbook", font=BIGFONT)
+        frame.place(x=4, y=234, width=392, height=96)
+        tk.Button(frame, text="Initialize Logbook", relief="raised", command=self.LogBookstartup).place(x=4, y=20)
         
 
     def LogBookstartup(self):
