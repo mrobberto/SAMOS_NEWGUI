@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 
 import tkinter as tk
+from tkinter import ttk
 
 from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
@@ -17,7 +18,7 @@ from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
 
-class ConfigPage(tk.Frame):
+class ConfigPage(ttk.Frame):
 
     def __init__(self, parent, container, **kwargs):
         super().__init__(container)
@@ -28,8 +29,10 @@ class ConfigPage(tk.Frame):
         
         self.fits_dir = get_fits_dir()
 
-        self.left_frame = tk.Frame(self, background="dark gray", width=600, height=500).place(x=0, y=0)
-        self.right_frame = tk.Frame(self, background="dark gray", width=400, height=500).place(x=585, y=0)
+        self.left_frame = tk.Frame(self, background="dark gray", width=600, height=500)
+        self.left_frame.place(x=0, y=0)
+        self.right_frame = tk.Frame(self, background="dark gray", width=400, height=500)
+        self.right_frame.place(x=585, y=0)
 
         # Set up directories frame
         frame = tk.LabelFrame(self.left_frame, text="Directories", font=BIGFONT)
@@ -112,7 +115,7 @@ class ConfigPage(tk.Frame):
 
         # Other entries
         frame = tk.LabelFrame(self.right_frame, text="Observer Data", font=BIGFONT)
-        frame.place(x=4, y=4, anchor="nw", width=392, height=225)
+        frame.place(x=4, y=4, width=392, height=225)
 
         tk.Label(frame, text="Telescope").place(x=4, y=10)
         self.Telescope = tk.StringVar()
@@ -145,7 +148,8 @@ class ConfigPage(tk.Frame):
         tk.Entry(frame, width=20, textvariable=self.TO_var).place(x=140, y=135)
 
         # Initialize
-        frame = tk.Frame(self.left_frame).place(x=4, y=440, anchor="nw", width=592, height=48)
+        frame = tk.Frame(self)
+        frame.place(x=4, y=440, anchor="nw", width=592, height=48)
         tk.Button(frame, text="Initialize", relief="raised", command=self.startup, font=BIGFONT).place(x=230, y=5)
         tk.Button(frame, text="Initialize Logbook", relief="raised", command=self.LogBookstartup).place(x=100, y=5)
         
@@ -369,23 +373,22 @@ class ConfigPage(tk.Frame):
         # Filemenu
         filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, activebackground="#026AA9")
         menubar.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
-        filemenu.add_command(label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
-        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame(parent.CCD2DMDPage))
-        filemenu.add_command(label="Motors", command=lambda: parent.show_frame(parent.Motors))
-        filemenu.add_command(label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
-        filemenu.add_command(label="SOAR TCS", command=lambda: parent.show_frame(parent.SOARPage))
-        filemenu.add_command(label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
-        filemenu.add_command(label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
+        filemenu.add_command(label="Config", command=lambda: parent.show_frame("ConfigPage"))
+        filemenu.add_command(label="DMD", command=lambda: parent.show_frame("DMDPage"))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame("CCD2DMDPage"))
+        filemenu.add_command(label="Motors", command=lambda: parent.show_frame("MotorsPage"))
+        filemenu.add_command(label="CCD", command=lambda: parent.show_frame("CCDPage"))
+        filemenu.add_command(label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
+        filemenu.add_command(label="MainPage", command=lambda: parent.show_frame("MainPage"))
         filemenu.add_separator()
-        filemenu.add_command(label="ETC", command=lambda: parent.show_frame(parent.ETCPage))
+        filemenu.add_command(label="ETC", command=lambda: parent.show_frame("ETCPage"))
         filemenu.add_command(label="Exit", command=parent.quit)
 
         # help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame(parent.GSPage))        
+        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
         help_menu.add_separator()
 
         return menubar

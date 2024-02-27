@@ -68,7 +68,7 @@ from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
 
-class ETCPage(tk.Frame):
+class ETCPage(ttk.Frame):
 
 #    def __init__(self, win):
     def __init__(self, parent, container, **kwargs):
@@ -2922,30 +2922,30 @@ class ETCPage(tk.Frame):
                            relief=tk.RAISED, activebackground="#026AA9")
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(
-            label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Config", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_command(
-            label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+            label="DMD", command=lambda: parent.show_frame("DMDPage"))
         filemenu.add_command(label="Recalibrate CCD2DMD",
-                             command=lambda: parent.show_frame(parent.CCD2DMD_RecalPage))
+                             command=lambda: parent.show_frame("CCD2DMD_RecalPage"))
         filemenu.add_command(
             label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(
-            label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
+            label="CCD", command=lambda: parent.show_frame("CCDPage"))
         filemenu.add_command(
-            label="SOAR TCS", command=lambda: parent.show_frame(parent.SOAR_Page))
+            label="SOAR TCS", command=lambda: parent.show_frame("SOAR_Page"))
         filemenu.add_command(
-            label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
+            label="MainPage", command=lambda: parent.show_frame("MainPage"))
         filemenu.add_command(
-            label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Close", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_separator()
         filemenu.add_command(
-            label="ETC", command=lambda: parent.show_frame(parent.ETCPage))
+            label="ETC", command=lambda: parent.show_frame("ETCPage"))
         filemenu.add_command(label="Exit", command=parent.quit)
 
         # help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=U.about)
+        help_menu.add_command(label="About", command=about_box)
         help_menu.add_separator()
 
         return menubar

@@ -68,7 +68,7 @@ from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
 
-class MainPage(tk.Frame):
+class MainPage(ttk.Frame):
     """ to be written """
 
     def __init__(self, parent, container, **kwargs):
@@ -76,6 +76,7 @@ class MainPage(tk.Frame):
         super().__init__(container)
         self.main_fits_header = kwargs['main_fits_header']
         self.PCM = kwargs['Motors']
+        self.convert = kwargs['convert']
 
         #self.DMDPage = DMDPage
         self.PAR = SAMOS_Parameters()
@@ -1788,29 +1789,16 @@ class MainPage(tk.Frame):
             ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
             # first case: figures that have no extensions (i.e. points): do nothing
             if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
-                x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
+                x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 self.slit_shape[x1, y1] = 0
             elif self.CentroidPickup_ChkBox_Enabled.get() == 1 and obj.kind == 'point':
-                x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
+                x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
-                x2, y2 = convert.CCD2DMD(ccd_x1, ccd_y1)
+                x2, y2 = self.convert.CCD2DMD(ccd_x1, ccd_y1)
                 x2, y2 = int(np.ceil(x2)), int(np.ceil(y2))
             else:
                 print("generic aperture")
-                """
-                x1,y1 = convert.CCD2DMD(ccd_x0,ccd_y0)
-                x1,y1 = int(np.floor(x1)), int(np.floor(y1))
-                x2,y2 = convert.CCD2DMD(ccd_x1,ccd_y1)
-                x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
-
-                # dmd_corners[:][1] = corners[:][1]+500
-                ####
-                # x1 = round(dmd_corners[0][0])
-                # y1 = round(dmd_corners[0][1])+400
-                # x2 = round(dmd_corners[2][0])
-                # y2 = round(dmd_corners[2][1])+400
-                """
                 # 3 load the slit pattern
                 data_box = self.AstroImage.cutout_shape(obj)
                 good_box = data_box.nonzero()
@@ -1828,9 +1816,9 @@ class MainPage(tk.Frame):
                     cy0 = ccd_y0 + good_box_y[iymin]
                     cy1 = ccd_y0 + good_box_y[iymax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = convert.CCD2DMD(cx0, cy0)
+                    x1, y1 = self.convert.CCD2DMD(cx0, cy0)
                     x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = convert.CCD2DMD(cx0, cy1)    # and the higher
+                    x2, y2 = self.convert.CCD2DMD(cx0, cy1)    # and the higher
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     print(x1, x2, y1, y2)
                     self.slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
@@ -1849,28 +1837,14 @@ class MainPage(tk.Frame):
                     cx0 = ccd_x0 + good_box_x[ixmin]
                     cx1 = ccd_x0 + good_box_x[ixmax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = convert.CCD2DMD(cx0, cy0)
+                    x1, y1 = self.convert.CCD2DMD(cx0, cy0)
                     x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = convert.CCD2DMD(cx1, cy0)    # and the higher
+                    x2, y2 = self.convert.CCD2DMD(cx1, cy0)    # and the higher
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     print(x1, x2, y1, y2)
                     self.slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
                     self.slit_shape[x1-2:x1, y1-2:y1] = 1
-#                    self.slit_shape[y1-2:y2+1,x1-2:x2+1] = 0
-#                    self.slit_shape[y1-2:y1,x1-2:x1] = 1
-                """
-                for i in range(len(good_box[0])):
-                x = ccd_x0 + good_box[i]
-                y = ccd_y0 + good_box[i]
-                x1,y1 = convert.CCD2DMD(x,y)
-                self.slit_shape[x1,y1]=0
-                """
-       #     self.slit_shape[x1:x2,y1:y2]=0
-#        IP = self.PAR.IP_dict['IP_DMD']
-#        [host,port] = IP.split(":")
-#        DMD.initialize(address=host, port=int(port))
-#        DMD._open()
-#        DMD.apply_shape(self.slit_shape)
+
 
     def push_slit_shape(self):
         """
@@ -3929,7 +3903,7 @@ class MainPage(tk.Frame):
 
         fits_x, fits_y = data_x + 1, data_y + 1
 
-        dmd_x, dmd_y = convert.CCD2DMD(fits_x, fits_y)
+        dmd_x, dmd_y = self.convert.CCD2DMD(fits_x, fits_y)
 
         # Calculate WCS RA
         try:
@@ -4442,9 +4416,9 @@ class MainPage(tk.Frame):
 
         fits_xc, fits_yc = picked_slit.get_center_pt()+1
 
-        dmd_xc, dmd_yc = convert.CCD2DMD(fits_xc, fits_yc)
-        dmd_x0, dmd_y0 = convert.CCD2DMD(fits_x0, fits_y0)
-        dmd_x1, dmd_y1 = convert.CCD2DMD(fits_x1, fits_y1)
+        dmd_xc, dmd_yc = self.convert.CCD2DMD(fits_xc, fits_yc)
+        dmd_x0, dmd_y0 = self.convert.CCD2DMD(fits_x0, fits_y0)
+        dmd_x1, dmd_y1 = self.convert.CCD2DMD(fits_x1, fits_y1)
 
         dmd_width = int(np.ceil(dmd_x1-dmd_x0))
         dmd_length = int(np.ceil(dmd_y1-dmd_y0))
@@ -4463,15 +4437,15 @@ class MainPage(tk.Frame):
             half_current_dmd_length = int(current_dmd_length)/2
 
             fits_xc, fits_yc = picked_slit.get_center_pt()
-            dmd_xc, dmd_yc = convert.CCD2DMD(fits_xc+1, fits_yc+1)
+            dmd_xc, dmd_yc = self.convert.CCD2DMD(fits_xc+1, fits_yc+1)
 
             dmd_x0 = dmd_xc-half_current_dmd_width
             dmd_y0 = dmd_yc-half_current_dmd_length
             dmd_x1 = dmd_xc+half_current_dmd_width
             dmd_y1 = dmd_yc+half_current_dmd_length
 
-            fits_x0, fits_y0 = convert.DMD2CCD(dmd_x0-1, dmd_y0-1)
-            fits_x1, fits_y1 = convert.DMD2CCD(dmd_x1-1, dmd_y1-1)
+            fits_x0, fits_y0 = self.convert.DMD2CCD(dmd_x0-1, dmd_y0-1)
+            fits_x1, fits_y1 = self.convert.DMD2CCD(dmd_x1-1, dmd_y1-1)
 
             fits_length = np.ceil(fits_y1-fits_y0)
             fits_width = np.ceil(fits_x1-fits_x0)
@@ -4928,24 +4902,24 @@ class MainPage(tk.Frame):
                            relief=tk.RAISED, activebackground="#026AA9")
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(
-            label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Config", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_command(
-            label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+            label="DMD", command=lambda: parent.show_frame("DMDPage"))
         filemenu.add_command(label="Recalibrate CCD2DMD",
-                             command=lambda: parent.show_frame(parent.CCD2DMDPage))
+                             command=lambda: parent.show_frame("CCD2DMDPage"))
         filemenu.add_command(
-            label="Motors", command=lambda: parent.show_frame(parent.MotorsPage))
+            label="Motors", command=lambda: parent.show_frame("MotorsPage"))
         filemenu.add_command(
-            label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
+            label="CCD", command=lambda: parent.show_frame("CCDPage"))
         filemenu.add_command(
-            label="SOAR TCS", command=lambda: parent.show_frame(parent.SOARPage))
+            label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
         filemenu.add_command(
-            label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
+            label="MainPage", command=lambda: parent.show_frame("MainPage"))
         filemenu.add_command(
-            label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Close", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_separator()
         filemenu.add_command(
-            label="ETC", command=lambda: parent.show_frame(parent.ETCPage))
+            label="ETC", command=lambda: parent.show_frame("ETCPage"))
         filemenu.add_command(label="Exit", command=parent.quit)
 
         """
@@ -4960,7 +4934,7 @@ class MainPage(tk.Frame):
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame(parent.GSPage))        
+        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
         help_menu.add_separator()
 
         return menubar

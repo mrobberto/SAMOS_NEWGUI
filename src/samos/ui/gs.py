@@ -68,13 +68,14 @@ from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
 
-class GSPage(tk.Frame):
+class GSPage(ttk.Frame):
     """ to be written """
 
     def __init__(self, parent, container, **kwargs):
         """ to be written """
         super().__init__(container)
         self.main_fits_header = kwargs['main_fits_header']
+        self.convert = kwargs['convert']
 
         #self.DMDPage = DMDPage
         self.PAR = SAMOS_Parameters()
@@ -538,13 +539,13 @@ class GSPage(tk.Frame):
             ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
             # first case: figures that have no extensions (i.e. points): do nothing
             if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
-                x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
+                x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 self.slit_shape[x1, y1] = 0
             elif self.GuideStarPickup_ChkBox_Enabled.get() == 1 and obj.kind == 'point':
-                x1, y1 = convert.CCD2DMD(ccd_x0, ccd_y0)
+                x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
-                x2, y2 = convert.CCD2DMD(ccd_x1, ccd_y1)
+                x2, y2 = self.convert.CCD2DMD(ccd_x1, ccd_y1)
                 x2, y2 = int(np.ceil(x2)), int(np.ceil(y2))
             else:
                 print("generic aperture")
@@ -565,9 +566,9 @@ class GSPage(tk.Frame):
                     cy0 = ccd_y0 + good_box_y[iymin]
                     cy1 = ccd_y0 + good_box_y[iymax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = convert.CCD2DMD(cx0, cy0)
+                    x1, y1 = self.convert.CCD2DMD(cx0, cy0)
                     x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = convert.CCD2DMD(cx0, cy1)    # and the higher
+                    x2, y2 = self.convert.CCD2DMD(cx0, cy1)    # and the higher
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     print(x1, x2, y1, y2)
                     self.slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
@@ -586,9 +587,9 @@ class GSPage(tk.Frame):
                     cx0 = ccd_x0 + good_box_x[ixmin]
                     cx1 = ccd_x0 + good_box_x[ixmax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = convert.CCD2DMD(cx0, cy0)
+                    x1, y1 = self.convert.CCD2DMD(cx0, cy0)
                     x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = convert.CCD2DMD(cx1, cy0)    # and the higher
+                    x2, y2 = self.convert.CCD2DMD(cx1, cy0)    # and the higher
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     print(x1, x2, y1, y2)
                     self.slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
@@ -1261,172 +1262,6 @@ class GSPage(tk.Frame):
         CM.CompoundMixin.delete_objects(self.canvas, list_points)
         self.canvas.objects  # check that the points are gone
 
-        """
-        # Find approximate bright peaks in a sub-area
-        from ginga.util import iqcalc
-        iq = iqcalc.IQCalc()
-    
-        r = self.canvas.objects[0]
-        img_data = self.AstroImage.get_data()
-        data_box = self.AstroImage.cutout_shape(r)
-        
-        peaks = iq.find_bright_peaks(data_box)
-        print(peaks[:20])  # subarea coordinates
-        px,py=round(peaks[0][0]+r.x1),round(peaks[0][1]+r.y2)
-        print(px,py)   #image coordinates
-        print(img_data[px,py]) #actual counts
-     
-        # evaluate peaks to get FWHM, center of each peak, etc.
-        objs = iq.evaluate_peaks(peaks, data_box)       
-        # how many did we find with standard thresholding, etc.
-        # see params for find_bright_peaks() and evaluate_peaks() for details
-        print(len(objs))
-        # example of what is returned
-        o1 = objs[0]
-        print(o1)
-           
-        # pixel coords are for cutout, so add back in origin of cutout
-        #  to get full data coords RA, DEC of first object
-        x1, y1, x2, y2 = r.get_llur()
-        self.img.pixtoradec(x1+o1.objx, y1+o1.objy)
-          
-        # Draw circles around all objects
-        Circle = self.canvas.get_draw_class('circle')
-        for obj in objs:
-            x, y = x1+obj.objx, y1+obj.objy
-            if r.contains(x, y):
-                self.canvas.add(Circle(x, y, radius=10, color='yellow'))
-        
-        # set pan and zoom to center
-        self.fitsimage.set_pan((x1+x2)/2, (y1+y2)/2)
-        self.fitsimage.scale_to(0.75, 0.75)
-        
-        r_all = self.canvas.objects[:]
-        print(r_all)
-        
-        
-        EXERCISE COMPOUNDMIXING CLASS
-        r_all is a CompountMixing object, see class ginga.canvas.CompoundMixin.CompoundMixin
-         https://ginga.readthedocs.io/en/stable/_modules/ginga/canvas/CompoundMixin.html#CompoundMixin.get_objects_by_kinds        
-              
-        # check that we have created a compostition of objects:
-        CM.CompoundMixin.is_compound(self.canvas.objects)     # True
-
-        # we can find out what are the "points" objects
-        points = CM.CompoundMixin.get_objects_by_kind(self.canvas,'point')
-        print(list(points))
-        
-        # we can remove what we don't like, e.g. points
-        points = CM.CompoundMixin.get_objects_by_kind(self.canvas,'point')
-        list_point=list(points)
-        CM.CompoundMixin.delete_objects(self.canvas,list_point)
-        self.canvas.objects   #check that the points are gone
-           
-        # we can remove both points and boxes
-        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas,['point','circle',
-                                                                    'rectangle', 'polygon', 
-                                                                    'triangle', 'righttriangle', 
-                                                                    'ellipse', 'square'])
-        list_points=list(points)
-        CM.CompoundMixin.delete_objects(self.canvas,list_points)
-        self.canvas.objects   #check that the points are gone
-    
-        # drawing an object can be done rather easily
-        # first take an object fromt the list and change something
-        objects=CM.CompoundMixin.get_objects(self.canvas)
-        o0=objects[0]
-        o0.y1=40
-        o0.height=100
-        o0.width=70
-        o0.color='lightblue'
-        CM.CompoundMixin.draw(self.canvas,self.canvas.viewer)
-        
-        END OF THE COMPOUNDMIXING EXCERCISE
-        # ===#===#===#===#===#===#===#===#===#===#===#====        
-
-        # region = 'fk5;circle(290.96388,14.019167,843.31194")'
-        # astropy_region = pyregion.parse(region)
-        # astropy_region=ap_region.ginga_canvas_object_to_astropy_region(self.canvas.objects[0])
-        # print(astropy_region)
-         
-        # List all regions that we have created
-        # n_objects = len(self.canvas.objects)
-        # for i_obj in range(n_objects):
-        #   astropy_region=ap_region.ginga_canvas_object_to_astropy_region(self.canvas.objects[i_obj])
-        #   print(astropy_region) 
-           
-        # create a list of astropy regions, so we export a .reg file
-        # first put the initial region in square brackets, argument of Regions to initiate the list
-        RRR=Regions([ap_region.ginga_canvas_object_to_astropy_region(self.canvas.objects[0])])
-        # then append to the list adding all other regions
-        for i_obj in range(1,len(self.canvas.objects)):
-           RRR.append(ap_region.ginga_canvas_object_to_astropy_region(self.canvas.objects[i_obj]))
-           print(RRR) 
- 
-        # write the regions to file
-        # this does not seem to work...
-        RRR.write('/Users/SAMOS_dev/Desktop/new_regions.reg', format='ds9',overwrite=True)
-       
-        # reading back the ds9 regions in ginga
-        pyregions = Regions.read('/Users/SAMOS_dev/Desktop/new_regions.reg', format='ds9')
-        n_regions = len(pyregions)
-        for i in range(n_regions):
-            pyregion = pyregions[i]
-            pyregion.width=7
-            pyregion.width=3
-            ap_region.add_region(self.canvas,pyregion)
-
-        print("yay!")            
-        
-        # Export all Ginga objects to Astropy region
-        # 1. list of ginga objects
-        objects = CM.CompoundMixin.get_objects(self.canvas)
-        counter = 0
-        for obj in objects:
-            if counter == 0:
-                astropy_regions=[g2r(obj)]  #here we create the first astropy region and the Regions list []
-            else:
-                astropy_regions.append(g2r(obj)) #will with the other slits 
-            counter += 1
-        regs = Regions(astropy_regions)     #convert to astropy-Regions
-        regs.write('my_regions.reg',overwrite=True)   #write to file
-        
-        # 2, Extract the slits and convert pixel->DMD values
-        
-        DMD.initialize(address=self.PAR.IP_dict['IP_DMD'][0:-5], port=int(self.PAR.IP_dict['IP_DMD'][-4:]))
-        DMD._open()
-        
-        # create initial DMD slit mask
-        self.slit_shape = np.ones((1080,2048)) # This is the size of the DC2K
-        
-        regions = Regions.read('my_regions.reg')
-
-
-        for i in range(len(regions)):
-            reg = regions[i]
-            corners = reg.corners
-            # convert CCD corners to DMD corners here
-            # TBD
-            # dmd_corners=[] 
-            # for j in range(len(corners)):
-            x1,y1 = convert.CCD2DMD(corners[0][0], corners[0][1])
-            x1,y1 = int(np.floor(x1)), int(np.floor(y1))
-            x2,y2 = convert.CCD2DMD(corners[2][0], corners[2][1])
-            x2,y2 = int(np.ceil(x2)), int(np.ceil(y2))
-            # dmd_corners[:][1] = corners[:][1]+500
-            ####   
-            # x1 = round(dmd_corners[0][0])
-            # y1 = round(dmd_corners[0][1])+400
-            # x2 = round(dmd_corners[2][0])
-            # y2 = round(dmd_corners[2][1])+400
-        # 3 load the slit pattern   
-            self.slit_shape[x1:x2,y1:y2]=0
-        DMD.apply_shape(self.slit_shape)  
-        # DMD.apply_invert()   
-
-        
-        print("check")
-        """
 
     def cursor_cb(self, viewer, button, data_x, data_y):
         """This gets called when the data position relative to the cursor
@@ -1444,7 +1279,7 @@ class GSPage(tk.Frame):
 
         fits_x, fits_y = data_x + 1, data_y + 1
 
-        dmd_x, dmd_y = convert.CCD2DMD(fits_x, fits_y)
+        dmd_x, dmd_y = self.convert.CCD2DMD(fits_x, fits_y)
 
         # Calculate WCS RA
         try:
@@ -1701,29 +1536,6 @@ class GSPage(tk.Frame):
         """    
 
 
-        """
-    def get_dmd_coords_of_picked_slit(self, picked_slit):
-        """
-        """ get_dmd_coords_of_picked_slit """
-        """
-        x0, y0, x1, y1 = picked_slit.get_llur()
-        fits_x0 = x0+1
-        fits_y0 = y0+1
-        fits_x1 = x1+1
-        fits_y1 = y1+1
-
-        fits_xc, fits_yc = picked_slit.get_center_pt()+1
-
-        dmd_xc, dmd_yc = convert.CCD2DMD(fits_xc, fits_yc)
-        dmd_x0, dmd_y0 = convert.CCD2DMD(fits_x0, fits_y0)
-        dmd_x1, dmd_y1 = convert.CCD2DMD(fits_x1, fits_y1)
-
-        dmd_width = int(np.ceil(dmd_x1-dmd_x0))
-        dmd_length = int(np.ceil(dmd_y1-dmd_y0))
-
-        return dmd_xc, dmd_yc, dmd_x0, dmd_y0, dmd_x1, dmd_y1, dmd_width, dmd_length
-        """
-        
     def check_valid_mags(self, event=None):
         """ to be written """
         pass
@@ -1922,24 +1734,24 @@ class GSPage(tk.Frame):
                            relief=tk.RAISED, activebackground="#026AA9")
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(
-            label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Config", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_command(
-            label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+            label="DMD", command=lambda: parent.show_frame("DMDPage"))
         filemenu.add_command(label="Recalibrate CCD2DMD",
-                             command=lambda: parent.show_frame(parent.CCD2DMDPage))
+                             command=lambda: parent.show_frame("CCD2DMDPage"))
         filemenu.add_command(
-            label="Motors", command=lambda: parent.show_frame(parent.MotorsPage))
+            label="Motors", command=lambda: parent.show_frame("MotorsPage"))
         filemenu.add_command(
-            label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
+            label="CCD", command=lambda: parent.show_frame("CCDPage"))
         filemenu.add_command(
-            label="SOAR TCS", command=lambda: parent.show_frame(parent.SOARPage))
+            label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
         filemenu.add_command(
-            label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
+            label="MainPage", command=lambda: parent.show_frame("MainPage"))
         filemenu.add_command(
-            label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Close", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_separator()
         filemenu.add_command(
-            label="ETC", command=lambda: parent.show_frame(parent.ETCPage))
+            label="ETC", command=lambda: parent.show_frame("ETCPage"))
         filemenu.add_command(label="Exit", command=parent.quit)
 
         """
@@ -1954,7 +1766,7 @@ class GSPage(tk.Frame):
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame(parent.GSPage))        
+        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
         help_menu.add_separator()
 
         return menubar

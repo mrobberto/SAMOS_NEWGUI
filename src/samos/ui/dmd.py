@@ -68,13 +68,14 @@ from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
 
-class DMDPage(tk.Frame):
+class DMDPage(ttk.Frame):
     """ to be written """
 
     def __init__(self, parent, container, **kwargs):
         """ to be written """
 
         super().__init__(container)
+        self.convert = kwargs['convert']
 
         label = tk.Label(self, text="DMD Page", font=('Times', '20'))
         label.pack(pady=0, padx=0)
@@ -361,7 +362,7 @@ class DMDPage(tk.Frame):
         x_CCD_HTS_center, y_CCD_HTS_center = WCS_global.all_world2pix(ad, 0)[0]
 
         # convert pixels -> DMD mirrors
-        x_DMD_HTS_center, y_DMD_HTS_center = convert.CCD2DMD(
+        x_DMD_HTS_center, y_DMD_HTS_center = self.convert.CCD2DMD(
             int(x_CCD_HTS_center), int(y_CCD_HTS_center))
 
         # refresh entrybox field
@@ -814,8 +815,6 @@ class DMDPage(tk.Frame):
             parent.geometry("910x425")
         parent.title("SAMOS DMD Controller")
         self.PAR = SAMOS_Parameters()
-        # MainPage class expects 2 arguments. They may be None.
-        self.Main = MainPage(None, None)
 
         menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
                           activebackground="#80B9DC")
@@ -825,31 +824,31 @@ class DMDPage(tk.Frame):
                            relief=tk.RAISED, activebackground="#026AA9")
         menubar.add_cascade(label="File", menu=filemenu)
         filemenu.add_command(
-            label="Config", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Config", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_command(
-            label="DMD", command=lambda: parent.show_frame(parent.DMDPage))
+            label="DMD", command=lambda: parent.show_frame("DMDPage"))
         filemenu.add_command(label="Recalibrate CCD2DMD",
-                             command=lambda: parent.show_frame(parent.CCD2DMDPage))
+                             command=lambda: parent.show_frame("CCD2DMDPage"))
         filemenu.add_command(
             label="Motors", command=lambda: parent.show_frame(parent.Motors))
         filemenu.add_command(
-            label="CCD", command=lambda: parent.show_frame(parent.CCDPage))
+            label="CCD", command=lambda: parent.show_frame("CCDPage"))
         filemenu.add_command(
-            label="SOAR TCS", command=lambda: parent.show_frame(parent.SOARPage))
+            label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
         filemenu.add_command(
-            label="MainPage", command=lambda: parent.show_frame(parent.MainPage))
+            label="MainPage", command=lambda: parent.show_frame("MainPage"))
         filemenu.add_command(
-            label="Close", command=lambda: parent.show_frame(parent.ConfigPage))
+            label="Close", command=lambda: parent.show_frame("ConfigPage"))
         filemenu.add_separator()
         filemenu.add_command(
-            label="ETC", command=lambda: parent.show_frame(parent.ETCPage))
+            label="ETC", command=lambda: parent.show_frame("ETCPage"))
         filemenu.add_command(label="Exit", command=parent.quit)
 
         # help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame(parent.GSPage))        
+        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
         help_menu.add_separator()
 
         return menubar
