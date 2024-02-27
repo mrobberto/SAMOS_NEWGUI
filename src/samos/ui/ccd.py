@@ -31,7 +31,7 @@ class CCDPage(tk.Frame):
 
         # Define Our Images
         self.on_png = tk.PhotoImage(file=get_data_file("tk.icons", "on_small.png"))
-        self.off_png = tk.PhotoImage(file=get_data_file("tk.icons", "off.png"))
+        self.off_png = tk.PhotoImage(file=get_data_file("tk.icons", "off_small.png"))
         self.button_open_camera = tk.Button(
             setup_frame, image=self.off_png, bd=0, command=self.turn_camera_ON)
         # command = open_close_camera)
