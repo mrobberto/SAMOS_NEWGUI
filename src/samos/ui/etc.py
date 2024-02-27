@@ -1,41 +1,77 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Tue Nov 16 08:56:51 2021
-
-@author: robberto
+SAMOS ETC tk Frame Class
 """
+import copy
+import csv
+from datetime import datetime
+import glob
+import logging
+from matplotlib import pyplot as plt
+import numpy as np
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+import time
+import twirl
+from urllib.parse import urlencode
 
-# Import the library tkinter
-from tkinter import *
+from astropy.coordinates import SkyCoord, FK4
+from astroquery.gaia import Gaia
+from astropy.io import fits, ascii
+from astroquery.simbad import Simbad
+from astropy.stats import sigma_clipped_stats, SigmaClip
+from astropy import units as u
+from astropy import wcs
+from astropy.wcs.utils import fit_wcs_from_points
+from ginga.util import iqcalc
+from ginga.AstroImage import AstroImage
+from ginga.util import ap_region
+from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
+from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
+from ginga import colors
+from ginga.util.loader import load_data
+from ginga.misc import log
+from ginga import colors as gcolors
+from ginga.canvas import CompoundMixin as CM
+from ginga.canvas.CanvasObject import get_canvas_types
+from ginga.tkw.ImageViewTk import CanvasView
+import pandas as pd
+from photutils.background import Background2D, MedianBackground
+from photutils.detection import DAOStarFinder
+from PIL import Image, ImageTk
+from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
+
 import tkinter as tk
-from tkinter import messagebox  # needed for python3.x
-from tkinter import filedialog as fd
 from tkinter import ttk
 
-import os
-import numpy as np
-import pandas as pd
-
-import matplotlib
-matplotlib.use('TkAgg')
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
-from astropy.table import Table
-from scipy import interpolate
-from pathlib import Path
-import math as math
-
-from samos.utilities import get_data_file
+from samos.ccd.Class_CCD_dev import Class_Camera
+from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
+from samos.dmd.convert.CONVERT_class import CONVERT
+from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
+from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.motors.Class_PCM import Class_PCM
+from samos.soar.Class_SOAR import Class_SOAR
+from samos.astrometry.skymapper import skymapper_interrogate
+from samos.astrometry.tk_class_astrometry_V5 import Astrometry
+from samos.astrometry.panstarrs.image import PanStarrsImage as PS_image
+from samos.astrometry.panstarrs.catalog import PanStarrsCatalog as PS_table
+from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
+from samos.system import WriteFITSHead as WFH
+from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
+from samos.system.SlitTableViewer import SlitTableView as STView
+from samos.tk_utilities.utils import about_box
+from samos.utilities import get_data_file, get_temporary_dir
+from samos.utilities.constants import *
 
-import sys
-from sys import platform
 
-class ETC_Spectral_Page(Frame):
+class ETCPage(tk.Frame):
 
 #    def __init__(self, win):
-    def __init__(self, parent, container):
+    def __init__(self, parent, container, **kwargs):
         super().__init__(container)
         
         self.homedir = Path(__file__).parent.absolute()
@@ -43,7 +79,7 @@ class ETC_Spectral_Page(Frame):
         # Constructing the left/right frames
         # , width=400, height=800)
         root = self
-        self.frame0l = Frame(root, background="bisque")
+        self.frame0l = tk.Frame(root, background="bisque")
         self.frame0l.place(x=0, y=0, anchor="nw", width=500, height=720)
         #root.geometry("1000x720")   
 
@@ -54,23 +90,23 @@ class ETC_Spectral_Page(Frame):
 
         # Constructing the first frame, frame1
         # , width=400, height=800)
-        self.frame0r = Frame(root, background="gray")
+        self.frame0r = tk.Frame(root, background="gray")
         # Displaying the frame1 in row 0 and column 0
         self.frame0r.place(x=501, y=0, anchor="nw", width=500, height=720)
 
         #######################################################################
         # Constructing the first frame, frame1
-        self.frame1 = Frame(self.frame0l, bg="light gray",
-                            relief=RIDGE)  # , padx=15, pady=15)
+        self.frame1 = tk.Frame(self.frame0l, bg="light gray",
+                            relief=tk.RIDGE)  # , padx=15, pady=15)
         # Displaying the frame1 in row 0 and column 0
         self.frame1.place(x=2, y=2, width=496, height=180)
 
-        self.w = Canvas(self.frame1, width=496, height=180)
+        self.w = tk.Canvas(self.frame1, width=496, height=180)
         self.w.create_rectangle(8, 5, 488, 38, outline='blue')
         # w.create_rectangle(50, 50, 100, 100, fill="red", outline = 'blue')
         self.w.pack()
 
-        self.label_Atmosferic_Window = Label(
+        self.label_Atmosferic_Window = tk.Label(
             self.frame1, text="Grating")
         self.label_Atmosferic_Window.place(x=10, y=10)
         #####
@@ -84,26 +120,21 @@ class ETC_Spectral_Page(Frame):
             "High Blue"
         ]
         # datatype of menu text
-        self.bandpass = StringVar()
+        self.bandpass = tk.StringVar()
 
         # initial menu text
         self.bandpass.set(options[2])
 
         # Create Dropdown menu
-        self.drop = OptionMenu(self.frame1, self.bandpass, *options)
+        self.drop = tk.OptionMenu(self.frame1, self.bandpass, *options)
         self.drop.place(x=73, y=6)
-
-        # b1 = Button(frame1, text="Ks")
-
-        # Displaying the button b1
-        # b1.pack()
 
         #####
         self.w.create_rectangle(8, 38, 488, 98, outline='blue')
 
         ### SLIT WIDTH ###
         ##################
-        self.label_SlitWidth = Label(self.frame1, text="Slit Width")
+        self.label_SlitWidth = tk.Label(self.frame1, text="Slit Width")
         self.label_SlitWidth.place(x=10, y=40)
 #        # Dropdown menu options
         slit_options = [
@@ -121,60 +152,49 @@ class ETC_Spectral_Page(Frame):
              '2.00'
         ]
 #        # datatype of menu text
-        self.slit_selected = StringVar()
+        self.slit_selected = tk.StringVar()
 #
 #        # initial menu text
         self.slit_selected.set(slit_options[2])
 #
 #        # Create Dropdown menu
-#        self.slit_drop = OptionMenu(self.frame1 , self.slit_selected , slit_options[2], *slit_options)
-        self.slit_drop = OptionMenu(self.frame1 , self.slit_selected ,  *slit_options)
+        self.slit_drop = tk.OptionMenu(self.frame1 , self.slit_selected ,  *slit_options)
         self.slit_drop.place(x=110, y=39)
-        self.label_arcsec1 = Label(self.frame1, text="arcsec")
+        self.label_arcsec1 = tk.Label(self.frame1, text="arcsec")
         self.label_arcsec1.place(x=180, y=40)
 
 
-# =============================================================================
-#         init_SlitWidth = StringVar()
-#         init_SlitWidth.set("0.7")
-#         self.Entry_SlitWidth = Entry(
-#             self.frame1, width=4, textvariable=init_SlitWidth)
-#         self.Entry_SlitWidth.place(x=110, y=37)
-#         self.label_arcsec1 = Label(self.frame1, text="arcsec")
-#         self.label_arcsec1.place(x=180, y=40)
-# 
-# =============================================================================
         ### NR. OF EXPOSURES ###
         ########################
-        self.label_NExp = Label(self.frame1, text="Nr. of Exp")
+        self.label_NExp = tk.Label(self.frame1, text="Nr. of Exp")
         self.label_NExp.place(x=325, y=40)
-        init_Nexp = StringVar()
+        init_Nexp = tk.StringVar()
         init_Nexp.set("2")
-        self.Entry_NofExp = Entry(self.frame1, width=4, textvariable=init_Nexp)
+        self.Entry_NofExp = tk.Entry(self.frame1, width=4, textvariable=init_Nexp)
         self.Entry_NofExp.place(x=400, y=40)
 
         ### ANGULAR EXTENT ###
         ######################
-        self.label_AngularExtent = Label(self.frame1, text="Seeing FWHM")
+        self.label_AngularExtent = tk.Label(self.frame1, text="Seeing FWHM")
         self.label_AngularExtent.place(x=10, y=74)
-        init_AngExt = StringVar()
+        init_AngExt = tk.StringVar()
         init_AngExt.set("0.4")
-        self.Entry_AngularExtent = Entry(
+        self.Entry_AngularExtent = tk.Entry(
             self.frame1, width=4, textvariable=init_AngExt)
         self.Entry_AngularExtent.place(x=110, y=71)
-        self.label_arcsec1 = Label(self.frame1, text="arcsec")
+        self.label_arcsec1 = tk.Label(self.frame1, text="arcsec")
         self.label_arcsec1.place(x=155, y=74)
 
 #######################################################################################################################
         ### USE AOS ###
 #######################################################################################################################
-        self.label_GLAO = Label(self.frame1, text="GLAO?")
+        self.label_GLAO = tk.Label(self.frame1, text="GLAO?")
         self.label_GLAO.place(x=255, y=70)
-        self.selected_GLAO = StringVar(value='SAM')
+        self.selected_GLAO = tk.StringVar(value='SAM')
         modes = ['SAM', 'Natural Seeing']
         counter = 0
         for mode in modes:
-            self.r_GLAO = Radiobutton(
+            self.r_GLAO = tk.Radiobutton(
                 self.frame1,
                 text=mode,
                 value=mode,
@@ -183,46 +203,19 @@ class ETC_Spectral_Page(Frame):
             self.r_GLAO.place(x=300+counter*60, y=69)
             counter += 1
 
-# =============================================================================
-#         ### FOWLER PAIRS ###
-#         ####################
-#         self.label_FowlerSampling = Label(self.frame1, text="Fowler Pairs")
-#         self.label_FowlerSampling.place(x=320, y=70)
-#         init_Fowler = StringVar()
-#         init_Fowler.set("16")
-#         self.Entry_NrFowlerPairs = Entry(
-#             self.frame1, width=4, textvariable=init_Fowler)
-#         self.Entry_NrFowlerPairs.place(x=400, y=67)
-# 
-# =============================================================================
         #####
         self.w.create_rectangle(8, 108, 488, 170, outline='blue')
 
-# =============================================================================
-#         self.selected_MagnitudeSystem = StringVar(value='Vega')
-#         modes = ['AB', 'Vega']
-#         counter = 0
-#         for mode in modes:
-#             self.r_ABORVEGA = Radiobutton(
-#                 self.frame2b,
-#                 text=mode,
-#                 value=mode,
-#                 variable=self.selected_MagnitudeSystem
-#             )
-#             self.r_ABORVEGA.place(x=120+counter*40, y=18)
-#             counter += 1
-# 
-# =============================================================================
 #######################################################################################################################
         ### USE FLUX OR MAGNITUDES ###
 #######################################################################################################################
-        self.label_FluxORmag = Label(self.frame1, text="Use Line Flux or magnitude?")
+        self.label_FluxORmag = tk.Label(self.frame1, text="Use Line Flux or magnitude?")
         self.label_FluxORmag.place(x=20, y=115)
-        self.selected_FluxORmag = StringVar(value='Use magnitude')
+        self.selected_FluxORmag = tk.StringVar(value='Use magnitude')
         modes = ['Use Line Flux', 'Use magnitude']
         counter = 0
         for mode in modes:
-            self.r_FluxORmag = Radiobutton(
+            self.r_FluxORmag = tk.Radiobutton(
                 self.frame1,
                 text=mode,
                 value=mode,
@@ -238,40 +231,40 @@ class ETC_Spectral_Page(Frame):
 
         # Constructing the second frame, frame2
         # , padx=15, pady=15)
-        self.frame2 = Frame(self.frame0l, bg="light gray")
+        self.frame2 = tk.Frame(self.frame0l, bg="light gray")
         # Displaying the frame2
         self.frame2.place(x=2, y=178, width=496, height=140)
 
-        self.w = Canvas(self.frame2, width=496, height=140)
+        self.w = tk.Canvas(self.frame2, width=496, height=140)
         self. w.create_rectangle(8, 8, 488, 132, outline='blue')
         self.w.pack()
 
         ### LINE FLUX ###
         #################
-        self.label_LineFlux = Label(self.frame2, text="Line Flux")
+        self.label_LineFlux = tk.Label(self.frame2, text="Line Flux")
         self.label_LineFlux.place(x=10, y=13)
-        init_LineFlux = StringVar()
+        init_LineFlux = tk.StringVar()
         init_LineFlux.set("9.0")
-        self.Entry_LineFlux = Entry(self.frame2, width=4, textvariable=init_LineFlux)
+        self.Entry_LineFlux = tk.Entry(self.frame2, width=4, textvariable=init_LineFlux)
         self.Entry_LineFlux.place(x=72, y=10)
-        self.label_LineFluxUnits = Label(
+        self.label_LineFluxUnits = tk.Label(
             self.frame2, text="x 1E-17 erg/s/cm\u00b2")
         self.label_LineFluxUnits.place(x=120, y=13)
 
         ### CENTRAL WAVELENGTH ###
         ##########################
-        self.label_CentralWl = Label(self.frame2, text="Central Wavelength")
+        self.label_CentralWl = tk.Label(self.frame2, text="Central Wavelength")
         self.label_CentralWl.place(x=10, y=43)
-        init_CentralWl = StringVar()
+        init_CentralWl = tk.StringVar()
         init_CentralWl.set("6563")
-        self.Entry_CentralWl = Entry(
+        self.Entry_CentralWl = tk.Entry(
             self.frame2, width=4, textvariable=init_CentralWl)
         self.Entry_CentralWl.place(x=142, y=40)
-        self.selected_LineWlUnits = StringVar(value='Angstrom')
+        self.selected_LineWlUnits = tk.StringVar(value='Angstrom')
         modes = ['Angstrom', 'micron']
         counter = 0
         for mode in modes:
-            self.r_LineWlUnits = Radiobutton(
+            self.r_LineWlUnits = tk.Radiobutton(
                 self.frame2,
                 text=mode,
                 value=mode,
@@ -282,40 +275,35 @@ class ETC_Spectral_Page(Frame):
 
         ### REDSHIFT ###
         ################
-        self.label_LineRedshift = Label(self.frame2, text="Redshift")
+        self.label_LineRedshift = tk.Label(self.frame2, text="Redshift")
         self.label_LineRedshift.place(x=10, y=70)
-        init_LineRedshift = StringVar()
+        init_LineRedshift = tk.StringVar()
         init_LineRedshift.set("0.0")
-        self.Entry_LineRedshift = Entry(
+        self.Entry_LineRedshift = tk.Entry(
             self.frame2, width=5, textvariable=init_LineRedshift)
         self.Entry_LineRedshift.place(x=72, y=67)
         
-        
-       # self.Button_checkRedshiftedWl = Button(self.frame2,text="check", 
-       #                                       relief=RAISED, command=self.check_RedshiftedWavelength)
-       # self.Button_checkRedshiftedWl.place(x=210,y=67)
-
         ### REDSHIFTED WAVELENGTH ###
         ################
-        self.label_RedshiftAdopted = Label(self.frame2, text="Redshit adopted")
+        self.label_RedshiftAdopted = tk.Label(self.frame2, text="Redshit adopted")
         self.label_RedshiftAdopted.place(x=280, y=70)
-        init_RedshiftAdopted = StringVar()
+        init_RedshiftAdopted = tk.StringVar()
         RWL = float(init_LineRedshift.get() ) # 6563*(1+float(init_LineRedshift.get()))
         RWL_string = str(RWL)
         init_RedshiftAdopted.set(RWL)# "{:7.2f}".format=(RWL))
-        self.Entry_RedshiftAdopted = Entry(
+        self.Entry_RedshiftAdopted = tk.Entry(
             self.frame2, width=5, textvariable=init_RedshiftAdopted)
         self.Entry_RedshiftAdopted.place(x=422, y=67)
 
         ### SOURCE WFHM ###
         ###################
-        self.label_FWHM = Label(self.frame2, text="Source FWHM")
+        self.label_FWHM = tk.Label(self.frame2, text="Source FWHM")
         self.label_FWHM.place(x=10, y=103)
-        init_FWHM = StringVar()
+        init_FWHM = tk.StringVar()
         init_FWHM.set("30")
-        self.Entry_FWHM = Entry(self.frame2, width=4, textvariable=init_FWHM)
+        self.Entry_FWHM = tk.Entry(self.frame2, width=4, textvariable=init_FWHM)
         self.Entry_FWHM.place(x=102, y=100)
-        self.label_FWHM = Label(self.frame2, text="km/s")
+        self.label_FWHM = tk.Label(self.frame2, text="km/s")
         self.label_FWHM.place(x=145, y=103)
 
 
@@ -324,11 +312,11 @@ class ETC_Spectral_Page(Frame):
 
         # Constructing the third frame, frame2b
         # , padx=15, pady=15)
-        self.frame2b = Frame(self.frame0l, bg="light gray")
+        self.frame2b = tk.Frame(self.frame0l, bg="light gray")
         # Displaying the frame3
         self.frame2b.place(x=2, y=312, width=496, height=120)
 
-        self.w = Canvas(self.frame2b, width=496, height=120)
+        self.w = tk.Canvas(self.frame2b, width=496, height=120)
         self.w.create_rectangle(8, 8, 488, 113, outline='blue')
         self.w.pack()
 
@@ -339,17 +327,17 @@ class ETC_Spectral_Page(Frame):
 
         ### MAGNITUDE ###
         ######################
-        self.label_Magnitude = Label(self.frame2b, text="Magnitude")
+        self.label_Magnitude = tk.Label(self.frame2b, text="Magnitude")
         self.label_Magnitude.place(x=10, y=18)
-        init_SourceMagnitude = StringVar()
+        init_SourceMagnitude = tk.StringVar()
         init_SourceMagnitude.set("18.6")
-        self.Entry_Magnitude = Entry(self.frame2b, width=5, textvariable=init_SourceMagnitude)
+        self.Entry_Magnitude = tk.Entry(self.frame2b, width=5, textvariable=init_SourceMagnitude)
         self.Entry_Magnitude.place(x=78, y=15)
-        self.selected_MagnitudeSystem = StringVar(value='Vega')
+        self.selected_MagnitudeSystem = tk.StringVar(value='Vega')
         modes = ['AB', 'Vega']
         counter = 0
         for mode in modes:
-            self.r_ABORVEGA = Radiobutton(
+            self.r_ABORVEGA = tk.Radiobutton(
                 self.frame2b,
                 text=mode,
                 value=mode,
@@ -375,11 +363,11 @@ class ETC_Spectral_Page(Frame):
             "K"
         ]
         # datatype of menu text
-        self.Vega_band = StringVar()
+        self.Vega_band = tk.StringVar()
         # initial menu text
         self.Vega_band.set(VegaMag_options[2])        
         # Create Dropdown menu
-        self.menu_Vega_band = OptionMenu(self.frame2b, self.Vega_band, *VegaMag_options)
+        self.menu_Vega_band = tk.OptionMenu(self.frame2b, self.Vega_band, *VegaMag_options)
         self.menu_Vega_band.place(x=220, y=18)
        
         # Dropdown menu options
@@ -395,47 +383,47 @@ class ETC_Spectral_Page(Frame):
             "K_VISTA"
         ]
         # datatype of menu text
-        self.AB_band = StringVar()
+        self.AB_band = tk.StringVar()
         # initial menu text
         self.AB_band.set(ABMag_options[2])        
         # Create Dropdown menu
-        self.menu_AB_band = OptionMenu(self.frame2b, self.AB_band, *ABMag_options)
+        self.menu_AB_band = tk.OptionMenu(self.frame2b, self.AB_band, *ABMag_options)
         self.menu_AB_band.place(x=2200, y=18)
 
 
 
         ### Type of spectrum  ###
         #########################
-        self.label_TypeOfSpectrum = Label(self.frame2b, text="Spectrum")
+        self.label_TypeOfSpectrum = tk.Label(self.frame2b, text="Spectrum")
         self.label_TypeOfSpectrum.place(x=290, y=18)
         # Dropdown menu
         options = [
             "Flat F_nu",
             "My own spectrum",
         ]
-        self.TypeOfSpectrum = StringVar()
+        self.TypeOfSpectrum = tk.StringVar()
         self.TypeOfSpectrum.set(options[0])
         # Create Dropdown menu
-        self.drop_TypeOfSpectrum = OptionMenu(
+        self.drop_TypeOfSpectrum = tk.OptionMenu(
             self.frame2b, self.TypeOfSpectrum, *options, command=self.select_SourceSpectrum)
         self.drop_TypeOfSpectrum.place(x=347, y=18)
         self.drop_TypeOfSpectrum.config(width=10)
 
         ### FILENAME ###
         ################
-        self.label_Filename = Label(self.frame2b, text="Filename")
+        self.label_Filename = tk.Label(self.frame2b, text="Filename")
         self.label_Filename.place(x=10, y=53)
-        self.Entry_Filename = Entry(self.frame2b, width=30)
+        self.Entry_Filename = tk.Entry(self.frame2b, width=30)
         self.Entry_Filename.place(x=70, y=50)
  
         # Dropdown menu
         ###############
         self.buttons_FlamORFnu_index = {}
-        self.selected_FlamORFnu = StringVar(value='F_lam')
+        self.selected_FlamORFnu = tk.StringVar(value='F_lam')
         modes = ['F_lam', 'F_nu']
         counter = 0
         for mode in modes:
-            self.r_FlamORFnu = Radiobutton(
+            self.r_FlamORFnu = tk.Radiobutton(
                 self.frame2b,
                 text=mode,
                 value=mode,
@@ -448,13 +436,13 @@ class ETC_Spectral_Page(Frame):
 
         ### WAVELENGTH UNIT ###
         ################
-        self.label_SpectrumWlUnits = Label(self.frame2b, text="Wavelength Unit")
+        self.label_SpectrumWlUnits = tk.Label(self.frame2b, text="Wavelength Unit")
         self.label_SpectrumWlUnits.place(x=10, y=83)
-        self.selected_SpectrumWlUnits = StringVar(value='Angstrom')
+        self.selected_SpectrumWlUnits = tk.StringVar(value='Angstrom')
         modes = ['Angstrom', 'Micron']
         counter = 0
         for mode in modes:
-            self.r_SpectrumWlUnits = Radiobutton(
+            self.r_SpectrumWlUnits = tk.Radiobutton(
                 self.frame2b,
                 text=mode,
                 value=mode,
@@ -465,11 +453,11 @@ class ETC_Spectral_Page(Frame):
             
         ### MAGNITUDE REDSHIFT ###
         ################
-        self.label_MagnitudeRedshift = Label(self.frame2b, text="Redshift")
+        self.label_MagnitudeRedshift = tk.Label(self.frame2b, text="Redshift")
         self.label_MagnitudeRedshift.place(x=350, y=83)
-        init_MagnitudeRedshift = StringVar()
+        init_MagnitudeRedshift = tk.StringVar()
         init_MagnitudeRedshift.set("0.0")
-        self.Entry_MagnitudeRedshift = Entry(
+        self.Entry_MagnitudeRedshift = tk.Entry(
             self.frame2b, width=4, textvariable=init_MagnitudeRedshift)
         self.Entry_MagnitudeRedshift.place(x=412, y=80)
             
@@ -480,25 +468,25 @@ class ETC_Spectral_Page(Frame):
 
         # Constructing frame Exp Time vs SNR
         # , padx=15, pady=15)
-        self.frame4 = Frame(self.frame0l, bg="light gray")
+        self.frame4 = tk.Frame(self.frame0l, bg="light gray")
         # Displaying the frame2
         self.frame4.place(x=2, y=430, width=496, height=110)
 
-        self.w = Canvas(self.frame4, width=496, height=110)
+        self.w = tk.Canvas(self.frame4, width=496, height=110)
         self.w.create_rectangle(8, 8, 488, 102, outline='blue')
         self.w.pack()
 
         self.w.create_rectangle(8, 8, 488, 64, outline='blue')
         ### ExpTimeORSNR ###
         ####################
-        self.label_ExpTimeORSNR = Label(
+        self.label_ExpTimeORSNR = tk.Label(
             self.frame4, text="Input an exposure time or a desired Signal to Noise ratio")
         self.label_ExpTimeORSNR.place(x=10, y=12)
-        self.selected_ExpTimeORSNR = StringVar()
+        self.selected_ExpTimeORSNR = tk.StringVar()
         modes = ['Determine Exposure Time', 'Determine Signal to Noise']
         counter = 0
         for mode in modes:
-            self.r_ExpTimeORSNR = Radiobutton(
+            self.r_ExpTimeORSNR = tk.Radiobutton(
                 self.frame4,
                 text=mode,
                 value=mode,
@@ -513,22 +501,22 @@ class ETC_Spectral_Page(Frame):
         
         ### TOTAL EXPOSURE TIME ###
         ###########################
-        self.label_TotalExpTime = Label(self.frame4, text="Total Exposure Time")
+        self.label_TotalExpTime = tk.Label(self.frame4, text="Total Exposure Time")
         self.label_TotalExpTime.place(x=10, y=73)
-        init_TotalExpTime = StringVar()
+        init_TotalExpTime = tk.StringVar()
         init_TotalExpTime.set("1000")
-        self.Entry_TotalExpTime = Entry(self.frame4, width=7, textvariable=init_TotalExpTime)
+        self.Entry_TotalExpTime = tk.Entry(self.frame4, width=7, textvariable=init_TotalExpTime)
         self.Entry_TotalExpTime.place(x=145, y=70)
-        self.label_s = Label(self.frame4, text="s")
+        self.label_s = tk.Label(self.frame4, text="s")
         self.label_s.place(x=220, y=73)
 
         ### DESIRED SNR ###
         ###########################
-        self.label_DesiredSNR = Label(self.frame4, text="Desired SNR")
+        self.label_DesiredSNR = tk.Label(self.frame4, text="Desired SNR")
         self.label_DesiredSNR.place(x=280, y=73)
-        init_SNR = StringVar()
+        init_SNR = tk.StringVar()
         init_SNR.set("10")
-        self.Entry_DesiredSNR = Entry(self.frame4, width=7, textvariable=init_SNR)
+        self.Entry_DesiredSNR = tk.Entry(self.frame4, width=7, textvariable=init_SNR)
         self.Entry_DesiredSNR.place(x=360, y=70)
 
 
@@ -538,10 +526,10 @@ class ETC_Spectral_Page(Frame):
         # Constructing the fifth frame, frame5
 
         # , padx=15, pady=15)
-        self.frame5 = Frame(self.frame0l, bg="light gray")
+        self.frame5 = tk.Frame(self.frame0l, bg="light gray")
         self.frame5.place(x=2, y=535, width=496, height=65)
 
-        self.w5 = Canvas(self.frame5, width=496, height=65)
+        self.w5 = tk.Canvas(self.frame5, width=496, height=65)
         self.w5.create_rectangle(8, 8, 488, 59, outline='blue')
         self.w5.pack()
 
@@ -549,15 +537,15 @@ class ETC_Spectral_Page(Frame):
 
         ### OPTIONAL INPUT ###
         ######################
-        self.label_AirmassANDWaterVapor = Label(
+        self.label_AirmassANDWaterVapor = tk.Label(
             self.frame5, text="Optional Input: Airmass and Water Vapour")
         self.label_AirmassANDWaterVapor.place(x=10, y=12)
-        self.selected_AirmassORWaterVapor = StringVar()
+        self.selected_AirmassORWaterVapor = tk.StringVar()
         selfmodes_AirmassORWaterVapor = [
             'Use Default', 'Airmass and Water Vapor Column']
         counter = 0
         for mode in selfmodes_AirmassORWaterVapor:
-            self.radio_AirmassORWaterVapor = Radiobutton(
+            self.radio_AirmassORWaterVapor = tk.Radiobutton(
                 self.frame5,
                 text=mode,
                 value=mode,
@@ -569,23 +557,23 @@ class ETC_Spectral_Page(Frame):
         self.selected_AirmassORWaterVapor.set('Use Default')
 
         # , padx=15, pady=15)
-        self.frame5b = Frame(self.frame0l, bg="light gray")
+        self.frame5b = tk.Frame(self.frame0l, bg="light gray")
         self.frame5b.place(x=2, y=594, width=496, height=120)
    #     self.w.create_rectangle(8, 62, 228, 112, outline = 'blue')
 
-        self.w5b = Canvas(self.frame5b, width=496, height=120)
+        self.w5b = tk.Canvas(self.frame5b, width=496, height=120)
         self.w5b.create_rectangle(8, 3, 488, 52, outline='blue')
         self.w5b.pack()
 
         ### AIRMASS ###
         ###############
-        self.label_Airmass = Label(self.frame5b, text="Airmass")
+        self.label_Airmass = tk.Label(self.frame5b, text="Airmass")
         self.label_Airmass.place(x=80, y=5)
-        self.selected_Airmass = StringVar()
+        self.selected_Airmass = tk.StringVar()
         self.modes_Airmass = ['1.0', '1.5', '2.0']
         counter = 0
         for mode in self.modes_Airmass:
-            self.radio_Airmass = Radiobutton(
+            self.radio_Airmass = tk.Radiobutton(
                 self.frame5b,
                 text=mode,
                 value=mode,
@@ -600,20 +588,20 @@ class ETC_Spectral_Page(Frame):
 
         ### Water Vapor ###
         ###################
-        self.label_WaterVapor = Label(self.frame5b, text="Water Vapor (mm)")
+        self.label_WaterVapor = tk.Label(self.frame5b, text="Water Vapor (mm)")
         self.label_WaterVapor.place(x=300, y=5)
-        self.selected_WaterVapor = StringVar()
+        self.selected_WaterVapor = tk.StringVar()
         self.modes_WaterVapor = ['1.0', '1.6', '3.0', '5.0']
         counter = 0
         for mode in self.modes_WaterVapor:
-            self.radio_WaterVapor = Radiobutton(
+            self.radio_WaterVapor = tk.Radiobutton(
                 self.frame5b,
                 text=mode,
                 value=mode,
                 variable=self.selected_WaterVapor
                 # command = self.hide_AirmassORWaterVapor
             )
-#       radio_WaterVapor_1p0 =  Radiobutton(self.frame5, text=modes[0], value=modes[0], variable=self.selected_WaterVapor,
+#       radio_WaterVapor_1p0 =  tk.Radiobutton(self.frame5, text=modes[0], value=modes[0], variable=self.selected_WaterVapor,
 #           state = 'disabled',
 #           #command = self.hide_AirmassORWaterVapor
 #       )
@@ -621,51 +609,38 @@ class ETC_Spectral_Page(Frame):
             counter += 1
         self.selected_WaterVapor.set('1.6')
 
-######################################################################
-
-# =============================================================================
-# # =============================================================================
-# #         # Constructing the last frame
-# #         # , padx=15, pady=15)
-# # =============================================================================
-        self.frame6 = Frame(self.frame0l, bg="light gray")
+        self.frame6 = tk.Frame(self.frame0l, bg="light gray")
         # Dislaying the self.frame2
         self.frame6.place(x=2, y=650, width=496, height=70)
 
-        self.w = Canvas(self.frame6, width=496, height=69)
+        self.w = tk.Canvas(self.frame6, width=496, height=69)
         self.w.create_rectangle(8, 8, 488, 61, outline='blue')
         self.w.pack()
 
         ### CALCULATE OR EXIT ###
         #########################
-        self.button_Calculate = Button(self.frame6, text="Calculate", command=self.XTcalc)
+        self.button_Calculate = tk.Button(self.frame6, text="Calculate", command=self.XTcalc)
         self.button_Calculate.place(x=150, y=20)
         # , command=root_exit)
-        self.button_Exit = Button(self.frame6, text="Exit", command=self.root_exit)
+        self.button_Exit = tk.Button(self.frame6, text="Exit", command=self.root_exit)
         self.button_Exit.place(x=250, y=20)
 
         self.initial_setup()
-        
-        
 
-
-# =============================================================================
-#         #########################
-#         ### OUTPUT FRAME ###
-#         #########################
-# 
-# =============================================================================
-        self.frame_out = Frame(self.frame0r, bg="light gray")
+        #########################
+        ### OUTPUT FRAME ###
+        #########################
+        self.frame_out = tk.Frame(self.frame0r, bg="light gray")
         self.frame_out.place(x=2, y=2, width=500, height=720)
 
-        self.w = Canvas(self.frame_out, width=496, height=714)
+        self.w = tk.Canvas(self.frame_out, width=496, height=714)
         self.w.create_rectangle(8, 8, 488, 46, outline='blue')
         self.w.pack()
 
     
-        self.text_SAMOS_Header = Text(self.frame_out, width=66, height=2, background='light gray')
-        if platform == "win32":
-            self.text_SAMOS_Header = Text(self.frame_out, width=59, height=2, background='light gray')
+        self.text_SAMOS_Header = tk.Text(self.frame_out, width=66, height=2, background='light gray')
+        if sys.platform == "win32":
+            self.text_SAMOS_Header = tk.Text(self.frame_out, width=59, height=2, background='light gray')
         #self.text_SAMOS_Header.insert(INSERT, text)
         self.text_SAMOS_Header.place(x=12, y=10)
         
@@ -674,36 +649,26 @@ class ETC_Spectral_Page(Frame):
         self.set.place(x=2, y=50, width=490, height=280)
 
         self.set['columns']= ('Parameter', 'Value','Units')
-        self.set.column("#0", width=0,  stretch=NO)
-        self.set.column("Parameter",anchor=CENTER, width=150)
-        self.set.column("Value",anchor=CENTER, width=100)
-        self.set.column("Units",anchor=CENTER, width=235)
-# 
-        self.set.heading("#0",text="",anchor=CENTER)
-        self.set.heading("Parameter",text="Parameter",anchor=CENTER)
-        self.set.heading("Value",text="Value",anchor=CENTER)
-        self.set.heading("Units",text="Units",anchor=CENTER)
-# 
-#        self.set.insert(parent='',index='end',iid=0,text='',values=('101','john','Gold'))
-#        self.set.insert(parent='',index='end',iid=1,text='',values=('102','jack',"Silver"))
-#        self.set.insert(parent='',index='end',iid=2,text='',values=('103','joy','Bronze'))
-# 
-# =============================================================================
+        self.set.column("#0", width=0,  stretch=tk.NO)
+        self.set.column("Parameter",anchor=tk.CENTER, width=150)
+        self.set.column("Value",anchor=tk.CENTER, width=100)
+        self.set.column("Units",anchor=tk.CENTER, width=235)
+        self.set.heading("#0",text="",anchor=tk.CENTER)
+        self.set.heading("Parameter",text="Parameter",anchor=tk.CENTER)
+        self.set.heading("Value",text="Value",anchor=tk.CENTER)
+        self.set.heading("Units",text="Units",anchor=tk.CENTER)
 
-# =============================================================================
-#         ##################################
-#         ###  PLOT OBSERVATIONS OR SNR? ###
-#         ##################################
-# 
-# =============================================================================
+        ##################################
+        ###  PLOT OBSERVATIONS OR SNR? ###
+        ##################################
         self.w.create_rectangle(8, 336, 492, 367, outline='blue')
  
-        self.selected_PlotObsORSNR = StringVar(value='Plot Observations')
+        self.selected_PlotObsORSNR = tk.StringVar(value='Plot Observations')
         modes = ['Plot Observations', 'Plot Signal to Noise']
         commands=[self.plot_obs,self.plot_snr]
         counter = 0
         for mode in modes:
-            self.r_PlotObsORSNR = Radiobutton(
+            self.r_PlotObsORSNR = tk.Radiobutton(
                 self.frame_out,
                 text=mode,
                 value=mode,
@@ -722,13 +687,13 @@ class ETC_Spectral_Page(Frame):
 # =============================================================================
         self.w.create_rectangle(8, 371, 492, 402, outline='blue')
  
-        self.label_PlotWavelengthRange  = Label(self.frame_out, text="Wl range")
+        self.label_PlotWavelengthRange  = tk.Label(self.frame_out, text="Wl range")
         self.label_PlotWavelengthRange.place(x=12, y=375)
-        self.selected_PlotWavelengthRange = StringVar(value='Default')
+        self.selected_PlotWavelengthRange = tk.StringVar(value='Default')
         modes = ['Default', 'User set']
         counter = 0
         for mode in modes:
-            self.r_PlotWavelengthRange = Radiobutton(
+            self.r_PlotWavelengthRange = tk.Radiobutton(
                 self.frame_out,
                 text=mode,
                 value=mode,
@@ -738,31 +703,23 @@ class ETC_Spectral_Page(Frame):
             self.r_PlotWavelengthRange.place(x=75+counter*75, y=375)
             counter += 1
 
-# =============================================================================
-#         wl_0 = StringVar()
-#         wl_1 = StringVar()
-#         wl_range=self.bandpass.get()
-#         wl_0.set(wl_range[0])
-#         wl_1.set(wl_range[-1])
-# 
-# =============================================================================
-        self.Entry_lambdamin= Entry(self.frame_out, width=6)
+        self.Entry_lambdamin= tk.Entry(self.frame_out, width=6)
         self.Entry_lambdamin.place(x=235, y=372)
         self.Entry_lambdamin.configure(state='disabled')
 
-        self.label_2dash = Label(self.frame_out, text="--")
+        self.label_2dash = tk.Label(self.frame_out, text="--")
         self.label_2dash.place(x=290, y=375)
         self.label_2dash.configure(state='disabled')
 
-        self.Entry_lambdamax= Entry(self.frame_out, width=6)
+        self.Entry_lambdamax= tk.Entry(self.frame_out, width=6)
         self.Entry_lambdamax.place(x=305, y=372)
         self.Entry_lambdamax.configure(state='disabled')
 
-        self.label_lambdamicron = Label(self.frame_out, text="micron")
+        self.label_lambdamicron = tk.Label(self.frame_out, text="micron")
         self.label_lambdamicron.place(x=340, y=375)
         self.label_lambdamicron.configure(state='disabled')
         
-        self.Button_RefreshPlot = Button(self.frame_out,text="Refresh", command=self.RefreshPlot)
+        self.Button_RefreshPlot = tk.Button(self.frame_out,text="Refresh", command=self.RefreshPlot)
         self.Button_RefreshPlot.place(x=400,y=372)                                 
 
 
@@ -776,7 +733,7 @@ class ETC_Spectral_Page(Frame):
 
         self.w.create_rectangle(8, 655, 492, 710, outline='blue')
 
-        self.button_PrintToFile = Button(self.frame_out, text="Print to file", command=self.PrintToFile, relief=RAISED) 
+        self.button_PrintToFile = tk.Button(self.frame_out, text="Print to file", command=self.PrintToFile, relief=tk.RAISED) 
         self.button_PrintToFile.place(x=10, y=670)        
 
         self.buttons = {}
@@ -784,26 +741,12 @@ class ETC_Spectral_Page(Frame):
         offset = [0,1,2,0,1,2]
         counter = 0
         for name in text_buttons:
-            self.button_var = IntVar()
+            self.button_var = tk.IntVar()
             self.button_var.set(0)
-            self.cb = Checkbutton(self.frame_out, text=name, variable=self.button_var)
+            self.cb = tk.Checkbutton(self.frame_out, text=name, variable=self.button_var)
             self.cb.place(x=130+120*offset[counter], y= 663+20*int(counter/3))
             self.buttons[name]=self.button_var
             counter = counter+1
-
-
-# =============================================================================
-#         for name in os.listdir(filedir):
-#             if name.endswith('.py') or name.endswith('.pyc'):
-#                 if name not in ("____.py", "_____.pyc"):
-#                     var = tk.IntVar() 
-#                     var.set(0)
-#                     cb.pack()
-#                     buttons.append((var,name))
-# 
-# =============================================================================
-
-
 
 
     def RefreshPlot(self):
@@ -824,23 +767,12 @@ class ETC_Spectral_Page(Frame):
         self.hide_ExpTimeORSNR()
         self.selected_ExpTimeORSNR.set('Determine Signal to Noise')
         self.read_throughput_files()
-#        self.selected_PlotObsORSNR.set('Plot Observations') 
-# =============================================================================
-#         wl_range=spec_struct["wave"] 
-#         #for the output window, set the lambdamin/max of the bandpass
-#         wl_0 = wl_range[0]
-#         wl_1 = wl_range[-1]
-#         self.Entry_lambdamin.set(str(wl_0))
-#         self.Entry_lambdamax.set(str(wl_1))
-#         
-# =============================================================================
 
     # collect all parameters and put it in a dictionary
 
     def collect_all_parameters(self):
         all_parameters = {
             "bandpass": self.bandpass.get(),
-#            "slit": self.Entry_SlitWidth.get(),
             "slit": self.slit_selected.get(),
             "NrOfExp": self.Entry_NofExp.get(),
             "AngularExt": self.Entry_AngularExtent.get(),
@@ -1042,19 +974,6 @@ class ETC_Spectral_Page(Frame):
              messagebox.showerror(
                  title=None, message="Central Wavelength must be  > 0")
 
-#    def check_RedshiftedWavelength(self): 
-#        print('pippo')
-#        CentralWl = float(self.Entry_CentralWl.get())
-#        Redshift =  float(self.Entry_Redshift.get())
-#        RedshiftedWavelength = CentralWl * (1+Redshift)
-#        RedshiftedWavelength_string = "{:.2f}".format(RedshiftedWavelength)
-#        print(CentralWl, Redshift, RedshiftedWavelength, RedshiftedWavelength_string)
-#        self.Entry_RedshiftAdopted.insert(END,RedshiftedWavelength_string)
-
- #       # validate redshift
- #       if float(all_parameters["Redshift"]) < 0:
- #          messagebox.showerror(title=None, message="Redshift must be  >= 0")
-         
 # =============================================================================
 # =============================================================================
 #          ;make the structure into something useful
@@ -1064,18 +983,7 @@ class ETC_Spectral_Page(Frame):
 
     def select_SourceSpectrum(self,arg1):
         if arg1 == 'My own spectrum':
-# =============================================================================
-#             self.label_Filename.configure(state='normal')
-#             self.Entry_Filename.configure(state='normal')
-#             self.r_FlamORFnu.configure(state='normal',value='F_lam')
-#             self.r_FlamORFnu.configure(state='normal',value='F_nu')
-#             self.label_SpectrumWlUnits.configure(state='normal')
-#             self.r_SpectrumWlUnits.configure(state='normal')
-#             self.label_MagnitudeRedshift.configure(state='normal')
-#             self.Entry_MagnitudeRedshift.configure(state='normal')
-# 
-# =============================================================================
-            self.source_filename = StringVar()
+            self.source_filename = tk.StringVar()
             filetypes = (
                 ('text files', '*.txt'),
                 ('text files', '*.dat'),
@@ -1146,20 +1054,6 @@ class ETC_Spectral_Page(Frame):
         self.user_Wave = userspec_wl_um#A
         self.user_Flux = userspec_Fnu#lam
         return 
-# ====== =======================================================================
-#         else:
-#          ### FILENAME ###
-#          ################
-#             print('disable all')
-#             self.label_Filename.configure(state='disabled')
-#             self.Entry_Filename.configure(state='disabled')
-#             self.r_FlamORFnu.configure(state='disabled',value='F_lam')
-#             self.r_FlamORFnu.configure(state='disabled',value='F_nu')
-#             self.label_SpectrumWlUnits.configure(state='disabled')
-#             self.r_SpectrumWlUnits.configure(state='disabled')
-#             self.label_MagnitudeRedshift.configure(state='disabled')
-#             self.Entry_MagnitudeRedshift.configure(state='disabled')
-# 
 # =============================================================================
 #purpose is to mimic what output would look like based on the inherent flaws of optics of telescope
 #basic process: convert everything to velocity, make a gaussian kernal and convolve it with the rest of the function, 
@@ -1682,7 +1576,7 @@ class ETC_Spectral_Page(Frame):
         all_parameters = self.collect_all_parameters()
         ready_to_go = self.validate(all_parameters)
         
-        self.button_Calculate = Button(self.frame6, text="Calculate", command=self.XTcalc)
+        self.button_Calculate = tk.Button(self.frame6, text="Calculate", command=self.XTcalc)
 
         self.button_Calculate.config(text="Processing...")
 # =============================================================================
@@ -1813,67 +1707,6 @@ class ETC_Spectral_Page(Frame):
         filt_wave = SAMOS_throughput_Wave 
         filt = SAMOS_throughput_Flux 
 
-# =============================================================================
-#          MOSIFRE Filters
-#   
-# =============================================================================
-# 
-#  ;read in the filter curve - wavlegth in microns
-#  readcol, mos_path+'mosfire_'+band+'.txt', filt_wave, filt, format='f,f', /silent
-# =============================================================================
-#         filter_bandpass = np.loadtxt(mos_path+"mosfire_"+band+".txt")
-#         filt_wave = filter_bandpass[:,0].astype(float)
-#         filt = filter_bandpass[:,1].astype(float)
-#         # just to be sure the wavelengths are increasing....
-#         if filt_wave[0] > filt_wave[-1]:   
-#             filt_wave = np.flip(filt_wave)
-#             filt = np.flip(filt)
-#  
-# =============================================================================
-# 
-# =============================================================================
-#         SOURCE SPECTRUM ENTERED BY THE USER?
-#   
-# =============================================================================
-# 
-# =============================================================================
-#         if all_parameters["TypeOfSpectrum"] ==  "My own spectrum":
-# ##          print(self.source_filename)
-#             source_spectrum = np.loadtxt(self.source_fullpathfilename))
-#  #           self.user_Wave = source_spectrum[:,0].astype(float)
-#  #           self.user_Flux = source_spectrum[:,1].astype(float)
-#             messagebox.showinfo(
-#                 title='Check Flux Units!',
-#                 message='wl[0] = '+str(user_Wave[0]) + '     Flux[0] = ' + str(self.user_Flux[0])
-#                 )
-#             
-#             #MOSFIRE wants spectra in micron
-# # =============================================================================
-#             if all_parameters["SpectrumWlUnits"] == "Angstrom": 
-#                 user_Wave = user_Wave/10000.0
-#     
-#             #Redshift is applied only to the wavelenghts
-# # =============================================================================
-#             user_Wave=user_Wave*(1+z)
-#    
-# # does the user spectrum cover the full band pass and are the wavelengths in micron?
-# # =============================================================================
-#             if ((min(user_Wave) > min(filt_wave)) or (max(user_Wave) < max(filt_wave))):
-#             #ok=0
-# #                warning = StringVar()
-#                 warning = 'The read-in spectrum from ' + str(self.source_filename) \
-#                       + 'does not span the full wavelength coverage of the ', band,' band ' \
-#                       + 'or is not in the proper format. The correct format is ' \
-#                       + 'observed-frame wavelength in micron or Angstroms and flux in ' \
-#                       + 'erg/s/cm2 in two column format with a space or comma ' \
-#                       + 'as the delimiter. Also please check that you have choosen the correct ' \
-#                       + 'wavelength units on the GUI.'
-#                 messagebox.showinfo(
-#                     title='Check spectrum',
-#                     message=warning
-#                     )
-# #              (PUT HERE AN INSTRUCTION TO RETURN?) 
-# =============================================================================
         
 # =============================================================================
 # if the magnitude is entered in Vega, change it to AB.
@@ -2213,23 +2046,6 @@ class ETC_Spectral_Page(Frame):
 #       
 #           the observed line wavelength in micron
             center = lineWl * (1+z_line)   #lineWl*(1+z)
- 
-# =============================================================================
-#             filter_limit_0 = min(filt_wave[np.where(filt>0.05)])
-#             filter_limit_1 = max(filt_wave[np.where(filt>0.05)])
-#             if ( (center < filter_limit_0) or (center > filter_limit_1 ) ):
-#                messagebox.showerror(
-#                  title=None, message="Central Wavelength " + str(center ) + " is out of bandpass \n changing redshift to match bandpass center")
-#                center = 0.5 * (filter_limit_0 + filter_limit_1)
-#                z_line = center/lineWl - 1   #new redshift
-#                z_line = round(z_line,3)
-#                self.Entry_LineRedshift.delete(0,END)
-#                self.Entry_LineRedshift.insert(0,str(z_line))
-#             self.Entry_RedshiftAdopted.delete(0,END)
-#             self.Entry_RedshiftAdopted.insert(0,str(z_line))
-#             #stat["lambda"] = center
-# =============================================================================
-               #self.root_exit() 
                
 # =============================================================================         
 # =============================================================================
@@ -2565,7 +2381,6 @@ class ETC_Spectral_Page(Frame):
 # =============================================================================
                 if ((min(self.user_Wave) > min(filt_wave)) or (max(self.user_Wave) < max(filt_wave))):
             #ok=0
-#                warning = StringVar()
                     warning = 'The read-in spectrum from ' + str(self.source_filename) \
                       + 'does not span the full wavelength coverage of the ', band,' band ' \
                       + 'or is not in the proper format. The correct format is ' \
@@ -3051,32 +2866,6 @@ class ETC_Spectral_Page(Frame):
                                         summary_struct["value"][i],
                                         summary_struct["unit"][i]) )  
                 
-                
-# =============================================================================
-#             #x= np.array ([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-#             #v= np.array ([16,16.31925,17.6394,16.003,17.2861,17.3131,19.1259,18.9694,22.0003,22.81226])
-#             #p= np.array ([16.23697,     17.31653,     17.22094,     17.68631,     17.73641 ,    18.6368,
-#             #            19.32125,     19.31756 ,    21.20247  ,   22.41444   ,  22.11718  ,   22.12453])
-# 
-#             x=spec_struct["wave"] 
-#             y=spec_struct["plot_index"]           
-#             fig = Figure(figsize=(6,6))
-#             a = fig.add_subplot(111)
-#             #a.scatter(x,v,color='red')
-#             a.plot(x, y,color='blue')
-#             a.invert_yaxis()
-# 
-#            # a.set_title ("Estimation Grid", fontsize=16)
-#             a.set_ylabel("transmission", fontsize=14)
-#             a.set_xlabel("Wavelength (micron)", fontsize=14)
-# 
-#             canvas = FigureCanvasTkAgg(fig, master=self.frame_out)
-#             canvas.get_tk_widget().place(x=2, y=450, width=490, height=250)#pack()
-#             canvas.draw()
-#     
-# =============================================================================
-    
-
 # =============================================================================
             self.Entry_lambdamin.configure(state='normal')
             self.Entry_lambdamax.configure(state='normal')
@@ -3153,13 +2942,6 @@ class ETC_Spectral_Page(Frame):
             label="ETC", command=lambda: parent.show_frame(parent.ETCPage))
         filemenu.add_command(label="Exit", command=parent.quit)
 
-#        # ETC menu
-#        ETC_menu = tk.Menu(menubar, tearoff=0)
-#        menubar.add_cascade(label="ETC", menu=ETC_menu)
-#        ETC_menu.add_command(label="Spectropscopy", command=parent.show_frame(parent.ETC))
-#        ETC_menu.add_command(label="Imaging", command=U.about)
-#        ETC_menu.add_separator()
-
         # help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
@@ -3167,16 +2949,3 @@ class ETC_Spectral_Page(Frame):
         help_menu.add_separator()
 
         return menubar
-
-
-# Create a GUI root
-#root = Tk()
-#mywin=MainWindow(root)
-        
-# Give a title to your self
-#root.title("XTCak=lk")
-# size of the window
-#root.geometry("1000x720")   
-        
-# Make the loop for displaying root
-#root.mainloop()

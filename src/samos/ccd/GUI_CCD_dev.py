@@ -316,7 +316,7 @@ class GUI_CCD(tk.Toplevel):     #the GUI_CCD class inherits from the tk.Toplevel
         self.label_camera_ON.place(x=4,y=8)
         
         # Define Our Images
-        self.on_png = tk.PhotoImage(file = get_data_file("tk.icons", "on.png"))
+        self.on_png = tk.PhotoImage(file = get_data_file("tk.icons", "on_small.png"))
         self.off_png = tk.PhotoImage(file = get_data_file("tk.icons", "off.png"))
         self.button_open_camera= tk.Button(labelframe_Setup, image=self.off_png, bd=0, command=self.turn_camera_ON)
                                                         #command = open_close_camera)

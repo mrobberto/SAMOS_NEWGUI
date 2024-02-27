@@ -69,8 +69,8 @@ from samos.utilities import get_data_file
 #SF = Class_SAMOS_Functions()
 
 #colorblind friendly 
-indicator_light_on_color = "#08F903"
-indicator_light_off_color = "#194A18"
+INDICATOR_LIGHT_ON_COLOR = "#08F903"
+INDICATOR_LIGHT_OFF_COLOR = "#194A18"
 indicator_light_pending_color = "#F707D3"
 
 class Class_PCM():
@@ -99,8 +99,8 @@ class Class_PCM():
         else: 
 #            self.MOTORS_onoff = 0
             print('MOTORS NOT CONNECTED!!')
-            self.canvas_Indicator.itemconfig("grism_ind", fill=indicator_light_off_color)
-            self.canvas_Indicator.itemconfig("filter_ind", fill=indicator_light_off_color)
+            self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+            self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
             self.MOTORS_onoff = 0
             return
  
@@ -1097,7 +1097,7 @@ class Class_PCM():
             self.move_FW_pos_wheel('B6')    
         
         self.canvas_Indicator.itemconfig("filter_ind", 
-                                         fill=indicator_light_on_color)
+                                         fill=INDICATOR_LIGHT_ON_COLOR)
         self.canvas_Indicator.update()
     # =============================================================================
     # #
@@ -1287,7 +1287,7 @@ class Class_PCM():
 
             print('Received', repr(data))
         self.canvas_Indicator.itemconfig("grism_ind", 
-                                         fill=indicator_light_on_color)
+                                         fill=INDICATOR_LIGHT_ON_COLOR)
         self.canvas_Indicator.update()
 
     def fast_home_grism_rails(self, GR):
@@ -1543,7 +1543,7 @@ class Class_PCM():
                     print('\nGR_A is at position 2\n')
                #self.write_status()         
                #self.canvas_Indicator.itemconfig("grism_ind", 
-               #                                 fill=indicator_light_on_color)
+               #                                 fill=INDICATOR_LIGHT_ON_COLOR)
                #self.canvas_Indicator.update()
                return position,current_steps
 

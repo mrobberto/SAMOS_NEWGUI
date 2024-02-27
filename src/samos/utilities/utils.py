@@ -17,10 +17,10 @@ Dependencies
     
     None.
 """
+from datetime import datetime
 import os
-import sys
-
 from pathlib import Path
+import sys
 
 
 def get_data_file(mod_path, filename=None):
@@ -69,3 +69,39 @@ def get_temporary_dir():
     """
     dir_path = Path(__file__).parent.parent.absolute() / "data" / "tmp"
     return dir_path
+
+
+def get_fits_dir():
+    """
+    Returns a Path to a directory for storing FITS files (generally exposure outputs).
+    Operates by the following rules:
+    
+    - If there is a "SAMOS_OUTPUTS" environment variable, store files there.
+    - If there is a "SAMOS_STORE_TO_CWD" environment variable, store files in cwd
+    - Store files in the SAMOS data.temporary directory
+    
+    In addition, makes sure that the directory *exists*, creates a daily directory 
+    within the general FITS directory, and ensures that *that* directory exists.
+    
+    Returns
+    -------
+    fits_dir : pathlib.Path
+        Path to today's FITS file output directory
+    """
+    today = datetime.now()
+    
+    if "SAMOS_OUTPUTS" in os.environ:
+        base_dir = Path(os.environ["SAMOS_OUTPUTS"])
+    elif "SAMOS_STORE_TO_CWD" in os.environ:
+        base_dir = Path(os.getcwd())
+    else:
+        base_dir = get_temporary_dir()
+    
+    fits_dir = base_dir / "SISI_images" / "SAMOS_{}".format(today.strftime('%Y%m%d'))
+    fits_dir.mkdir(parents=True, exist_ok=True)
+    
+    fits_directory_file = get_temporary_dir() / "fits_current_dir_name.txt"
+    with open(fits_directory_file, "w") as outf:
+        outf.write("{}".format(fits_dir))
+    
+    return fits_dir

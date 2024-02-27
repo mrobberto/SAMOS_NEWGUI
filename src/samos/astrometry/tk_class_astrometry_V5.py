@@ -27,67 +27,52 @@ from astropy import units as u
 from astropy.io import fits
 from regions import Regions
 
-
 import numpy as np
-#from esutil import htm
-
 import os
 
+from samos.utilities.constants import *
 
-class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.Toplevel widget
-#    def __init__(self, master=None):
-    def __init__(self, master=None):  #__init__ constructor method. 
-        #>>> AM = Astrometry(master) would be an instance of the class Astrometry that you can call with its functions, e.g.
-        #>>> AM.show_Simbad()
-    
-        logger = log.get_logger("example1", log_stderr=True)
-        self.logger = logger
+
+class Astrometry(tk.Toplevel):
+    def __init__(self, master=None):
+        self.logger = log.get_logger("samos", log_stderr=True)
         
         super().__init__(master = master) 
-        #super() recalls and includes the __init__() of the master class (tk.Topelevel), so one can use that stuff there without copying the code.
-        
-        
+
+        # Set up basic contents
         self.title("Astrometry")
         self.geometry("900x600")
-        label = tk.Label(self, text ="This is the Astrometry Window")
-        label.pack()
+        tk.label(self, text="Astrometry Window").pack(expand=0)
 
-  
-#       
-        self.frame0l = tk.Frame(self,background="cyan")#, width=300, height=300)
-        self.frame0l.place(x=0, y=0, anchor="nw", width=890, height=590)
+        # Main frame
+        self.main_frame = tk.Frame(self, background="cyan").pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-# =============================================================================
-#      ENTER COORDINATES
-# 
-# =============================================================================
-        labelframe_EnterCoordinates =  tk.LabelFrame(self.frame0l, text="Enter Coordinates", 
-                                                     width=300,height=140,
-                                                     font=("Arial", 24))
-        labelframe_EnterCoordinates.place(x=5,y=5)
+        # Enter Co-ordinates frame
+        coord_frame =  tk.LabelFrame(self.main_frame, text="Enter Coordinates", font=("Arial", 24))
+        coord_frame.pack(anchor=tk.NW, expand=True, padx=10, pady=10)
 
-        label_EnterRA =  tk.Label(labelframe_EnterCoordinates, text="RA")
+        label_EnterRA =  tk.Label(coord_frame, text="RA")
         label_EnterRA.place(x=4,y=10)
         self.string_RA_center = tk.StringVar(value="00:00:00.0")
-        entry_RA = tk.Entry(labelframe_EnterCoordinates, width=11,  bd =3, textvariable=self.string_RA_center)
+        entry_RA = tk.Entry(coord_frame, width=11,  bd =3, textvariable=self.string_RA_center)
         entry_RA.place(x=40, y=8)
-        label_RA_template =  tk.Label(labelframe_EnterCoordinates, text="(HH:MM:SS.x)")
+        label_RA_template =  tk.Label(coord_frame, text="(HH:MM:SS.x)")
         label_RA_template.place(x=150,y=10)
 
-        label_EnterDEC =  tk.Label(labelframe_EnterCoordinates, text="DEC")
+        label_EnterDEC =  tk.Label(coord_frame, text="DEC")
         label_EnterDEC.place(x=4,y=40)
         self.string_DEC_center= tk.StringVar(value="+00:00:00.00")
-        entry_DEC = tk.Entry(labelframe_EnterCoordinates, width=11,  bd =3, textvariable=self.string_DEC_center)
+        entry_DEC = tk.Entry(coord_frame, width=11,  bd =3, textvariable=self.string_DEC_center)
         entry_DEC.place(x=40, y=38)
-        label_DEC_template =  tk.Label(labelframe_EnterCoordinates, text="(\u00b1DD:MM:SS.xx)")
+        label_DEC_template =  tk.Label(coord_frame, text="(\u00b1DD:MM:SS.xx)")
         label_DEC_template.place(x=150,y=40)
 
-        label_EnterEpoch =  tk.Label(labelframe_EnterCoordinates, text="Epoch")
+        label_EnterEpoch =  tk.Label(coord_frame, text="Epoch")
         label_EnterEpoch.place(x=4,y=70)
         self.string_Epoch= tk.StringVar(value="2000.0")
-        entry_Epoch = tk.Entry(labelframe_EnterCoordinates, width=6,  bd =3, textvariable=self.string_Epoch)
+        entry_Epoch = tk.Entry(coord_frame, width=6,  bd =3, textvariable=self.string_Epoch)
         entry_Epoch.place(x=40, y=68)
-        label_Epoch_template =  tk.Label(labelframe_EnterCoordinates, text="e.g. 2000.0")
+        label_Epoch_template =  tk.Label(coord_frame, text="e.g. 2000.0")
         label_Epoch_template.place(x=110,y=70)
   
         
@@ -95,9 +80,10 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
 #      QUERY SIMBAD
 # 
 # =============================================================================
-        labelframe_Query_Simbad =  tk.LabelFrame(self.frame0l, text="Query Simbad", 
+        labelframe_Query_Simbad =  tk.LabelFrame(self.main_frame, text="Query Simbad", 
                                                      width=300,height=140,
-                                                     font=("Arial", 24))
+                                                     font=("Arial", 24),
+                                                     sticky=TK_STICKY_ALL)
         labelframe_Query_Simbad.place(x=5, y=150)
 
         button_Query_Simbad =  tk.Button(labelframe_Query_Simbad, text="Query Simbad", bd=3, command=self.Query_Simbad)
@@ -130,14 +116,15 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
         print(self.Survey_selected.get())
 
         
-        self.readout_Simbad = tk.Label(self.frame0l, text='')
+        self.readout_Simbad = tk.Label(self.main_frame, text='')
 # =============================================================================
 #      QUERY Gaia
 # 
 # =============================================================================
-        labelframe_Query_Gaia =  tk.LabelFrame(self.frame0l, text="Query Gaia", 
+        labelframe_Query_Gaia =  tk.LabelFrame(self.main_frame, text="Query Gaia", 
                                                      width=300,height=140,
-                                                     font=("Arial", 24))
+                                                     font=("Arial", 24),
+                                                     sticky=TK_STICKY_ALL)
         labelframe_Query_Gaia.place(x=5,y=300)
 
         button_Query_Gaia =  tk.Button(labelframe_Query_Gaia, text="Query Gaia", bd=3, command=self.Query_Gaia)
@@ -148,11 +135,11 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
 # #           LAST TWO LINES
 # =============================================================================
 
-        self.hbox = tk.Frame(self.frame0l)
+        self.hbox = tk.Frame(self.main_frame)
         self.hbox.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
 #        self.hbox.place(x=0,y=560)
    
-        self.readout_Simbad = tk.Label(self.frame0l, text='tbd')
+        self.readout_Simbad = tk.Label(self.main_frame, text='tbd')
         self.readout_Simbad.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
 #        self.readout_Simbad.place(x=0,y=530)
 
@@ -163,32 +150,16 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
 # =============================================================================
 
     def Show_Simbad(self):
-            self.frame_DisplaySimbad = tk.Frame(self.frame0l,background="pink")#, width=400, height=800)
-            self.frame_DisplaySimbad.place(x=310, y=5, anchor="nw", width=528, height=516) 
-            
-            #img = AstroImage()
-#            img = io_fits.load_file(self.image.filename())
-    
-            # ginga needs a logger.
-            # If you don't want to log anything you can create a null logger by
-            # using null=True in this call instead of log_stderr=True
-            #logger = log.get_logger("example1", log_stderr=True, level=40)
-            logger = log.get_logger("example1",log_stderr=True, level=40)
- 
-#            fv = FitsViewer()
-#            top = fv.get_widget()
-            
-#            ImageViewCanvas.fitsimage.set_image(img)
-            canvas = tk.Canvas(self.frame0l, bg="grey", height=516, width=528)
-#            canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+            self.frame_DisplaySimbad = tk.Frame(self.main_frame,background="pink")#, width=400, height=800)
+            self.frame_DisplaySimbad.place(x=310, y=5, anchor="nw", width=528, height=516, sticky=TK_STICKY_ALL)
+
+            self.logger.setLevel(40)
+
+            canvas = tk.Canvas(self.main_frame, bg="grey", height=516, width=528)
             canvas.place(x=310,y=5)
                   
             fi = CanvasView(logger)
             fi.set_widget(canvas)
-#            fi.set_image(img) 
-#            self.fitsimage.set_image(img)
-
-            #fi.set_redraw_lag(0.0)
             fi.enable_autocuts('on')
             fi.set_autocut_params('zscale')
             fi.enable_autozoom('on')
@@ -196,19 +167,10 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
             # tk seems to not take focus with a click
             fi.set_enter_focus(True)
             fi.set_callback('cursor-changed', self.cursor_cb)
-            
-            #'button-press' is found in Mixins.py
             fi.set_callback('button-press', self. button_click)  
-            
-            #'drag-drop' is found in Mixins.py
-            #fi.set_callback('drag-drop', self. draw_cb)   
-
-           # fi.set_bg(0.2, 0.2, 0.2)
             fi.ui_set_active(True)
             fi.show_pan_mark(True)
-#            fi.set_image(img)
             self.fitsimage = fi
-            
             
             bd = fi.get_bindings()
             bd.enable_all(True)
@@ -217,45 +179,23 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
             DrawingCanvas = fi.getDrawClass('drawingcanvas')
             canvas = DrawingCanvas()
             canvas.enable_draw(True)
-            #canvas.enable_edit(True)
             canvas.set_drawtype('rectangle', color='blue')
             canvas.set_surface(fi)
             self.canvas = canvas
-            # add canvas to view
             fi.add(canvas)
             canvas.ui_set_active(True)
      
             fi.configure(516,528)
-          #  fi.set_window_size(514,522)
-            
-            #self.fitsimage.set_image(img)
-#            self.root.title(filepath)
+
             self.load_file()
-     
-
-     
-# =============================================================================
-#             self.readout_Simbad = tk.Label(self.frame0l, text='tbd')
-# #            self.readout_Simbad.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
-#             self.readout_Simbad.place(x=0,y=530)
-#      
-# =============================================================================
-
 
             self.drawtypes = fi.get_drawtypes()
-            ## wdrawtype = ttk.Combobox(root, values=self.drawtypes,
-            ##                          command=self.set_drawparams)
-            ## index = self.drawtypes.index('ruler')
-            ## wdrawtype.current(index)
+
             wdrawtype = tk.Entry(self.hbox, width=12)
             wdrawtype.insert(0, 'rectangle')
             wdrawtype.bind("<Return>", self.set_drawparams)
             self.wdrawtype = wdrawtype
      
-            # wdrawcolor = ttk.Combobox(root, values=self.drawcolors,
-            #                           command=self.set_drawparams)
-            # index = self.drawcolors.index('blue')
-            # wdrawcolor.current(index)
             wdrawcolor = tk.Entry(self.hbox, width=12)
             wdrawcolor.insert(0, 'blue')
             wdrawcolor.bind("<Return>", self.set_drawparams)
@@ -270,27 +210,19 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
             walpha.bind("<Return>", self.set_drawparams)
             self.walpha = walpha
     
-            wclear = tk.Button(self.hbox, text="Clear Canvas",
-                                    command=self.clear_canvas)
-#            wopen = tk.Button(self.hbox, text="Open File",
-#                                   command=self.open_file)
-            wquit = tk.Button(self.hbox, text="Quit",
-                                   command=lambda: self.quit())
-            for w in (wquit, wclear, walpha, tk.Label(self.hbox, text='Alpha:'),
-                      wfill, wdrawcolor, wdrawtype):#, wopen):
-                w.pack(side=tk.RIGHT)
+            wclear = tk.Button(self.hbox, text="Clear Canvas", command=self.clear_canvas)
+            wquit = tk.Button(self.hbox, text="Quit", command=lambda: self.quit())
             
-# =============================================================================
-#         top = fv.get_widget()
-# 
-#         if len(args) > 0:
-#            fv.load_file(args[0])
-# 
-# =============================================================================
+            ui_elements = [wquit, wclear, walpha, tk-Label(self.hbox, text='Alpha:'),
+                           wfill, wdrawcolor, wdrawtype]
+            
+            for ui_element in ui_elements:
+                ui_element.pack(side=tk.RIGHT)
+
 
     def cursor_cb(self, viewer, button, data_x, data_y):
-        """This gets called when the data position relative to the cursor
-        changes.
+        """
+        This gets called when the data position relative to the cursor changes.
         """
         # Get the value under the data coordinates
         try:
@@ -327,7 +259,7 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
 
 
 # =============================================================================
-#         labelframe_SolveAstrometry =  tk.LabelFrame(self.frame0l, text="Solve Astrometry", font=("Arial", 24))
+#         labelframe_SolveAstrometry =  tk.LabelFrame(self.main_frame, text="Solve Astrometry", font=("Arial", 24))
 #         labelframe_SolveAstrometry.pack(fill="both", expand="yes")
 #         
 # =============================================================================
@@ -425,7 +357,7 @@ class Astrometry(tk.Toplevel):     #the astrometry class inherits from the tk.To
              #'object': object_main_id, 
              # Download an image centered on the first object in the results 
              #'ra': object_coords[0].ra.value, 
-             #'dec': object_coords[0].dec.value, 
+             #'dec': object_coords[0].dec.value,                                                                   
              'ra': c.ra.value, 
              'dec': c.dec.value,
              'fov': (3.5 * u.arcmin).to(u.deg).value, 

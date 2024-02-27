@@ -84,7 +84,7 @@ class Config(tk.Frame):
         # Keep track of the button state on/off
  #       self.Motors_is_on = True
         # Define Our Images 
-        self.Image_on = tk.PhotoImage(file = get_data_file("tk.icons", "on.png"))
+        self.Image_on = tk.PhotoImage(file = get_data_file("tk.icons", "on_small.png"))
         self.Image_off = tk.PhotoImage(file = get_data_file("tk.icons", "off.png")) 
         
         self.dir_dict = {'dir_Motors': '/motors',

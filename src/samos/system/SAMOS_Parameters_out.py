@@ -32,7 +32,7 @@ class SAMOS_Parameters():
             self.scale_DMD2PIXEL = 0.892
         """
 
-        self.Image_on = tk.PhotoImage(file=get_data_file("tk.icons", "on.png"))
+        self.Image_on = tk.PhotoImage(file=get_data_file("tk.icons", "on_small.png"))
         self.Image_off = tk.PhotoImage(file=get_data_file("tk.icons", "off.png"))
 
         self.dir_dict = {'dir_Motors': '/motors',
