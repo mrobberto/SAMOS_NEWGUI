@@ -17,140 +17,137 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
+from .common_frame import SAMOSFrame
 
-class ConfigPage(ttk.Frame):
+
+class ConfigPage(SAMOSFrame):
 
     def __init__(self, parent, container, **kwargs):
-        super().__init__(container)
-        self.logger = logging.getLogger("samos")
-        self.DMD = kwargs['DMD']
-
-        self.PAR = SAMOS_Parameters()
-        
-        self.fits_dir = get_fits_dir()
-
-        self.left_frame = tk.Frame(self, background="dark gray", width=600, height=500)
-        self.left_frame.place(x=0, y=0)
-        self.right_frame = tk.Frame(self, background="dark gray", width=400, height=500)
-        self.right_frame.place(x=585, y=0)
+        super().__init__(parent, container, **kwargs)
 
         # Set up directories frame
-        frame = tk.LabelFrame(self.left_frame, text="Directories", font=BIGFONT)
-        frame.place(x=4, y=4, anchor="nw", width=592, height=225)
+        frame = tk.LabelFrame(self.main_frame, text="Directories", font=BIGFONT, borderwidth=2)
+        frame.grid(row=0, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        tk.Label(frame, text=self.PAR.dir_dict['dir_Motors']).place(x=4, y=10)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_CCD']).place(x=4, y=35)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_DMD']).place(x=4, y=60)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_SOAR']).place(x=4, y=85)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_SAMI']).place(x=4, y=110)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_Astrom']).place(x=4, y=135)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_system']).place(x=4, y=160)
+        tk.Label(frame, text=self.PAR.dir_dict['dir_Motors']).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text=self.PAR.dir_dict['dir_CCD']).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text=self.PAR.dir_dict['dir_DMD']).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text=self.PAR.dir_dict['dir_SOAR']).grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text=self.PAR.dir_dict['dir_SAMI']).grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text=self.PAR.dir_dict['dir_Astrom']).grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text=self.PAR.dir_dict['dir_system']).grid(row=6, column=0, sticky=TK_STICKY_ALL)
 
         self.dir_Motors = tk.StringVar()
         self.dir_Motors.set(self.PAR.dir_dict['dir_Motors'])
-        tk.Entry(frame, width=25, textvariable=self.dir_Motors).place(x=140, y=10)
+        tk.Entry(frame, width=25, textvariable=self.dir_Motors).grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.dir_CCD = tk.StringVar()
         self.dir_CCD.set(self.PAR.dir_dict['dir_CCD'])
-        tk.Entry(frame, width=25, textvariable=self.dir_CCD).place(x=140, y=35)
+        tk.Entry(frame, width=25, textvariable=self.dir_CCD).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.dir_DMD = tk.StringVar()
         self.dir_DMD.set(self.PAR.dir_dict['dir_DMD'])
-        tk.Entry(frame, width=25, textvariable=self.dir_DMD).place(x=140, y=60)
+        tk.Entry(frame, width=25, textvariable=self.dir_DMD).grid(row=2, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.dir_SOAR = tk.StringVar()
         self.dir_SOAR.set(self.PAR.dir_dict['dir_SOAR'])
-        tk.Entry(frame, width=25, textvariable=self.dir_SOAR).place(x=140, y=85)
+        tk.Entry(frame, width=25, textvariable=self.dir_SOAR).grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.dir_SAMI = tk.StringVar()
         self.dir_SAMI.set(self.PAR.dir_dict['dir_SAMI'])
-        tk.Entry(frame, width=25, textvariable=self.dir_SAMI).place(x=140, y=110)
+        tk.Entry(frame, width=25, textvariable=self.dir_SAMI).grid(row=4, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.dir_Astrom = tk.StringVar()
         self.dir_Astrom.set(self.PAR.dir_dict['dir_Astrom'])
-        tk.Entry(frame, width=25, textvariable=self.dir_Astrom).place(x=140, y=135)
+        tk.Entry(frame, width=25, textvariable=self.dir_Astrom).grid(row=5, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.dir_system = tk.StringVar()
         self.dir_system.set(self.PAR.dir_dict['dir_system'])
-        tk.Entry(frame, width=25, textvariable=self.dir_system).place(x=140, y=160)
+        tk.Entry(frame, width=25, textvariable=self.dir_system).grid(row=6, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
-        tk.Button(frame, text="Load Current", relief="raised", command=self.load_dir_user, font=BIGFONT).place(x=380, y=10)
-        tk.Button(frame, text="Save Current", relief="raised", command=self.save_dir_user, font=BIGFONT).place(x=380, y=50)
-        tk.Button(frame, text="Load Default", relief="raised", command=self.load_dir_default, font=BIGFONT).place(x=380, y=90)
+        b = tk.Button(frame, text="Load Current", relief="raised", command=self.load_dir_user, font=BIGFONT)
+        b.grid(row=7, column=0, sticky=TK_STICKY_ALL)
+        b = tk.Button(frame, text="Save Current", relief="raised", command=self.save_dir_user, font=BIGFONT)
+        b.grid(row=7, column=1, sticky=TK_STICKY_ALL)
+        b = tk.Button(frame, text="Load Default", relief="raised", command=self.load_dir_default, font=BIGFONT)
+        b.grid(row=7, column=2, sticky=TK_STICKY_ALL)
 
         # Set up servers frame
-        frame = tk.LabelFrame(self.left_frame, text="Servers", font=BIGFONT)
-        frame.place(x=4, y=234, anchor="nw", width=592, height=200)
+        frame = tk.LabelFrame(self.main_frame, text="Servers", font=BIGFONT, borderwidth=2)
+        frame.grid(row=1, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        tk.Radiobutton(frame, text='Inside', variable=self.PAR.inoutvar, value='inside', 
-                       command=self.load_IP_default).place(x=20, y=0)
-        tk.Radiobutton(frame, text='Outside (with VPN)', variable=self.PAR.inoutvar, 
-                       value='outside', command=self.load_IP_default).place(x=150, y=0)
+        b = tk.Radiobutton(frame, text='Inside', variable=self.PAR.inoutvar, value='inside', command=self.load_IP_default)
+        b.grid(row=0, column=0, columnspan=1, sticky=TK_STICKY_ALL)
+        b = tk.Radiobutton(frame, text='Outside (with VPN)', variable=self.PAR.inoutvar, value='outside', 
+                           command=self.load_IP_default)
+        b.grid(row=0, column=2, columnspan=2, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="SAMOS Motors").place(x=4, y=35)
-        tk.Label(frame, text="CCD").place(x=4, y=60)
-        tk.Label(frame, text="DMD").place(x=4, y=85)
-        tk.Label(frame, text="SOAR Telescope").place(x=4, y=110)
-        tk.Label(frame, text="SOAR SAMI").place(x=4, y=135)
+        tk.Label(frame, text="SAMOS Motors").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text="CCD").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text="DMD").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text="SOAR Telescope").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text="SOAR SAMI").grid(row=5, column=0, sticky=TK_STICKY_ALL)
 
         self.IP_Motors = tk.StringVar()
         self.IP_Motors.set(self.PAR.IP_dict['IP_Motors'])
-        tk.Entry(frame, width=20, textvariable=self.IP_Motors).place(x=120, y=35)
+        tk.Entry(frame, width=20, textvariable=self.IP_Motors).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.IP_CCD = tk.StringVar()
         self.IP_CCD.set(self.PAR.IP_dict['IP_CCD'])
-        tk.Entry(frame, width=20, textvariable=self.IP_CCD).place(x=120, y=60)
+        tk.Entry(frame, width=20, textvariable=self.IP_CCD).grid(row=2, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.IP_DMD = tk.StringVar()
         self.IP_DMD.set(self.PAR.IP_dict['IP_DMD'])
-        tk.Entry(frame, width=20, textvariable=self.IP_DMD).place(x=120, y=85)
+        tk.Entry(frame, width=20, textvariable=self.IP_DMD).grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.IP_SOAR = tk.StringVar()
         self.IP_SOAR.set(self.PAR.IP_dict['IP_SOAR'])
-        tk.Entry(frame, width=20, textvariable=self.IP_SOAR).place(x=120, y=110)
+        tk.Entry(frame, width=20, textvariable=self.IP_SOAR).grid(row=4, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.IP_SAMI = tk.StringVar()
         self.IP_SAMI.set(self.PAR.IP_dict['IP_SAMI'])
-        tk.Entry(frame, width=20, textvariable=self.IP_SAMI).place(x=120, y=135)
+        tk.Entry(frame, width=20, textvariable=self.IP_SAMI).grid(row=5, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
-        self.IP_Motors_on_button = tk.Button(frame, image=self.PAR.Image_off, bd=0, 
-                                             command=self.Motors_switch).place(x=320, y=39)
-        self.CCD_on_button = tk.Button(frame, image=self.PAR.Image_off, bd=0, command=self.CCD_switch).place(x=320, y=64)
-        self.DMD_on_button = tk.Button(frame, image=self.PAR.Image_off, bd=0, command=self.DMD_switch).place(x=320, y=89)
-        self.SOAR_Tel_on_button = tk.Button(frame, image=self.PAR.Image_off, bd=0, 
-                                            command=self.SOAR_switch).place(x=320, y=113)
-        self.SOAR_SAMI_on_button = tk.Button(frame, image=self.PAR.Image_off, bd=0, 
-                                             command=self.SAMI_switch).place(x=320, y=139)
-
+        self.IP_Motors_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.Motors_switch)
+        self.IP_Motors_on_button.grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        self.CCD_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.CCD_switch)
+        self.CCD_on_button.grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        self.DMD_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.DMD_switch)
+        self.DMD_on_button.grid(row=3, column=3, sticky=TK_STICKY_ALL)
+        self.SOAR_Tel_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.SOAR_switch)
+        self.SOAR_Tel_on_button.grid(row=4, column=3, sticky=TK_STICKY_ALL)
+        self.SOAR_SAMI_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.SAMI_switch)
+        self.SOAR_SAMI_on_button.grid(row=5, column=3, sticky=TK_STICKY_ALL)
 
         # Other entries
-        frame = tk.LabelFrame(self.right_frame, text="Observer Data", font=BIGFONT)
-        frame.place(x=4, y=4, width=392, height=225)
+        frame = tk.LabelFrame(self.main_frame, text="Observer Data", font=BIGFONT, borderwidth=2)
+        frame.grid(row=0, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        tk.Label(frame, text="Telescope").place(x=4, y=10)
+        tk.Label(frame, text="Telescope").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.Telescope = tk.StringVar()
         self.Telescope.set(self.PAR.PotN['Telescope'])
-        tk.Entry(frame, width=20, textvariable=self.Telescope).place(x=140, y=10)
+        tk.Entry(frame, width=20, textvariable=self.Telescope).grid(row=0, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Program ID").place(x=4, y=35)
+        tk.Label(frame, text="Program ID").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.Program_ID = tk.StringVar()
         self.Program_ID.set(self.PAR.PotN['Program ID'])
-        tk.Entry(frame, width=20, textvariable=self.Program_ID).place(x=140, y=35)
+        tk.Entry(frame, width=20, textvariable=self.Program_ID).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Proposal Title").place(x=4, y=60)
+        tk.Label(frame, text="Proposal Title").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         self.Proposal_Title = tk.StringVar()
         self.Proposal_Title.set(self.PAR.PotN['Proposal Title'])
-        tk.Entry(frame, width=20, textvariable=self.Proposal_Title).place(x=140, y=60)
+        tk.Entry(frame, width=20, textvariable=self.Proposal_Title).grid(row=2, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Principal Investigator").place(x=4, y=85)
+        tk.Label(frame, text="Principal Investigator").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.Principal_Investigator = tk.StringVar()
         self.Principal_Investigator.set(self.PAR.PotN['Principal Investigator'])
-        tk.Entry(frame, width=20, textvariable=self.Principal_Investigator).place(x=140, y=85)
+        tk.Entry(frame, width=20, textvariable=self.Principal_Investigator).grid(row=3, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Observer").place(x=4, y=110)
+        tk.Label(frame, text="Observer").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         self.Observer = tk.StringVar()
         self.Observer.set(self.PAR.PotN['Observer'])
-        tk.Entry(frame, width=20, textvariable=self.Observer).place(x=140, y=110)
+        tk.Entry(frame, width=20, textvariable=self.Observer).grid(row=4, column=1, sticky=TK_STICKY_ALL)
 
+        tk.Label(frame, text="Telescope Operator ").grid(row=5, column=0, sticky=TK_STICKY_ALL)
         self.TO_var = tk.StringVar()
         self.TO_var.set(self.PAR.PotN['Telescope Operator'])
-        tk.Label(frame, text="Telescope Operator ").place(x=4, y=135)
-        tk.Entry(frame, width=20, textvariable=self.TO_var).place(x=140, y=135)
+        tk.Entry(frame, width=20, textvariable=self.TO_var).grid(row=5, column=1, sticky=TK_STICKY_ALL)
 
         # Initialize
-        frame = tk.LabelFrame(self.right_frame, text="Logbook", font=BIGFONT)
-        frame.place(x=4, y=234, width=392, height=96)
-        tk.Button(frame, text="Initialize Logbook", relief="raised", command=self.LogBookstartup).place(x=4, y=20)
+        frame = tk.LabelFrame(self.main_frame, text="Logbook", font=BIGFONT, borderwidth=2)
+        frame.grid(row=1, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
+        b = tk.Button(frame, text="Initialize Logbook", relief="raised", command=self.LogBookstartup)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         
 
     def LogBookstartup(self):
@@ -247,14 +244,14 @@ class ConfigPage(ttk.Frame):
         # print("\n Motors return:>", answer,"<")
         if answer != "no connection":
             print("Motors are on")
-            self.IP_Motors_on_button.config(image=self.PAR.Image_on)
+            self.IP_Motors_on_button.config(image=self.on_sm)
             print('echo from server:')
             self.PAR.IP_status_dict['IP_Motors'] = True
             # PCM.power_on()
 
         else:
             print("Motors are off\n")
-            self.IP_Motors_on_button.config(image=self.PAR.Image_off)
+            self.IP_Motors_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_Motors'] = False
 
 
@@ -265,11 +262,11 @@ class ConfigPage(ttk.Frame):
         print("CCD returns:>", answer, "<")
         if str(answer) == '<HTML>':
             print("CCD is on")
-            self.CCD_on_button.config(image=self.PAR.Image_on)
+            self.CCD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_CCD'] = True
         else:
             print("\nCCD is off\n")
-            self.CCD_on_button.config(image=self.PAR.Image_off)
+            self.CCD_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_CCD'] = False
 
         # DMD alive?
@@ -280,11 +277,11 @@ class ConfigPage(ttk.Frame):
         answer = self.DMD._open()
         if answer != "no DMD":
             print("\n DMD is on")
-            self.DMD_on_button.config(image=self.PAR.Image_on)
+            self.DMD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_DMD'] = True
         else:
             print("\n DMD is off")
-            self.DMD_on_button.config(image=self.PAR.Image_off)
+            self.DMD_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_DMD'] = False
 
         self.save_IP_status()
@@ -295,11 +292,11 @@ class ConfigPage(ttk.Frame):
     def Motors_switch(self):
         """ Determine is on or off """
         if self.PAR.IP_status_dict['IP_Motors']:
-            self.IP_Motors_on_button.config(image=self.PAR.Image_off)
+            self.IP_Motors_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_Motors'] = False
             PCM.power_off()
         else:
-            self.IP_Motors_on_button.config(image=self.PAR.Image_on)
+            self.IP_Motors_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_Motors'] = True
             self.save_IP_status()
             PCM.IP_host = self.IP_Motors
@@ -311,10 +308,10 @@ class ConfigPage(ttk.Frame):
     def CCD_switch(self):
         """ Determine is on or off """
         if self.PAR.IP_status_dict['IP_CCD']:
-            self.CCD_on_button.config(image=self.PAR.Image_off)
+            self.CCD_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_CCD'] = False
         else:
-            self.CCD_on_button.config(image=self.PAR.Image_on)
+            self.CCD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_CCD'] = True
         self.save_IP_status()
         print(self.PAR.IP_status_dict)
@@ -323,10 +320,10 @@ class ConfigPage(ttk.Frame):
     def DMD_switch(self):
         """ Determine is on or off """
         if self.PAR.IP_status_dict['IP_DMD']:
-            self.DMD_on_button.config(image=self.PAR.Image_off)
+            self.DMD_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_DMD'] = False
         else:
-            self.DMD_on_button.config(image=self.PAR.Image_on)
+            self.DMD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_DMD'] = True
         self.save_IP_status()
         print(self.PAR.IP_status_dict)
@@ -335,10 +332,10 @@ class ConfigPage(ttk.Frame):
     def SOAR_switch(self):
         """ Determine is on or off """
         if self.PAR.IP_status_dict['IP_SOAR']:
-            self.SOAR_Tel_on_button.config(image=self.PAR.Image_off)
+            self.SOAR_Tel_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_SOAR'] = False
         else:
-            self.SOAR_Tel_on_button.config(image=self.PAR.Image_on)
+            self.SOAR_Tel_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_SOAR'] = True
         self.save_IP_status()
         print(self.PAR.IP_status_dict)
@@ -347,10 +344,10 @@ class ConfigPage(ttk.Frame):
     def SAMI_switch(self):
         """ Determine is on or off """
         if self.PAR.IP_status_dict['IP_SAMI']:
-            self.SOAR_SAMI_on_button.config(image=self.PAR.Image_off)
+            self.SOAR_SAMI_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_SAMI'] = False
         else:
-            self.SOAR_SAMI_on_button.config(image=self.PAR.Image_on)
+            self.SOAR_SAMI_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_SAMI'] = True
         self.save_IP_status()
         print(self.PAR.IP_status_dict)
@@ -359,38 +356,6 @@ class ConfigPage(ttk.Frame):
     def client_exit(self):
         """ to be written """
         print("complete")
-        # self.master.destroy()
-
-
-    def create_menubar(self, parent):
-        # the size of the window is controlled when the menu is loaded
-        parent.geometry("1000x520")
-        parent.title("SAMOS Configuration")
-
-        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
-
-        # Filemenu
-        filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, activebackground="#026AA9")
-        menubar.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(label="Config", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_command(label="DMD", command=lambda: parent.show_frame("DMDPage"))
-        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame("CCD2DMDPage"))
-        filemenu.add_command(label="Motors", command=lambda: parent.show_frame("MotorsPage"))
-        filemenu.add_command(label="CCD", command=lambda: parent.show_frame("CCDPage"))
-        filemenu.add_command(label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
-        filemenu.add_command(label="MainPage", command=lambda: parent.show_frame("MainPage"))
-        filemenu.add_separator()
-        filemenu.add_command(label="ETC", command=lambda: parent.show_frame("ETCPage"))
-        filemenu.add_command(label="Exit", command=parent.quit)
-
-        # help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
-        help_menu.add_separator()
-
-        return menubar
     
 
     def _load_dir(self, data_file):

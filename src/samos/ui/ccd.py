@@ -10,52 +10,43 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
+from .common_frame import SAMOSFrame
 
-class CCDPage(ttk.Frame):
+
+class CCDPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
-        super().__init__(container)
-        self.logger = logging.getLogger("samos")
+        super().__init__(parent, container, **kwargs)
         self.logger.debug('Initializing CCD control frame')
 
-        # Define Our Images
-        self.on_png = tk.PhotoImage(file=get_data_file("tk.icons", "on_small.png"))
-        self.off_png = tk.PhotoImage(file=get_data_file("tk.icons", "off_small.png"))
-
-        # Label for the full frame
-        tk.Label(self, text="CCD Page", font=('Times', '20')).pack(pady=0, padx=0)
-
-        # Set up main frame
-        main_frame = tk.Frame(self, background="cyan")
-        main_frame.place(x=0, y=0, anchor="nw", width=950, height=590)
-
         # CCD Setup Panel
-        ccd_frame = tk.LabelFrame(main_frame, text="Camera Setup", font=BIGFONT)
-        ccd_frame.pack(fill="both", expand="yes")
+        self.main_frame.config(background="cyan")
 
         # CAMERA ON/OFF SWITCH
         self.camera_is_on = False
-        self.label_camera = tk.Label(ccd_frame, text=self.cam, fg="grey", font=BIGFONT)
-        self.label_camera.place(x=4, y=8)
-        self.button_camera = tk.Button(ccd_frame, image=self.cimg, bd=0, command=self.toggle_camera)
-        self.button_camera.place(x=180, y=0)
+        self.label_camera = tk.Label(self.main_frame, text=self.cam, fg="grey", font=BIGFONT)
+        self.label_camera.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
+        self.button_camera = tk.Button(self.main_frame, image=self.cam_img, bd=0, command=self.toggle_camera)
+        self.button_camera.grid(row=0, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
         # COOLER ON/OFF SWITCH
         self.cooler_is_on = False
-        self.label_cooler = tk.Label(ccd_frame, text=self.cool, fg="grey", font=BIGFONT)
-        self.label_cooler.place(x=4, y=58)
-        self.button_cooler = tk.Button(ccd_frame, image=self.coolimg, bd=0, command=self.toggle_cooler)
-        self.button_cooler.place(x=180, y=50)
+        self.label_cooler = tk.Label(self.main_frame, text=self.cool, fg="grey", font=BIGFONT)
+        self.label_cooler.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
+        self.button_cooler = tk.Button(self.main_frame, image=self.cool_img, bd=0, command=self.toggle_cooler)
+        self.button_cooler.grid(row=1, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
         # COOLER TEMPERATURE SETUP AND VALUE
-        tk.Label(ccd_frame, text="CCD Temperature Sepoint (C)").place(x=4, y=98)
+        l = tk.Label(self.main_frame, text="CCD Temperature Sepoint (C)")
+        l.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
         self.Tset = tk.StringVar()
         self.Tset.set("-90")
-        entry_Tset = tk.Entry(ccd_frame, textvariable=self.Tset, width=5, bd=3)
-        entry_Tset.place(x=200, y=96)
-        tk.Label(ccd_frame, text="Current CCD Temperature (K)").place(x=4, y=128)
+        entry_Tset = tk.Entry(self.main_frame, textvariable=self.Tset, width=5, bd=3)
+        entry_Tset.grid(row=2, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
+        l = tk.Label(self.main_frame, text="Current CCD Temperature (K)")
+        l.grid(row=3, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
         self.Tdet = tk.IntVar()
-        tk.Label(ccd_frame, textvariable=self.Tdet, font=('Arial', 16), borderwidth=3, relief="sunken", 
-                 bg="green", fg="white", text=str(273)).place(x=200, y=126)
+        tk.Label(self.main_frame, textvariable=self.Tdet, font=('Arial', 16), borderwidth=3, relief="sunken", 
+                 bg="green", fg="white", text=str(273)).grid(row=3, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
         self.Tdet.set(273)
 
 
@@ -64,7 +55,7 @@ class CCDPage(ttk.Frame):
             self.camera_is_on = False
         else:
             self.camera_is_on = True
-        self.button_camera.config(image=self.cimg)
+        self.button_camera.config(image=self.cam_img)
         self.label_camera.config(text=self.cam, fg="grey")
 
 
@@ -75,36 +66,6 @@ class CCDPage(ttk.Frame):
             self.cooler_is_on = True
         self.button_cooler.config(image=self.cool_img)
         self.label_cooler.config(text=self.cool, fg="green")
-
-
-    def create_menubar(self, parent):
-        parent.geometry("900x600")
-        parent.title("SAMOS CCD Controller")
-
-        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
-
-        # Filemenu
-        filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, activebackground="#026AA9")
-        menubar.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(label="Config", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_command(label="DMD", command=lambda: parent.show_frame("DMDPage"))
-        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame("CCD2DMDPage"))
-        filemenu.add_command(label="Motors", command=lambda: parent.show_frame("MotorsPage"))
-        filemenu.add_command(label="CCD", command=lambda: parent.show_frame("CCDPage"))
-        filemenu.add_command(label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
-        filemenu.add_command(label="MainPage", command=lambda: parent.show_frame("MainPage"))
-        filemenu.add_separator()
-        filemenu.add_command(label="ETC", command=lambda: parent.show_frame("ETCPage"))
-        filemenu.add_command(label="Exit", command=parent.quit)
-
-        # help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
-        help_menu.add_separator()
-
-        return menubar
     
     
     @property
@@ -118,14 +79,14 @@ class CCDPage(ttk.Frame):
     
     
     @property
-    def cimg(self):
+    def cam_img(self):
         """
         This property points to the appropriate image for the camera button given the 
         camera state
         """
         if self.camera_is_on:
-            return self.on_png
-        return self.off_png
+            return self.on_big
+        return self.off_big
 
 
     @property
@@ -139,11 +100,11 @@ class CCDPage(ttk.Frame):
     
     
     @property
-    def coolimg(self):
+    def cool_img(self):
         """
         This property points to the appropriate image for the cooler button given the 
         cooler state
         """
         if self.cooler_is_on:
-            return self.on_png
-        return self.off_png
+            return self.on_big
+        return self.off_big

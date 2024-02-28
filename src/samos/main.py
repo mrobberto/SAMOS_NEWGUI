@@ -18,6 +18,7 @@ from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.system import WriteFITSHead as WFH
+from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage
 from samos.utilities.constants import *
 
@@ -39,26 +40,19 @@ class App(tk.Tk):
             "Motors": Class_PCM(),
             "SOAR": Class_SOAR(),
             "convert": CONVERT(),
-            "main_fits_header": WFH.FITSHead()
+            "main_fits_header": WFH.FITSHead(),
+            "PAR": SAMOS_Parameters()
         }
         
         # Setting up Initial Things
         self.title("SAMOS Control System")
-        self.geometry("1100x500")
-        self.resizable(True, True)
-
-        # Tabbed interface not currently working        
-#         container = ttk.Notebook(self, width=1100)
-#         self.frames = {}
-#         for frame_class in self.FRAME_CLASSES:
-#             frame = frame_class(self, container, **self.samos_classes)
-#             self.frames[frame_class.__name__] = frame
-#             container.add(frame, text=frame_class.__name__)
-#         self.show_frame("ConfigPage")
+        self.resizable(False, False)
 
         # Creating a container
-        container = tk.Frame(self, bg="#8AA7A9", width=1100)
-        container.pack(side="top", fill="both", expand=True)
+        container = tk.Frame(self, bg="#8AA7A9")#, width=1100)
+        # We want to use grid rather than pack, but that means we have to adjust other
+        # classes first
+        container.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         
@@ -67,7 +61,7 @@ class App(tk.Tk):
         for frame_class in self.FRAME_CLASSES:
             frame = frame_class(self, container, **self.samos_classes)
             self.frames[frame_class.__name__] = frame
-            frame.grid(row=0, column=0, sticky="nsew")
+            frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.show_frame("ConfigPage")
 
 
@@ -76,6 +70,12 @@ class App(tk.Tk):
         new_frame = self.frames[frame]
         menubar = new_frame.create_menubar(self)
         self.configure(menu=menubar)
+        if hasattr(new_frame, "main_frame"):
+            self.geometry("{}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
+            print("New geometry {}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
+        else:
+            self.geometry("{}x{}".format(new_frame.winfo_width(), new_framewinfo_height()))
+            print("New geometry {}x{}".format(new_frame.winfo_width(), new_frame.winfo_height()))
         new_frame.tkraise()
     
     
