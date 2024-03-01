@@ -33,9 +33,10 @@ from samos.utilities.constants import *
 
 class SAMOSFrame(ttk.Frame):
 
-    def __init__(self, parent, container, **kwargs):
+    def __init__(self, parent, container, name, **kwargs):
         super().__init__(container)
         self.logger = logging.getLogger("samos")
+        self.parent = parent
         self.CCD = kwargs["CCD"]
         self.DMD = kwargs['DMD']
         self.PSima = kwargs["PSima"]
@@ -45,10 +46,11 @@ class SAMOSFrame(ttk.Frame):
         self.Motors = kwargs["Motors"]
         self.SOAR = kwargs["SOAR"]
         self.convert = kwargs["convert"]
+        self.main_fits_header = kwargs["main_fits_header"]
         self.PAR = kwargs["PAR"]
         self.fits_dir = get_fits_dir()
 
-        self.main_frame = tk.Frame(self, borderwidth=5)
+        self.main_frame = tk.LabelFrame(self, text=name, font=BIGFONT, borderwidth=5)
         self.main_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
         # Define Our Images

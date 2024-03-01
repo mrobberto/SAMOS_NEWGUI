@@ -51,7 +51,7 @@ from samos.ccd.Class_CCD_dev import Class_Camera
 from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
-from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.astrometry.skymapper import skymapper_interrogate
@@ -78,7 +78,7 @@ class GSPage(ttk.Frame):
         self.convert = kwargs['convert']
 
         #self.DMDPage = DMDPage
-        self.PAR = SAMOS_Parameters()
+        self.PAR = kwargs['PAR']
         self.ConfP = parent.frames["ConfigPage"]
 
         self.container = container
@@ -1724,7 +1724,6 @@ class GSPage(ttk.Frame):
         if sys.platform == "win32":
             parent.geometry("1260x930") # was "1400x920")
         parent.title("SAMOS Main Page")
-        self.PAR = SAMOS_Parameters()
 
         menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
                           activebackground="#80B9DC")

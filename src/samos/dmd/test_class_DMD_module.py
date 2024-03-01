@@ -13,7 +13,8 @@ import numpy as np
 #from photutils import CircularAperture
 
 # Actually import the controller
-from .Class_DMD_dev import DigitalMicroMirrorDevice
+from .dmd import DigitalMicroMirrorDevice
+from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 import time
 
 import pandas as pd
@@ -25,7 +26,7 @@ t0=time.perf_counter()
 # Config ID can map to device specifics in the future
 # I've left that up to whomever write the upper levels for the STUF
 
-dmd = DigitalMicroMirrorDevice()#config_id='pass') 
+dmd = DigitalMicroMirrorDevice(par=SAMOS_Parameters())
 dmd.initialize()
 
 # As we run commands we can check out whether or not they're working with a little nanny cam set up here  :

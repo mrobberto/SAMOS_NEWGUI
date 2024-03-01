@@ -42,13 +42,14 @@ from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 
 class Class_Camera(object):
     
-    def __init__(self,dict_params):
+    def __init__(self, dict_params, par):
         self.dict_params = dict_params.copy() #in the class, make a copy of the dict
         self.ExpTime = dict_params['Exposure Time']
         self.DetTemp = dict_params['CCD Temperature']
         self.TriggerMode = dict_params['Trigger Mode']
         self.NofFrames = dict_params['NofFrames']
         self.FrameSuff = None
+        self.PAR = par
         
         
  
@@ -154,7 +155,6 @@ class Class_Camera(object):
     def expose(self, night_dir_basename, start_fnumber):#, exp_progbar, exp_progbar_style, var_exp, 
                #read_progbar, read_progbar_style, var_read):
         self.FrameSuff = start_fnumber
-        self.PAR = SAMOS_Parameters()
         fnumber = int(start_fnumber.get())
         self.img_night_dir_list = []
         if 2<=len(sys.argv):
@@ -334,7 +334,7 @@ class Class_Camera(object):
             
             # write to file
             # 1) the last file is always saved as newimage.fit, and handled by ginga
-            fileout = os.path.join(self.PAR.QL_images,"newimage.fits")
+            fileout = self.PAR.QL_images / "newimage.fits"
             #os.remove(fileout)
             newFile = open(fileout, "wb")
             newFile.write(data)
@@ -382,7 +382,7 @@ class Class_Camera(object):
         global outname
         outname = os.path.join(fits_dir,'SAMOS_image_'+today.strftime('%H%M%S')+'.fits')
         import shutil  
-        shutil.copy(os.path.join(self.PAR.QL_images,'newimage_fixed.fit'), outname)
+        shutil.copy(self.PAR.QL_images / 'newimage_fixed.fit', outname)
     
     def delete_fitsfile(self):
         os.remove(outname)

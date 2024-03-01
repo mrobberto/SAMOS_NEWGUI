@@ -29,8 +29,9 @@ parent_dir = str(path.parent)
 from .hadamard_class_v3 import *
 HTSI = HTSI_Models()
 
-from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
-dmd = DigitalMicroMirrorDevice()#config_id='pass') 
+from samos.dmd import DigitalMicroMirrorDevice
+from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
+dmd = DigitalMicroMirrorDevice(par=SAMOS_Parameters())
 dmd.initialize()
 
 import pandas as pd

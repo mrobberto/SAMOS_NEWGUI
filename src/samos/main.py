@@ -3,6 +3,9 @@
 Main entrypoint to SAMOS GUI
 """
 import logging
+import multiprocessing as mp
+import socket
+import sys
 
 from ginga.util import iqcalc
 from ginga.AstroImage import AstroImage
@@ -14,25 +17,33 @@ from samos.astrometry.panstarrs.image import PanStarrsImage as PS_image
 from samos.astrometry.panstarrs.catalog import PanStarrsCatalog as PS_table
 from samos.ccd.Class_CCD_dev import Class_Camera
 from samos.dmd.convert.CONVERT_class import CONVERT
-from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.system import WriteFITSHead as WFH
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage
 from samos.utilities.constants import *
+from samos.utilities.simulator import start_simulator
 
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.logger = logging.getLogger('samos')
-        self.logger.debug("Initializing App")
+        self.logger.setLevel(logging.INFO)
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.INFO)
+        self.logger.addHandler(handler)
+        self.logger.info("Initializing App")
+        self.PAR = SAMOS_Parameters()
+        self.simulator = None
+        self.protocol("WM_DELETE_WINDOW", self.destroy)
         
         # Instantiate the classes that represent the SAMOS hardware
         self.samos_classes = {
-            "CCD": Class_Camera(dict_params=self.CCD_PARAMS),
-            "DMD": DigitalMicroMirrorDevice(),
+            "CCD": Class_Camera(dict_params=CCD_PARAMS, par=self.PAR),
+            "DMD": DigitalMicroMirrorDevice(par=self.PAR),
             "PSima": PS_image(),
             "PStab": PS_table(),
             "img": AstroImage(),
@@ -41,7 +52,7 @@ class App(tk.Tk):
             "SOAR": Class_SOAR(),
             "convert": CONVERT(),
             "main_fits_header": WFH.FITSHead(),
-            "PAR": SAMOS_Parameters()
+            "PAR": self.PAR
         }
         
         # Setting up Initial Things
@@ -79,6 +90,55 @@ class App(tk.Tk):
         new_frame.tkraise()
     
     
+    def initialize_simulator(self):
+        """
+        Starts the simulated SAMOS telescope if it isn't already.
+        """
+        if self.PAR.simulated:
+            self.logger.warning("Attempted to start simulator when already simulated.")
+        self.logger.info("Starting Simulator")
+        for key in self.PAR.IP_dict:
+            host, port = self.PAR.IP_dict[key].split(":")
+            if host != "127.0.0.1":
+                self.logger.error("SAMOS simulator can only run on localhost!")
+        self.app_pipe, sim_pipe = mp.Pipe()
+        self.simulator = mp.Process(target=start_simulator, args=(self.PAR.IP_dict, sim_pipe))
+        self.PAR.simulated = True
+        self.simulator.daemon = True
+        self.simulator.start()
+        self.logger.info("Simulator Running")
+    
+    
+    def destroy_simulator(self):
+        """
+        If the simulated SAMOS telescope is running, send it a shutdown message
+        """
+        if not self.PAR.simulated:
+            self.logger.warning("Attempted to shut down already inactive simulator")
+        self.logger.info("Shutting Down Simulator")
+        self.simulator.terminate()
+        self.app_pipe.send("SHUTDOWN!")
+        self.simulator.join()
+        self.simulator.close()
+        self.logger.info("Simulator has shut down.")
+        self.PAR.simulated = False
+        self.simulator = None
+
+
+    def destroy(self):
+        """
+        While closing, if running the simulator, close it.
+        """
+        self.logger.warning("Shutting down SAMOS")
+        if self.simulator is not None:
+            self.simulator.terminate()
+            self.simulator.join()
+            self.simulator.close()
+            self.logger.info("Simulator has exited")
+        self.logger.warning("Finished shutdown functions")
+        super().destroy()
+
+    
     FRAME_CLASSES = [
         ConfigPage, 
         DMDPage, 
@@ -90,10 +150,6 @@ class App(tk.Tk):
         ETCPage, 
         GSPage
     ]
-
-    # Trigger Mode = 4: light
-    # Trigger Mode = 5: dark
-    CCD_PARAMS = {'Exposure Time': 0, 'CCD Temperature': 2300, 'Trigger Mode': 4, 'NofFrames': 1}
 
 
 def run_samos():

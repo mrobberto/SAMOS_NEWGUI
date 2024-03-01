@@ -17,7 +17,8 @@ parent_dir = str(path.parent)
 params = {'Exposure Time':5000,'CCD Temperature':2300,'Trigger Mode': 4, 'NofFrames': 1}
 from samos.utilities import get_data_file
 from samos.ccd.Class_CCD import Class_Camera
-Camera= Class_Camera(dict_params=params)
+from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
+Camera= Class_Camera(dict_params=params, par=SAMOS_Parameters())
 from samos.motors.Class_PCM import Class_PCM
 PCM = Class_PCM()
 if PCM.MOTORS_onoff == 0:
@@ -28,8 +29,8 @@ print(PCM.echo_client())
 PCM.power_on()
 
 # Actually import the controller
-from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
-dmd = DigitalMicroMirrorDevice()#config_id='pass') 
+from samos.dmd import DigitalMicroMirrorDevice
+dmd = DigitalMicroMirrorDevice(par=SAMOS_Parameters())
 dmd.initialize()
 
 import pandas as pd

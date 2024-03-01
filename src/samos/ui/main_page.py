@@ -51,7 +51,7 @@ from samos.ccd.Class_CCD_dev import Class_Camera
 from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
-from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.astrometry.skymapper import skymapper_interrogate
@@ -79,7 +79,7 @@ class MainPage(ttk.Frame):
         self.convert = kwargs['convert']
 
         #self.DMDPage = DMDPage
-        self.PAR = SAMOS_Parameters()
+        self.PAR = kwargs["PAR"]
         self.ConfP = parent.frames["ConfigPage"]
 
         self.container = container
@@ -2276,7 +2276,7 @@ class MainPage(ttk.Frame):
         #
         # START WITH DEFINITIONS
         self.current_night_dir_filenames = []
-        Camera = Class_Camera(dict_params=params)
+        Camera = Class_Camera(dict_params=params, par=self.PAR)
         Camera.exp_progbar = self.exp_progbar
         Camera.exp_progbar_style = self.exp_progbar_style
         Camera.var_exp = self.var_perc_exp_done
@@ -2343,7 +2343,6 @@ class MainPage(ttk.Frame):
         None.
 
         """
-#        Camera = Class_Camera(dict_params=params)
         for fname in newfiles:
             
             #FIX THE HEADERS
@@ -2437,7 +2436,6 @@ class MainPage(ttk.Frame):
         None.
 
         """
-#        Camera = Class_Camera(dict_params=params)
         for fname in newfiles:
             
             #FIX THE HEADERS
@@ -2509,7 +2507,6 @@ class MainPage(ttk.Frame):
         None.
 
         """
-#        Camera = Class_Camera(dict_params=params)
         superdark_s = np.zeros( (1032,1056) )
         for fname in newfiles:
             
@@ -2619,7 +2616,6 @@ class MainPage(ttk.Frame):
         None.
 
         """
-#        Camera = Class_Camera(dict_params=params)
         running_flat = np.zeros( (1032,1056) )
         for fname in newfiles:
             
@@ -2759,7 +2755,6 @@ class MainPage(ttk.Frame):
         None.
 
         """
-#        Camera = Class_Camera(dict_params=params)
         for fname in newfiles:
             
             #FIX THE HEADERS

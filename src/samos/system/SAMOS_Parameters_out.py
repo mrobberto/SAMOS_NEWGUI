@@ -19,7 +19,7 @@ parent_dir = str(path.parent)
 from samos.utilities import get_data_file
 
 class SAMOS_Parameters():
-    """ Collection of paramaeters to be shared by the classes """
+    """ Collection of parameters to be shared by the classes """
 
     def __init__(self):
         """
@@ -31,9 +31,6 @@ class SAMOS_Parameters():
             self.inoutvar
             self.scale_DMD2PIXEL = 0.892
         """
-
-        self.Image_on = tk.PhotoImage(file=get_data_file("tk.icons", "on_small.png"))
-        self.Image_off = tk.PhotoImage(file=get_data_file("tk.icons", "off_small.png"))
 
         self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD': '/ccd',
@@ -64,17 +61,9 @@ class SAMOS_Parameters():
                                'IP_SOAR': False,
                                'IP_SAMI': False,
                                }
-        """ REMOVED
-        self.IP_dict =  {'IP_Motors': '128.220.146.254:8889',
-                         'IP_CCD'   : '128.220.146.254:8900',
-                         'IP_DMD'   : '128.220.146.254:8888',
-                         'IP_SOAR'  : 'TBD',
-                         'IP_SAMI'  : 'TBD',
-                        } 
-        """
-
-        self.inoutvar = tk.StringVar()
-        self.inoutvar.set("inside")
+        
+        # Is SAMOS running in simulated mode?
+        self.simulated = False
 
         self.SAMOS_arcs_mm_scale = 206265./ (4100*4) # f/4  arcsec/mm
         self.SOAR_arcs_mm_scale = 206265./ (4100*16.6) # f/4  arcsec/mm

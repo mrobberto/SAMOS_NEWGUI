@@ -22,6 +22,11 @@ import sys
 import tkinter as tk
 
 
+# Required parameters when initializing the CCD class
+# Trigger Mode = 4: light
+# Trigger Mode = 5: dark
+CCD_PARAMS = {'Exposure Time': 0, 'CCD Temperature': 2300, 'Trigger Mode': 4, 'NofFrames': 1}
+
 # Color Information
 INDICATOR_LIGHT_ON_COLOR = "#08F903"
 INDICATOR_LIGHT_OFF_COLOR = "#194A18"

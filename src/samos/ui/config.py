@@ -23,7 +23,7 @@ from .common_frame import SAMOSFrame
 class ConfigPage(SAMOSFrame):
 
     def __init__(self, parent, container, **kwargs):
-        super().__init__(parent, container, **kwargs)
+        super().__init__(parent, container, "SAMOS Configuration", **kwargs)
 
         # Set up directories frame
         frame = tk.LabelFrame(self.main_frame, text="Directories", font=BIGFONT, borderwidth=2)
@@ -70,11 +70,14 @@ class ConfigPage(SAMOSFrame):
         frame = tk.LabelFrame(self.main_frame, text="Servers", font=BIGFONT, borderwidth=2)
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
+        self.PAR.inoutvar = tk.StringVar(None, "inside")
         b = tk.Radiobutton(frame, text='Inside', variable=self.PAR.inoutvar, value='inside', command=self.load_IP_default)
-        b.grid(row=0, column=0, columnspan=1, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text='Outside (with VPN)', variable=self.PAR.inoutvar, value='outside', 
                            command=self.load_IP_default)
-        b.grid(row=0, column=2, columnspan=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        b = tk.Radiobutton(frame, text='SIMULATED', fg='red', variable=self.PAR.inoutvar, value='simulated',
+                           command=self.load_IP_default).grid(row=0, column=2, sticky=TK_STICKY_ALL)
 
         tk.Label(frame, text="SAMOS Motors").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, text="CCD").grid(row=2, column=0, sticky=TK_STICKY_ALL)
@@ -195,9 +198,11 @@ class ConfigPage(SAMOSFrame):
     def load_IP_user(self):
         if self.PAR.inoutvar.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
-        else:
+        elif self.PAR.inoutvar.get() == 'outside':
             ip_file = get_data_file("system", "IP_addresses_default_outside.csv")
-        ip_file_default = os.path.join(dir_SYSTEM, "IP_addresses_default.csv")
+        elif self.PAR.inoutvar.get() == 'simulated':
+            ip_file = get_data_file("system", "IP_addresses_SIMULATED.csv")
+        ip_file_default = get_data_file("system", "IP_addresses_default.csv")
         shutil.copy(ip_file, ip_file_default)
         return self._load_ip(ip_file)
 
@@ -205,9 +210,11 @@ class ConfigPage(SAMOSFrame):
     def load_IP_default(self):
         if self.PAR.inoutvar.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
-        else:
+        elif self.PAR.inoutvar.get() == 'outside':
             ip_file = get_data_file("system", "IP_addresses_default_outside.csv")
-        ip_file_default = os.path.join(dir_SYSTEM, "IP_addresses_default.csv")
+        elif self.PAR.inoutvar.get() == 'simulated':
+            ip_file = get_data_file("system", "IP_addresses_SIMULATED.csv")
+        ip_file_default = get_data_file("system", "IP_addresses_default.csv")
         shutil.copy(ip_file, ip_file_default)
         return self._load_ip(ip_file_default)
 
@@ -215,9 +222,11 @@ class ConfigPage(SAMOSFrame):
     def save_IP_user(self):
         if self.PAR.inoutvar.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
-        else:
+        elif self.PAR.inoutvar.get() == 'outside':
             ip_file = get_data_file("system", "IP_addresses_default_outside.csv")
-        ip_file_default = os.path.join(dir_SYSTEM, "IP_addresses_default.csv")
+        elif self.PAR.inoutvar.get() == 'simulated':
+            ip_file = get_data_file("system", "IP_addresses_SIMULATED.csv")
+        ip_file_default = get_data_file("system", "IP_addresses_default.csv")
         shutil.copy(ip_file, ip_file_default)
         
         with open(ip_file, "w") as outf:
@@ -235,52 +244,51 @@ class ConfigPage(SAMOSFrame):
 
 
     def IP_echo(self):
-        """ MOTORS alive? """
-        print("\n Checking Motors status")
+        # Motors Alive?
+        self.logger.info("Checking Motor Status")
         IP = self.PAR.IP_dict['IP_Motors']
         [host, port] = IP.split(":")
         PCM.initialize(address=host, port=int(port))
         answer = PCM.echo_client()
-        # print("\n Motors return:>", answer,"<")
         if answer != "no connection":
-            print("Motors are on")
+            self.logger.info("Motors are on")
             self.IP_Motors_on_button.config(image=self.on_sm)
-            print('echo from server:')
+            self.logger.info('echo from server:')
             self.PAR.IP_status_dict['IP_Motors'] = True
             # PCM.power_on()
 
         else:
-            print("Motors are off\n")
+            self.logger.warning("Motors are off")
             self.IP_Motors_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_Motors'] = False
 
 
         # CCD alive?
-        print("\n Checking CCD status")
+        self.logger.info("Checking CCD status")
         url_name = "http://"+os.path.join(self.PAR.IP_dict['IP_CCD'])  # +'/'
         answer = (CCD.get_url_as_string(url_name))[:6]  # expect <HTML>
-        print("CCD returns:>", answer, "<")
+        self.logger.info("CCD returns: '''{}'''".format(answer))
         if str(answer) == '<HTML>':
-            print("CCD is on")
+            self.logger.info("CCD is on")
             self.CCD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_CCD'] = True
         else:
-            print("\nCCD is off\n")
+            self.logger.warning("CCD is off\n")
             self.CCD_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_CCD'] = False
 
         # DMD alive?
-        print("\n Checking DMD status")
+        self.logger.info("Checking DMD status")
         IP = self.PAR.IP_dict['IP_DMD']
         [host, port] = IP.split(":")
         self.DMD.initialize(address=host, port=int(port))
         answer = self.DMD._open()
         if answer != "no DMD":
-            print("\n DMD is on")
+            self.logger.info("DMD is on")
             self.DMD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_DMD'] = True
         else:
-            print("\n DMD is off")
+            self.logger.warning("DMD is off")
             self.DMD_on_button.config(image=self.off_sm)
             self.PAR.IP_status_dict['IP_DMD'] = False
 
@@ -302,7 +310,7 @@ class ConfigPage(SAMOSFrame):
             PCM.IP_host = self.IP_Motors
             PCM.power_on()
         self.save_IP_status()
-        print(self.PAR.IP_status_dict)
+        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
 
 
     def CCD_switch(self):
@@ -314,7 +322,7 @@ class ConfigPage(SAMOSFrame):
             self.CCD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_CCD'] = True
         self.save_IP_status()
-        print(self.PAR.IP_status_dict)
+        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
 
 
     def DMD_switch(self):
@@ -326,7 +334,7 @@ class ConfigPage(SAMOSFrame):
             self.DMD_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_DMD'] = True
         self.save_IP_status()
-        print(self.PAR.IP_status_dict)
+        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
 
 
     def SOAR_switch(self):
@@ -338,7 +346,7 @@ class ConfigPage(SAMOSFrame):
             self.SOAR_Tel_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_SOAR'] = True
         self.save_IP_status()
-        print(self.PAR.IP_status_dict)
+        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
 
 
     def SAMI_switch(self):
@@ -350,12 +358,7 @@ class ConfigPage(SAMOSFrame):
             self.SOAR_SAMI_on_button.config(image=self.on_sm)
             self.PAR.IP_status_dict['IP_SAMI'] = True
         self.save_IP_status()
-        print(self.PAR.IP_status_dict)
-
-
-    def client_exit(self):
-        """ to be written """
-        print("complete")
+        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
     
 
     def _load_dir(self, data_file):
@@ -378,10 +381,15 @@ class ConfigPage(SAMOSFrame):
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]: rows[1] for rows in reader}
         
-        for system in self.systems[:-2]:
+        for system in self.SYSTEMS[:-2]:
             key = "IP_{}".format(system)
             self.PAR.IP_dict[key] = dict_from_csv[key]
             getattr(self, key).set(dict_from_csv[key])
+        
+        if self.PAR.inoutvar.get() == "simulated":
+            self.parent.initialize_simulator()
+        else:
+            self.parent.destroy_simulator()
 
         return self.PAR.IP_dict
 

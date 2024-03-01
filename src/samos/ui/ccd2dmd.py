@@ -43,7 +43,7 @@ class CCD2DMDPage(SAMOSFrame):
     """ to be written """
 
     def __init__(self, parent, container, **kwargs):
-        super().__init__(parent, container, **kwargs)
+        super().__init__(parent, container, "CCD-DMD Calibration", **kwargs)
         self.fits_hdu = None
         self.sources_table = None
         self.dmd_table = None

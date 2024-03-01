@@ -51,7 +51,7 @@ from samos.ccd.Class_CCD_dev import Class_Camera
 from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
-from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
+from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.astrometry.skymapper import skymapper_interrogate
@@ -594,7 +594,6 @@ class SOARPage(ttk.Frame):
         """ to be written """
         parent.geometry("1100x500")
         parent.title("SOAR TCS")
-        self.PAR = SAMOS_Parameters()
 
         menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
                           activebackground="#80B9DC")

@@ -15,7 +15,7 @@ from .common_frame import SAMOSFrame
 
 class CCDPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
-        super().__init__(parent, container, **kwargs)
+        super().__init__(parent, container, "CCD Control", **kwargs)
         self.logger.debug('Initializing CCD control frame')
 
         # CCD Setup Panel

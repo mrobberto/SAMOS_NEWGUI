@@ -26,12 +26,13 @@ path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
 parent_dir = str(path.parent)   
 
+from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from .hadamard_class_v3 import *
 HTSI = HTSI_Models()
 
 from samos.utilities import get_data_file
-from samos.dmd.Class_DMD_dev import DigitalMicroMirrorDevice
-dmd = DigitalMicroMirrorDevice()#config_id='pass') 
+from samos.dmd import DigitalMicroMirrorDevice
+dmd = DigitalMicroMirrorDevice(par=SAMOS_Parameters())
 dmd.initialize()
 
 import pandas as pd
