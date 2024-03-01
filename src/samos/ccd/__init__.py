@@ -1,1 +1,1 @@
-from Class_CCD_dev import Class_Camera
+from .Class_CCD_dev import Class_Camera

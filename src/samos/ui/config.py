@@ -197,9 +197,9 @@ class ConfigPage(SAMOSFrame):
 
     def load_IP_user(self):
         if self.PAR.inoutvar.get() == 'inside':
-            ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
+            ip_file = get_data_file("system", "IP_addresses_user_inside.csv")
         elif self.PAR.inoutvar.get() == 'outside':
-            ip_file = get_data_file("system", "IP_addresses_default_outside.csv")
+            ip_file = get_data_file("system", "IP_addresses_user_outside.csv")
         elif self.PAR.inoutvar.get() == 'simulated':
             ip_file = get_data_file("system", "IP_addresses_SIMULATED.csv")
         ip_file_default = get_data_file("system", "IP_addresses_default.csv")
@@ -221,11 +221,12 @@ class ConfigPage(SAMOSFrame):
 
     def save_IP_user(self):
         if self.PAR.inoutvar.get() == 'inside':
-            ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
+            ip_file = get_data_file("system", "IP_addresses_user_inside.csv")
         elif self.PAR.inoutvar.get() == 'outside':
-            ip_file = get_data_file("system", "IP_addresses_default_outside.csv")
+            ip_file = get_data_file("system", "IP_addresses_user_outside.csv")
         elif self.PAR.inoutvar.get() == 'simulated':
-            ip_file = get_data_file("system", "IP_addresses_SIMULATED.csv")
+            self.logger.error("ERROR: simulated IP addresses should not be changed!")
+            return
         ip_file_default = get_data_file("system", "IP_addresses_default.csv")
         shutil.copy(ip_file, ip_file_default)
         

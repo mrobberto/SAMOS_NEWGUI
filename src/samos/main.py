@@ -59,35 +59,60 @@ class App(tk.Tk):
         self.title("SAMOS Control System")
         self.resizable(False, False)
 
-        # Creating a container
-        container = tk.Frame(self, bg="#8AA7A9")#, width=1100)
-        # We want to use grid rather than pack, but that means we have to adjust other
-        # classes first
-        container.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
-        
+#         # Creating a container
+#         container = tk.Frame(self, bg="#8AA7A9")#, width=1100)
+#         container.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+#         container.grid_rowconfigure(0, weight=1)
+#         container.grid_columnconfigure(0, weight=1)
+# 
+#         # Initialize Frames
+#         self.frames = {}
+#         for frame_class in self.FRAME_CLASSES:
+#             frame = frame_class(self, container, **self.samos_classes)
+#             self.frames[frame_class.__name__] = frame
+#             frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+#         self.frames["ConfigPage"].load_IP_default()
+#         self.show_frame("ConfigPage")
+
+        # Create a container Notebook
+        self.container = ttk.Notebook(self)
+        self.container.enable_traversal()
+        self.container.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.container.grid_rowconfigure(0, weight=1)
+        self.container.grid_columnconfigure(0, weight=1)
+
         # Initialize Frames
         self.frames = {}
+        self.frame_indices = {}
+        current_index = 0
         for frame_class in self.FRAME_CLASSES:
-            frame = frame_class(self, container, **self.samos_classes)
+            frame = frame_class(self, self.container, **self.samos_classes)
             self.frames[frame_class.__name__] = frame
+            self.frame_indices[frame_class.__name__] = current_index
             frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+            self.container.add(frame, text=frame_class.__name__)
+            current_index += 1
+        self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
 
 
     def show_frame(self, frame):
         self.logger.debug("Selecting frame {}".format(frame))
+#         new_frame = self.frames[frame]
+#         menubar = new_frame.create_menubar(self)
+#         self.configure(menu=menubar)
+#         if hasattr(new_frame, "main_frame"):
+#             self.geometry("{}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
+#             print("New geometry {}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
+#         else:
+#             self.geometry("{}x{}".format(new_frame.winfo_width(), new_framewinfo_height()))
+#             print("New geometry {}x{}".format(new_frame.winfo_width(), new_frame.winfo_height()))
+#         new_frame.tkraise()
+
         new_frame = self.frames[frame]
         menubar = new_frame.create_menubar(self)
         self.configure(menu=menubar)
-        if hasattr(new_frame, "main_frame"):
-            self.geometry("{}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
-            print("New geometry {}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
-        else:
-            self.geometry("{}x{}".format(new_frame.winfo_width(), new_framewinfo_height()))
-            print("New geometry {}x{}".format(new_frame.winfo_width(), new_frame.winfo_height()))
-        new_frame.tkraise()
+        self.container.select(self.frame_indices[frame])
     
     
     def initialize_simulator(self):
@@ -116,11 +141,12 @@ class App(tk.Tk):
         if not self.PAR.simulated:
             self.logger.warning("Attempted to shut down already inactive simulator")
         self.logger.info("Shutting Down Simulator")
-        self.simulator.terminate()
-        self.app_pipe.send("SHUTDOWN!")
-        self.simulator.join()
-        self.simulator.close()
-        self.logger.info("Simulator has shut down.")
+        if self.simulator is not None:
+            self.simulator.terminate()
+            self.app_pipe.send("SHUTDOWN!")
+            self.simulator.join()
+            self.simulator.close()
+            self.logger.info("Simulator has shut down.")
         self.PAR.simulated = False
         self.simulator = None
 

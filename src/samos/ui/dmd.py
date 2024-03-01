@@ -67,19 +67,19 @@ class DMDPage(SAMOSFrame):
         super().__init__(parent, container, "DMD Control", **kwargs)
         
         # Set up basic frames
-        button_frame = tk.LabelFrame(self.main_frame, text="Controls", font=BIGFONT, borderwidth=3)
+        button_frame = tk.LabelFrame(self.main_frame, text="Controls", font=BIGFONT, borderwidth=3, width=250)
         button_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        display_frame = tk.Frame(self.main_frame, borderwidth=3)
-        display_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        hadamard_frame = tk.Frame(self.main_frame, borderwidth=3)
-        hadamard_frame.grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        display_frame = tk.Frame(self.main_frame, borderwidth=3, width=350)
+        display_frame.grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        hadamard_frame = tk.Frame(self.main_frame, borderwidth=3, width=250)
+        hadamard_frame.grid(row=0, column=3, sticky=TK_STICKY_ALL)
 
         # dmd.initialize()
         button_Initialize = tk.Button(button_frame, text="Initialize", command=self.dmd_initialize)
         button_Initialize.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
         # Basic Patterns
-        tk.Label(button_frame, text="Basic Patterns:").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        tk.Label(button_frame, text="Basic Patterns:", anchor="w").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         button_Whiteout = tk.Button(button_frame, text="Blackout", bd=3, command=self.dmd_whiteout)
         button_Whiteout.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         button_Blackout = tk.Button(button_frame, text="Whiteout", bd=3, command=self.dmd_blackout)
@@ -92,33 +92,34 @@ class DMDPage(SAMOSFrame):
         button_antInvert.grid(row=4, column=2, sticky=TK_STICKY_ALL)
 
         # Custom Patterns
-        tk.Label(button_frame, text="Custom Patterns:").grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        tk.Label(button_frame, text="Custom Patterns:", anchor="w").grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         button_edit = tk.Button(button_frame, text="Edit DMD Map", command=self.browse_map)
         button_edit.grid(row=7, column=0, sticky=TK_STICKY_ALL)
         button_load_map = tk.Button(button_frame, text="Load DMD Map", command=self.load_map)
         button_load_map.grid(row=7, column=2, sticky=TK_STICKY_ALL)
-        label_filename = tk.Label(button_frame, text="Current DMD Map")
+        label_filename = tk.Label(button_frame, text="Current DMD Map:", anchor="w")
         label_filename.grid(row=8, column=0, sticky=TK_STICKY_ALL)
         self.str_map_filename = tk.StringVar()
-        tk.Label(button_frame, textvariable=self.str_map_filename).grid(row=8, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        l = tk.Label(button_frame, textvariable=self.str_map_filename, bg="grey")
+        l.grid(row=8, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Custom Slit
-        tk.Label(button_frame, text="Custom Slit:").grid(row=10, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        tk.Label(button_frame, text="Custom Slit:", anchor="w").grid(row=10, column=0, sticky=TK_STICKY_ALL)
         custom_frame = tk.Frame(button_frame, borderwidth=0)
-        custom_frame.grid(row=11, column=0, rowspan=2, columnspan=3, sticky=TK_STICKY_ALL)
+        custom_frame.grid(row=11, column=0, rowspan=1, columnspan=3, sticky=TK_STICKY_ALL)
         tk.Label(custom_frame, text="x0").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.x0 = tk.IntVar(self, 540)
-        tk.Entry(custom_frame, textvariable=self.x0).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        tk.Entry(custom_frame, textvariable=self.x0, width=5).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         tk.Label(custom_frame, text="y0").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         self.y0 = tk.IntVar(self, 1024)
-        tk.Entry(custom_frame, textvariable=self.y0).grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        tk.Entry(custom_frame, textvariable=self.y0, width=5).grid(row=0, column=3, sticky=TK_STICKY_ALL)
 
-        tk.Label(custom_frame, text="x1").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(custom_frame, text="x1").grid(row=0, column=4, sticky=TK_STICKY_ALL)
         self.x1 = tk.IntVar(self, 540)
-        tk.Entry(custom_frame, textvariable=self.x1).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        tk.Label(custom_frame, text="y1").grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(custom_frame, textvariable=self.x1, width=5).grid(row=0, column=5, sticky=TK_STICKY_ALL)
+        tk.Label(custom_frame, text="y1").grid(row=0, column=6, sticky=TK_STICKY_ALL)
         self.y1 = tk.IntVar(self, 1024)
-        tk.Entry(custom_frame, textvariable=self.y1).grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        tk.Entry(custom_frame, textvariable=self.y1, width=5).grid(row=0, column=7, sticky=TK_STICKY_ALL)
 
         # Slit Buttons
         tk.Button(button_frame, text="Add", command=self.AddSlit).grid(row=13, column=0, sticky=TK_STICKY_ALL)
@@ -129,8 +130,8 @@ class DMDPage(SAMOSFrame):
         tk.Button(button_frame, text="Load Slit List", command=self.load_slits).grid(row=15, column=2, sticky=TK_STICKY_ALL)
         tk.Label(button_frame, text="Current Slit List").grid(row=16, column=0, sticky=TK_STICKY_ALL)
         self.str_filename_slits = tk.StringVar()
-        t = tk.Entry(button_frame, textvariable=self.str_filename_slits)
-        t.grid(row=16, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        l = tk.Label(button_frame, textvariable=self.str_filename_slits, bg="grey", anchor="w")
+        l.grid(row=16, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Canvas display for DMD pattern
         self.canvas = tk.Canvas(display_frame, width=300, height=270, bg="dark gray")
@@ -153,28 +154,28 @@ class DMDPage(SAMOSFrame):
         self.order_menu.grid(row=0, column=3, rowspan=2, sticky=TK_STICKY_ALL)
         
         # Slit Dimensions
-        tk.Label(hadamard_conf_frame, text="Slit Width: ").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(hadamard_conf_frame, text="Slit Width:", anchor="w").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.slit_width = tk.IntVar(self, 3)
-        box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_width)
+        box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_width, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        tk.Label(hadamard_conf_frame, text="Length:").grid(row=3, column=3, sticky=TK_STICKY_ALL)
+        tk.Label(hadamard_conf_frame, text="Length:", anchor="w").grid(row=3, column=3, sticky=TK_STICKY_ALL)
         self.slit_length = tk.IntVar(self, 256)
-        box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_length)
+        box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_length, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=4, sticky=TK_STICKY_ALL)
 
         # Field Centre
-        tk.Label(hadamard_conf_frame, text="Centre:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(hadamard_conf_frame, text="Xo").grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        tk.Label(hadamard_conf_frame, text="Field Centre:", anchor="w").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(hadamard_conf_frame, text="Xo", anchor="w").grid(row=4, column=1, sticky=TK_STICKY_ALL)
         self.slit_xc = tk.IntVar(self, 540)
-        tk.Entry(hadamard_conf_frame, textvariable=self.slit_xc).grid(row=4, column=2, sticky=TK_STICKY_ALL)
-        tk.Label(hadamard_conf_frame, text="Yo").grid(row=4, column=3, sticky=TK_STICKY_ALL)
+        tk.Entry(hadamard_conf_frame, textvariable=self.slit_xc, width=5).grid(row=4, column=2, sticky=TK_STICKY_ALL)
+        tk.Label(hadamard_conf_frame, text="Yo", anchor="w").grid(row=4, column=3, sticky=TK_STICKY_ALL)
         self.slit_yc = tk.IntVar(self, 1045)
-        tk.Entry(hadamard_conf_frame, textvariable=self.slit_yc).grid(row=4, column=4, sticky=TK_STICKY_ALL)
+        tk.Entry(hadamard_conf_frame, textvariable=self.slit_yc, width=5).grid(row=4, column=4, sticky=TK_STICKY_ALL)
 
         # Field Width
-        tk.Label(hadamard_conf_frame, text="Width:").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(hadamard_conf_frame, text="Width:", anchor="w").grid(row=5, column=0, sticky=TK_STICKY_ALL)
         self.field_width = tk.IntVar(self, 21)
         txt = tk.Entry(hadamard_conf_frame,  textvariable=self.field_width, bg="red", fg="white", font=BIGFONT_15)
         txt.grid(row=5, column=1, columnspan=4, sticky=TK_STICKY_ALL)
@@ -197,13 +198,15 @@ class DMDPage(SAMOSFrame):
         # Ra/Dec
         radec_frame = tk.LabelFrame(hadamard_frame, text="Generate from RA/DEC")
         radec_frame.grid(row=4, column=0, rowspan=2, sticky=TK_STICKY_ALL)
-        tk.Label(radec_frame, text="Target RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(radec_frame, text="Target RA:", anchor="w").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.target_ra = tk.DoubleVar(self, 1.234567)
-        tk.Entry(radec_frame, textvariable=self.target_ra).grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
+        e.grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         tk.Label(radec_frame, text="(decimal degrees)").grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        tk.Label(radec_frame, text="Target DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(radec_frame, text="Target DEC:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.target_dec = tk.DoubleVar(self, 1.234567)
-        tk.Entry(radec_frame, textvariable=self.target_ra).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
+        e.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         tk.Label(radec_frame, text="(decimal degrees)").grid(row=1, column=3, sticky=TK_STICKY_ALL)
         b = tk.Button(radec_frame, text="GENERATE", bg='#A877BA', font=BIGFONT_20, command=self.generate_hts_from_radec)
         b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
@@ -263,11 +266,11 @@ class DMDPage(SAMOSFrame):
     def set_SH_matrix(self, event=None):
         """ set_SH_matrix """
         if self.SHMatrix_Checked.get() == "S":
-            self.order = self.Sorder.get()
+            self.order = self.Sorders[1]
             self.order_menu.set_menu(self.order, *self.Sorders)
             self.mask_arrays = np.arange(0, self.order)
         else:
-            self.order = self.Horder.get()
+            self.order = self.Horders[1]
             self.order_menu.set_menu(self.order, self.Horders)
             a = tuple(['a'+str(i), 'b'+str(i)] for i in range(1, 4))
             self.mask_arrays = [inner for outer in zip(*a) for inner in outer]
@@ -475,8 +478,7 @@ class DMDPage(SAMOSFrame):
         self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
         
         myList = []
-        # 2. that's just a string! check if file exists to load what you already inherited
-        if os.path.isfile(self.map_filename) == True: 
+        if self.map_filename.is_file():
             with open(self.map_filename, 'r') as file:
                 myFile = csv.reader(file)
                 for row in myFile:

@@ -1,41 +1,13 @@
-from urllib.request import Request,urlopen
-from urllib.error import URLError,HTTPError
+from datetime import datetime
+import math
+import os
+from pathlib import Path
 import socket
 from time import sleep,time
-#from msvcrt import getch,kbhit
+from urllib.request import Request,urlopen
+from urllib.error import URLError,HTTPError
 import xml.dom.minidom
-#import sys
 
-
-### Substitute getch from https://www.reddit.com/r/learnpython/comments/7036k5/can_i_use_getch_on_macos_x/
-#import sys, tty, termios
-import sys
-from sys import platform
-if platform == "linux" or platform == "linux2":
-    import tty, termios
-if platform == "darwin":
-    import tty, termios
-#if platform == "win32":
-#    import getch
-
-### Needed to run ConvertSIlly by C. Loomis
-import math
-import pathlib
-
-import os
-import csv
-from pathlib import Path
-
-from datetime import datetime
-
-
-#define the local directory, absolute so it is not messed up when this is called
-path = Path(__file__).parent.absolute()
-local_dir = str(path.absolute())
-parent_dir = str(path.parent)   
-
-
-#load the functions
 from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 
@@ -50,23 +22,6 @@ class Class_Camera(object):
         self.NofFrames = dict_params['NofFrames']
         self.FrameSuff = None
         self.PAR = par
-        
-        
- 
-        
-    if (platform == "linux") or (platform == "darwin"): 
-        def getch(char_width=1):
-            '''get a fixed number of typed characters from the terminal. 
-            Linux / Mac only'''
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
-            try:
-                tty.setraw(fd)
-                ch = sys.stdin.read(char_width)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            return ch
-    ####
     
     
     def get_url(self,url_name,post_data=None):
@@ -128,9 +83,9 @@ class Class_Camera(object):
 
         # If no output file given, just prepend "fixed"
         if outname is None:
-                fname = pathlib.Path(fname)
+                fname = Path(fname)
                 dd = fname.parent
-                outname = pathlib.Path(fname.parent, 'fixed'+fname.name)
+                outname = Path(fname.parent, 'fixed'+fname.name)
 
         with open(fname, "rb") as in_f:
                 buf = in_f.read()
@@ -349,22 +304,7 @@ class Class_Camera(object):
             self.img_night_dir_list.append(fileout1)
             fnumber+=1
             self.FrameSuff.invoke("buttonup")
-            # 2) if there is a request for iterations, the serial number is appended; use setimage_ to isolate the set
-#            if iterations > 1:
-#                newFile = open(fileout, "wb")
-#                newFile.write(data)
-#                newFile.close()
-#                self.convertSIlly(fileout,fileout)
-                
 
-                
-                #=> these files are handled by the routines in Main_Vx.py
-
-#        self.write_fitsfile()
-
-              #if kbhit():
-            #    if 27==ord(getch()):
-            #        break
         print("Collected {} images in {:.3f} seconds.".format(collected_images,time() - startTime))
         for fname in self.img_night_dir_list:
             print("   ",fname)
