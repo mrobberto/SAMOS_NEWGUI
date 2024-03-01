@@ -44,74 +44,94 @@ class ExitGracefully:
 class SAMOSSimulator:
     def __init__(self, ip_dict, parent_pipe):
         self.logger = logging.getLogger("samos")
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging.DEBUG)
         self.logger.addHandler(handler)
         self.logger.info("Simulator started on localhost.")
         self.ip_dict = ip_dict
         self.comm_pipe = parent_pipe
         self.shutdown_signal = ExitGracefully()
         self.port_mappings = {}
-        self.sockets = {}
-        for key in self.ip_dict:
+        self.listen_sockets = {}
+        self.connected_sockets = {}
+        for key in self.COMPONENT_KEYS:
             self.port_mappings[key] = int(ip_dict[key].split(":")[1])
-            self.sockets[key] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            new_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.listen_sockets[new_socket] = key
             try:
-                self.sockets[key].bind(('localhost', self.port_mappings[key]))
-                self.sockets[key].listen(1)
+                new_socket.bind(('localhost', self.port_mappings[key]))
+                new_socket.listen(1)
             except socket.error as msg:
                 self.logger.error("Bind failed. Error: {}".format(msg))
                 sys.exit(1)
             self.logger.info("Listening for {} at port {}".format(key, self.port_mappings[key]))
 
-    
+
     def run(self):
+        socket_list = list(self.listen_sockets.keys()) + list(self.connected_sockets.keys()) + [self.comm_pipe]
+        self.logger.debug("Socket list is {}".format(socket_list))
         while not self.shutdown_signal.kill_now:
-            reads, writes, errors = select(list(self.sockets.values()) + [self.comm_pipe], [], [])
+            reads, writes, errors = select(socket_list, [], [])
+            
+            self.logger.info("Got reads: {}".format(reads))
+            self.logger.info("Got writes: {}".format(writes))
+            self.logger.info("Got errors: {}".format(errors))
             
             # When the parent exits, this will show as "ready for reading"
             if self.comm_pipe in reads:
+                self.logger.info("Got shutdown signal")
                 self.shutdown_signal.kill_now = True 
                 continue
             
-            for key in self.sockets:
-                for socket in reads:
-                    if self.sockets[key] == socket:
-                        self.logger.info("Received connection for {}".format(key))
-                        data = socket.recv(1024)
-                        text = data.decode("utf-8")
-                        if not data:
-                            self.logger.warning("{} disconnected".format(key))
-                        else:
-                            self.logger.info("SAMOS {} was sent {}".format(key, text))
-                        if self.key_functions[key] is not None:
-                            self.key_functions[key](text, socket)
+            for sock in reads:
+                # Connection attempt
+                if sock in self.listen_sockets:
+                    component = self.listen_sockets[sock]
+                    self.logger.info("Opening connection for {}".format(component))
+                    connection, address = sock.accept()
+                    self.connected_sockets[connection] = component
+                    self.logger.debug("Connected Sockets is: {}".format(self.connected_sockets))
+                    self._receive(connection, component)
+                elif sock in self.connected_sockets:
+                    component = self.connected_sockets[sock]
+                    self.logger.info("Receiving data for {}".format(component))
+                    self._receive(connection, component)
+            # End for loop
+        # End while loop
+
         self.logger.warning("Shutting down simulator.")
-        for key in self.sockets:
-            self.sockets[key].close()
+        for key in self.connected_sockets:
+            key.close()
+        for key in self.listen_sockets:
+            key.close()
         self.logger.warning("Sockets closed.")
 
 
-    def handle_dmd(self, data, socket):
+    def _receive(self, connection, component):
         """
-        Handle incoming data from the DMD class
+        Try receiving data from a connection
         """
-        self.logger.info("DMD sent {}".format(text))
-        self.logger.info("Replying with SUCCESS")
-        socket.sendall(b'SUCCESS\n')
-    
-    
-    @property
-    def component_functions(self):
-        key_functions = {
-            "IP_Motors": None,
-            "IP_CCD": None,
-            "IP_DMD": "handle_dmd",
-            "IP_SOAR": None,
-            "IP_SAMI": None
-        }
-        return key_functions
+        try:
+            data = connection.recv(1024)
+        except ConnectionResetError:
+            self.logger.info("Connnection to {} closed by remote".format(component))
+            data = b""
+        
+        if data:
+            text = data.decode("utf-8")
+            self.logger.info("{} sent {}".format(component, text))
+
+            # Currently, by default, reply with "success"
+            self.logger.info("Replying with 'SUCCESS'")
+            connection.sendall(b'SUCCESS\n')
+        else:
+            connection.close()
+            if connection in self.connected_sockets:
+                del self.connected_sockets[connection]
+
+
+    COMPONENT_KEYS = ["IP_Motors", "IP_CCD", "IP_DMD", "IP_SOAR", "IP_SAMI"]
 
 
 def start_simulator(ip_dict, parent_pipe):

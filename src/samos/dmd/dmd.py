@@ -1,20 +1,14 @@
+import codecs
 import logging
-import os
-import socket
-
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+from pathlib import Path
+from PIL import Image
+import socket
+import sys
 import time
 
-import codecs
-#from catkit.interfaces.DeformableMirrorController import DeformableMirrorController
-
-#import SAMOS functions to handle IP addresses
-import sys
-from pathlib import Path
-#define the local directory, absolute so it is not messed up when this is called
-path = Path(__file__).parent.absolute()
-local_dir = str(path.absolute())
 from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.utilities import get_data_file
 
@@ -30,11 +24,6 @@ class DigitalMicroMirrorDevice():
         self.logger = logging.getLogger("samos")
         self.PAR = kwargs['par']
         
-        # Get IP addresses
-        ip_port = self.PAR.IP_dict['IP_DMD'].split(":")
-        self.dmd_ip = ip_port[0]
-        self.dmd_port = int(ip_port[1])
-        
         # Set invert to false
         self.invert = False
 
@@ -42,11 +31,10 @@ class DigitalMicroMirrorDevice():
     def initialize(self, **kwargs):
         """ Initial function for the DMD Controller."""
         self.logger.info("Initializing DMD")
+        dmd_ip, dmd_port = self._get_address()
         hostname = socket.gethostname()
-        local_ip = '172.16.1.108'
         self.logger.debug("DMD hostname: {}".format(hostname))
-        self.logger.debug("DMD local IP: {}".format(local_ip))
-        self.logger.debug("DMD IP:Port: {}:{}".format(self.dmd_ip, self.dmd_port))
+        self.logger.debug("DMD IP:Port: {}:{}".format(dmd_ip, dmd_port))
         
         self.start_on_whiteout = kwargs.get("start_on_whiteout", False)
         self.dmd_size = kwargs.get("dmd_size", (1080, 2048))
@@ -56,6 +44,10 @@ class DigitalMicroMirrorDevice():
         
         self._shapes = {'blackout': (np.zeros(self.dmd_size), self.apply_blackout), 
                         'whiteout': (np.ones(self.dmd_size), self.apply_whiteout)}
+        # Checkerboard Pattern
+        data_file = get_data_file('dmd.pattern.basic_patterns', 'checkerboard.npy')
+        self._shapes["checkerboard"] = (np.load(data_file), "checkerboard")
+        
         self.current_dmd_shape = None
 
 
@@ -66,9 +58,11 @@ class DigitalMicroMirrorDevice():
         constant connection and more testing our connection method responds as
         expected.
         """
+        self.logger.info("Opening a connection to DMD")
+        dmd_ip, dmd_port = self._get_address()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
             try:
-                instrument.connect((self.dmd_ip, self.dmd_port))
+                instrument.connect((dmd_ip, dmd_port))
             except Exception as e:
                 self.logger.error("DMD did not respond!")
                 self.logger.error("Error was {}".format(e))
@@ -77,7 +71,7 @@ class DigitalMicroMirrorDevice():
             self.logger.info("Sending test message")
             instrument.sendall(b':TEST\n')
             response = instrument.recv(1024)
-            self.logger.info("Received response '{}'".format(reponse.decode('ascii')))
+            self.logger.info("Received response '{}'".format(response.decode('ascii')))
         return response
 
 
@@ -92,9 +86,10 @@ class DigitalMicroMirrorDevice():
         Send a message to the controller and check the controller sucessfully received it.
         """
         self.logger.info("Sending DMD the command '{}'".format(command))
+        dmd_ip, dmd_port = self._get_address()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
             try:
-                instrument.connect((self.dmd_ip, self.dmd_port))
+                instrument.connect((dmd_ip, dmd_port))
             except Exception as e:
                 self.logger.error("DMD did not respond!")
                 self.logger.error("Error was {}".format(e))
@@ -122,16 +117,18 @@ class DigitalMicroMirrorDevice():
 
     def apply_checkerboard(self):
         """ Apply a checkerboard to the DMD. """
+        self.logger.info("DMD applying checkerboard pattern")
         message = ['~enable\n', '~test,0\n', '~load,slow\n']
         if not self._send_command_set(message, "checkerboard"):
             return
         self.invert = False
-        self.current_dmd_shape = np.copy(self.shapes['whiteout'][0])
+        self.current_dmd_shape = np.copy(self.shapes['checkerboard'][0])
         self.update_dmd_plot()
 
 
     def apply_dotpattern(self):
         """ Apply a dotpattern to the DMD. """
+        self.logger.info("DMD applying dot pattern")
         message = ['~enable\n', '~test,1\n', '~load,slow\n']
         if not self._send_command_set(message, "dotpattern"):
             return
@@ -141,6 +138,7 @@ class DigitalMicroMirrorDevice():
 
     def apply_gridpattern(self):
         """ Apply a gridpattern to the DMD. """
+        self.logger.info("DMD applying grid pattern")
         message = ['~enable\n', '~test,2\n', '~load,slow\n']
         if not self._send_command_set(message, "gridpattern"):
             return
@@ -148,10 +146,10 @@ class DigitalMicroMirrorDevice():
         self.current_dmd_shape = np.copy(self.shapes['whiteout'][0])
         self.update_dmd_plot()
     
-
     
     def apply_whiteout(self):
         """ Apply a full whiteout to the DMD. (All ones, all mirrors flipped.) """
+        self.logger.info("DMD applying whiteout pattern")
         message = ['~enable\n', '~fill,1\n', '~load,slow\n']
         if not self._send_command_set(message, "whiteout"):
             return
@@ -162,6 +160,7 @@ class DigitalMicroMirrorDevice():
 
     def apply_blackout(self):
         """ Apply a full blackout to the DMD. (All zeros, no mirrors flipped.) """
+        self.logger.info("DMD applying blackout pattern")
         message = ['~enable\n', '~fill,0\n', '~load,slow\n']
         if not self._send_command_set(message, "blackout"):
             return
@@ -172,6 +171,7 @@ class DigitalMicroMirrorDevice():
 
     def apply_invert(self):
         """ Invert the last pattern on the DMD."""
+        self.logger.info("Inverting pattern")
         message = ['~load_neg,slow\n']
         if not self._send_command_set(message, "invert"):
             return
@@ -181,6 +181,7 @@ class DigitalMicroMirrorDevice():
 
     def apply_antinvert(self):
         """ Undo the invert"""
+        self.logger.info("Undoing inverted pattern")
         message = ['~load,slow\n']
         if not self._send_command_set(message, "antinvert"):
             return
@@ -221,6 +222,7 @@ class DigitalMicroMirrorDevice():
         dm_num : int
             Required parameter from DeformableMirror class.
         """
+        self.logger.info("DMD applying custom shape to DMD")
         # flip the dmd shape to match the new orientation avoiding the pond mirrors
         dm_shape = self.flip_shape(dm_shape)    
         if dm_shape.shape != self.dmd_size:
@@ -312,16 +314,15 @@ class DigitalMicroMirrorDevice():
 
     def update_dmd_plot(self, shape=None, plot_name='current_dmd_state'):
         """ Consistent plotting method to write out DMD plot. """
+        self.logger.info("Updating current DMD plot")
         if shape is None:
             shape = self.current_dmd_shape
+        shape[np.where(shape>0)] = 1
         if self.invert:
             shape = abs(shape-1)
-        plt.clf()
         shape_rotated = np.rot90(shape, k=1, axes=(0, 1))
-        plt.imshow(shape_rotated, vmin=0, vmax=1)
-        plt.colorbar()
-        plt.savefig(local_dir + "/current_dmd_state.png")
-        plt.close()
+        plot_image = Image.fromarray(shape_rotated.astype("uint8")*255)
+        plot_image.save(get_data_file("dmd") / "current_dmd_state.png")
 
 
     def _build_message(self, data_length=2, command_type=0, row=0, column=0, data=None):
@@ -504,7 +505,7 @@ class DigitalMicroMirrorDevice():
         self.logger.info("DMD Applying slit set")
         dm_shape= np.ones((1080,2048))
         for slit in slits:
-            self.logger.info("Applying slit {}".format(slit))
+            self.logger.info("DMD applying slit {}".format(slit))
             dm_shape[slit['x1']:slit['x2']+1,slit['y1']:slit['y2']+1] = 0
         self.apply_shape(dm_shape, dm_num=1)
 
@@ -554,3 +555,14 @@ class DigitalMicroMirrorDevice():
             self.logger.error("Failed to apply {}".format(note))
             return False
         return True
+
+
+    def _get_address(self):
+        """
+        Get the current IP address and port from the parameters class
+        """
+        # Get IP addresses
+        ip_port = self.PAR.IP_dict['IP_DMD'].split(":")
+        dmd_ip = ip_port[0]
+        dmd_port = int(ip_port[1])
+        return dmd_ip, dmd_port

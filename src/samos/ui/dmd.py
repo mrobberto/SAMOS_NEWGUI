@@ -2,6 +2,7 @@
 SAMOS DMD tk Frame Class
 """
 import csv
+from datetime import datetime
 import logging
 import numpy as np
 import os
@@ -38,6 +39,7 @@ from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, Rectangle
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter.filedialog import askopenfilename
 
 from samos.ccd.Class_CCD_dev import Class_Camera
 from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
@@ -122,9 +124,9 @@ class DMDPage(SAMOSFrame):
         tk.Entry(custom_frame, textvariable=self.y1, width=5).grid(row=0, column=7, sticky=TK_STICKY_ALL)
 
         # Slit Buttons
-        tk.Button(button_frame, text="Add", command=self.AddSlit).grid(row=13, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(button_frame, text="Push", command=self.PushCurrentMap).grid(row=13, column=1, sticky=TK_STICKY_ALL)
-        tk.Button(button_frame, text="Save", command=self.SaveMap).grid(row=13, column=2, sticky=TK_STICKY_ALL)
+        tk.Button(button_frame, text="Add", command=self.add_slit).grid(row=13, column=0, sticky=TK_STICKY_ALL)
+        tk.Button(button_frame, text="Push", command=self.push_current_map).grid(row=13, column=1, sticky=TK_STICKY_ALL)
+        tk.Button(button_frame, text="Save", command=self.save_map).grid(row=13, column=2, sticky=TK_STICKY_ALL)
 
         # Load Slit
         tk.Button(button_frame, text="Load Slit List", command=self.load_slits).grid(row=15, column=2, sticky=TK_STICKY_ALL)
@@ -281,7 +283,7 @@ class DMDPage(SAMOSFrame):
 
     def generate_hts(self):
         """ HTS_generate """
-        DMD_size = (1080, 2048)
+        DMD_size = self.DMD.dmd_size
         matrix_type = self.SHMatrix_Checked.get()  # Two options, H or S
         # e.g. 15 Order of the hadamard matrix (or S matrix)
         order = self.order
@@ -323,8 +325,8 @@ class DMDPage(SAMOSFrame):
         sets all mirrors "ON" as seen by the imaging channel. From the point of view of 
         the DMD with its current orientation, all mirrors are "OFF"
         """
-        DMD.apply_blackout()
-        self._set_slit_image("whiteout_dmd_state.png", "whiteout")
+        self.DMD.apply_blackout()
+        self._set_slit_image("current_dmd_state.png", "whiteout")
 
 
     def dmd_blackout(self):
@@ -332,23 +334,20 @@ class DMDPage(SAMOSFrame):
         sets all mirrors "OFF" as seen by the imaging channel. From the point of view of 
         the DMD with its current orientation, all mirrors are "ON"
         """
-        DMD.apply_whiteout()
-        self._set_slit_image("blackout_dmd_state.png", "blackout")
+        self.DMD.apply_whiteout()
+        self._set_slit_image("current_dmd_state.png", "blackout")
 
 
     def dmd_checkerboard(self):
         """ dmd_checkerboard """
-        DMD.apply_checkerboard()
-        self._set_slit_image("checkerboard.png", "checkerboard")
+        self.DMD.apply_checkerboard()
+        self._set_slit_image("current_dmd_state.png", "checkerboard")
 
 
     def dmd_invert(self):
         """ dmd_invert """
-        DMD.apply_invert()
-        with Image.open(get_data_file("dmd", "current_dmd_state.png")) as image:
-            inverted_image = PIL.ImageOps.invert(image)
-            inverted_image.save(get_data_file("dmd", "current_dmd_state.png"))
-        if "inverted" in str_map_filename.get():
+        self.DMD.apply_invert()
+        if "inverted" in self.str_map_filename.get():
             state_name = self.str_map_filename.get().replace(" inverted", "")
         else:
             state_name = "{} inverted".format(self.str_map_filename.get())
@@ -357,8 +356,8 @@ class DMDPage(SAMOSFrame):
 
     def dmd_antinvert(self):
         """ dmd_antinvert """
-        DMD.apply_antinvert()
-        if "inverted" in str_map_filename.get():
+        self.DMD.apply_antinvert()
+        if "inverted" in self.str_map_filename.get():
             state_name = self.str_map_filename.get().replace(" inverted", "")
         else:
             state_name = "{} inverted".format(self.str_map_filename.get())
@@ -368,12 +367,8 @@ class DMDPage(SAMOSFrame):
     def browse_map(self):
         """ BrowseMapFiles """
         self.str_map_filename.set("")
-        filename = tk.filedialog.askopenfilename(initialdir=get_data_file("dmd.csv.maps"),
-                                                 title="Select a File",
-                                                 filetypes=(("Text files",
-                                                             "*.csv"),
-                                                            ("all files",
-                                                             "*.*")))
+        filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
+                                   filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
         try:
             os.startfile(filename)
         except AttributeError:
@@ -385,12 +380,8 @@ class DMDPage(SAMOSFrame):
         """ LoadMap """
         self.str_map_filename.set("")
         self.str_filename_slits.set("")
-        filename = tk.filedialog.askopenfilename(initialdir=get_data_file("dmd.csv.maps"),
-                                                 title="Select a File",
-                                                 filetypes=(("Text files",
-                                                             "*.csv"),
-                                                            ("all files",
-                                                             "*.*")))
+        filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
+                                   filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
         file_path = Path(filename)
         self.logger.info("Loading Map {}".format(filename))
         self.str_map_filename.set(file_path.name)
@@ -401,7 +392,6 @@ class DMDPage(SAMOSFrame):
             csv_file = csv.reader(file)
             for row in csv_file:
                 map_list.append([int(r) for r in row])
-        file.close()
         
         self.logger.debug("Map rows are:")
         for i, row in enumerate(map_list):
@@ -441,12 +431,8 @@ class DMDPage(SAMOSFrame):
         """ LoadSlits """
         self.string_var_filename.set("")
         self.str_filename_slits.set("")
-        filename_slits = tk.filedialog.askopenfilename(initialdir=get_data_file("dmd.csv.slits"),
-                                                       title="Select a File",
-                                                       filetypes=(("Text files",
-                                                                   "*.csv"),
-                                                                  ("all files",
-                                                                   "*.*")))
+        filename_slits = askopenfilename(initialdir=get_data_file("dmd.csv.slits"), title="Select a File",
+                                         filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
         file_path = Path(filename_slits)
         self.str_filename_slits.set(file_path.name)
         main_fits_header.set_param("dmdmap", file_path.name)
@@ -460,90 +446,84 @@ class DMDPage(SAMOSFrame):
         slit_shape = np.ones((1080, 2048))  # This is the size of the DC2K
         for i in table.index:
             slit_shape[x1[i]:x2[i], y1[i]:y2[i]] = 0
-        DMD.apply_shape(slit_shape)
+        self.DMD.apply_shape(slit_shape)
         self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
 
 
-    def AddSlit(self):
+    def add_slit(self):
         """
         # 1. read the current filename
         # 2. open the .csv file
         # 3. add the slit
         """
-
         # 1. read the current filename
         filename_in_text = self.str_map_filename.get()
-        if filename_in_text[-4:] != ".csv":
-            filename_in_text.append(".csv")
-        self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
+        if (len(filename_in_text) == 0) or (filename_in_text == "none"):
+            self.logger.error("ERROR: Can't add slit to nonexistent slit file!")
+            filename_slits = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
+                                             filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
+            self.map_filename = Path(filename_slits)
+        else:
+            if filename_in_text[-4:] != ".csv":
+                filename_in_text.append(".csv")
+            self.map_filename = get_data_file("dmd.csv.maps", filename_in_text)
         
-        myList = []
+        map_list = []
         if self.map_filename.is_file():
             with open(self.map_filename, 'r') as file:
-                myFile = csv.reader(file)
-                for row in myFile:
-                    myList.append(row)
-            file.close()
- 
-        # 3. add the slit
-        # set the four corners of the aperture
-#        row = [str(int(self.x0.get())), str(int(self.y0.get())), str(
-#            int(self.x1.get())), str(int(self.y1.get())), "0"]
-        row = [str(int(self.x0.get())), str(int(self.x1.get())), str(
-            int(self.y0.get())), str(int(self.y1.get())), "0"]
-        myList.append(row)
-        self.map = myList
+                csv_reader = csv.reader(file)
+                for row in csv_reader:
+                    map_list.append(row)
 
-    def SaveMap(self):
+        row = [str(x) for x in [self.x0.get(), self.x1.get(), self.y0.get(), self.y1.get(), 0]]
+        map_list.append(row)
+        self.map = map_list
+
+
+    def save_map(self):
         """ SaveMap """
-        print("Saving Map")
+        self.logger.info("Saving current DMD map")
         filename_in_text = self.str_map_filename.get()
+        
+        # If there is no filename defined, create one based on current date
+        if (len(filename_in_text) == 0) or (filename_in_text == "none"):
+            self.logger.error("Attempted to save nonexistent map")
+            filename_in_text = "map_custom_{}.csv".formate(datetime.now().strftime("%Y%m%d"))
+            self.logger.info("Creating custom map file {}".format(filename_in_text))
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
         self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
         pandas_map = pd.DataFrame(self.map)
         pandas_map.to_csv(self.map_filename, index=False, header=None)
-        print("Map Saved")
-        
-    def PushCurrentMap(self):
+        self.logger.info("Map {} saved".format(filename_in_text))
+
+
+    def push_current_map(self):
         """ Push to the DMD the file in Current DMD Map Textbox """
-
+        self.logger.info("Pushing map to DMD")
         filename_in_text = self.self.str_map_filename.get()
-        if filename_in_text[-4:] != ".csv":
-            filename_in_text.append(".csv")
-        self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
+        if (len(filename_in_text) == 0) or (filename_in_text == "none"):
+            self.logger.error("ERROR: Can't add push map with no map loaded!")
+            filename_slits = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
+                                             filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
+            self.map_filename = Path(filename_slits)
+        else:
+            if filename_in_text[-4:] != ".csv":
+                filename_in_text.append(".csv")
+            self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
 
-        myList = []
+        map_list = []
         with open(self.map_filename, 'r') as file:
-            myFile = csv.reader(file)
-            for row in myFile:
-                myList.append(row)
-        file.close()
+            csv_file = csv.reader(file)
+            for row in csv_file:
+                myList.append([int(x) for x in row])
 
         test_shape = np.ones((1080, 2048))  # This is the size of the DC2K
-        for i in range(len(myList)):
-            test_shape[int(myList[i][0]):int(myList[i][1]), int(
-                myList[i][2]):int(myList[i][3])] = int(myList[i][4])
-
-        DMD.apply_shape(test_shape)
-
-        # Create a photoimage object of the image in the path
-        # Load an image in the script
-        # global img
-        image_map = Image.open(os.path.join(dir_DMD, "current_dmd_state.png"))
-        self.img = ImageTk.PhotoImage(image_map)
-
-        print('img =', self.img)
-        self.canvas.create_image(104, 128, image=self.img)
-        image_map.close()
-
-    def enter_command(self):
-        """ enter_command """
-        print('command entered:', self.Command_string.get())
-        # convert StringVar to string
-        t = DMD.send_command_string(self.Command_string.get())
-        self.Echo_String.set(t)
-        print(t)
+        for row in map_list:
+            test_shape[row[0]:row[1], row[2]:row[3]] = row[4]
+        self.DMD.apply_shape(test_shape)
+        # Retrieve the DMD image of the map, and apply it.
+        self._set_slit_image("current_dmd_state.png", "Current Map")
 
 
     def _set_slit_image(self, image_file, image_name):
@@ -552,8 +532,9 @@ class DMDPage(SAMOSFrame):
         mirror configuration
         """
         with Image.open(get_data_file("dmd", image_file)) as image_map:
-            tk_image = ImageTk.PhotoImage(image_map)
+            image_scaled = image_map.resize((300, 270))
+            tk_image = ImageTk.PhotoImage(image_scaled)
             label1 = tk.Label(self.canvas, image=tk_image)
             label1.image = tk_image
-            label1.place(x=-100, y=0)
+            label1.grid(row=0, column=0)
         self.str_map_filename.set(image_name)
