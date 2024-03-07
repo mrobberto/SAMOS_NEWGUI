@@ -22,6 +22,8 @@ import os
 from pathlib import Path
 import sys
 
+from .constants import *
+
 
 def get_data_file(mod_path, filename=None):
     """
@@ -105,3 +107,10 @@ def get_fits_dir():
         outf.write("{}".format(fits_dir))
     
     return fits_dir
+
+
+def grid_sall(widget, sticky=TK_STICKY_ALL, **kwargs):
+    """
+    Effectively makes the default sticky value ALL
+    """
+    widget.grid(widget, sticky=sticky, **kwargs)

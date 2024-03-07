@@ -67,28 +67,13 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
+from .common_frame import SAMOSFrame
 
-class GSPage(ttk.Frame):
-    """ to be written """
 
+class GSPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
-        """ to be written """
-        super().__init__(container)
-        self.main_fits_header = kwargs['main_fits_header']
-        self.convert = kwargs['convert']
-
-        #self.DMDPage = DMDPage
-        self.PAR = kwargs['PAR']
-        self.ConfP = parent.frames["ConfigPage"]
-
-        self.container = container
-        
-
-        logger = log.get_logger("example2", options=None)
-        self.logger = logger
-
-        label = tk.Label(self, text="Main Page", font=('Times', '20'))
-        label.pack(pady=0, padx=0)
+        super().__init__(parent, container, "Guide Star", **kwargs)
+        self.config_tab = parent.frames["ConfigPage"]
 
         # keep track of the entry number for header keys that need to be added
         # will be used to write "OtherParameters.txt"
@@ -99,365 +84,147 @@ class GSPage(ttk.Frame):
         self.wcs = None
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
-        #self.SlitTabView = None
         self.loaded_regfile = None
-        today = datetime.now()
         self.fits_dir = get_fits_dir()
 
+        # FITS manager
+        frame = tk.LabelFrame(self.main_frame, text="FITS Manager", background="pink")
+        frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        # RA, DEC Entry box
+        self.ra = tk.DoubleVar(self, 150.17110)
+        tk.Label(frame, text="RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.ra).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        self.dec = tk.DoubleVar(self, -54.79004)
+        tk.Label(frame, text="Dec:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
+        # QUERY Server
+        frame = tk.LabelFrame(self.main_frame, text="Query Image Server", font=BIGFONT)
+        frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        # Survey Select Menu
+        tk.Label(frame, text="Survey").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.survey_options = ["SkyMapper", "SDSS", "PanSTARRS/DR1/" "DSS", "DSS2/red", 
+                               "CDS/P/AKARI/FIS/N160", "2MASS/J", "GALEX", "AllWISE/W3"]
+        self.survey_selected = tk.StringVar(self, self.survey_options[0])
+        self.menu_survey = ttk.OptionMenu(frame, self.survey_selected, *self.survey_options)
+        self.menu_survey.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        self.menu_survey['menu'].insert_separator(3)
+        # Filter Selection
+        self.survey_filter = tk.StringVar(self, "i")
+        tk.Label(frame, text="Filter:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.survey_filter).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        # Run Query
+        b = tk.Button(frame, text="Run Query", command=self.run_query)
+        b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#  #    OBSERVER/NIGHT INFO Label Frame
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.wcs_exist = None
-
-
-
-
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#  #    FITS manager
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        # , width=400, height=800)
-        self.frame_FITSmanager = tk.Frame(self, background="pink")
-        self.frame_FITSmanager.place(
-            x=10, y=10, anchor="nw", width=420, height=190)
-
-        labelframe_FITSmanager = tk.LabelFrame(
-            self.frame_FITSmanager, text="FITS manager", font=BIGFONT)
-        labelframe_FITSmanager.pack(fill="both", expand="yes")
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#       RA, DEC Entry box
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.string_RA = tk.StringVar()
-#        self.string_RA.set("189.99763")  #Sombrero
-        self.string_RA.set("150.17110")  # NGC 3105
-        label_RA = tk.Label(labelframe_FITSmanager, text="RA:",  bd=3)
-        self.entry_RA = tk.Entry(
-            labelframe_FITSmanager, width=11,  bd=3, textvariable=self.string_RA)
-        label_RA.place(x=150, y=1)
-        self.entry_RA.place(x=190, y=-5)
-
-        """ DEC Entry box"""
-        self.string_DEC = tk.StringVar()
-#        self.string_DEC.set("-11.62305")#Sombrero
-        self.string_DEC.set("-54.79004")  # NGC 3105
-        label_DEC = tk.Label(labelframe_FITSmanager, text="Dec:",  bd=3)
-        self.entry_DEC = tk.Entry(
-            labelframe_FITSmanager, width=11,  bd=3, textvariable=self.string_DEC)
-        label_DEC.place(x=150, y=20)
-        self.entry_DEC.place(x=190, y=20)
-        
-# =============================================================================
-#      QUERY Server
-#
-# =============================================================================
-        labelframe_Query_Survey = tk.LabelFrame(labelframe_FITSmanager, text="Query Image Server",
-                                                width=400, height=110,
-                                                font=BIGFONT)
-        labelframe_Query_Survey.place(x=5, y=45)
-
-
-        self.label_SelectSurvey = tk.Label(
-            labelframe_Query_Survey, text="Survey")
-        self.label_SelectSurvey.place(x=5, y=5)
-#        # Dropdown menu options
-        Survey_options = [
-            "SkyMapper",
-            "SDSS",
-            "PanSTARRS/DR1/", #SIMBAD - 
-            "DSS",          #SIMBAD - 
-            "DSS2/red",     #SIMBAD - 
-            "CDS/P/AKARI/FIS/N160", #SIMBAD - 
-            "2MASS/J",      #SIMBAD -  
-            "GALEX",        # SIMBAD - 
-            "AllWISE/W3"]   # SIMBAD - 
-#        # datatype of menu text
-        self.Survey_selected = tk.StringVar()
-#        # initial menu text
-        self.Survey_selected.set(Survey_options[0])
-#        # Create Dropdown menu
-        self.menu_Survey = tk.OptionMenu(
-            labelframe_Query_Survey, self.Survey_selected,  *Survey_options)
-        # add bar to split menu, see
-        # https://stackoverflow.com/questions/55621073/add-a-separator-to-an-option-menu-in-python-with-tkinter
-        self.menu_Survey['menu'].insert_separator(3)
-        self.menu_Survey.place(x=65, y=3)
-        
-        """ Filter Entry box"""
-        self.string_Filter = tk.StringVar()
-        self.string_Filter.set("i")
-        label_Filter = tk.Label(labelframe_Query_Survey, text='Filter:',  bd=3)
-        entry_Filter = tk.Entry(labelframe_Query_Survey,
-                                width=2,  bd=3, textvariable=self.string_Filter)
-        label_Filter.place(x=195, y=5)
-        entry_Filter.place(x=240, y=3)
-        
-        """ QUERY BUTTON"""
-        button_Query_Survey = tk.Button(
-            labelframe_Query_Survey, text="Query", bd=3, command=self.Query_Survey)
-        button_Query_Survey.place(x=300, y=3)
-
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-# GINGA DISPLAY
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
-        vbox = tk.Frame(self, relief=tk.RAISED, borderwidth=1)
-#        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        vbox.pack(side=tk.TOP)
-        vbox.place(x=450, y=0, anchor="nw")  # , width=500, height=800)
-        # self.vb = vbox
-
-#        canvas = tk.Canvas(vbox, bg="grey", height=514, width=522)
-        canvas = tk.Canvas(vbox, bg="grey", height=800, width=800)#1032, width=1056)
-        canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
-        # => ImageViewTk -- a backend for Ginga using a Tk canvas widget
-        fi = CanvasView(logger)
-        # => Call this method with the Tkinter canvas that will be used for the display.
-        fi.set_widget(canvas)
-        # fi.set_redraw_lag(0.0)
-        fi.enable_autocuts('on')
-        fi.set_autocut_params('zscale')
-        fi.enable_autozoom('on')
-        # fi.enable_draw(False)
-        # tk seems to not take focus with a click
-        fi.set_enter_focus(True)
-        fi.set_callback('cursor-changed', self.cursor_cb)
-        fi.set_bg(0.2, 0.2, 0.2)
-        fi.ui_set_active(True)
-        fi.show_pan_mark(True)
-        # add little mode indicator that shows keyboard modal states
-        fi.show_mode_indicator(True, corner='ur')
-        self.fitsimage = fi
-
-        bd = fi.get_bindings()
-        bd.enable_all(True)
-
-        # canvas that we will draw on
-#        DrawingCanvas = fi.getDrawClasses('drawingcanvas')
-        canvas = self.canvas_types.DrawingCanvas()
-        canvas.enable_draw(True)
-        canvas.enable_edit(True)
-        canvas.set_drawtype('box', color='red')
-#        canvas.set_drawtype('point', color='red')
-        canvas.register_for_cursor_drawing(fi)
-#        canvas.add_callback('draw-event', self.draw_cb)
-#        canvas.set_draw_mode('draw')
-        canvas.add_callback('pick-up', self.pick_cb,'up')
-        canvas.set_draw_mode('pick')
-        # without this call, you can only draw with the right mouse button
-        # using the default user interface bindings
-        # canvas.register_for_cursor_drawing(fi)
-
-        canvas.ui_set_active(True)
-        self.canvas = canvas
-
-
-#        # add canvas to viewers default canvas
-        fi.get_canvas().add(canvas)
-
-        self.drawtypes = canvas.get_drawtypes()
+        # GINGA DISPLAY
+        frame = tk.LabelFrame(self.main_frame, text="Survey Image", relief=tk.RAISED)
+        frame.grid(row=0, column=1, rowspan=4, sticky=TK_STICKY_ALL)
+        frame.rowconfigure(0, minsize=800, weight=1)
+        frame.columnconfigure(0, minsize=800, weight=1)
+        self.ginga_canvas = tk.Canvas(frame, bg="grey", height=800, width=800)
+        self.ginga_canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.fits_image = CanvasView(self.logger)
+        self.fits_image.set_widget(self.ginga_canvas)
+        self.fits_image.enable_autocuts('on')
+        self.fits_image.set_autocut_params('zscale')
+        self.fits_image.enable_autozoom('on')
+        self.fits_image.set_enter_focus(True)
+        self.fits_image.set_callback('cursor-changed', self.cursor_changed)
+        self.fits_image.set_bg(0.2, 0.2, 0.2)
+        self.fits_image.ui_set_active(True)
+        self.fits_image.show_pan_mark(True)
+        self.fits_image.show_mode_indicator(True, corner='ur')
+        self.fits_image.get_bindings().enable_all(True)
+        self.drawing_canvas = self.canvas_types.DrawingCanvas()
+        self.drawing_canvas.enable_draw(True)
+        self.drawing_canvas.enable_edit(True)
+        self.drawing_canvas.set_drawtype('box', color='red')
+        self.drawing_canvas.register_for_cursor_drawing(self.fits_image)
+        self.drawing_canvas.add_callback('pick-up', self.pick_cb, 'up')
+        self.drawing_canvas.set_draw_mode('pick')
+        self.drawing_canvas.ui_set_active(True)
+        self.fits_image.get_canvas().add(self.drawing_canvas)
+        self.drawtypes = self.drawing_canvas.get_drawtypes()
         self.drawtypes.sort()
+        self.fits_image.set_window_size(1028, 1044)
+        self.readout = tk.Label(frame, text='')
+        self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
-#        fi.configure(516, 528) #height, width
-        fi.set_window_size(1028, 1044)
+        # Guide Star Pickup Frame
+        frame = tk.LabelFrame(self.main_frame, text="Guide Star Pickup", font=BIGFONT)
+        frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        # Low Mag (bright end)
+        self.low_mag = tk.IntVar(self, 11)
+        tk.Label(frame, text="Low Mag:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        s = tk.Spinbox(frame, command=self.check_valid_mags, increment=1, textvariable=self.low_mag, from_=0, to=25)
+        s.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        s.bind("<Return>", self.check_valid_mags)
+        # High mag (faint end)
+        tk.Label(frame, text="High Mag:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.high_mag = tk.IntVar(self, 13)
+        s = tk.Spinbox(frame, command=self.check_valid_mags, increment=1, textvariable=self.high_mag, from_=0, to=25)
+        s.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        s.bind("<Return>", self.check_valid_mags)
+        # SLIT POINTER ENABLED
+        self.guide_star_pickup_enabled = tk.IntVar(self, 1)
+        b = tk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
+        b.grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        # Candidate Guide Star Co-ordinates
+        self.gs_ra = tk.DoubleVar(self, 150.17110)
+        tk.Label(frame, text="RA:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_ra).grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        self.gs_dec = tk.DoubleVar(self, -54.79004)
+        tk.Label(frame, text="Dec:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_dec).grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        # X Shift
+        self.gs_xshift = tk.DoubleVar(self, 150.17110)
+        tk.Label(frame, text="X Shift (mm)").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_xshift).grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        # Y Shift
+        self.gs_yshift = tk.DoubleVar(self, -54.79004)
+        tk.Label(frame, text="Y Shift (mm)").grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_yshift).grid(row=6, column=1, sticky=TK_STICKY_ALL)
+        # Magnitude
+        self.gs_mag = tk.DoubleVar(self, 0.0)
+        tk.Label(frame, text="Magnitude:").grid(row=7, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_mag).grid(row=7, column=1, sticky=TK_STICKY_ALL)
+        b = tk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR)
+        b.grid(row=8, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
-        self.readout = tk.Label(vbox, text='')
-        self.readout.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
-        # self.readout.place()
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#  #   Guide Star Pickup Frame
-#
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        # , width=400, height=800)
-        self.frame_SlitConf = tk.Frame(self, background="gray")
-        self.frame_SlitConf.place(
-            x=10, y=210, anchor="nw", width=420, height=180)
-        labelframe_SlitConf = tk.LabelFrame(self.frame_SlitConf, text="Guide Star Pickup",
-                                            font=BIGFONT)
-        labelframe_SlitConf.pack(fill="both", expand="yes")
-        
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#  #    Low Mag (bright end)
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        label_low_mag = tk.Label(labelframe_SlitConf,
-                                text="low mag")
-        label_low_mag.place(x=4, y=4)
-        self.low_mag = tk.IntVar()
-        self.low_mag.set(11)
-        self.textbox_low_mag = tk.Entry(
-            labelframe_SlitConf, textvariable=self.low_mag, width=4)
-        # self.textbox_low_mag.place(x=130,y=5)
-
-        low_mag_SpinBox = tk.Spinbox(labelframe_SlitConf,
-                                      command=self.check_valid_mags, increment=1,
-                                      textvariable=self.low_mag, width=5,
-                                      from_=0, to=25)
-        low_mag_SpinBox.place(x=100, y=4)
-        low_mag_SpinBox.bind("<Return>", self.check_valid_mags)
-        #self.low mag = low mag
-
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#  #    High mag (faint end)
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        label_high_mag = tk.Label(labelframe_SlitConf,
-                                text="high mag")
-        label_high_mag.place(x=4, y=29)
-        self.high_mag = tk.IntVar()
-        self.high_mag.set(13)
-        self.textbox_high_mag = tk.Entry(
-            labelframe_SlitConf, textvariable=self.high_mag, width=4)
-        # self.textbox_high_mag.place(x=130,y=30)
-
-        high_mag_SpinBox = tk.Spinbox(labelframe_SlitConf,
-                                       command=self.check_valid_mags, increment=1,
-                                       textvariable=self.high_mag, width=5,
-                                       from_=0, to=25)
-        high_mag_SpinBox.place(x=100, y=30)
-        high_mag_SpinBox.bind("<Return>", self.check_valid_mags)
-        #self.high_mag = high mag
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#  #    SLIT POINTER ENABLED
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.GuideStarPickup_ChkBox_Enabled = tk.IntVar()
-        self.GuideStarPickup_ChkBox_Enabled.set(1)
-        
-        GS_pickb = tk.Button(labelframe_SlitConf, text="Pick Guide Star",
-                               command=self.Pick_GuideStar)
-        GS_pickb.place(x=220, y=0)
-                
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#  #    RADEC OF CANDIDATE GUIDE STAR
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        """ RA Entry box"""
-        self.string_RA_GS = tk.StringVar()
-#        self.string_RA.set("189.99763")  #Sombrero
-        self.string_RA_GS.set("150.17110")  # NGC 3105
-        Label_RA_GS = tk.Label(labelframe_SlitConf, text='RA:',  bd=3)
-        Entry_RA_GS = tk.Entry(
-            labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_RA_GS)
-        Label_RA_GS.place(x=5, y=51)
-        Entry_RA_GS.place(x=45, y=51)
-
-        """ DEC Entry box"""
-        self.string_DEC_GS = tk.StringVar()
-#        self.string_DEC.set("-11.62305")#Sombrero
-        self.string_DEC_GS.set("-54.79004")  # NGC 3105
-        Label_DEC_GS = tk.Label(labelframe_SlitConf, text='Dec:',  bd=3)
-        Entry_DEC_GS = tk.Entry(
-            labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_DEC_GS)
-        Label_DEC_GS.place(x=5, y=71)
-        Entry_DEC_GS.place(x=45, y=71)
-        
-        """ X shift"""
-        self.string_Xmm_GS = tk.StringVar()
-#        self.string_RA.set("189.99763")  #Sombrero
-        self.string_Xmm_GS.set("150.17110")  # NGC 3105
-        Label_Xmm_GS = tk.Label(labelframe_SlitConf, text='X(mm)',  bd=3)
-        Entry_Xmm_GS = tk.Entry(
-            labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_Xmm_GS)
-        Label_Xmm_GS.place(x=145, y=51)
-        Entry_Xmm_GS.place(x=195, y=51)
-
-        """ Y shift"""
-        self.string_Ymm_GS = tk.StringVar()
-#        self.string_DEC.set("-11.62305")#Sombrero
-        self.string_Ymm_GS.set("-54.79004")  # NGC 3105
-        Label_Ymm_GS = tk.Label(labelframe_SlitConf, text='Y(mm)',  bd=3)
-        Entry_Ymm_GS = tk.Entry(
-            labelframe_SlitConf, width=9,  bd=3, textvariable=self.string_Ymm_GS)
-        Label_Ymm_GS.place(x=145, y=71)
-        Entry_Ymm_GS.place(x=195, y=71)
-
-        """ magnitude"""
-        self.string_mag_GS = tk.StringVar()
-#        self.string_DEC.set("-11.62305")#Sombrero
-#        self.string_mag_GS.set("-54.79004")  # NGC 3105
-        Label_mag_GS = tk.Label(labelframe_SlitConf, text='Mag',  bd=3)
-        Entry_mag_GS = tk.Entry(
-            labelframe_SlitConf, width=5,  bd=3, textvariable=self.string_mag_GS)
-        Label_mag_GS.place(x=295, y=65)
-        Entry_mag_GS.place(x=340, y=64)
-
-
-        button_RADEC_to_SOAR = tk.Button(labelframe_SlitConf, text="Accept Guide Star", bd=3,
-                             command=self.send_RADEC_to_SOAR)
-        button_RADEC_to_SOAR.place(x=5, y=100)
-
-        """
-        HORIZONTAL BOX AT THE BOTTOM WITH ORIGINAL GINGA TOOLS
-        """
-
-        hbox = tk.Frame(self)
-        hbox.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
-
-        self.drawtypes = canvas.get_drawtypes()
-        # wdrawtype = ttk.Combobox(self, values=self.drawtypes,
-        # command=self.set_drawparams)
-        # index = self.drawtypes.index('ruler')
-        # wdrawtype.current(index)
-        wdrawtype = tk.Entry(hbox, width=12)
+        # Ginga Tools Box
+        frame = tk.LabelFrame(self.main_frame, text="Image Tools", font=BIGFONT)
+        frame.grid(row=4, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.drawtypes = self.drawing_canvas.get_drawtypes()
+        # W Draw (?)
+        wdrawtype = tk.Entry(frame)
+        wdrawtype.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         wdrawtype.insert(0, 'box')
         wdrawtype.bind("<Return>", self.set_drawparams)
         self.wdrawtype = wdrawtype
-
-        wdrawcolor = ttk.Combobox(
-            hbox, values=self.drawcolors, style="TCombobox")  # ,
-        #                           command=self.set_drawparams)
-        index = self.drawcolors.index('red')
-        wdrawcolor.current(index)
+        # Draw Colour
+        wdrawcolor = ttk.Combobox(frame, values=self.drawcolors, style="TCombobox")
+        wdrawcolor.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        color_index = self.drawcolors.index('red')
+        wdrawcolor.current(color_index)
         wdrawcolor.bind("<<ComboboxSelected>>", self.set_drawparams)
-        # wdrawcolor = tk.Entry(hbox, width=12)
-        # wdrawcolor.insert(0, 'blue')
-        # wdrawcolor.bind("<Return>", self.set_drawparams)
         self.wdrawcolor = wdrawcolor
+        # Draw Fill
+        self.vfill = tk.IntVar(self, 0)
+        tk.Checkbutton(frame, text="Fill", variable=self.vfill).grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        self.walpha = tk.DoubleVar(self, 1.0)
+        tk.Label(frame, text="Alpha:").grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        e = tk.Entry(frame, textvariable=self.walpha)
+        e.grid(row=0, column=4, sticky=TK_STICKY_ALL)
+        e.bind("<Return>", self.set_drawparams)
+        # Buttons
+        tk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        tk.Button(frame, text="Save Canvas", command=self.save_canvas).grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        tk.Button(frame, text="Open File", command=self.open_file).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
-        self.vfill = tk.IntVar()
-        wfill = tk.Checkbutton(hbox, text="Fill", variable=self.vfill)
-        self.wfill = wfill
 
-        walpha = tk.Entry(hbox, width=12)
-        walpha.insert(0, '1.0')
-        walpha.bind("<Return>", self.set_drawparams)
-        self.walpha = walpha
-
-        wrun = tk.Button(hbox, text="Slits Only",
-                         command=self.slits_only)
-        wclear = tk.Button(hbox, text="Clear Canvas",
-                           command=self.clear_canvas)
-        wsave = tk.Button(hbox, text="Save Canvas",
-                          command=self.save_canvas)
-        wopen = tk.Button(hbox, text="Open File",
-                          command=self.open_file)
-        # pressing quit button freezes application and forces kernel restart.
-        wquit = tk.Button(hbox, text="Quit",
-                          #command=lambda: self.quit(self))
-                          command=self.MASTER_quit)
-
-        for w in (wquit, wsave, wclear, wrun, walpha, tk.Label(hbox, text='Alpha:'),
-                  #                  wfill, wdrawcolor, wslit, wdrawtype, wopen):
-                  wfill, wdrawcolor, wdrawtype, wopen):
-            w.pack(side=tk.RIGHT)
-
-    
     def regfname_handle_focus_out(self, _):
-        """ to be written """
-
         current_text = self.regfname_entry.get()
         if current_text.strip(" ") == "":
             # self.regfname_entry.delete(0, tk.END)
@@ -491,10 +258,7 @@ class GSPage(ttk.Frame):
         pattern_path = created_patterns_path / Path(pattern_name)
 
         # create astropy regions and save them after checking that there is something to save...
-        """
-        slits = CM.CompoundMixin.get_objects_by_kind(self.canvas,'rectangle')
-        """
-        slits = CM.CompoundMixin.get_objects_by_kind(self.canvas, 'box')
+        slits = CM.CompoundMixin.get_objects_by_kind(self.drawing_canvas, 'box')
 
         list_slits = list(slits)
         if len(list_slits) != 0:
@@ -510,7 +274,7 @@ class GSPage(ttk.Frame):
         Export all Ginga objects to Astropy region
         """
         # 1. list of ginga objects
-        objects = CM.CompoundMixin.get_objects(self.canvas)
+        objects = CM.CompoundMixin.get_objects(self.drawing_canvas)
 
         try:
             pattern_list_index = self.pattern_group_dropdown.current()
@@ -519,7 +283,7 @@ class GSPage(ttk.Frame):
             current_pattern_tags = [
                 "@{}".format(int(obj_num)) for obj_num in current_pattern.object.values]
 
-            objects = [self.canvas.get_object_by_tag(
+            objects = [self.drawing_canvas.get_object_by_tag(
                 tag) for tag in current_pattern_tags]
         except:
             pass
@@ -542,7 +306,7 @@ class GSPage(ttk.Frame):
                 x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 self.slit_shape[x1, y1] = 0
-            elif self.GuideStarPickup_ChkBox_Enabled.get() == 1 and obj.kind == 'point':
+            elif self.guide_star_pickup_enabled.get() == 1 and obj.kind == 'point':
                 x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2, y2 = self.convert.CCD2DMD(ccd_x1, ccd_y1)
@@ -658,7 +422,7 @@ class GSPage(ttk.Frame):
         """ to be written """
         kind = self.wdrawtype.get()
         color = self.wdrawcolor.get()
-        alpha = float(self.walpha.get())
+        alpha = self.walpha.get()
         fill = self.vfill.get() != 0
 
         params = {'color': color,
@@ -670,17 +434,15 @@ class GSPage(ttk.Frame):
             params['fill'] = fill
             params['fillalpha'] = alpha
 
-        self.canvas.set_drawtype(kind, **params)
+        self.drawing_canvas.set_drawtype(kind, **params)
 
     def save_canvas(self):
         """ to be written """
-        regs = ap_region.export_regions_canvas(self.canvas, logger=self.logger)
-        # self.canvas.save_all_objects()
+        regs = ap_region.export_regions_canvas(self.drawing_canvas, logger=self.logger)
 
     def clear_canvas(self):
         """ to be written """
-        # CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
-        obj_tags = list(self.canvas.tags.keys())
+        obj_tags = list(self.drawing_canvas.tags.keys())
         # print(obj_tags)
         #for tag in obj_tags:
         #    if self.SlitTabView is not None:
@@ -692,7 +454,7 @@ class GSPage(ttk.Frame):
 
                 # if not self.low_magindow.winfo_exists():
                 #    self.SlitTabView.recover_window()
-        self.canvas.delete_all_objects(redraw=True)
+        self.drawing_canvas.delete_all_objects(redraw=True)
 
 
    
@@ -702,10 +464,10 @@ class GSPage(ttk.Frame):
         """
         import json
 #       How do we capture a parameter in another class/form?
-        self.PAR.PotN['Telescope'] = self.ConfP.Telescope.get() #ConfigPage.Telescope.get()
+        self.PAR.PotN['Telescope'] = self.config_tab.Telescope.get() #ConfigPage.Telescope.get()
         self.PAR.PotN['Program ID'] = self.program_var.get() 
-        self.PAR.PotN['Proposal Title'] = self.ConfP.Proposal_Title.get()#ConfigPage.Telescope.get()
-        self.PAR.PotN['Principal Investigator'] = self.ConfP.Principal_Investigator.get() #ConfigPage.Telescope.get()
+        self.PAR.PotN['Proposal Title'] = self.config_tab.Proposal_Title.get()#ConfigPage.Telescope.get()
+        self.PAR.PotN['Principal Investigator'] = self.config_tab.Principal_Investigator.get() #ConfigPage.Telescope.get()
         # For the parameters redefinied here it is easy: capture them...
         self.PAR.PotN['Observer'] = self.names_var.get()
         self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
@@ -786,14 +548,14 @@ class GSPage(ttk.Frame):
     def send_RADEC_to_SOAR(self):
         pass
 
-    def Query_Survey(self):
+    def run_query(self):
         """ to be written """
         #cleanup the canfas
-        CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
+        CM.CompoundMixin.delete_all_objects(self.drawing_canvas)#,redraw=True)
         self.clear_canvas()
 
         from astroquery.hips2fits import hips2fits
-        Survey = self.Survey_selected.get()
+        Survey = self.survey_selected.get()
 
         if Survey == "SkyMapper":
             try:
@@ -811,22 +573,7 @@ class GSPage(ttk.Frame):
             self.PanStarrs_query_GuideStars()
 
         else:
-            Survey = Survey+self.string_Filter.get()
-            """    
-            print("Survey selected: ",Survey,'\n')
-            coord = SkyCoord(self.string_RA.get()+'  ' +
-                         self.string_DEC.get(), unit=(u.deg, u.deg), frame='fk5')
-            # coord = SkyCoord('16 14 20.30000000 -19 06 48.1000000', unit=(u.hourangle, u.deg), frame='fk5')
-
-            query_results = Simbad.query_region(coord)
-            
-            if query_results is None:
-                print('\n no objects found at that RA,Dec; try again elsewhere\n')
-                ra_center = self.string_RA.get()
-                dec_center = self.string_DEC.get()
-            else:
-                print('\n SIMBAD OBJECTS: \n',query_results)
-            """
+            Survey = Survey+self.survey_filter.get()
         # =============================================================================
         # Download an image centered on the coordinates passed by the main window
         #
@@ -835,25 +582,9 @@ class GSPage(ttk.Frame):
             #object_coords = SkyCoord(ra=query_results['RA'], dec=query_results['DEC'],
             #                         #                                 unit=(u.deg, u.deg), frame='icrs')
             #                         unit=(u.hourangle, u.deg), frame='icrs')
-            c = SkyCoord(self.string_RA.get(),
-                         self.string_DEC.get(), unit=(u.deg, u.deg))
+            c = SkyCoord(self.ra.get(),
+                         self.ra.get(), unit=(u.deg, u.deg))
      # FROM      https://astroquery.readthedocs.io/en/latest/hips2fits/hips2fits.html
-            """
-             query_params = {
-                 'hips': self.Survey_selected.get(), #'DSS', #
-                 # 'object': object_main_id,
-                 # Download an image centef on the first object in the results
-                 # 'ra': object_coords[0].ra.value,
-                 # 'dec': object_coords[0].dec.value,
-                 'ra': c.ra.value,
-                 'dec': c.dec.value,
-                 'fov': (3.5 * u.arcmin).to(u.deg).value,
-                 'width': 1056#528,
-                 'height': 1032#516
-                 }
-            url = f'http://alasky.u-strasbg.fr/hips-image-services/hips2fits?{urlencode(query_params)}'
-            hdul = fits.open(url)
-            """
             query_params = {"NAXIS1": 1056,
                             "NAXIS2": 1032,
                             "WCSAXES": 2,
@@ -868,7 +599,7 @@ class GSPage(ttk.Frame):
                             "CRVAL1": c.ra.value,
                             "CRVAL2": c.dec.value}
             query_wcs = wcs.WCS(query_params)
-            hips = self.Survey_selected.get()
+            hips = self.survey_selected.get()
             hdul = hips2fits.query_with_wcs(hips=hips,
                                             wcs=query_wcs,
                                             get_query_payload=False,
@@ -884,14 +615,14 @@ class GSPage(ttk.Frame):
             
             #to make this robust, we neeed to add a couple of parameters to the FITS header
             #(something like this may be needed by the other surveys...)
-            hdul[0].header["FILENAME"] = Survey + "_" + self.string_RA.get() +"_" + self.string_DEC.get() + ".fits"
+            hdul[0].header["FILENAME"] = f"{Survey}_{self.ra.get()}_{self.dec.get()}.fits"
 
             self.image = hdul
             hdul.writeto(get_data_file('astrometry.general') / 'newtable.fits', overwrite=True)
             img = AstroImage()
-            Posx = self.string_RA.get()
-            Posy = self.string_DEC.get()
-            filt = self.string_Filter.get()
+            Posx = self.ra.get()
+            Posy = self.ra.get()
+            filt = self.survey_filter.get()
             data = hdul[0].data[:, ::-1]
             try:
                 image_data = Image.fromarray(data)
@@ -932,9 +663,9 @@ class GSPage(ttk.Frame):
         """ get image from SkyMapper """
 
         img = AstroImage()
-        Posx = self.string_RA.get()
-        Posy = self.string_DEC.get()
-        filt = self.string_Filter.get()
+        Posx = self.ra.get()
+        Posy = self.ra.get()
+        filt = self.survey_filter.get()
         
         SOAR_EFL = 68176.3    # mm
         SAMI_GUIDE_SCALE = 206265 / SOAR_EFL   # arcsec/mmm
@@ -975,11 +706,11 @@ class GSPage(ttk.Frame):
         
         
         
-    def Pick_GuideStar(self):        
+    def pick_guide_star(self):        
         """ to be written, but it seems rather obvious"""
-        CM.CompoundMixin.delete_all_objects(self.canvas)#,redraw=True)
+        CM.CompoundMixin.delete_all_objects(self.drawing_canvas)#,redraw=True)
         self.clear_canvas()
-        filt = self.string_Filter.get()
+        filt = self.survey_filter.get()
         if filt == "g":
             self.table_full['star_mag'] = self.table_full['g_band']
         elif filt == "r":
@@ -1027,13 +758,13 @@ class GSPage(ttk.Frame):
             obj.add_callback('pick-up', self.pick_cb, 'down')
             obj.tag = '@'+str(i_tag)
             i_tag += 1
-            self.canvas.add(obj)
-        self.circle_tags = list(self.canvas.tags.keys())    
+            self.drawing_canvas.add(obj)
+        self.circle_tags = list(self.drawing_canvas.tags.keys())    
         print(self.circle_tags)
 
 
         # LABELS NEXT TO all objects
-        Text = self.canvas.get_draw_class('Text')
+        Text = self.drawing_canvas.get_draw_class('Text')
         z = np.transpose([x_SkyMap,y_SkyMap])
         x = z[:,0]+5
         y = z[:,1]+5
@@ -1041,7 +772,7 @@ class GSPage(ttk.Frame):
                 print(x[i],y[i])
                 string=Text(x=x[i], y=y[i],text=str(i),color='red')
                 string.fontsize=25
-                self.canvas.add(string)
+                self.drawing_canvas.add(string)
         
         #DRAW  THE YELLOW AREA OF SISI
         box_region = RectanglePixelRegion(center=PixCoord(x=round(self.data_GS.shape[0]/2), y=round(self.data_GS.shape[1]/2)),
@@ -1059,8 +790,8 @@ class GSPage(ttk.Frame):
             #obj.fill=True
             #obj.alpha=0.01
             #obj.alpha = "0.5"
-        # add_region(self.canvas, obj, tag="twirlstars", redraw=True)
-        self.canvas.add(obj)
+        # add_region(self.drawing_canvas, obj, tag="twirlstars", redraw=True)
+        self.drawing_canvas.add(obj)
         print("done")
 
         
@@ -1068,9 +799,9 @@ class GSPage(ttk.Frame):
     def SDSS_query(self):
 
 #        img = AstroImage()
-        Posx = self.string_RA.get()
-        Posy = self.string_DEC.get()
-        filt = self.string_Filter.get()
+        Posx = self.ra.get()
+        Posy = self.ra.get()
+        filt = self.survey_filter.get()
         
         from astropy import units as u
         from astropy import coordinates as coords
@@ -1154,13 +885,13 @@ class GSPage(ttk.Frame):
     def PanStarrs_query_GuideStars(self):
         
         #get ra,dec and set image size
-        ra = float(self.string_RA.get())
-        dec = float(self.string_DEC.get())
+        ra = self.ra.get()
+        dec = self.ra.get()
         if dec < -30:
             print("\n Declination outside the PanStarrs survey \n")
             return
         
-        filter = self.string_Filter.get()
+        filter = self.survey_filter.get()
         size = int(300 / 0.25)   # create an image 5'x5'
         
         #get the pan star image
@@ -1168,7 +899,7 @@ class GSPage(ttk.Frame):
         fh = fits.open(fitsurl[0])
         fim = fh[0].data
         
-        #also a couple of variables for the Pick_GuideStar
+        #also a couple of variables for the pick_guide_star
         self.data_GS = fh[0].data
         self.header_GS = fh[0].header
         
@@ -1225,7 +956,7 @@ class GSPage(ttk.Frame):
         """ to be written """
         self.AstroImage = load_data(
             self.fullpath_FITSfilename, logger=self.logger)
-        self.canvas.set_image(self.AstroImage)
+        self.drawing_canvas.set_image(self.AstroImage)
         self.root.title(self.fullpath_FITSfilename)
 
     def open_file(self):
@@ -1241,29 +972,29 @@ class GSPage(ttk.Frame):
     def slits_only(self):
         """ erase all objects in the canvas except slits (boxes) """
         # check that we have created a compostition of objects:
-        CM.CompoundMixin.is_compound(self.canvas.objects)     # True
+        CM.CompoundMixin.is_compound(self.drawing_canvas.objects)     # True
 
         # we can find out what are the "points" objects
-        points = CM.CompoundMixin.get_objects_by_kind(self.canvas, 'point')
+        points = CM.CompoundMixin.get_objects_by_kind(self.drawing_canvas, 'point')
         print(list(points))
 
         # we can remove what we don't like, e.g. points
-        points = CM.CompoundMixin.get_objects_by_kind(self.canvas, 'point')
+        points = CM.CompoundMixin.get_objects_by_kind(self.drawing_canvas, 'point')
         list_point = list(points)
-        CM.CompoundMixin.delete_objects(self.canvas, list_point)
-        self.canvas.objects  # check that the points are gone
+        CM.CompoundMixin.delete_objects(self.drawing_canvas, list_point)
+        self.drawing_canvas.objects  # check that the points are gone
 
         # we can remove both points and boxes
-        points = CM.CompoundMixin.get_objects_by_kinds(self.canvas, ['point', 'circle',
+        points = CM.CompoundMixin.get_objects_by_kinds(self.drawing_canvas, ['point', 'circle',
                                                                      'rectangle', 'polygon',
                                                                      'triangle', 'righttriangle',
                                                                      'ellipse', 'square'])
         list_points = list(points)
-        CM.CompoundMixin.delete_objects(self.canvas, list_points)
-        self.canvas.objects  # check that the points are gone
+        CM.CompoundMixin.delete_objects(self.drawing_canvas, list_points)
+        self.drawing_canvas.objects  # check that the points are gone
 
 
-    def cursor_cb(self, viewer, button, data_x, data_y):
+    def cursor_changed(self, viewer, button, data_x, data_y):
         """This gets called when the data position relative to the cursor
         changes.
         """
@@ -1293,8 +1024,8 @@ class GSPage(ttk.Frame):
             ra_deg, dec_deg = image.pixtoradec(fits_x, fits_y)
             self.ra_center, self.dec_center = image.pixtoradec(1056, 1032,
                                                                format='str', coords='fits')
-            Delta_Xmm = ( ra_deg - float(self.string_RA.get()) ) * 3600 / self.PAR.SOAR_arcs_mm_scale
-            Delta_Ymm = ( dec_deg - float(self.string_DEC.get()) ) * 3600 / self.PAR.SOAR_arcs_mm_scale
+            Delta_Xmm = ( ra_deg - self.ra.get() ) * 3600 / self.PAR.SOAR_arcs_mm_scale
+            Delta_Ymm = ( dec_deg - self.ra.get() ) * 3600 / self.PAR.SOAR_arcs_mm_scale
 
         except Exception as e:
             # self.logger.warning("Bad coordinate conversion: %s" % (
@@ -1319,7 +1050,6 @@ class GSPage(ttk.Frame):
         self.readout.config(text=text)
 
     def MASTER_quit(self):
-        #self.ConfP.destroy()
         self.destroy()
         return True
 
@@ -1329,7 +1059,7 @@ class GSPage(ttk.Frame):
         self.wdrawtype.delete(0, tk.END)
         mode = self.Draw_Edit_Pick_Checked.set("draw")
         self.set_mode_cb()
-        if self.GuideStarPickup_ChkBox_Enabled.get() == 1:
+        if self.guide_star_pickup_enabled.get() == 1:
             self.wdrawtype.insert(0, "point")
         else:
             self.wdrawtype.insert(0, "box")
@@ -1337,7 +1067,7 @@ class GSPage(ttk.Frame):
         print("drawtype changed to ", self.wdrawtype.get())
 #        parameters = []
 #        parameters['color'] = 'red'
-        self.canvas.set_drawtype(self.wdrawtype.get())#,**parameters)
+        self.drawing_canvas.set_drawtype(self.wdrawtype.get())#,**parameters)
             
 
     def set_mode_cb(self):
@@ -1346,17 +1076,17 @@ class GSPage(ttk.Frame):
         
         #we turn off here the SourcePickup_ChkBox 
         if mode != "draw":
-            self.GuideStarPickup_ChkBox_Enabled.set(0)
+            self.guide_star_pickup_enabled.set(0)
             
 #        self.logger.info("canvas mode changed (%s) %s" % (mode))
         self.logger.info("canvas mode changed (%s)" % (mode))
         try: #all object painted red, should not be true for the traces
-            for obj in self.canvas.objects:
+            for obj in self.drawing_canvas.objects:
                 obj.color = 'red'
         except:
             pass
 
-        self.canvas.set_draw_mode(mode)
+        self.drawing_canvas.set_draw_mode(mode)
 
 
     def draw_cb(self, canvas, tag):
@@ -1407,15 +1137,15 @@ class GSPage(ttk.Frame):
             # obj = r2g(r)
             
             # the Ginga Box object can be added to the canvas
-            self.canvas.add(obj)
+            self.drawing_canvas.add(obj)
         
         # time to do the math; collect the pixels in the Ginga box
         data_box = self.AstroImage.cutout_shape(obj)
 
         # we can now remove the "pointer" object
-        CM.CompoundMixin.delete_object(self.canvas, obj)
+        CM.CompoundMixin.delete_object(self.drawing_canvas, obj)
 
-  #      obj = self.canvas.get_draw_class('rectangle')
+  #      obj = self.drawing_canvas.get_draw_class('rectangle')
   #      obj(x1=x_c-20,y1=y_c-20,x2=x_c+20,y2=y_c+20,
   #                      width=100,
   #                      height=30,
@@ -1470,17 +1200,17 @@ class GSPage(ttk.Frame):
         print(self.AstroImage.pixtoradec(objs[0].objx, objs[0].objy))
 #        slit_w=3
 #        slit_l=9
-#        self.canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
+#        self.drawing_canvas.add(slit_box(x1=objs[0].objx+x1-slit_w,y1=objs[0].objy+y1-slit_h,x2=objs[0].objx+x1+slit_w,y2=objs[0].objy+y1+slit_h,
 #                        width=100,
 #                        height=30,
 #                        angle = 0*u.deg))
 
         #enogh with astronomy;
         # having found the centroid, we need to draw the slit
-        slit_box = self.canvas.get_draw_class('box')
+        slit_box = self.drawing_canvas.get_draw_class('box')
         xradius = self.low_mag.get() * 0.5 * self.PAR.scale_DMD2PIXEL
         yradius = self.high_mag.get() * 0.5 * self.PAR.scale_DMD2PIXEL
-        new_slit_tag = self.canvas.add(slit_box(x=objs[0].objx+x1,
+        new_slit_tag = self.drawing_canvas.add(slit_box(x=objs[0].objx+x1,
                                                 y=objs[0].objy+y1,
                                                 xradius=xradius,
                                                 yradius=yradius,
@@ -1496,7 +1226,7 @@ class GSPage(ttk.Frame):
         """
         
         """
-        #obj = self.canvas.get_object_by_tag(new_slit_tag)
+        #obj = self.drawing_canvas.get_object_by_tag(new_slit_tag)
         # obj.add_callback('pick-down', self.pick_cb, 'down')
         obj.add_callback('pick-up', self.pick_cb, 'up')
         obj.add_callback('pick-move', self.pick_cb, 'move')
@@ -1504,7 +1234,7 @@ class GSPage(ttk.Frame):
         obj.add_callback('edited', self.edit_cb)
         # self.cleanup_kind('point')
         # ssself.cleanup_kind('box')
-        return self.canvas.objects[-1]
+        return self.drawing_canvas.objects[-1]
 
              # create box
         """     
@@ -1627,55 +1357,18 @@ class GSPage(ttk.Frame):
             index = int(obj.tag[1:]) - int(self.circle_tags[0][1:]) 
             
             #print(self.table.iloc[index])
-            self.string_RA_GS.set(self.table['RA'].iloc[index])
-            self.string_DEC_GS.set(self.table['DEC'].iloc[index])
-            Delta_RA = float(self.table['RA'].iloc[index]) - float(self.string_RA.get()) 
-            Delta_DEC = float(self.table['DEC'].iloc[index]) - float(self.string_DEC.get()) 
+            self.gs_ra.set(self.table['RA'].iloc[index])
+            self.gs_dec.set(self.table['DEC'].iloc[index])
+            Delta_RA = float(self.table['RA'].iloc[index]) - self.ra.get()
+            Delta_DEC = float(self.table['DEC'].iloc[index]) - float(self.ra.get()) 
             Delta_RA_mm = round(Delta_RA * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
             Delta_DEC_mm = round(Delta_DEC * 3600 / self.PAR.SOAR_arcs_mm_scale,3)
-            self.string_Xmm_GS.set(Delta_RA_mm)
-            self.string_Ymm_GS.set(Delta_DEC_mm)
+            self.gs_xshift.set(Delta_RA_mm)
+            self.gs_yshift.set(Delta_DEC_mm)
             
             #print the magntude of the selected star
 #            print(self.star_mag)
-            self.string_mag_GS.set(round(self.table.star_mag.iloc[index],3))
-            
-            #if self.deleteChecked.get():#event.key == 'd':
-            # canvas.delete_object(obj)
-            #try:
-            #    self.SlitTabView.stab.select_row(row=self.tab_row_ind)          
-            #    print("start tab len", len(
-            #        self.SlitTabView.stab.get_sheet_data()))
-            #    self.SlitTabView.stab.delete_row(self.tab_row_ind)
-            #    print("end tab len", len(self.SlitTabView.stab.get_sheet_data()))
-            #    self.SlitTabView.stab.redraw()
-            #    self.SlitTabView.slitDF = self.SlitTabView.slitDF.drop(
-            #        index=self.obj_ind)
-            #    # del self.SlitTabView.slit_obj_tags[self.obj_ind]
-            #    self.SlitTabView.slit_obj_tags.remove(self.selected_obj_tag)
-            #     canvas.clear_selected()
-
-            #    try:
-            #    
-            #        for si in range(len(self.pattern_series)):
-
-            #           sub = self.pattern_series[si]
-
-            #            tag = int(obj.tag.strip("@"))
-
-            #            if tag in sub.object.values:
-            #                sub_ind = sub.where(sub.object == tag).dropna(
-            #                    how="all").index.values[0]
-            #                sub = sub.drop(index=sub_ind)
-
-            #                self.pattern_series[si] = sub
-
-            #    except:
-            #        print("try again")
-
-            #except:
-            #    print("No slit table created yet.")
-
+            self.gs_mag.set(round(self.table.star_mag.iloc[index],3))
         return True
         
 
@@ -1688,84 +1381,3 @@ class GSPage(ttk.Frame):
         # update slit table data to reflect the new edits
         #self.SlitTabView.update_table_row_from_obj(obj, self.fitsimage)
         return True
-
-        """
-    def cleanup_kind(self, kind):
-        """
-        """  
-        REMOVE only a specific type of object
-        self.cleanup_kind('point')
-        self.cleanup_kind('box') 
-        """
-        """
-        # check that we have created a compostition of objects:
-        CM.CompoundMixin.is_compound(self.canvas.objects)     # True
-
-        # we can find out what are the "points" objects
-        # points = CM.CompoundMixin.get_objects_by_kind(self.canvas,'point')
-        found = CM.CompoundMixin.get_objects_by_kind(self.canvas, str(kind))
-        list_found = list(found)
-        CM.CompoundMixin.delete_objects(self.canvas, list_found)
-        self.canvas.objects  # check that the points are gone
-        """
-
-
-
-
-    def save(file_type):
-        """ to be written """
-        pass
-        
-    def create_menubar(self, parent):
-        """ to be written """
-        
-        #parent is the local form
-        parent.geometry("1290x920")  #was ("1400x900")  # was("1280x900")
-        if sys.platform == "win32":
-            parent.geometry("1260x930") # was "1400x920")
-        parent.title("SAMOS Main Page")
-
-        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
-                          activebackground="#80B9DC")
-
-        # Filemenu
-        filemenu = tk.Menu(menubar, tearoff=0,
-                           relief=tk.RAISED, activebackground="#026AA9")
-        menubar.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(
-            label="Config", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_command(
-            label="DMD", command=lambda: parent.show_frame("DMDPage"))
-        filemenu.add_command(label="Recalibrate CCD2DMD",
-                             command=lambda: parent.show_frame("CCD2DMDPage"))
-        filemenu.add_command(
-            label="Motors", command=lambda: parent.show_frame("MotorsPage"))
-        filemenu.add_command(
-            label="CCD", command=lambda: parent.show_frame("CCDPage"))
-        filemenu.add_command(
-            label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
-        filemenu.add_command(
-            label="MainPage", command=lambda: parent.show_frame("MainPage"))
-        filemenu.add_command(
-            label="Close", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_separator()
-        filemenu.add_command(
-            label="ETC", command=lambda: parent.show_frame("ETCPage"))
-        filemenu.add_command(label="Exit", command=parent.quit)
-
-        """
-        # proccessing menu
-        processing_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Validation", menu=processing_menu)
-        processing_menu.add_command(label="validate")
-        processing_menu.add_separator()
-        """
-
-        # help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
-        help_menu.add_separator()
-
-        return menubar

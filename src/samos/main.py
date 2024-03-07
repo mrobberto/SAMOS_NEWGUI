@@ -59,21 +59,6 @@ class App(tk.Tk):
         self.title("SAMOS Control System")
         self.resizable(False, False)
 
-#         # Creating a container
-#         container = tk.Frame(self, bg="#8AA7A9")#, width=1100)
-#         container.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-#         container.grid_rowconfigure(0, weight=1)
-#         container.grid_columnconfigure(0, weight=1)
-# 
-#         # Initialize Frames
-#         self.frames = {}
-#         for frame_class in self.FRAME_CLASSES:
-#             frame = frame_class(self, container, **self.samos_classes)
-#             self.frames[frame_class.__name__] = frame
-#             frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-#         self.frames["ConfigPage"].load_IP_default()
-#         self.show_frame("ConfigPage")
-
         # Create a container Notebook
         self.container = ttk.Notebook(self)
         self.container.enable_traversal()

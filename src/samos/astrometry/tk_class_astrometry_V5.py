@@ -30,6 +30,7 @@ from regions import Regions
 import numpy as np
 import os
 
+from samos.utilities import grid_sall
 from samos.utilities.constants import *
 
 
