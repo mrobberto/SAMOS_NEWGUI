@@ -39,8 +39,6 @@ class SAMOSFrame(ttk.Frame):
         self.parent = parent
         self.CCD = kwargs["CCD"]
         self.DMD = kwargs['DMD']
-        self.PSima = kwargs["PSima"]
-        self.PStab = kwargs["PStab"]
         self.img = kwargs["img"]
         self.iq = kwargs["iq"]
         self.Motors = kwargs["Motors"]

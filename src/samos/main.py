@@ -13,8 +13,6 @@ from ginga.AstroImage import AstroImage
 import tkinter as tk
 from tkinter import ttk
 
-from samos.astrometry.panstarrs.image import PanStarrsImage as PS_image
-from samos.astrometry.panstarrs.catalog import PanStarrsCatalog as PS_table
 from samos.ccd.Class_CCD_dev import Class_Camera
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd import DigitalMicroMirrorDevice
@@ -44,8 +42,6 @@ class App(tk.Tk):
         self.samos_classes = {
             "CCD": Class_Camera(dict_params=CCD_PARAMS, par=self.PAR),
             "DMD": DigitalMicroMirrorDevice(par=self.PAR),
-            "PSima": PS_image(),
-            "PStab": PS_table(),
             "img": AstroImage(),
             "iq": iqcalc.IQCalc(),
             "Motors": Class_PCM(),

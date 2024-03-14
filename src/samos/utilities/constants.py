@@ -17,10 +17,37 @@ Dependencies
     
     None.
 """
+from astropy import units as u
 from ginga import colors as gcolors
 import sys
 import tkinter as tk
 
+
+# Telescope Parameters
+
+# SDSS Pixel Scale
+SDSS_PIXEL_SCALE = 0.396 * u.arcsec / u.pix
+
+# SAMOS Parameters
+SAMOS_ARCS_MM_SCALE = 206265. * u.arcsec / (4100 * u.mm * 4)  # f/4  arcsec/mm
+
+# DMD Parameters
+DMD_MIRROR_SCALE = SAMOS_ARCS_MM_SCALE * 0.0137 * u.mm
+DMD_MIRROR_TO_PIXEL_SCALE = 0.892  # mirrors to pixel as per e-mail by RB  Jan 207, 2023
+
+# SOAR Parameters
+SOAR_EFL = 68176.3 * u.mm
+SOAR_ARCS_MM_SCALE = 206265. * u.arcsec / (4100 * u.mm * 16.6)  # f/4  arcsec/mm
+
+# SISI Parameters
+SISI_PIXEL_SCALE = DMD_MIRROR_SCALE / (1.125 * u.pixel)
+SISI_FIELD_SIZE_PIXELS = 1000
+
+# SAMI parameters
+SAMI_GUIDE_SCALE = 206265 * u.arcsec / SOAR_EFL
+SAMI_GUIDE_FOV_MM = 100 * u.mm
+SAMI_GUIDE_FOV_ARCSEC = SAMI_GUIDE_FOV_MM * SAMI_GUIDE_SCALE
+SAMI_GUIDE_FOV_SISIPIX = SAMI_GUIDE_FOV_ARCSEC / SISI_PIXEL_SCALE
 
 # Required parameters when initializing the CCD class
 # Trigger Mode = 4: light

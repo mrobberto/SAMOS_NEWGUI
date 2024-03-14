@@ -14,7 +14,7 @@ The extracted region size is 1280 pixels = 320 arcsec."
 import numpy
 import matplotlib.pyplot as plt
 
-from samos.astrometry.panstarrs.image import PanStarrsImage as PS
+from samos.astrometry.guide_stars import PanSTARRSGuideStar as PS
 
 PS = PS()
 

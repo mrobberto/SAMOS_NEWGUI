@@ -904,14 +904,14 @@ class ETC:
                 qa = -nPixSpec * sig_rateSpecObs**2 / SN**2 
             else:
                 qa = -sig_rateSpecObs**2 / SN**2
+            qb = dither * bkSpecObs + dither * stat["dark"] * nPixSpatial.value / u.electron + sig_rateSpecObs
+            qc = dither * det_RN.value**2 / Nreads * nPixSpatial.value * nExp
+            timeSpec = (((-qb - np.sqrt(qb**2 - 4 * qa * qc)) / (2 * qa)) / u.pix).decompose()
+            time = np.median(timeSpec[sn_index])
         else:
             # Determine SNR
             pass
 
-        qb = dither * bkSpecObs + dither * stat["dark"] * nPixSpatial.value / u.electron + sig_rateSpecObs
-        qc = dither * det_RN.value**2 / Nreads * nPixSpatial.value * nExp
-        timeSpec = (((-qb - np.sqrt(qb**2 - 4 * qa * qc)) / (2 * qa)) / u.pix).decompose()
-        time = np.median(timeSpec[sn_index])
 
         # Determine the signal to noise
         # - noise contributions

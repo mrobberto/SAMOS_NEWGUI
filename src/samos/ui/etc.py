@@ -347,7 +347,7 @@ class ETCPage(SAMOSFrame):
             "spec_redshift": self.spec_redshift.get(),
             "spec_waveunit": self.spec_waveunit.get(),
             "calc_type": self.calculation_type.get(),
-            "total_exptime": self.calc_exptime.get(),
+            "total_exptime": self.calc_exptime.get() * u.s,
             "total_snr": self.calc_snr.get(),
             "custom_airmass": self.custom_airmass.get(),
             "custom_watervapour": self.custom_water.get(),

@@ -22,16 +22,6 @@ class SAMOS_Parameters():
     """ Collection of parameters to be shared by the classes """
 
     def __init__(self):
-        """
-        Defines:
-            self.Image_on/off
-            self.dir_dict
-            self.IP_dict
-            self.IP_status_dict
-            self.inoutvar
-            self.scale_DMD2PIXEL = 0.892
-        """
-
         self.dir_dict = {'dir_Motors': '/motors',
                          'dir_CCD': '/ccd',
                          'dir_DMD': '/dmd',
@@ -46,40 +36,22 @@ class SAMOS_Parameters():
         """ Default IP address imported for all forms"""
         with open(get_data_file("system", "IP_addresses_default.csv"), mode='r') as inp:
             reader = csv.reader(inp)
-            dict_from_csv = {rows[0]: rows[1] for rows in reader}
-        inp.close()
-        self.IP_dict = {}
-        self.IP_dict['IP_Motors'] = dict_from_csv['IP_Motors']
-        self.IP_dict['IP_CCD'] = dict_from_csv['IP_CCD']
-        self.IP_dict['IP_DMD'] = dict_from_csv['IP_DMD']
-        self.IP_dict['IP_SOAR'] = dict_from_csv['IP_SOAR']
-        self.IP_dict['IP_SAMI'] = dict_from_csv['IP_SAMI']
-
-        self.IP_status_dict = {'IP_Motors': False,
-                               'IP_CCD': False,
-                               'IP_DMD': False,
-                               'IP_SOAR': False,
-                               'IP_SAMI': False,
-                               }
-        
+            self.IP_dict = {rows[0]: rows[1] for rows in reader}
+        self.IP_status_dict = {
+            'IP_Motors': False,
+            'IP_CCD': False,
+            'IP_DMD': False,
+            'IP_SOAR': False,
+            'IP_SAMI': False,
+        }
         # Is SAMOS running in simulated mode?
         self.simulated = False
 
-        self.SAMOS_arcs_mm_scale = 206265./ (4100*4) # f/4  arcsec/mm
-        self.SOAR_arcs_mm_scale = 206265./ (4100*16.6) # f/4  arcsec/mm
-        self.DMD_MirrorScale = self.SAMOS_arcs_mm_scale * 0.0137 # = 0.1723 #arcsecond/mirror  # 206265
-        self.SISI_PixelScale = self.DMD_MirrorScale/1.125  # = 0.153  #arcsecond/pixel
-        self.SISI_FieldSize_pixel = 1000
-        self.scale_DMD2PIXEL = 0.892  # mirros to pixel as per e-mail by RB  Jan 207, 2023
+        self.dmd_map_filename = None
 
-        self.dmd_map_filename = ""
-
-        """
-        I am adding here the parameters that may change every night, 
-        saved in the Parameters.txt file as a dictionary
-        that has to be handled as a json file. 
-        See Prameters_README.py for further info on how to handle it
-        """
+        # I am adding here the parameters that may change every night, saved in the 
+        # Parameters.txt file as a dictionary that has to be handled as a json file. 
+        # See Prameters_README.py for further info on how to handle it
         with open(get_data_file("system", "Parameters_of_the_night.txt")) as f:
             data= f.read()
         self.PotN = json.loads(data)    
@@ -87,7 +59,6 @@ class SAMOS_Parameters():
         self.Telescope = self.PotN['Telescope']
         self.Program_ID = self.PotN['Program ID']
         self.Telescope_Operator = self.PotN['Telescope Operator']
-        #print(self.Observer)
         
-        self.logbook_exists = 0
-        self.Ginga_PA = 0
+        self.logbook_exists = False
+        self.Ginga_PA = False

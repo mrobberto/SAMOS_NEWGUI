@@ -56,8 +56,6 @@ from samos.motors.Class_PCM import Class_PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.astrometry.skymapper import skymapper_interrogate
 from samos.astrometry.tk_class_astrometry_V5 import Astrometry
-from samos.astrometry.panstarrs.image import PanStarrsImage as PS_image
-from samos.astrometry.panstarrs.catalog import PanStarrsCatalog as PS_table
 from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
 from samos.system import WriteFITSHead as WFH
 from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF

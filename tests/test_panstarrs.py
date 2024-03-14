@@ -8,7 +8,7 @@ Created on Thu Oct 26 23:16:23 2023
 
 from astropy.io import ascii
 import numpy as np
-from samos.astrometry.panstarrs.catalog import PanStarrsCatalog as PS_dr2cat 
+from samos.astrometry-guide_stars import PanSTARRSGuideStar as PS_dr2cat
 PS_dr2 = PS_dr2cat()
 
 

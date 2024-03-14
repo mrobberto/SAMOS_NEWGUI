@@ -1,47 +1,88 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Thu Oct 26 23:05:22 2023
-
-@author: robberto
-
-from https://ps1images.stsci.edu/ps1_dr2_api.html
+PanSTARRS interface for the guide star module.
 """
-
-"""
-Query Pan-STARRS DR2 catalog using MAST API
-
-The new MAST interface to the Pan-STARRS catalog supports queries to both the DR1 and DR2 
-PS1 catalogs. It also has an associated API, which is used in this script.
-
-This script shows how to query the Pan-STARRS DR2 catalog using the PS1 search API. The 
-examples show how to do a simple cone search, how to manipulate the table of results, and 
-how to get a light curve from the table of detections.
-"""
+from astropy.io import ascii, fits
 from astropy.table import Table
-import http.client as httplib 
-import json
-import logging
-import matplotlib.pyplot as plt
 import numpy as np
-import re
-import requests
-import sys
-from urllib.parse import quote as urlencode
-from urllib.request import urlretrieve
+from pathlib import Path
+
+from samos.utilities import get_temporary_dir
+
+from .base import GuideStar
 
 
-# Panstarrs query base URL
-baseurl = "https://catalogs.mast.stsci.edu/api/v0.1/panstarrs"
+class PanSTARRSGuideStar(GuideStar):
+    def __init__(self, ra, dec, band, logger):
+        super().__init__(ra, dec, band, "panstarrs", logger)
 
 
-class PanStarrsCatalog:
+    def run_query(self):
+        """
+        Create URLs based on co-ordinates and bands, then retrieve image and catalog data.
+        """
+        image_urls = self.build_image_urls()
+        self.fits_image = fits.open(image_urls[0])
+        self.star_table = self.get_panstarrs_table()        
 
-    def __init__(self):
-        logger = logging.getLogger('samos')
-        logger.debug("Initialized PanStarrsCatalog")
 
-    def ps_cone(self, ra, dec, radius, **kwargs):
+    def get_source_table(self):
+        """
+        Query ps1filenames.py service to get a list of images
+        
+        Returns
+        -------
+        table : astropy.table.Table
+            Table containing search results
+        """
+        base_url = "https://ps1images.stsci.edu/cgi-bin/ps1filenames.py"
+        query_url = f"{base_url}?ra={self.ra}&dec={self.dec}&filters={self.band}"
+        return Table.read(url, format="ascii")
+
+
+    def build_image_urls(self, size=240):
+        """
+        Get URL for FITS images in an image table returned from `self.get_source_table()`
+
+        Parameters
+        ----------
+        size : int
+            Extracted image size in pixels (at 0.25 arcseconds/pixel)
+        
+        Returns
+        -------
+        url_results : list
+            List of strings containing image retrieval URLs
+        """
+        source_table = self.get_source_table()
+        base_url = "https://ps1images.stsci.edu/cgi-bin/fitscut.cgira={self.ra}&dec={self.dec}&size={size}&format=fits"
+        urls = [f"{base_url}&red={file_name}" for file_name in source_table['filename']]
+        return urls
+
+
+    def get_panstarrs_table(self):
+        """
+        Use the PanSTARRS catalog query class to do a cone search on our RA and dec, and
+        give us a source table.
+        """
+        column_names = {
+            f"{self.band}MeanPSFMag": "star_mag",
+            "raMean": "ra",
+            "decMean": "dec"
+        }
+        radius = (212.0 * u.arcsec).to(u.deg).value
+        constraints = {'nDetections.gt': 1}
+        columns = ["objID", "raMean", "decMean", "nDetections", f"n{self.band}", f"{self.band}MeanPSFMag"]
+        results = self.ps_cone(radius, release="dr2", columns=columns, verbose=True, **constraints)
+        tab = ascii.read(results)
+        mag_col = f"{self.band}MeanPSFMag"
+        if mag_col in tab:
+            tab[mag_col].format = ".4f"
+            tab[mag_col][tab[mag_col] == -999.0] = np.nan
+        tab["id"] = ["{}".format(x) for x in tab["objID"]]
+        return tab.rename(columns=column_names)
+
+
+    def ps_cone(self, radius, **kwargs):
         """
         Do a cone search of the PS1 catalog. In addition to the parameters listed below,
         see the astroquery documentation at <https://astroquery.readthedocs.io/en/latest/> 
@@ -72,8 +113,8 @@ class PanStarrsCatalog:
             Whether to print out additional information about the request and retrieval
         """
         
-        kwargs['ra'] = ra
-        kwargs['dec'] = dec
+        kwargs['ra'] = self.ra
+        kwargs['dec'] = self.dec
         kwargs['radius'] = radius
         return self.ps_search(**kwargs)
     
@@ -105,7 +146,6 @@ class PanStarrsCatalog:
         kwargs['release'] = kwargs.get('release', 'dr1')
         kwargs['format'] = kwargs.get('format', 'csv')
         kwargs['columns'] = kwargs.get('columns', None)
-        kwargs['baseurl'] = kwargs.get('baseurl', baseurl)
         kwargs['verbose'] = kwargs.get('verbose', False)
         
         self.check_legal(table, release)
@@ -120,7 +160,7 @@ class PanStarrsCatalog:
             if len(badcols) > 0:
                 raise ValueError("Columns {} not available in Panstarrs data table".format(badcols))
         
-        url = f"{kwargs['baseurl']}/{kwargs['release']}/{kwargs['table']}.{kwargs['format']}"
+        url = f"{self.BASE_URL}/{kwargs['release']}/{kwargs['table']}.{kwargs['format']}"
         r = requests.get(url, params=kwargs)
     
         if kwargs['verbose']:
@@ -147,9 +187,9 @@ class PanStarrsCatalog:
             tablelist = ("mean", "stack", "detection")
         if table not in tablelist:
             raise ValueError("Bad value for table (for {} must be one of {})".format(release, table_list))
-    
-    
-    def ps_metadata(self, table="mean", release="dr1", baseurl=baseurl):
+
+
+    def ps_metadata(self, **kwargs):
         """
         Return metadata for the specified catalog and table
         
@@ -164,6 +204,9 @@ class PanStarrsCatalog:
         
         Returns an astropy table with columns name, type, description
         """
+        table = kwargs.get('table', 'mean')
+        release = kwargs.get('release', 'dr1')
+        baseurl = kwargs.get('baseurl', self.BASE_URL)
         
         self.check_legal(table,release)
         url = f"{baseurl}/{release}/{table}/metadata"
@@ -256,4 +299,8 @@ class PanStarrsCatalog:
             raise ValueError("Unknown object '{}'".format(name))
 
         return (obj_ra, obj_dec)
+
+
+    VALID_BANDS = ['g', 'r', 'i', 'z', 'y']
+    BASE_URL = "https://catalogs.mast.stsci.edu/api/v0.1/panstarrs"
 
