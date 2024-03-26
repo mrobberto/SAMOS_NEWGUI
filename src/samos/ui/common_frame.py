@@ -24,11 +24,11 @@ import shutil
 import tkinter as tk
 from tkinter import ttk
 
-from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
+from samos.utilities.tk import check_widgets
 
 
 class SAMOSFrame(ttk.Frame):
@@ -47,6 +47,7 @@ class SAMOSFrame(ttk.Frame):
         self.main_fits_header = kwargs["main_fits_header"]
         self.PAR = kwargs["PAR"]
         self.fits_dir = get_fits_dir()
+        self.check_widgets = {}
 
         self.main_frame = tk.LabelFrame(self, text=name, font=BIGFONT, borderwidth=5)
         self.main_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
@@ -56,8 +57,8 @@ class SAMOSFrame(ttk.Frame):
         self.off_big = tk.PhotoImage(file=get_data_file("tk.icons", "off_big.png"))
         self.on_sm = tk.PhotoImage(file=get_data_file("tk.icons", "on_small.png"))
         self.off_sm = tk.PhotoImage(file=get_data_file("tk.icons", "off_small.png"))
-    
-    
+
+
     def create_custom_menus(self, parent, menubar):
         pass
         
@@ -89,3 +90,10 @@ class SAMOSFrame(ttk.Frame):
         help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
 
         return menubar
+
+
+    def set_enabled(self):
+        """
+        Apply the check_widgets function to everything in the check_widgets dictionary
+        """
+        check_widgets(self.check_widgets)

@@ -198,7 +198,11 @@ class DMDPage(SAMOSFrame):
         # convert radec->pixels using WCS
         # from https://gist.github.com/barentsen/548f88ef38f645276fccea1481c76fc3
         ad = np.array([[ra_HTS_center, dec_HTS_center]]).astype(float)
-        x_CCD_HTS_center, y_CCD_HTS_center = WCS_global.all_world2pix(ad, 0)[0]
+        if not self.PAR.valid_wcs:
+            self.logger.error("Attempting to generate map from RA/DEC with no valid WCS")
+            tk.messagebox.showerror(title="No valid WCS!", message="SAMOS has no valid WCS.\nUnable to set mask from RA/DEC.")
+            return
+        x_CCD_HTS_center, y_CCD_HTS_center = self.PAR.wcs.all_world2pix(ad, 0)[0]
 
         # convert pixels -> DMD mirrors
         x_DMD_HTS_center, y_DMD_HTS_center = self.convert.CCD2DMD(int(x_CCD_HTS_center), int(y_CCD_HTS_center))

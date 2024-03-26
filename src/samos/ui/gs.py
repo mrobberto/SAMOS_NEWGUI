@@ -1,97 +1,31 @@
 """
 SAMOS Guide Star tk Frame Class
 """
-import copy
-import csv
-from datetime import datetime
-import glob
-import logging
-from matplotlib import pyplot as plt
-import numpy as np
-import os
-from pathlib import Path
-import re
-import shutil
-import subprocess
-import sys
-import time
-import twirl
-from urllib.parse import urlencode
-
-from astroquery.gaia import Gaia
-from astroquery.hips2fits import hips2fits
-from astroquery.simbad import Simbad
-from astropy.coordinates import SkyCoord, FK4
-from astropy.io import fits, ascii
-from astropy.stats import sigma_clipped_stats, SigmaClip
+from astropy.io import fits
 from astropy import units as u
-from astropy import wcs
-from astropy.wcs.utils import fit_wcs_from_points
-from ginga.util import iqcalc
 from ginga.AstroImage import AstroImage
-from ginga.util import ap_region
 from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
 from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
 from ginga import colors
-from ginga.util.loader import load_data
-from ginga.misc import log
-from ginga import colors as gcolors
 from ginga.canvas import CompoundMixin as CM
 from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
-import pandas as pd
-from photutils.background import Background2D, MedianBackground
-from photutils.detection import DAOStarFinder
-from PIL import Image, ImageTk
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
 
 import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename
 
-from samos.astrometry.guide_stars import GenericGuideStar, PanSTARRSGuideStar, SDSSGuideStar, SkyMapperGuideStar
-from samos.ccd.Class_CCD_dev import Class_Camera
-from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
-from samos.dmd.convert.CONVERT_class import CONVERT
-from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
-from samos.dmd import DigitalMicroMirrorDevice
-from samos.motors.Class_PCM import Class_PCM
-from samos.soar.Class_SOAR import Class_SOAR
-from samos.astrometry.tk_class_astrometry_V5 import Astrometry
-from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
-from samos.system import WriteFITSHead as WFH
-from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-from samos.system.SlitTableViewer import SlitTableView as STView
-from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame
+from .gs_query_frame import GSQueryFrame
 
 
 class GSPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "Guide Star", **kwargs)
-        self.config_tab = parent.frames["ConfigPage"]
-        self.catalogs = {
-            "panstarrs": PanSTARRSGuideStar,
-            "skymapper": SkyMapperGuideStar,
-            "sdss": SDSSGuideStar,
-            "other": GenericGuideStar
-        }
-        self.survey_map = {
-            "SkyMapper": "skymapper",
-            "SDSS": "sdss",
-            "PanSTARRS/DR1": "panstarrs", 
-            "DSS": "other", 
-            "DSS2/red": "other", 
-            "CDS/P/AKARI/FIS/N160": "other", 
-            "2MASS/J": "other", 
-            "GALEX": "other", 
-            "AllWISE/W3": "other"
-        }
-
         self.main_fits_header.create_main_params_dict()
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
@@ -110,21 +44,8 @@ class GSPage(SAMOSFrame):
         tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
         # QUERY Server
-        frame = tk.LabelFrame(self.main_frame, text="Query Image Server", font=BIGFONT)
-        frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        # Survey Select Menu
-        tk.Label(frame, text="Survey").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.survey_selected = tk.StringVar(self, list(self.survey_map.keys())[0])
-        self.menu_survey = ttk.OptionMenu(frame, self.survey_selected, *list(self.survey_map.keys()))
-        self.menu_survey.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.menu_survey['menu'].insert_separator(3)
-        # Filter Selection
-        self.survey_filter = tk.StringVar(self, "i")
-        tk.Label(frame, text="Filter:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.survey_filter).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        # Run Query
-        b = tk.Button(frame, text="Run Query", command=self.run_query)
-        b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.gs_query_frame = GSQueryFrame(self.main_frame, self.ra, self.dec, self.run_query, self.logger)
+        self.gs_query_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # GINGA DISPLAY
         frame = tk.LabelFrame(self.main_frame, text="Survey Image", relief=tk.RAISED)
@@ -266,38 +187,20 @@ class GSPage(SAMOSFrame):
         self.logger.warning("send_RADEC_to_SOAR has not been implemented!")
 
 
-    def run_query(self):
+    def run_query(self, catalog):
+        self.catalog = catalog
         self.clear_canvas()
-        
-        # Find Selected survey
-        selected_survey = self.survey_selected.get()
-        survey_key = self.survey_map[selected_survey]
-        ra = self.ra.get()
-        dec = self.dec.get()
-        band = self.survey_filter.get()
-        
-        try:
-            self.logger.info("Creating Catalog Object")
-            if survey_key == "other":
-                self.catalog = self.catalogs[survey_key](ra, dec, band, selected_survey, self.logger)
-            else:
-                self.catalog = self.catalogs[survey_key](ra, dec, band, self.logger)
-            self.logger.info("Running Query")
-            self.catalog.run_query()
-            self.logger.info("Setting local canvas")
-            self.data_GS = self.catalog.image[0].data
-            self.logger.info("Setting local header information")
-            self.header_GS = self.catalog.image[0].header
-            self.logger.info("Creating Local Image")
-            self.image = AstroImage()
-            self.image.load_hdu(self.catalog.image[0])
-            self.fits_image.set_image(self.image)
-            self.fits_image.rotate(self.PAR.Ginga_PA)
-            self.table_full = self.catalog.table
-            self.table_full.pprint_include_names = ('id', 'ra', 'dec', 'star_mag')
-        except Exception as e:
-            self.logger.error("Failed to retrieve data from {} survey".format(selected_survey))
-            self.logger.error("Reported error was: {}".format(e))
+        self.logger.info("Setting local canvas")
+        self.data_GS = self.catalog.image[0].data
+        self.logger.info("Setting local header information")
+        self.header_GS = self.catalog.image[0].header
+        self.logger.info("Creating Local Image")
+        self.image = AstroImage()
+        self.image.load_hdu(self.catalog.image[0])
+        self.fits_image.set_image(self.image)
+        self.fits_image.rotate(self.PAR.Ginga_PA)
+        self.table_full = self.catalog.table
+        self.table_full.pprint_include_names = ('id', 'ra', 'dec', 'star_mag')
 
 
     def pick_guide_star(self):
@@ -337,10 +240,8 @@ class GSPage(SAMOSFrame):
                 obj.color = "red"
                 obj.pickable = True
                 obj.add_callback('pick-up', self.pick_cb, 'down')
-                obj.tag = f'@{row["id"]}'
-                self.logger.info("Source ID is {} ({})".format(row["id"], type(row["id"])))
-                self.logger.info("Source tagged as object {} ({})".format(obj.tag, type(obj.tag)))
-                self.drawing_canvas.add(obj, tag=obj.tag)
+                self.logger.info("Adding source with ID {}".format(row["id"]))
+                self.drawing_canvas.add(obj, tag=f'@{row["id"]}')
                 star_label = Text(x=x+5, y=y+5, text=f'{row["id"]}', color="red")
                 star_label.fontsize = 25
                 self.drawing_canvas.add(star_label)
@@ -391,7 +292,7 @@ class GSPage(SAMOSFrame):
         canvas.set_draw_mode('draw')
         canvas.set_draw_mode('pick')
         self.object_id = obj.tag.strip('@')
-        self.logger.info("Selected source has ID {} ({})".format(self.object_id, type(self.object_id)))
+        self.logger.info("Selected source has ID {}".format(self.object_id))
 
         if ptype == 'up' or ptype == 'down':
             self.logger.info("Searching for object {} in table".format(self.object_id))

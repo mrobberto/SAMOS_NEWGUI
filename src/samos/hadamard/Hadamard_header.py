@@ -17,8 +17,8 @@ parent_dir = str(path.parent)
 params = {'Exposure Time':1000,'CCD Temperature':2300,'Trigger Mode': 4, 'NofFrames': 1}
 from samos.utilities import get_data_file
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-from samos.ccd.Class_CCD import Class_Camera
-Camera= Class_Camera(dict_params=params, par=SAMOS_Parameters())
+from samos.ccd import CCD
+Camera= CCD(SAMOS_Parameters(), None, logger.getLogger('samos'))
 from samos.motors.Class_PCM import Class_PCM
 PCM = Class_PCM()
 if PCM.MOTORS_onoff == 0:

@@ -9,7 +9,6 @@ import socket
 import sys
 import time
 
-from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.utilities import get_data_file
 
 

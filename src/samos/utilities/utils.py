@@ -22,6 +22,10 @@ import os
 from pathlib import Path
 import sys
 
+from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
+from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
+from regions import Regions
+
 from .constants import *
 
 
@@ -109,8 +113,41 @@ def get_fits_dir():
     return fits_dir
 
 
-def grid_sall(widget, sticky=TK_STICKY_ALL, **kwargs):
-    """
-    Effectively makes the default sticky value ALL
-    """
-    widget.grid(widget, sticky=sticky, **kwargs)
+def convert_ginga_to_astropy(ginga_regions):
+    """ converting (x,y) Ginga Regions to (x,y) Astropy Regions """
+    astropy_regions = Regions()
+    for region in ginga_regions:
+        astropy_regions.append(g2r(region))
+    return astropy_regions
+
+
+# Contains a naive way of turning a slit array into a CSV file, included here because it's
+# not actually used that I can see, but I want to keep it available for the moment.
+#     def push_objects_to_slits(self):
+#         self.logger.info("Creating DMD slit file")
+#         save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".pix")],
+#                                                 defaultextension=".pix",
+#                                                 initialdir=get_data_file("dmd.scv.maps"))
+#         self.logger.info("Collecting current slits")
+#         slit_shape = self.collect_slit_shape()
+#         self.logger.info("Creating Slit Map file")
+#         with open(save_file, "wt") as dmd_file:
+#             for row_index in range(slit_shape.shape[0]):
+#                 if not np.all(slit_shape[row_index]):
+#                     # There are at least some zeros in this row
+#                     column = 0
+#                     gathering = False
+#                     start_column = -1
+#                     while column < slit_shape.shape[1]:
+#                         if not gathering:
+#                             while (column < slit_shape.shape[1]) and (slit_shape[row_index][column] == 1):
+#                                 column += 1
+#                             if slit_shape[row_index][column] == 0:
+#                                 gathering = True
+#                                 start_column = column
+#                         else:
+#                             while (column < slit_shape.shape[1]) and (slit_shape[row_index][column] == 0):
+#                                 column += 1
+#                             if (column == slit_shape[1]) or (slit_shape[row_index][column] == 1):
+#                                 dmd_file.write(f"{start_column},{column},{row_index},{row_index},0\n")
+#                                 gathering = False

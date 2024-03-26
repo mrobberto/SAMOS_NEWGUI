@@ -6,7 +6,7 @@ Created on Tue Feb 14 14:15:21 2023
 @author: samos_dev
 """
 from astropy.io import fits
-from astropy import units as u#, wcs
+from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
 

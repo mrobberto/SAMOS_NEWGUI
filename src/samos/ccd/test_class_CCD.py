@@ -7,13 +7,13 @@ Created on Thu Jan  6 18:11:10 2022
 """
 
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-from .Class_CCD_dev import Class_Camera
+from .CCD import CCD
 
 params = {'Exposure Time':100,'CCD Temperature':2300,'Trigger Mode': 4, 'NofFrames': 1}
         #Trigger Mode = 4: light
         #Trigger Mode = 4: dark
 
-Camera= Class_Camera(dict_params=params, par=SAMOS_Parameters())
+Camera= CCD(SAMOS_Parameters(), None, logger.getLogger('samos'))
 
 
 #Camera.expose()

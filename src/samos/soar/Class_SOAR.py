@@ -12,11 +12,10 @@ from pathlib import Path
 #define the local directory, absolute so it is not messed up when this is called
 path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
-from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 
 class Class_SOAR:
-    def __init__(self):
-        all_IPs = SF.read_IP_default()
+    def __init__(self, par):
+        self.PAR = par
 
         """ switch when the correct IP and PORT are insterted"""
         # self.SOAR_TCS_IP =  all_IPs['IP_SOAR'][0:i_columns]

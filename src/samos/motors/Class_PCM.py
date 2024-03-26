@@ -62,11 +62,7 @@ path = Path(__file__).parent.absolute()
 local_dir = str(path.absolute())
 parent_dir = str(path.parent)  
 
-from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.utilities import get_data_file
-
-#PCM = Class_PCM()
-#SF = Class_SAMOS_Functions()
 
 #colorblind friendly 
 INDICATOR_LIGHT_ON_COLOR = "#08F903"
@@ -76,12 +72,8 @@ indicator_light_pending_color = "#F707D3"
 class Class_PCM():
     
 
-    def __init__(self): 
-        IP_status_dict = SF.read_IP_initial_status()
-        print("\n Initial IP_dict:\n",IP_status_dict,"\n")
-#        IP_dict = SF.read_IP_user()
-        IP_dict = SF.read_IP_default()
-        print("\n Current IP_default:\n",IP_dict,"\n")
+    def __init__(self, par):
+        self.PAR = par
         
         # reference to indicator lights in main GUI
         # indicator lights will be different colors depending on
@@ -89,12 +81,12 @@ class Class_PCM():
         self.canvas_Indicator = None
         
         self.MOTORS_onoff = 0
-        if IP_status_dict['IP_Motors'] == 'False':#../0'True':
+        if self.PAR.IP_status_dict['IP_Motors'] == 'False':#../0'True':
 #            self.IP_Host = str((IP_dict['IP_PCM'])[:12]) #str((IP_dict['IP_Motors'])[:15])
 #            self.IP_Port = int((IP_dict['IP_PCM'])[13:]) #int((IP_dict['IP_Motors'])[16:])
-            self.IP_Host = IP_dict['IP_Motors'].split(':')[0]#[:12]) #str((IP_dict['IP_Motors'])[:15])
+            self.IP_Host = self.PAR.IP_dict['IP_Motors'].split(':')[0]#[:12]) #str((IP_dict['IP_Motors'])[:15])
 #            print("\n motors ip",IP_dict['IP_Motors'],"\n")
-            self.IP_Port = int(IP_dict['IP_Motors'].split(':')[1])#[13:])) #int((IP_dict['IP_Motors'])[16:])
+            self.IP_Port = int(self.PAR.IP_dict['IP_Motors'].split(':')[1])#[13:])) #int((IP_dict['IP_Motors'])[16:])
             self.MOTORS_onoff = 1
         else: 
 #            self.MOTORS_onoff = 0

@@ -13,7 +13,7 @@ from ginga.AstroImage import AstroImage
 import tkinter as tk
 from tkinter import ttk
 
-from samos.ccd.Class_CCD_dev import Class_Camera
+from samos.ccd import CCD
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors.Class_PCM import Class_PCM
@@ -38,10 +38,11 @@ class App(tk.Tk):
         self.simulator = None
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         
+        DMD = DigitalMicroMirrorDevice(par=self.PAR)
         # Instantiate the classes that represent the SAMOS hardware
         self.samos_classes = {
-            "CCD": Class_Camera(dict_params=CCD_PARAMS, par=self.PAR),
-            "DMD": DigitalMicroMirrorDevice(par=self.PAR),
+            "CCD": CCD(self.PAR, DMD, self.logger),
+            "DMD": DMD,
             "img": AstroImage(),
             "iq": iqcalc.IQCalc(),
             "Motors": Class_PCM(),

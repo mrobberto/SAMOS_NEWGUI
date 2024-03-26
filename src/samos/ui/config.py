@@ -11,7 +11,6 @@ import shutil
 import tkinter as tk
 from tkinter import ttk
 
-from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
@@ -154,7 +153,7 @@ class ConfigPage(SAMOSFrame):
         
 
     def LogBookstartup(self):
-        SF.create_log_file(
+        self.PAR.create_log_file(
             Telescope=self.Telescope.get(),
             ProgramID=self.Program_ID.get(),
             ProposalTitle=self.Proposal_Title.get(),
@@ -162,8 +161,8 @@ class ConfigPage(SAMOSFrame):
             Observer=self.Observer.get(),
             Operator=self.TO_var.get()
         )
-        self.PAR.logbook_exist = True
-    
+
+
     def startup(self):
         self.logger.info("CONFIG_GUI: entering startup.")
         self.load_IP_default()

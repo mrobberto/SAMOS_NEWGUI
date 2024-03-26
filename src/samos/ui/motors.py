@@ -47,7 +47,7 @@ from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, Rectangle
 import tkinter as tk
 from tkinter import ttk
 
-from samos.ccd.Class_CCD_dev import Class_Camera
+from samos.ccd import CCD
 from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
@@ -57,7 +57,6 @@ from samos.soar.Class_SOAR import Class_SOAR
 from samos.astrometry.tk_class_astrometry_V5 import Astrometry
 from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
 from samos.system import WriteFITSHead as WFH
-from samos.system.SAMOS_Functions import Class_SAMOS_Functions as SF
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.system.SlitTableViewer import SlitTableView as STView
 from samos.tk_utilities.utils import about_box

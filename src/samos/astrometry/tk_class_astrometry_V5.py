@@ -30,7 +30,6 @@ from regions import Regions
 import numpy as np
 import os
 
-from samos.utilities import grid_sall
 from samos.utilities.constants import *
 
 
@@ -534,7 +533,7 @@ class Astrometry(tk.Toplevel):
         
         
         
-    def APRegion_RAD2pix(APRegionfile,WCS):
+    def APRegion_RAD2pix(APRegionfile, WCS, both=False):
         """
         Convert the region file in ds9/RADEC format to AP/xy format given a WCS solution
         
@@ -583,8 +582,9 @@ class Astrometry(tk.Toplevel):
 
         APregionfile_pixel = APRegionfile.replace("RADEC","pixels")
         RRR_pix.write(APregionfile_pixel, overwrite=True)
-        
-        #skycoord = SkyCoord(42, 43, unit='deg', frame='galactic')
+
+        if both:
+            return RRR_pix, regions
         return RRR_pix
     
     
