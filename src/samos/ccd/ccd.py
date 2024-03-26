@@ -190,7 +190,7 @@ class CCD():
         return startTime
 
 
-    def start_exposure(self)
+    def start_exposure(self):
         reply = self.get_url(target+'command.txt',f"{self.acquire_cmd}", as_string=True)
         if len(reply) < 9:
             self.logger.error("Reply '{}' too short: failed to expose camera.".format(reply))
@@ -246,7 +246,7 @@ class CCD():
         return "{}_{:04n}.fits".format(night_dir_basename, fnumber), cycle_time, read_time, read_bytes
 
 
-    def self.finish_exposure(self, collected_images, startTime, longest_cycle, total_read_bytes, total_read_time)
+    def finish_exposure(self, collected_images, startTime, longest_cycle, total_read_bytes, total_read_time):
         self.logger.info("Collected {} images in {:.3f} seconds.".format(len(collected_images), time() - startTime))
         for file_name in collected_images:
             self.logger.debug("\t{}".format(file_name))

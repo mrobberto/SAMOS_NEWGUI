@@ -63,46 +63,21 @@ local_dir = str(path.absolute())
 parent_dir = str(path.parent)  
 
 from samos.utilities import get_data_file
+from samos.utilities.constants import *
 
-#colorblind friendly 
-INDICATOR_LIGHT_ON_COLOR = "#08F903"
-INDICATOR_LIGHT_OFF_COLOR = "#194A18"
-indicator_light_pending_color = "#F707D3"
 
 class Class_PCM():
     
 
-    def __init__(self, par):
+    def __init__(self, par, logger, canvas_Indicator=None):
         self.PAR = par
+        self.logger = logger
         
         # reference to indicator lights in main GUI
-        # indicator lights will be different colors depending on
-        # if motors are moving or in position
-        self.canvas_Indicator = None
-        
+        self.canvas_Indicator = canvas_Indicator
         self.MOTORS_onoff = 0
-        if self.PAR.IP_status_dict['IP_Motors'] == 'False':#../0'True':
-#            self.IP_Host = str((IP_dict['IP_PCM'])[:12]) #str((IP_dict['IP_Motors'])[:15])
-#            self.IP_Port = int((IP_dict['IP_PCM'])[13:]) #int((IP_dict['IP_Motors'])[16:])
-            self.IP_Host = self.PAR.IP_dict['IP_Motors'].split(':')[0]#[:12]) #str((IP_dict['IP_Motors'])[:15])
-#            print("\n motors ip",IP_dict['IP_Motors'],"\n")
-            self.IP_Port = int(self.PAR.IP_dict['IP_Motors'].split(':')[1])#[13:])) #int((IP_dict['IP_Motors'])[16:])
-            self.MOTORS_onoff = 1
-        else: 
-#            self.MOTORS_onoff = 0
-            print('MOTORS NOT CONNECTED!!')
-            self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.MOTORS_onoff = 0
-            return
- 
-#        self.params = {'Host': '128.220.146.254', 'Port': 8889}
-        #self.params = {'Host': '172.16.0.128', 'Port': 1000}
-                
 
-    #       cwd = os.getcwd()
         data = ascii.read(get_data_file("motors", 'IDG_Filter_positions.txt'))
-        #print(data)
         self.FW1_counts_pos1 = data['Counts'][0]
         self.FW1_counts_pos2 = data['Counts'][1]
         self.FW1_counts_pos3 = data['Counts'][2]
@@ -121,6 +96,22 @@ class Class_PCM():
         self.GR_A_counts_pos2 = data['Counts'][15]
         self.GR_B_counts_pos1 = data['Counts'][16]
         self.GR_B_counts_pos2 = data['Counts'][17]
+
+
+    def initialize_indicator(self, indicator):
+        if self.canvas_Indicator is not None:
+            self.logger.warning("Overwriting existing indicator widget with a new one!")
+        self.canvas_Indicator = indicator
+        if self.PAR.IP_status_dict['IP_Motors'] == 'False':
+            self.IP_Host, self.IP_Port = tuple(self.PAR.IP_dict['IP_Motors'].split(':'))
+            self.IP_Port = int(self.IP_Port)
+            self.MOTORS_onoff = 1
+        else:
+            self.logger.info("Motors not connected!")
+            self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+            self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+            self.MOTORS_onoff = 0
+        
  
 # =============================================================================
 #     def echo_server():

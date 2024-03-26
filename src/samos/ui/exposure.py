@@ -160,7 +160,7 @@ class ExposureProgressWindow(tk.Toplevel):
                 if exptype in ["sci", "flat", "buffer"]:
                     self.main_fits_header.set_param("FILTER", params["filter"])
                     self.main_fits_header.set_param("GRATING", params["grating"])
-                if exptype == "sci"
+                if exptype == "sci":
                     if self.PAR.valid_wcs:
                         self.main_fits_header.add_astrometric_fits_keywords(original_header)
                 
@@ -183,10 +183,10 @@ class ExposureProgressWindow(tk.Toplevel):
          this procedure runs after CCD.expose()
          to handle the decision of saving all single files or just the averages
          """
-         image_type = self.image_type
-         files = self.collected_files
-         last_number = self.expnum - 1
-         params = self.params
+        image_type = self.image_type
+        files = self.collected_files
+        last_number = self.expnum - 1
+        params = self.params
 
         superfile_cube = np.zeros((1032, 1056, len(files)))  # note y,x,z
 

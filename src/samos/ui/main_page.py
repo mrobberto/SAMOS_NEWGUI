@@ -89,9 +89,12 @@ class MainPage(SAMOSFrame):
         self.main_fits_header.create_main_params_dict()
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
-        self.loaded_regfile = None
         self.pattern_series = []
         self.sub_pattern_names = []
+
+        # Early variable setting when variables must be valid for widgets to be enabled.
+        self.loaded_reg_file = tk.StringVar(self, "")
+        self.loaded_reg_file_path = None
 
         # Create column frames to hopefully keep things as even as possible
         fleft = tk.Frame(self.main_frame)
@@ -294,13 +297,15 @@ class MainPage(SAMOSFrame):
         # Ginga Tool Box
         frame = tk.LabelFrame(fctr, text="Tools")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        # Early variable definition because it's needed to set an enable condition.
+        self.source_pickup_enabled = tk.IntVar(self, 0)
         # Shape
         tk.Label(frame, text="Shape:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.draw_type = tk.StringVar(self, "box")
         e = tk.Entry(frame, textvariable=self.draw_type)
         e.bind("<Return>", self.set_drawparams)
         e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = ("tkvar", self.source_pickup_enabled, 1)
+        self.check_widgets[e] = [("tkvar", self.source_pickup_enabled, 1)]
         # Colour
         self.draw_color = ttk.Combobox(frame, values=self.drawcolors, style="TCombobox")
         self.draw_color.current(self.drawcolors.index("red"))
@@ -316,7 +321,6 @@ class MainPage(SAMOSFrame):
         e.bind("<Return>", self.set_drawparams)
         e.grid(row=0, column=5, sticky=TK_STICKY_ALL)
         # Slit Configurations
-        self.source_pickup_enabled = tk.IntVar(self, 0)
         b = tk.Checkbutton(frame, text="Source Pickup", variable=self.source_pickup_enabled, command=self.set_slit_drawtype)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Buttons
@@ -368,7 +372,7 @@ class MainPage(SAMOSFrame):
         pattern_frame.grid(row=0, column=1, rowspan=2, sticky=TK_STICKY_ALL)
         b = tk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.loaded_reg_file)]
+        self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
         self.base_pattern_name = tk.StringVar(self, "Base Pattern Name")
         e = tk.Entry(pattern_frame, width=15, textvariable=self.base_pattern_name)
         e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -389,8 +393,6 @@ class MainPage(SAMOSFrame):
         b = tk.Button(frame, text="Load Regions from DS9/RADEC Region File", command=self.load_regions_radec)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, text="Loaded Region File:", anchor=tk.W).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.loaded_reg_file = tk.StringVar(self, "")
-        self.loaded_reg_file_path = None
         tk.Label(frame, textvariable=self.loaded_reg_file, anchor=tk.W).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = tk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC, anchor=tk.E)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
@@ -1006,8 +1008,8 @@ class MainPage(SAMOSFrame):
             self.logger.info("Found WCS solution")
             
         hdu_wcs = self.PAR.wcs.to_fits()
-        if self.loaded_regfile is not None:
-            hdu_wcs[0].header.set("dmdmap", self.loaded_regfile.name)
+        if self.loaded_reg_file_path is not None:
+            hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)
 
         hdu_wcs[0].data = data  # add data to fits file
         self.wcs_filename = get_data_file('astrometry.general') / "WCS_{}_{}.fits".format(ra, dec)
@@ -1058,7 +1060,7 @@ class MainPage(SAMOSFrame):
         radius_pix = 20
         slit_width = self.slit_w.get()
         slit_height = self.slt_h.get()
-        coords = [PixCoord(x, y), for x, y in stars]
+        coords = [PixCoord(x, y) for x, y in stars]
         regions = Regions([RectanglePixelRegion(center=c, width=slit_width, height=slit_height, angle=0*u.deg) for c in coords])
         for i,region in enumerate(regions):
             obj = r2g(region)
@@ -1341,7 +1343,7 @@ class MainPage(SAMOSFrame):
         self.slits_only()
         self.logger.info("Creating pattern series. Current pattern is {}".format(self.base_pattern_name_entry.get()))
 
-        self.DMD_Group = DMDGroup(dmd_slitview_df=self.slit_tab_view.slitDF, regfile=self.loaded_regfile)
+        self.DMD_Group = DMDGroup(dmd_slitview_df=self.slit_tab_view.slitDF, regfile=self.loaded_reg_file_path)
         good_patterns = [self.slit_tab_view.slitDF]
         redo_pattern = self.slit_tab_view.slitDF.copy()
         base_name = self.base_pattern_name_entry.get()

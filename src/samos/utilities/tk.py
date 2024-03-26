@@ -77,13 +77,15 @@ def check_widgets(widgets):
     Each condition is a tuple, one of:
     - ("valid_wcs", PAR): Check if the PAR object has valid_wcs == True
     - ("valid_file", VAR): Check if the pathlib.Path object VAR has is_file() == True
-    - ("condition", (object, attribute, value)): getattr(object, attribute) == value
-    - ("tkvar", (widget, value)): widget.get() == value
+    - ("tkvar", widget, value): widget.get() == value
+    - ("is_something, VAR"): Check if VAR is None
+    - ("condition", object, attribute, value): getattr(object, attribute) == value
     
     Conditions are combined with implicit AND
     """
     for widget in widgets:
         for condition in widgets[widget]:
+            print(condition)
             if condition[0] == "valid_wcs":
                 if not condition[1].valid_wcs:
                     widget.configure(state="disabled")
@@ -102,7 +104,7 @@ def check_widgets(widgets):
                     widget.configure(state="disabled")
                     break
             else:  # implicit condition[0] == "condition"
-                if (hasattr(condition[1][0], condition[1][1])) and (getattr(condition[1][0], condition[1][1]) != condition[1][2]):
+                if (hasattr(condition[1], condition[2])) and (getattr(condition[1], condition[2]) != condition[3]):
                     widget.configure(state="disabled")
                     break
         widget.configure(state="normal")

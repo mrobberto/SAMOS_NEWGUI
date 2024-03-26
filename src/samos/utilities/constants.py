@@ -77,6 +77,11 @@ NICE_COLORS_LIST = bright_blues
 NICE_COLORS_LIST.extend(bright_reds)
 NICE_COLORS_LIST.extend(bright_greens)
 
+# Motor color indicators (colorblind-friendly)
+INDICATOR_LIGHT_ON_COLOR = "#08F903"
+INDICATOR_LIGHT_OFF_COLOR = "#194A18"
+indicator_light_pending_color = "#F707D3"
+
 # Font sizes, by system
 if sys.platform == "win32":
     BIGFONT = ("Arial", 12, 'bold')

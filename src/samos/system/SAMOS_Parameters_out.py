@@ -86,10 +86,10 @@ class SAMOS_Parameters():
         pn = self.PotN
         if not self.logbook_exists:
             with open(self.logfile_name, 'w+') as logfile:
-                logfile.write(f"SAMOS LOGBOOK for {today.strftime('%Y%m%d)'}\n")
+                logfile.write(f"SAMOS LOGBOOK for {today.strftime('%Y%m%d')}\n")
                 logfile.write(f"Telescope,{pn['Telescope']}\n")
                 logfile.write(f"Program ID,{pn['Program ID']},Proposal Title,{pn['Proposal Title']},PI,{pn['PI']}\n")
-                logfile.write(f"Observer,{pn['Observer']},Telescope Operator,{pn['Telescope Operator]}\n")
+                logfile.write(f"Observer,{pn['Observer']},Telescope Operator,{pn['Telescope Operator']}\n")
                 logfile.write("Date,Local Time,Target,Filter,Repeats,Exposure Time,Filename,Mask Name,")
                 logfile.write("Grating,Sp. Exp.T,Sp. Filename,Comment\n")
         return self.logfile_name

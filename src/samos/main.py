@@ -45,8 +45,8 @@ class App(tk.Tk):
             "DMD": DMD,
             "img": AstroImage(),
             "iq": iqcalc.IQCalc(),
-            "Motors": Class_PCM(),
-            "SOAR": Class_SOAR(),
+            "Motors": Class_PCM(self.PAR, self.logger),
+            "SOAR": Class_SOAR(self.PAR),
             "convert": CONVERT(),
             "main_fits_header": WFH.FITSHead(),
             "PAR": self.PAR
