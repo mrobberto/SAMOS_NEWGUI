@@ -24,7 +24,7 @@ class SAMOS_Parameters():
 
     def __init__(self):
         today = datetime.now()
-        self.dir_dict = {'dir_Motors': '/motors',
+        self.dir_dict = {'dir_PCM': '/motors',
                          'dir_CCD': '/ccd',
                          'dir_DMD': '/dmd',
                          'dir_SOAR': '/soar',
@@ -40,7 +40,7 @@ class SAMOS_Parameters():
             reader = csv.reader(inp)
             self.IP_dict = {rows[0]: rows[1] for rows in reader}
         self.IP_status_dict = {
-            'IP_Motors': False,
+            'IP_PCM': False,
             'IP_CCD': False,
             'IP_DMD': False,
             'IP_SOAR': False,

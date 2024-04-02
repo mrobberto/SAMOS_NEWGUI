@@ -16,7 +16,7 @@ from tkinter import ttk
 from samos.ccd import CCD
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd import DigitalMicroMirrorDevice
-from samos.motors.Class_PCM import Class_PCM
+from samos.motors import PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.system import WriteFITSHead as WFH
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
@@ -45,7 +45,7 @@ class App(tk.Tk):
             "DMD": DMD,
             "img": AstroImage(),
             "iq": iqcalc.IQCalc(),
-            "Motors": Class_PCM(self.PAR, self.logger),
+            "PCM": PCM(self.PAR, self.logger),
             "SOAR": Class_SOAR(self.PAR),
             "convert": CONVERT(),
             "main_fits_header": WFH.FITSHead(),

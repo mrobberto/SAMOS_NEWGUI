@@ -131,7 +131,7 @@ class SAMOSSimulator:
                 del self.connected_sockets[connection]
 
 
-    COMPONENT_KEYS = ["IP_Motors", "IP_CCD", "IP_DMD", "IP_SOAR", "IP_SAMI"]
+    COMPONENT_KEYS = ["IP_PCM", "IP_CCD", "IP_DMD", "IP_SOAR", "IP_SAMI"]
 
 
 def start_simulator(ip_dict, parent_pipe):

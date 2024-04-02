@@ -52,7 +52,7 @@ from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
 from samos.dmd import DigitalMicroMirrorDevice
-from samos.motors.Class_PCM import Class_PCM
+from samos.motors import PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.astrometry.tk_class_astrometry_V5 import Astrometry
 from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
@@ -63,418 +63,232 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
+from .common_frame import SAMOSFrame
 
-class MotorsPage(ttk.Frame):
-    """ Motors """
+
+class MotorsPage(SAMOSFrame):
 
     def __init__(self, parent, container, **kwargs):
-        """ to be written """
-
-        super().__init__(container)
-
-        # label = tk.Label(self, text="Motors Page", font=('Times', '20'))
-        # label.pack(pady=0,padx=0)
-
-        # ADD CODE HERE TO DESIGN THIS PAGE
-        self.Echo_String = tk.StringVar()
-        # self.check_if_power_is_on()
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#         #Get echo from Server
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        Button_Echo_From_Server = tk.Button(
-            self, text="Echo from server", command=self.call_echo_PCM, relief=tk.RAISED)
-        # placing the button on my window
-        Button_Echo_From_Server.place(x=10, y=10)
-        self.Echo_String = tk.StringVar()
-        Label_Echo_Text = tk.Label(
-            self, textvariable=self.Echo_String, width=15, bg='white')
-        Label_Echo_Text.place(x=160, y=13)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#        # Power on/odd
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        super().__init__(parent, container, "Motors", **kwargs)
+        self.initialized = False
         self.is_on = False
-        if self.is_on == False:
-            text = "Turn power ON"
-            color = "green"
-        else:
-            text = "Turn power OFF"
-            color = "red"
-        self.Button_Power_OnOff = tk.Button(
-            self, text=text, command=self.power_switch, relief=tk.RAISED, fg=color)
-        self.Button_Power_OnOff.place(x=10, y=40)
+        self.switch_text = {
+            True: "Turn Motors OFF",
+            False: "Turn Motors ON"
+        }
+        self.switch_img = {
+            True: self.on_big
+            False: self.off_big
+        }
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#         All port statusPower on/odd
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.Button_All_Ports_Status = tk.Button(
-            self, text="All ports status", command=self.all_ports_status, relief=tk.RAISED)
-        self.Button_All_Ports_Status.place(x=200, y=40)
+        # Initialize all motors
+        b = tk.Button(self.main_frame, text="Initialize", command=self.initialize_pcm, relief=tk.RAISED)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#         Select FW or GR
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.r1_v = tk.IntVar()
+        # Turn motor power on/off
+        motor_frame = tk.LabelFrame(self.main_frame, text="Motor Power")
+        motor_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.motor_switch_text = tk.StringVar(self, self.switch_text[self.is_on])
+        l = tk.Label(motor_frame, textvariable=self.motor_switch_text, font=BIGFONT)
+        l.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[l] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.motor_on_button = tk.Button(motor_frame, image=self.switch_img[self.is_on], command=self.power_switch)
+        self.motor_on_button.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[self.motor_on_button] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
 
-        r1 = tk.Radiobutton(self, text='FW1', variable=self.r1_v,
-                            value=1, command=self.Choose_FWorGR)
-        r1.place(x=10, y=70)
+        # Port Status
+        port_status_frame = tk.LabelFrame(self.main_frame, text="Power Port Status")
+        port_status_frame.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        b = tk.Button(port_status_frame, text="Get Status", command=self.all_ports_status, relief=tk.RAISED)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.port_status_info = tk.StringVar(self, "")
+        tk.Label(port_status_frame, textvariable=self.port_status_info).grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
-        r2 = tk.Radiobutton(self, text='FW2', variable=self.r1_v,
-                            value=2, command=self.Choose_FWorGR)
-        r2.place(x=70, y=70)
+        # Mechanism Selection
+        frame = tk.LabelFrame(self.main_frame, text="Filter/Grating Control")
+        frame.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        sel_frame = tk.Frame(frame)
+        sel_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        # Select Mechanism to Act On
+        self.active_wheel = tk.StringVar(self, 'FW1')
+        self.current_wheel = 'FW1'
+        b = tk.Radiobutton(sel_frame, text='FW1', value='FW1', variable=self.active_wheel, command=self.choose_wheel)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        b = tk.Radiobutton(sel_frame, text='FW2', value='FW2', variable=self.active_wheel, command=self.choose_wheel)
+        b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        b = tk.Radiobutton(sel_frame, text='GR_A', value='GR_A', variable=self.active_wheel, command=self.choose_wheel)
+        b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        b = tk.Radiobutton(sel_frame, text='GR_B', value='GR_B', variable=self.active_wheel, command=self.choose_wheel)
+        b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        # Send home
+        b = tk.Button(frame, text="Send to Home", command=self.home)
+        b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        # Get Position
+        b = tk.Button(frame, text="Get Current Steps", command=self.current_steps)
+        b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.step_position = tk.StringVar(self, "")
+        tk.Label(frame, textvariable=self.step_position).grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        # Move to step
+        tk.Label(frame, text="Step:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.step_entry = tk.StringVar(self, "")
+        e = tk.Entry(frame, textvariable=self.step_entry)
+        e.grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[e] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        b = tk.Button(frame, text="Move to Step", command=self.move_to_step)
+        b.grid(row=2, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        b = tk.Button(frame, text="Stop", command=self.stop_motors)
+        b.grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        # Move to Position
+        tk.Label(frame, "Set Position").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        self.pos_options = {"FW1": ["A1", "A2", "A3", "A4", "A5", "A6"],
+                            "FW2": ["B1", "B2", "B3", "B4", "B5", "B6"],
+                            "GR_A": ["GR_A1", "GR_A2"],
+                            "GR_B": ["GR_B1", "BR_B2"]}
+        self.selected_pos = tk.StringVar(self, self.pos_options[self.active_wheel.get()][0])
+        self.options = ttk.OptionMenu(frame, self.selected_pos, *self.pos_options[self.active_wheel.get()], command=self.move_to_pos)
+        self.options.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[self.options] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
 
-        r3 = tk.Radiobutton(self, text='GR_A', variable=self.r1_v,
-                            value=3, command=self.Choose_FWorGR)
-        r3.place(x=130, y=70)
+        # Move to Filter
+        tk.Label(self.main_frame, "Set Filter").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        self.filter_options = ["open", "SLOAN-g", "SLOAN-r", "SLOAN-i", "SLOAN-z", "Ha", "O[III]", "S[II]"]
+        self.selected_filter = tk.StringVar(self, self.filter_options[0])
+        m = ttk.OptionMenu(self.main_frame, self.selected_filter, *self.filter_options, command=self.move_to_filter)
+        m.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[m] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
 
-        r3 = tk.Radiobutton(self, text='GR_B', variable=self.r1_v,
-                            value=4, command=self.Choose_FWorGR)
-        r3.place(x=190, y=70)
+        # Custom Command
+        tk.Label(self.main_frame, "Enter Command:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        self.command = tk.StringVar(self, "")
+        e = tk.Entry(self.main_frame, textvariable=self.command)
+        e.grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[e] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        b = tk.Button(self.main_frame, text="Run", command=self.enter_command)
+        b.grid(row=4, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
 
-        # start with FW1
-        self.r1_v.set(1)
-        self.Choose_FWorGR()
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#       home
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.Button_home = tk.Button(
-            self, text="send to home", command=self.home, relief=tk.RAISED)
-        self.Button_home.place(x=10, y=100)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#        Initialize
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.Button_Initialize = tk.Button(
-            self, text="Initialize Filter Wheels", command=self.FW_initialize, relief=tk.RAISED)
-        self.Button_Initialize.place(x=200, y=100)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#        Query current step counts
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        self.Button_Initialize = tk.Button(
-            self, text="Current steps", command=self.query_current_step_counts, relief=tk.RAISED)
-        self.Button_Initialize.place(x=10, y=130)
-
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#         #Move to step....
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        Button_Move_to_step = tk.Button(
-            self, text="Move to step", command=self.move_to_step, relief=tk.RAISED)
-        Button_Move_to_step.place(x=10, y=160)
-        self.Target_step = tk.StringVar()
-        Label_Target_step = tk.Entry(
-            self, textvariable=self.Target_step, width=6, bg='white')
-        Label_Target_step.place(x=140, y=163)
-        Button_Stop = tk.Button(
-            self, text="Stop", command=self.stop, relief=tk.RAISED)
-        Button_Stop.place(x=260, y=160)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#         #Move to FW_position....
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        FW_pos_options = [
-            "A1",
-            "A2",
-            "A3",
-            "A4",
-            "A5",
-            "A6",
-            "B1",
-            "B2",
-            "B3",
-            "B4",
-            "B5",
-            "B6",
-        ]
-
-#        # datatype of menu text
-        self.selected_FW_pos = tk.StringVar()
-#        # initial menu text
-        self.selected_FW_pos.set(FW_pos_options[0])
-#        # Create Dropdown menu
-        self.menu_FW_pos = tk.OptionMenu(
-            self, self.selected_FW_pos,  *FW_pos_options)
-        self.menu_FW_pos.place(x=120, y=193)
-        Button_Move_to_FW_pos = tk.Button(
-            self, text="FW Position", command=self.FW_move_to_position, relief=tk.RAISED)
-        Button_Move_to_FW_pos.place(x=10, y=190)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#         #Move to Filter....
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        filter_options = [
-            "open",
-            "SLOAN-g",
-            "SLOAN-r",
-            "SLOAN-i",
-            "SLOAN-z",
-            "Ha",
-            "O[III]",
-            "S[II]",
-        ]
-
-#        # datatype of menu text
-        self.selected_filter = tk.StringVar()
-#        # initial menu text
-        self.selected_filter.set(filter_options[0])
-#        # Create Dropdown menu
-        self.menu_filters = tk.OptionMenu(
-            self, self.selected_filter,  *filter_options)
-        self.menu_filters.place(x=300, y=193)
-        Button_Move_to_filter = tk.Button(
-            self, text="Filter", command=self.FW_move_to_filter, relief=tk.RAISED)
-        Button_Move_to_filter.place(x=230, y=190)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#         #Move to GR_position....
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        GR_pos_options = [
-            "GR_A1",
-            "GR_A2",
-            "GR_B1",
-            "GR_B2",
-        ]
-#        # datatype of menu text
-        self.selected_GR_pos = tk.StringVar()
-#        # initial menu text
-        self.selected_GR_pos.set(GR_pos_options[0])
-#        # Create Dropdown menu
-        self.menu_GR_pos = tk.OptionMenu(
-            self, self.selected_GR_pos,  *GR_pos_options)
-        self.menu_GR_pos.place(x=120, y=223)
-        Button_Move_to_GR_pos = tk.Button(
-            self, text="GR Position", command=self.GR_move_to_position, relief=tk.RAISED)
-        Button_Move_to_GR_pos.place(x=10, y=220)
-
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#         #Enter command
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        Button_Enter_Command = tk.Button(
-            self, text="Enter Command: ", command=self.enter_command, relief=tk.RAISED)
-        Button_Enter_Command.place(x=10, y=250)
-        self.Command_string = tk.StringVar()
-        Text_Command_string = tk.Entry(
-            self, textvariable=self.Command_string, width=15, bg='white')
-        Text_Command_string.place(x=180, y=252)
-        Label_Command_string_header = tk.Label(
-            self, text=" ~@,9600_8N1T2000,+")
-        Label_Command_string_header.place(x=10, y=280)
-        Label_Command_string_Example = tk.Label(self, text=" (e.g. /1e1R\\n)")
-        Label_Command_string_Example.place(x=165, y=280)
+        # Initialize Commands
+        b = tk.Button(self.main_frame, "Initialize Filter Wheels", command=self.initialize_filters)
+        b.grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        b = tk.Button(self.main_frame, "Initialize Grism Rails", command=self.initialize_grisms)
+        b.grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
 
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#
-#         # Exit
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-        quitButton = tk.Button(self, text="Exit", command=self.client_exit)
-        quitButton.place(x=280, y=300)
+    def initialize_pcm(self):
+        self.logger.info("Initializing contact with PCM")
+        response = self.PCM.echo_client()
+        self.logger.info("Server Responded {}".format())
+        if response is not None:
+            self.initialized = True
+            self.is_on = self.PCM.check_if_power_is_on()
 
-    def get_widget(self):
-        """ get_widget """
-        return self.root
-
-    """
-    def check_if_power_is_on(self):
-        print('at startup, get echo from server:')
-        t = PCM.echo_client()
-        self.Echo_String.set(t)
-        if t!= None:
-            print(t[2:13])
-            if t[2:13] == "NO RESPONSE":
-                self.is_on = False
-                self.Echo_String.set(t[2:13])
-            else:
-                self.is_on = True
-                self.Echo_String.set(t)
-        else:
-            print("No echo from the server")
-    """
-
-    def call_echo_PCM(self):
-        """ call_echo_PCM """
-        print('echo from server:')
-        t = PCM.echo_client()
-        self.Echo_String.set(t)
-        print(t)
 
     def power_switch(self):
         """ power_switch """
-    # Determine is on or off
-        if self.is_on:  # True, power is on => turning off, prepare for turn on agaim
-            t = PCM.power_off()
-            self.is_on = False
-            self.Button_Power_OnOff.config(text="Turn power On", fg="green")
+        if self.is_on:
+            self.logger.info("Turning motors off")
+            response = self.PCM.power_off()
+            self.logger.info("Motors responded {}".format(response))
+            self.is_on = self.PCM.check_if_power_is_on()
         else:
-            t = PCM.power_on()
-            self.is_on = True
-            self.Button_Power_OnOff.config(text="Turn power Off", fg="red")
-        self.Echo_String.set(t)
-        print("Power switched to ", t)
+            self.logger.info("Turning motors on")
+            response = self.PCM.power_on()
+            self.logger.info("Motors responded {}".format(response))
+            self.is_on = self.PCM.check_if_power_is_on()
+        self.motor_switch_text.set(self.switch_text[self.is_on])
+        self.motor_on_button.config(image=self.switch_image[self.is_on])
+
 
     def all_ports_status(self):
         """ all_ports_status """
-        print('all ports status:')
-        t = PCM.all_ports_status()
-        self.Echo_String.set(t)
-        print(t)
+        self.port_status_info.set(self.PCM.all_ports_status())
 
-    def Choose_FWorGR(self):
+
+    def choose_wheel(self):
         """ Choose_FWorGR """
-        if self.r1_v.get() == 1:
-            unit = 'FW1',
-        if self.r1_v.get() == 2:
-            unit = 'FW2',
-        if self.r1_v.get() == 3:
-            unit = 'GR_A',
-        if self.r1_v.get() == 4:
-            unit = 'GR_B',
-        self.FWorGR = unit[0]  # returns a list...
-        print(self.FWorGR)
+        chosen_wheel = self.active_wheel.get()
+        if chosen_wheel != self.current_wheel:
+            # Empty out all status labels
+            self.step_position.set("")
+            self.step_entry.set("")
+            self.current_wheel = chosen_wheel
+            self.selected_pos.set(self.pos_options[chosen_wheel][0])
+            self.options.set_menu(self.selected_pos, *self.pos_options[chosen_wheel])
 
-    def FW_initialize(self):
-        """ to be written """
 
-        print('Initialize:')
-        t = PCM.initialize_filter_wheel("FW1")
-        t = PCM.initialize_filter_wheel("FW2")
-        self.Echo_String.set(t)
-        print(t)
+    def initialize_filters(self):
+        msg = "Do you really want to initialize the filter wheels? This should only be "
+        msg += "needed after changing a motor or other component."
+        res = tk.messagebox.askquestion("Initialize Filter Wheels", msg)
+        if res == 'yes':
+            self.logger.info("Initializing wheel 1")
+            result = self.PCM.initialize_filter_wheel("FW1")
+            self.logger.info("Result of initializing wheel 1: {}".format(result))
+            self.logger.info("Initializing wheel 2")
+            result = self.PCM.initialize_filter_wheel("FW2")
+            self.logger.info("Result of initializing wheel 2: {}".format(result))
 
-    def stop_the_motors(self):
-        """ to be written """
-        print('Stop the motor:')
-        t = PCM.motors_stop()
-        self.Echo_String.set(t)
 
-    def query_current_step_counts(self):
-        """ to be written """
-        print('Current step counts:')
-        t = PCM.query_current_step_counts(self.FWorGR)
-        self.Echo_String.set(t)
-        print(t)
+    def initialize_grisms(self):
+        msg = "Do you really want to initialize the grism rails? This should only be "
+        msg += "needed after changing a motor or other component."
+        res = tk.messagebox.askquestion("Initialize Grism Rails", msg)
+        if res == 'yes':
+            self.logger.info("Initializing rails")
+            result = self.PCM.initialize_grism_rails()
+            self.logger.info("Result of initializing rails: {}".format(result))
+
+
+    def stop_motors(self):
+        result = self.PCM.motors_stop()
+        self.logger.info("Result of stopping motors is: {}".format(result))
+
+
+    def current_filter_step(self):
+        result = self.PCM.current_filter_step(self.active_wheel.get())
+        self.step_position.set("{}".format(result))
+
 
     def home(self):
-        """ to be written """
-        print('home:')
-        t = PCM.home_FWorGR_wheel(self.FWorGR)
-        self.Echo_String.set(t)
-        print(t)
+        result = self.PCM.return_wheel_home(self.active_wheel.get())
+        self.logger.info("Result of home command is {}".format(result))
+
 
     def move_to_step(self):
-        """ to be written """
-        print('moving to step:')
+        result = self.PCM.go_to_step(self.active_wheel.get(), self.step_entry.get())
+        self.logger.info("Result of moving to step: {}".format(result))
 
-        t = PCM.go_to_step(self.FWorGR, self.Target_step.get())
-        self.Echo_String.set(t)
-        print(t)
 
-    def stop(self):
-        """ to be written """
-        print('moving to step:')
-        t = PCM.stop_filter_wheel(self.FWorGR)
-        self.Echo_String.set(t)
-        print(t)
+    def move_to_pos(self):
+        current_wheel = self.active_wheel.get()
+        new_pos = self.selected_pos.get()
+        if "GR" in current_wheel:
+            result = self.PCM.move_grism_rails(new_pos)
+            self.main_fits_header.set_param("grismpos", new_pos)
+        else:
+            result = self.PCM.move_filter_wheel(new_pos)
+            self.main_fits_header.set_param("filterpos", new_pos)
+        self.logger.info("Moved {} to {}. Result {}".format(current_wheel, new_pos, result))
 
-    def FW_move_to_position(self):
-        """ to be written """
-        print('moving to FW position:', self.selected_FW_pos.get())
-        FW_pos = self.selected_FW_pos.get()
-        t = PCM.move_FW_pos_wheel(FW_pos)
-        self.Echo_String.set(t)
-        main_fits_header.set_param("filterpos", FW_pos)
-        print(t)
 
-    def FW_move_to_filter(self):
-        """ to be written """
-        print('moving to filter:', self.selected_filter.get())
-        filter = self.selected_filter.get()
-        t = PCM.move_filter_wheel(filter)
-        self.Echo_String.set(t)
-        main_fits_header.set_param("filters", filter)
-        print(t)
+    def move_to_filter(self):
+        result = self.PCM.move_filter_wheel(self.selected_filter.get())
+        self.main_fits_header.set_param("filters", self.selected_filter.get())
+        self.logger.info("Moved filters to {}. Result {}".format(self.selected_filter.get(), result))
 
-    def GR_move_to_position(self):
-        """ to be written """
-        print('moving to GR_position:')
-        GR_pos = self.selected_GR_pos.get()
-        t = PCM.move_grism_rails(GR_pos)
-        self.Echo_String.set(t)
-
-        print(t)
 
     def enter_command(self):
-        """ to be written """
-        print('command entered:', self.Command_string.get())
-        # convert StringVar to string
-        t = PCM.send_command_string(self.Command_string.get())
-        self.Echo_String.set(t)
-        print(t)
-
-    def client_exit(self):
-        """ to be written """
-        print("destroy")
-        self.destroy()
-
-    def create_menubar(self, parent):
-        """ to be written """
-        parent.geometry("400x330")
-        if sys.platform == "win32":
-            parent.geometry("500x400")
-
-        parent.title("SAMOS Motor Controller")
-
-        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
-                          activebackground="#80B9DC")
-
-        # Filemenu
-        filemenu = tk.Menu(menubar, tearoff=0,
-                           relief=tk.RAISED, activebackground="#026AA9")
-        menubar.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(
-            label="Config", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_command(
-            label="DMD", command=lambda: parent.show_frame("DMDPage"))
-        filemenu.add_command(label="Recalibrate CCD2DMD",
-                             command=lambda: parent.show_frame("CCD2DMDPage"))
-        filemenu.add_command(
-            label="Motors", command=lambda: parent.show_frame("MotorsPage"))
-        filemenu.add_command(
-            label="CCD", command=lambda: parent.show_frame("CCDPage"))
-        filemenu.add_command(
-            label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
-        filemenu.add_command(
-            label="MainPage", command=lambda: parent.show_frame("MainPage"))
-        filemenu.add_command(
-            label="Close", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_separator()
-        filemenu.add_command(
-            label="ETC", command=lambda: parent.show_frame("ETCPage"))
-        filemenu.add_command(label="Exit", command=parent.quit)
-
-        """
-        # proccessing menu
-        processing_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Validation", menu=processing_menu)
-        processing_menu.add_command(label="validate")
-        processing_menu.add_separator()
-        """
-
-        # help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
-        help_menu.add_separator()
-
-        return menubar
+        self.logger.info("Commanding PCM {}".format(self.command.get()))
+        result = self.PCM.send_command_string(self.command.get())
+        self.logger.info("PCM returned {}".format(result))

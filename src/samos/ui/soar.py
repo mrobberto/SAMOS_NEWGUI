@@ -52,7 +52,7 @@ from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
 from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
 from samos.dmd import DigitalMicroMirrorDevice
-from samos.motors.Class_PCM import Class_PCM
+from samos.motors import PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.astrometry.tk_class_astrometry_V5 import Astrometry
 from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks

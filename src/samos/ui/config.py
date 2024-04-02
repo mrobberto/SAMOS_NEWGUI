@@ -25,68 +25,53 @@ class ConfigPage(SAMOSFrame):
         super().__init__(parent, container, "SAMOS Configuration", **kwargs)
 
         # Set up directories frame
-        frame = tk.LabelFrame(self.main_frame, text="Directories", font=BIGFONT, borderwidth=2)
+        frame = tk.LabelFrame(self.main_frame, text="Files", font=BIGFONT, borderwidth=2)
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        tk.Label(frame, text=self.PAR.dir_dict['dir_Motors']).grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_CCD']).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_DMD']).grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_SOAR']).grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_SAMI']).grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_Astrom']).grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text=self.PAR.dir_dict['dir_system']).grid(row=6, column=0, sticky=TK_STICKY_ALL)
-
-        self.dir_Motors = tk.StringVar()
-        self.dir_Motors.set(self.PAR.dir_dict['dir_Motors'])
-        tk.Entry(frame, width=25, textvariable=self.dir_Motors).grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.dir_CCD = tk.StringVar()
-        self.dir_CCD.set(self.PAR.dir_dict['dir_CCD'])
-        tk.Entry(frame, width=25, textvariable=self.dir_CCD).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.dir_DMD = tk.StringVar()
-        self.dir_DMD.set(self.PAR.dir_dict['dir_DMD'])
-        tk.Entry(frame, width=25, textvariable=self.dir_DMD).grid(row=2, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.dir_SOAR = tk.StringVar()
-        self.dir_SOAR.set(self.PAR.dir_dict['dir_SOAR'])
-        tk.Entry(frame, width=25, textvariable=self.dir_SOAR).grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.dir_SAMI = tk.StringVar()
-        self.dir_SAMI.set(self.PAR.dir_dict['dir_SAMI'])
-        tk.Entry(frame, width=25, textvariable=self.dir_SAMI).grid(row=4, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.dir_Astrom = tk.StringVar()
-        self.dir_Astrom.set(self.PAR.dir_dict['dir_Astrom'])
-        tk.Entry(frame, width=25, textvariable=self.dir_Astrom).grid(row=5, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.dir_system = tk.StringVar()
-        self.dir_system.set(self.PAR.dir_dict['dir_system'])
-        tk.Entry(frame, width=25, textvariable=self.dir_system).grid(row=6, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-
-        b = tk.Button(frame, text="Load Current", relief="raised", command=self.load_dir_user, font=BIGFONT)
-        b.grid(row=7, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Save Current", relief="raised", command=self.save_dir_user, font=BIGFONT)
-        b.grid(row=7, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Load Default", relief="raised", command=self.load_dir_default, font=BIGFONT)
-        b.grid(row=7, column=2, sticky=TK_STICKY_ALL)
+        initial_files_location = "module"
+        if "SAMOS_FILES_LOCATION" in os.environ:
+            initial_files_location = os.environ["SAMOS_FILES_LOCATION"]
+        self.files_loc = tk.StringVar(self, initial_files_location)
+        custom_files_initial = ""
+        if "SAMOS_CUSTOM_FILES_LOCATION" in os.environ:
+            custom_files_initial = os.environ["SAMOS_CUSTOM_FILES_LOCATION"]
+        self.custom_files_path = tk.StringVar(self, custom_files_initial)
+        tk.Label(frame, text="Store files:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b = tk.Radiobutton(frame, text="In Module", variable=self.files_loc, value="module", command=self.set_files_base,
+                           anchor=tk.W)
+        b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        b = tk.Radiobutton(frame, text="Home Directory", variable=self.files_loc, value="home", command=self.set_files_base,
+                           anchor=tk.W)
+        b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        b = tk.Radiobutton(frame, text="Working Directory", variable=self.files_loc, value="cwd", command=self.set_files_base,
+                           anchor=tk.W)
+        b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        b = tk.Radiobutton(frame, text="Custom Location", variable=self.files_loc, value="custom", command=self.set_files_base,
+                           anchor=tk.W)
+        b.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, textvariable=self.custom_files_path).grid(row=5, column=0, sticky=TK_STICKY_ALL)
 
         # Set up servers frame
         frame = tk.LabelFrame(self.main_frame, text="Servers", font=BIGFONT, borderwidth=2)
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        self.PAR.inoutvar = tk.StringVar(None, "inside")
-        b = tk.Radiobutton(frame, text='Inside', variable=self.PAR.inoutvar, value='inside', command=self.load_IP_default)
+        self.ip_loc = tk.StringVar(self, "inside")
+        b = tk.Radiobutton(frame, text='Inside', variable=self.ip_loc, value='inside', command=self.load_IP_default)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Radiobutton(frame, text='Outside (with VPN)', variable=self.PAR.inoutvar, value='outside', 
-                           command=self.load_IP_default)
+        b = tk.Radiobutton(frame, text='Outside (with VPN)', variable=self.ip_loc, value='outside', command=self.load_IP_default)
         b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Radiobutton(frame, text='SIMULATED', fg='red', variable=self.PAR.inoutvar, value='simulated',
-                           command=self.load_IP_default).grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        b = tk.Radiobutton(frame, text='SIMULATED', fg='red', variable=self.ip_loc, value='simulated', command=self.load_IP_default)
+        b.grid(row=0, column=2, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="SAMOS Motors").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text="PCM").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, text="CCD").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, text="DMD").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, text="SOAR Telescope").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, text="SOAR SAMI").grid(row=5, column=0, sticky=TK_STICKY_ALL)
 
-        self.IP_Motors = tk.StringVar()
-        self.IP_Motors.set(self.PAR.IP_dict['IP_Motors'])
-        tk.Entry(frame, width=20, textvariable=self.IP_Motors).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        self.IP_PCM = tk.StringVar()
+        self.IP_PCM.set(self.PAR.IP_dict['IP_PCM'])
+        tk.Entry(frame, width=20, textvariable=self.IP_PCM).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.IP_CCD = tk.StringVar()
         self.IP_CCD.set(self.PAR.IP_dict['IP_CCD'])
         tk.Entry(frame, width=20, textvariable=self.IP_CCD).grid(row=2, column=1, columnspan=2, sticky=TK_STICKY_ALL)
@@ -150,17 +135,25 @@ class ConfigPage(SAMOSFrame):
         frame.grid(row=1, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
         b = tk.Button(frame, text="Initialize Logbook", relief="raised", command=self.LogBookstartup)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        
+
+
+    def set_files_base(self):
+        os.environ["SAMOS_FILES_LOCATION"] = self.files_loc.get()
+        if self.files_loc.get() == "custom" and (not Path(self.custom_files_path.get()).is_dir()):
+            custom_loc = tk.filedialog.askdirectory(initialdir=Path.cwd(), title="Select a Location to store files")
+            self.custom_files_path.set(custom_loc)
+            os.environ["SAMOS_CUSTOM_FILES_LOCATION"] = custom_loc
+
 
     def LogBookstartup(self):
-        self.PAR.create_log_file(
-            Telescope=self.Telescope.get(),
-            ProgramID=self.Program_ID.get(),
-            ProposalTitle=self.Proposal_Title.get(),
-            PI=self.Principal_Investigator.get(), 
-            Observer=self.Observer.get(),
-            Operator=self.TO_var.get()
-        )
+        self.PAR.PotN['Program ID'] = self.Program_ID.get()
+        self.PAR.PotN['Observer'] = self.Observer.get()
+        self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
+        self.PAR.PotN['Telescope'] = self.Telescope.get()
+        self.PAR.PotN['PI'] = self.Principal_Investigator.get()
+        self.PAR.PotN['ProposalTitle'] = self.Proposal_Title.get()
+        self.PAR.update_PotN()
+        self.PAR.create_log_file()
 
 
     def startup(self):
@@ -172,7 +165,7 @@ class ConfigPage(SAMOSFrame):
             IP = self.PAR.IP_dict['IP_DMD']
             [host, port] = IP.split(":")
             self.DMD.initialize(address=host, port=int(port))
-        if self.PAR.IP_status_dict['IP_Motors'] == True:
+        if self.PAR.IP_status_dict['IP_PCM'] == True:
             PCM.power_on()
         self.logger.info("CONFIG_GUI: startup complete.")
 
@@ -195,11 +188,11 @@ class ConfigPage(SAMOSFrame):
 
 
     def load_IP_user(self):
-        if self.PAR.inoutvar.get() == 'inside':
+        if self.ip_loc.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_user_inside.csv")
-        elif self.PAR.inoutvar.get() == 'outside':
+        elif self.ip_loc.get() == 'outside':
             ip_file = get_data_file("system", "IP_addresses_user_outside.csv")
-        elif self.PAR.inoutvar.get() == 'simulated':
+        elif self.ip_loc.get() == 'simulated':
             ip_file = get_data_file("system", "IP_addresses_SIMULATED.csv")
         ip_file_default = get_data_file("system", "IP_addresses_default.csv")
         shutil.copy(ip_file, ip_file_default)
@@ -207,11 +200,11 @@ class ConfigPage(SAMOSFrame):
 
 
     def load_IP_default(self):
-        if self.PAR.inoutvar.get() == 'inside':
+        if self.ip_loc.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
-        elif self.PAR.inoutvar.get() == 'outside':
+        elif self.ip_loc.get() == 'outside':
             ip_file = get_data_file("system", "IP_addresses_default_outside.csv")
-        elif self.PAR.inoutvar.get() == 'simulated':
+        elif self.ip_loc.get() == 'simulated':
             ip_file = get_data_file("system", "IP_addresses_SIMULATED.csv")
         ip_file_default = get_data_file("system", "IP_addresses_default.csv")
         shutil.copy(ip_file, ip_file_default)
@@ -219,11 +212,11 @@ class ConfigPage(SAMOSFrame):
 
 
     def save_IP_user(self):
-        if self.PAR.inoutvar.get() == 'inside':
+        if self.ip_loc.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_user_inside.csv")
-        elif self.PAR.inoutvar.get() == 'outside':
+        elif self.ip_loc.get() == 'outside':
             ip_file = get_data_file("system", "IP_addresses_user_outside.csv")
-        elif self.PAR.inoutvar.get() == 'simulated':
+        elif self.ip_loc.get() == 'simulated':
             self.logger.error("ERROR: simulated IP addresses should not be changed!")
             return
         ip_file_default = get_data_file("system", "IP_addresses_default.csv")
@@ -246,7 +239,7 @@ class ConfigPage(SAMOSFrame):
     def IP_echo(self):
         # Motors Alive?
         self.logger.info("Checking Motor Status")
-        IP = self.PAR.IP_dict['IP_Motors']
+        IP = self.PAR.IP_dict['IP_PCM']
         [host, port] = IP.split(":")
         PCM.initialize(address=host, port=int(port))
         answer = PCM.echo_client()
@@ -254,13 +247,13 @@ class ConfigPage(SAMOSFrame):
             self.logger.info("Motors are on")
             self.IP_Motors_on_button.config(image=self.on_sm)
             self.logger.info('echo from server:')
-            self.PAR.IP_status_dict['IP_Motors'] = True
+            self.PAR.IP_status_dict['IP_PCM'] = True
             # PCM.power_on()
 
         else:
             self.logger.warning("Motors are off")
             self.IP_Motors_on_button.config(image=self.off_sm)
-            self.PAR.IP_status_dict['IP_Motors'] = False
+            self.PAR.IP_status_dict['IP_PCM'] = False
 
 
         # CCD alive?
@@ -299,15 +292,15 @@ class ConfigPage(SAMOSFrame):
     # Define our switch functions
     def Motors_switch(self):
         """ Determine is on or off """
-        if self.PAR.IP_status_dict['IP_Motors']:
+        if self.PAR.IP_status_dict['IP_PCM']:
             self.IP_Motors_on_button.config(image=self.off_sm)
-            self.PAR.IP_status_dict['IP_Motors'] = False
+            self.PAR.IP_status_dict['IP_PCM'] = False
             PCM.power_off()
         else:
             self.IP_Motors_on_button.config(image=self.on_sm)
-            self.PAR.IP_status_dict['IP_Motors'] = True
+            self.PAR.IP_status_dict['IP_PCM'] = True
             self.save_IP_status()
-            PCM.IP_host = self.IP_Motors
+            PCM.IP_host = self.IP_PCM.get()
             PCM.power_on()
         self.save_IP_status()
         self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
@@ -386,7 +379,7 @@ class ConfigPage(SAMOSFrame):
             self.PAR.IP_dict[key] = dict_from_csv[key]
             getattr(self, key).set(dict_from_csv[key])
         
-        if self.PAR.inoutvar.get() == "simulated":
+        if self.ip_loc.get() == "simulated":
             self.parent.initialize_simulator()
         else:
             self.parent.destroy_simulator()
@@ -394,4 +387,4 @@ class ConfigPage(SAMOSFrame):
         return self.PAR.IP_dict
 
 
-    SYSTEMS = ["Motors", "CCD", "DMD", "SOAR", "SAMI", "Astrom", "system"]
+    SYSTEMS = ["PCM", "CCD", "DMD", "SOAR", "SAMI", "Astrom", "system"]

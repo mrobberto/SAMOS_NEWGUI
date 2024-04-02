@@ -96,10 +96,20 @@ def get_fits_dir():
     """
     today = datetime.now()
     
-    if "SAMOS_OUTPUTS" in os.environ:
-        base_dir = Path(os.environ["SAMOS_OUTPUTS"])
-    elif "SAMOS_STORE_TO_CWD" in os.environ:
-        base_dir = Path(os.getcwd())
+    if "SAMOS_FILES_LOCATION" in os.environ:
+        if os.environ["SAMOS_FILES_LOCATION"] == "module":
+            base_dir = get_temporary_dir()
+        elif os.environ["SAMOS_FILES_LOCATION"] == "home":
+            base_dir = Path.home()
+        elif os.environ["SAMOS_FILES_LOCATION"] == "cwd":
+            base_dir = Path.cwd()
+        elif os.environ["SAMOS_FILES_LOCATION"] == "custom":
+            if "SAMOS_CUSTOM_FILES_LOCATION" in os.environ:
+                base_dir = Path(os.environ["SAMOS_CUSTOM_FILES_LOCATION"])
+            else:
+                base_dir = get_temporary_dir()
+        else:
+            base_dir = Path(os.environ["SAMOS_FILES_LOCATION"])
     else:
         base_dir = get_temporary_dir()
     

@@ -1,72 +1,42 @@
 """
 SAMOS Main tk Frame Class
 """
-import copy
+from copy import deepcopy
 import csv
 from datetime import datetime
-import glob
-import logging
-from matplotlib import pyplot as plt
 import numpy as np
-import os
 from pathlib import Path
 import random
 import re
-import shutil
-import subprocess
-import sys
 import time
 import twirl
-from urllib.parse import urlencode
 
-from astropy.coordinates import SkyCoord, FK4
-from astroquery.gaia import Gaia
+from astropy.coordinates import SkyCoord
 from astropy.io import fits, ascii
-from astroquery.simbad import Simbad
-from astropy.stats import sigma_clipped_stats, SigmaClip
 from astropy import units as u
 from astropy import wcs
-from astropy.wcs.utils import fit_wcs_from_points
-from ginga.util import iqcalc
 from ginga.AstroImage import AstroImage
-from ginga.util import ap_region
 from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
 from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
 from ginga import colors
 from ginga.util.loader import load_data
-from ginga.misc import log
-from ginga import colors as gcolors
 from ginga.canvas import CompoundMixin as CM
 from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
 import pandas as pd
-from photutils.background import Background2D, MedianBackground
-from photutils.detection import DAOStarFinder
 from PIL import Image, ImageTk
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
 
 import tkinter as tk
 from tkinter import ttk
 
-from samos.ccd import CCD
-from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
-from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
-from samos.dmd import DigitalMicroMirrorDevice
-from samos.motors.Class_PCM import Class_PCM
-from samos.soar.Class_SOAR import Class_SOAR
-from samos.astrometry.skymapper import skymapper_interrogate
 from samos.astrometry.tk_class_astrometry_V5 import Astrometry
-from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
-from samos.system import WriteFITSHead as WFH
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.system.SlitTableViewer import SlitTableView as STView
-from samos.tk_utilities.utils import about_box 
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 from samos.utilities.utils import convert_ginga_to_astropy
 from samos.utilities.tk import all_children, select_widgets, set_widgets, check_widgets
-
 
 from .common_frame import SAMOSFrame
 from .exposure import ExposureProgressWindow
@@ -78,7 +48,6 @@ class MainPage(SAMOSFrame):
         super().__init__(parent, container, "Main Frame", **kwargs)
         self.previous_image_name = ""
         self.selected_object_tag = None
-        self.check_widgets = {}
         
         self.initialize_slit_table()
 
@@ -479,7 +448,7 @@ class MainPage(SAMOSFrame):
         self.status_box.create_oval(240, 20, 280, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["tcs_ind"], outline=None)
         self.status_box.create_text(260, 70, text="TCS")
         # Give the PCM class a copy of the status box so that it can set colours as well.
-        self.Motors.canvas_Indicator = self.status_box
+        self.PCM.initialize_indicator(self.status_box)
 
         self.set_enabled()
 
@@ -777,7 +746,7 @@ class MainPage(SAMOSFrame):
         main_fits_header.set_param("filtpos", filter_pos)
         self.status_box.itemconfig("filter_ind", fill=indicator_light_pending_color)
         self.status_box.update()
-        command_status = self.Motors.move_filter_wheel(current_filter)
+        command_status = self.PCM.move_filter_wheel(current_filter)
         self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         self.status_box.update()
         self.logger.info("Motors returned {}".format(command_status))
@@ -794,7 +763,7 @@ class MainPage(SAMOSFrame):
         main_fits_header.set_param("grating", GR_pos)
         self.status_box.itemconfig("grism_ind", fill=indicator_light_pending_color)
         self.status_box.update()
-        command_status = self.Motors.move_grism_rails(GR_pos)
+        command_status = self.PCM.move_grism_rails(GR_pos)
         self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         self.status_box.update()
         self.logger.info("Motors returned {}".format(command_status))
@@ -902,15 +871,11 @@ class MainPage(SAMOSFrame):
         # now open logfile to write the writeup
         with open(self.PAR.logbook_name, 'a') as logbook:
             today = datetime.now()
-            for i in range(len(newfiles)):
-                logbook.write(today.strftime('%Y-%m-%d')+",")
-                logbook.write(time.strftime("%H:%M:%S", self.start_time)+",")
-                logbook.write(self.PAR.PotN['Object Name']+",")
-                logbook.write(self.FW_filter.get()+",")
-                logbook.write(str(len(newfiles))+",")
-                logbook.write(self.ExpTimeSet.get()+",")
-                logbook.write(os.path.split(newfiles[i])[-1]+",")
-                logbook.write("\n")
+            for file in newfiles:
+                file_name = Path(file).name
+                logbook.write(f"{today.strftime('%Y-%m-%d')},time.strftime('%H:%M:%S', self.start_time),")
+                logbook.write(f"{self.PAR.PotN['Object Name]},{self.current_filter.get()},{len(newfiles)},")
+                logbook.write(f"{self.image_exptime.get()},{file_name}\n")
 
 
     def change_acq_type(self, event):
@@ -1103,12 +1068,14 @@ class MainPage(SAMOSFrame):
             # We report the value across the pixel, even though the coords
             # change halfway across the pixel
             value = viewer.get_data(int(data_x + viewer.data_off), int(data_y + viewer.data_off))
-            value = int(round(value, 0))
+            value = f"{value:10g}"
         except Exception as e:
-            value = None
+            value = "Invalid"
 
         fits_x, fits_y = data_x + 1, data_y + 1
+        text = f"FITS: (x, y) = ({fits_x:6.1f}, {fits_y:6.1f}). Value = {value}"
         dmd_x, dmd_y = self.convert.CCD2DMD(fits_x, fits_y)
+        text = f"DMD: (x, y) = ({dmd_x:9.4f}, {dmd_y:9.4f}). " + text
 
         # Calculate WCS RA
         try:
@@ -1119,9 +1086,10 @@ class MainPage(SAMOSFrame):
                 return
             ra_deg, dec_deg = image.pixtoradec(fits_x, fits_y)
             self.ra_center, self.dec_center = image.pixtoradec(528, 516, format='str', coords='fits')
-            text = f"(RA, DEC): (({ra_deg}, {dec_deg}), DMD: ({dmd_x}, {dmd_y}), Image: ({fits_x}, {fits_y}), {value}"
+            text = f"(RA, DEC): ({ra_deg:9.4f}, {dec_deg:9.4f}). " + text
         except Exception as e:
-            text = "Good coordinates not found"
+            self.logger.error("Error {} in printing co-ordinates".format(e))
+            text = "No Valid WCS. " + text
         self.readout.config(text=text)
 
 
@@ -1150,7 +1118,7 @@ class MainPage(SAMOSFrame):
         obj.add_callback('pick-up', self.pick_cb, 'up')
         obj.add_callback('pick-move', self.pick_cb, 'move')
         obj.add_callback('edited', self.edit_cb)
-        kind = self.wdrawtype.get()
+        kind = self.draw_type.get()
         self.logger.info(f"User draw object of kind {kind} with tag {tag} on canvas {canvas}")
         if self.slit_tab_view is None:
             self.initialize_slit_table()
@@ -1582,7 +1550,7 @@ class MainPage(SAMOSFrame):
             slit_shape[x1[i]:x2[i], y1[i]:y2[i]] = 0
         self.push_slits(slit_shape)
         # Create a photoimage object of the image in the path
-        image_map = Image.open(os.path.join(dir_DMD, "current_dmd_state.png"))
+        image_map = Image.open(get_data_file("dmd", "current_dmd_state.png"))
         self.img = ImageTk.PhotoImage(image_map)
         image_map.close()
         self.set_enabled()
