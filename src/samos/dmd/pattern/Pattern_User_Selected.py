@@ -109,7 +109,7 @@ class FitsViewer(QtGui.QMainWindow):
         
         
         
-        #vbox = tk.Frame(main, relief=tk.RAISED, borderwidth=1)
+        #vbox = ttk.Frame(main, relief=tk.RAISED, borderwidth=1)
 #        vbox.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         #vbox.pack(side=tk.TOP)
         #vbox.place(x=5, y=0, anchor="nw")#, width=500, height=800)
@@ -182,16 +182,16 @@ class FitsViewer(QtGui.QMainWindow):
         main_canvas.mpl_connect("button_press_event",self.zoomimage)
         
         
-        self.readout = tk.Label(main, text='')
+        self.readout = ttk.Label(main, text='')
         self.readout.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
         """
-        #self.vbox_tab = tk.Frame(main)
+        #self.vbox_tab = ttk.Frame(main)
         #self.vbox_tab.pack(side=tk.RIGHT)
         #self.vbox_tab.place(x=600,y=290,width=700,height=300)
         
         
         
-#        vbox_zoom = tk.Frame(main, relief=tk.RAISED, borderwidth=1)
+#        vbox_zoom = ttk.Frame(main, relief=tk.RAISED, borderwidth=1)
 #        vbox_zoom.pack(side=tk.TOP)
 #        vbox_zoom.place(x=805,y=0, anchor="ne")
         
@@ -216,15 +216,15 @@ class FitsViewer(QtGui.QMainWindow):
         self.zax = zax
         
        
-        vbox_zoom_slit_x0 = tk.Frame(main)
+        vbox_zoom_slit_x0 = ttk.Frame(main)
         vbox_zoom_slit_x0.pack(anchor='n')
         vbox_zoom_slit_x0.place(x=805,y=30)
         spinvar_zx0 = tk.DoubleVar()
         self.spinvar_zx0 = spinvar_zx0
-        spinvar_zx0_label = tk.Label(vbox_zoom_slit_x0,text="x0")
+        spinvar_zx0_label = ttk.Label(vbox_zoom_slit_x0,text="x0")
         spinvar_zx0_label.pack(anchor='ne',side=tk.RIGHT)
         
-        slit_x0_spinbox = tk.Spinbox(vbox_zoom_slit_x0,from_=1,to=1025,
+        slit_x0_spinbox = ttk.Spinbox(vbox_zoom_slit_x0,from_=1,to=1025,
                                      textvariable=self.spinvar_zx0,
                                      command=self.edit_slit_mpl,width=5,
                                      increment=1)
@@ -232,15 +232,15 @@ class FitsViewer(QtGui.QMainWindow):
         
         #slit_x0_spinbox.place(x=600,y=200)
         
-        vbox_zoom_slit_x1 = tk.Frame(main)
+        vbox_zoom_slit_x1 = ttk.Frame(main)
         vbox_zoom_slit_x1.pack(anchor='n')
         vbox_zoom_slit_x1.place(x=805,y=60)
         spinvar_zx1 = tk.DoubleVar()
         self.spinvar_zx1 = spinvar_zx1
-        spinvar_zx1_label = tk.Label(vbox_zoom_slit_x1,text="x1")
+        spinvar_zx1_label = ttk.Label(vbox_zoom_slit_x1,text="x1")
         spinvar_zx1_label.pack(anchor='ne',side=tk.RIGHT)
         
-        slit_x1_spinbox = tk.Spinbox(vbox_zoom_slit_x1,from_=1,to=1025,
+        slit_x1_spinbox = ttk.Spinbox(vbox_zoom_slit_x1,from_=1,to=1025,
                                      textvariable=self.spinvar_zx1,
                                      command=self.edit_slit_mpl, width=5,
                                      increment=1)
@@ -252,29 +252,29 @@ class FitsViewer(QtGui.QMainWindow):
         
         
        
-        vbox_zoom_slit_y0 = tk.Frame(main)
+        vbox_zoom_slit_y0 = ttk.Frame(main)
         vbox_zoom_slit_y0.pack(anchor='n')
         vbox_zoom_slit_y0.place(x=805,y=90)
         spinvar_zy0 = tk.DoubleVar()
         self.spinvar_zy0 = spinvar_zy0
-        spinvar_zy0_label = tk.Label(vbox_zoom_slit_y0,text="y0")
+        spinvar_zy0_label = ttk.Label(vbox_zoom_slit_y0,text="y0")
         spinvar_zy0_label.pack(anchor='ne',side=tk.RIGHT)
         
-        slit_y0_spinbox = tk.Spinbox(vbox_zoom_slit_y0,from_=1,to=1025,
+        slit_y0_spinbox = ttk.Spinbox(vbox_zoom_slit_y0,from_=1,to=1025,
                                      textvariable=self.spinvar_zy0,
                                      command=self.edit_slit_mpl,width=5,
                                      increment=1)
         slit_y0_spinbox.pack(side=tk.TOP,fill=tk.BOTH,padx=0)
         
-        vbox_zoom_slit_y1 = tk.Frame(main)
+        vbox_zoom_slit_y1 = ttk.Frame(main)
         vbox_zoom_slit_y1.pack(anchor='s')
         vbox_zoom_slit_y1.place(x=805,y=120)
         spinvar_zy1 = tk.DoubleVar()
         self.spinvar_zy1 = spinvar_zy1
-        spinvar_zy1_label = tk.Label(vbox_zoom_slit_y1,text="y1")
+        spinvar_zy1_label = ttk.Label(vbox_zoom_slit_y1,text="y1")
         spinvar_zy1_label.pack(anchor='ne',side=tk.RIGHT)
         
-        slit_y1_spinbox = tk.Spinbox(vbox_zoom_slit_y1,from_=1,to=1025,
+        slit_y1_spinbox = ttk.Spinbox(vbox_zoom_slit_y1,from_=1,to=1025,
                                      textvariable=self.spinvar_zy1,
                                      command=self.edit_slit_mpl, width=5,
                                      increment=1)
@@ -287,21 +287,21 @@ class FitsViewer(QtGui.QMainWindow):
  
         
         
- #       self.slit_readout = tk.Label(main, text='')
+ #       self.slit_readout = ttk.Label(main, text='')
  #       self.slit_readout.pack(side=tk.TOP, fill=tk.X, expand=0)
  #       self.slit_readout.place(x=600,y=220)
         
-        slit_bbox = tk.Frame(main)
+        slit_bbox = ttk.Frame(main)
         slit_bbox.pack(side=tk.RIGHT,fill=tk.X, expand=0)
         slit_bbox.place(x=805,y=150)
-        slit_button = tk.Button(slit_bbox, text="Add Slit",command=self.save_slit)
+        slit_button = ttk.Button(slit_bbox, text="Add Slit",command=self.save_slit)
         slit_button.pack(side=tk.RIGHT)
         
-        hbox1 = tk.Frame(main)
+        hbox1 = ttk.Frame(main)
         hbox1.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
         
         
-        wopen = tk.Button(hbox1, text="Open File",
+        wopen = ttk.Button(hbox1, text="Open File",
                                command=self.load_file)
         wopen.pack(side=tk.LEFT,fill="none")
         
@@ -314,7 +314,7 @@ class FitsViewer(QtGui.QMainWindow):
             # './fits_image/cutout_rebined_resized.fits'
 #        image = load_data(self.test_file_name, logger=self.logger)
 
-        self.browse_fits_files = tk.filedialog.askopenfilename(initialdir = "./",filetypes=[("FITS files","*fits")], 
+        self.browse_fits_files = ttk.filedialog.askopenfilename(initialdir = "./",filetypes=[("FITS files","*fits")], 
                     title = "Select a FITS File",parent=self.hbox1)
         
         

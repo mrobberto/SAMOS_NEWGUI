@@ -27,4 +27,4 @@ def about_box():
     """
     Display a dialog with application info
     """
-    tk.messagebox.showinfo('About SAMOS', "This is the control software for the SAMOS instrument.")
+    ttk.messagebox.showinfo('About SAMOS', "This is the control software for the SAMOS instrument.")

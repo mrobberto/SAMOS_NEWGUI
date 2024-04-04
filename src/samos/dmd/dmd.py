@@ -19,10 +19,9 @@ class DigitalMicroMirrorDevice():
     a DLP7000, which is a 768x1024 pixel device, but should be generalizable to
     other sizes, etc. 
     """
-    def __init__(self, **kwargs):
-        self.logger = logging.getLogger("samos")
-        self.PAR = kwargs['par']
-        
+    def __init__(self, logger, par):
+        self.logger = logger
+        self.PAR = par
         # Set invert to false
         self.invert = False
 

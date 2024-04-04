@@ -95,7 +95,7 @@ class SlitTableView(tk.Frame):
         
             
         
-        vbox = tk.Frame(parent, background="light gray")
+        vbox = ttk.Frame(parent)
         vbox.place(x=4, y=4, anchor="nw", width=700, height=400)
         self.vbox = vbox
         stab = tksheet.Sheet(vbox,width=700,height=400,)
@@ -454,7 +454,7 @@ class SlitTableView(tk.Frame):
 #root.geometry("400x330")
  
 #Then we actually create the instance.
-#app = Tk.Window(root)   
+#app = ttk.Window(root)   
  
 #Finally, show it and begin the mainloop.
 #root.mainloop()

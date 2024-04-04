@@ -4,6 +4,7 @@ SAMOS SOAR tk Frame Class
 import copy
 import csv
 from datetime import datetime
+from functools import partial
 import glob
 import logging
 from matplotlib import pyplot as plt
@@ -46,6 +47,8 @@ from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, Rectangle
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter.scrolledtext import ScrolledText
+import customtkinter
 
 from samos.ccd import CCD
 from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
@@ -63,376 +66,296 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
+from .common_frame import SAMOSFrame, check_enabled
 
-class SOARPage(ttk.Frame):
-    """ to be written """
 
+class SOARPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
-        """ to be written """
-        super().__init__(container)
+        super().__init__(parent, container, "SOAR", **kwargs)
+        self.initialized = False
 
-        # label = tk.Label(self, text="SOAR TCS 1", font=('Times', '20'))
-        # label.pack(pady=0,padx=0)
+        # Initialization Button
+        w = ttk.Button(self.main_frame, text="Initialize", command=self.way)
+        w.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
-        # ADD CODE HERE TO DESIGN THIS PAGE
-        # , width=300, height=300)
-        self.frame0l = tk.Frame(self, background="light gray")
-        self.frame0l.place(x=0, y=0, anchor="nw", width=1100, height=500)
+        # Offset
+        w = ttk.Button(self.main_frame, text="Get Offset", command=partial(self.Offset_option_TCS, ""))
+        w.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.offset = tk.StringVar(self, "E 0.00 N 0.00")
+        w = ttk.Entry(self.main_frame, textvariable=self.offset, width=12)
+        w.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Button(self.main_frame, text="Move to Offset", command=partial(self.Offset_option_TCS, "MOVE"))
+        w.grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        # Focus
+        w = ttk.Button(self.main_frame, text="Get Focus", command=partial(self.Focus_option_TCS, "STATUS"))
+        w.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.focus = tk.DoubleVar(self, 0.)
+        w = ttk.Entry(self.main_frame, textvariable=self.focus, width=12)
+        w.grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        focus_options = ["Relative", "Absolute"]
+        self.focus_option = tk.StringVar(self, focus_options[0])
+        w = ttk.OptionMenu(self.main_frame, self.focus_option, *focus_options)
+        w.grid(row=2, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Button(self.main_frame, text="Change Focus", command=partial(self.Focus_option_TCS, "MOVE"))
+        w.grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        # CLM
+        w = ttk.Button(self.main_frame, text="Get CLM", command=partial(self.CLM_option_TCS, "STATUS"))
+        w.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.clm = tk.StringVar(self, "IN")
+        w = customtkinter.CTkSwitch(self.main_frame, textvariable=self.clm, command=partial(self.CLM_option_TCS, "SET"), 
+                                    variable=self.clm, onvalue="IN", offvalue="OUT")
+        w.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        # Guider
+        w = ttk.Button(self.main_frame, text="Get Guider", command=partial(self.Guider_option_TCS, "STATUS"))
+        w.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.guider = tk.StringVar(self, "DISABLED")
+        w = customtkinter.CTkSwitch(self.main_frame, textvariable=self.guider, command=partial(self.Guider_option_TCS, "SET"), 
+                                    variable=self.guider, onvalue="ENABLED", offvalue="DISABLED")
+        w.grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        # Whitespot
 
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-#      TCS Controls
-# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
-
-        button_WAY = tk.Button(
-            self.frame0l, text="Who are you?", command=self.WAY)
-        button_WAY.place(x=4, y=40)
-
-        from functools import partial
-        tk.Label(self.frame0l,
-                 text="Offset:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=4, y=70)
-        self.OFFSET_MOVE_msg = tk.StringVar()
-        self.OFFSET_MOVE_msg.set("E 0.00 N 0.00")
-        entry_OFFSET_MOVE = tk.Entry(
-            self.frame0l, textvariable=self.OFFSET_MOVE_msg, width=12,  bd=3)
-        entry_OFFSET_MOVE.place(x=60, y=68)
-        button_OFFSET_MOVE = tk.Button(
-            self.frame0l, text="MOVE", command=partial(self.Offset_option_TCS, "MOVE"))
-        button_OFFSET_MOVE.place(x=200, y=70)
-        button_OFFSET_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.Offset_option_TCS, "STATUS"))
-        button_OFFSET_STATUS.place(x=400, y=70)
-
-        tk.Label(self.frame0l,
-                 text="Focus:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=4, y=100)
-        self.Focus_option_msg = tk.StringVar()
-        self.Focus_option_msg.set("0")
-        entry_Focus_option = tk.Entry(
-            self.frame0l, textvariable=self.Focus_option_msg, width=5,  bd=3)
-        entry_Focus_option.place(x=60, y=98)
-        self.Focus_variable = tk.StringVar()
-        self.Focus_variable.set("MOVEREL")
-        Focus_options = ["MOVEREL", "MOVEABS"]
-        button_Focus_MOVEREL = tk.Radiobutton(self.frame0l,
-                   text=Focus_options[0],
-                   padx=2,
-                   variable=self.Focus_variable,
-                   command=partial(self.Focus_option_TCS, Focus_options[0]),
-                   value="MOVEREL").place(x=200, y=100)
-        button_Focus_MOVEABS = tk.Radiobutton(self.frame0l,
-                   text=Focus_options[1],
-                   padx=2,
-                   variable=self.Focus_variable,
-                   command=partial(self.Focus_option_TCS, Focus_options[1]),
-                   value="MOVEABS").place(x=300, y=100)
-        button_Focus_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.Focus_option_TCS, "STATUS"))
-        button_Focus_STATUS.place(x=400, y=100)
-
-        self.v = tk.StringVar()
-        self.v.set("OUT")  # initializing the choice, i.e. Python
-        status = ["IN", "OUT"]
-        tk.Label(self.frame0l,
-                 text="CLM:",
-                 justify=tk.LEFT,
-                 padx=20).place(x=4, y=130)
-        button_CLM_IN = tk.Radiobutton(self.frame0l,
-                   text=status[0],
-                   padx=20,
-                   variable=self.v,
-                   command=partial(self.CLM_option_TCS, status[0]),
-                   value="IN").place(x=200, y=130)
-        button_CLM_OUT = tk.Radiobutton(self.frame0l,
-                   text=status[1],
-                   padx=20,
-                   variable=self.v,
-                   command=partial(self.CLM_option_TCS, status[1]),
-                   value="OUT").place(x=300, y=130)
-        button_CLM_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.CLM_option_TCS, "STATUS"))
-        button_CLM_STATUS.place(x=400, y=130)
-
-        self.Guider_status = tk.StringVar()
-        # initializing the choice, i.e. Python
-        self.Guider_status.set("DISABLE")
-        status = ["ENABLE", "DISABLE"]
-        tk.Label(self.frame0l,
-                 text="Guider:",
-                 justify=tk.LEFT,
-                 padx=20).place(x=4, y=160)
-        button_Guider_Enable = tk.Radiobutton(self.frame0l,
-                   text=status[0],
-                   padx=5,
-                   variable=self.Guider_status,
-                   command=partial(self.Guider_option_TCS, status[0]),
-                   value="ENABLE").place(x=200, y=160)
-        button_Guider_Disable = tk.Radiobutton(self.frame0l,
-                   text=status[1],
-                   padx=5,
-                   variable=self.Guider_status,
-                   command=partial(self.Guider_option_TCS, status[1]),
-                   value="DISABLE").place(x=300, y=160)
-        button_Guider_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.Guider_option_TCS, "STATUS"))
-        button_Guider_STATUS.place(x=400, y=160)
 
         self.Whitespot_status = tk.StringVar()
         # initializing the choice, i.e. Python
         self.Whitespot_status.set("OFF")
         status = ["ON", "OFF"]
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="Whitespot % :",
-                 justify=tk.LEFT,
-                 padx=10).place(x=4, y=190)
+                 justify=tk.LEFT).place(x=4, y=190)
         self.Whitespot_percentage = tk.StringVar()
         self.Whitespot_percentage.set("50")
-        entry_Whitespot_percentage = tk.Entry(
-            self.frame0l, textvariable=self.Whitespot_percentage, width=4,  bd=3)
+        entry_Whitespot_percentage = ttk.Entry(
+            self.main_frame, textvariable=self.Whitespot_percentage, width=4)
         entry_Whitespot_percentage.place(x=130, y=186)
-        button_Whitespot_Enable = tk.Radiobutton(self.frame0l,
+        button_Whitespot_Enable = ttk.Radiobutton(self.main_frame,
                    text=status[0],
-                   padx=5,
                    variable=self.Whitespot_status,
                    command=partial(self.Whitespot_option_TCS, status[0]),
                    value="ON").place(x=200, y=190)
-        button_Whitespot_Disable = tk.Radiobutton(self.frame0l,
+        button_Whitespot_Disable = ttk.Radiobutton(self.main_frame,
                    text=status[1],
-                   padx=5,
                    variable=self.Whitespot_status,
                    command=partial(self.Whitespot_option_TCS, status[1]),
                    value="OFF").place(x=300, y=190)
-        button_Whitespot_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.Whitespot_option_TCS, "STATUS"))
+        button_Whitespot_STATUS = ttk.Button(
+            self.main_frame, text="STATUS", command=partial(self.Whitespot_option_TCS, "STATUS"))
         button_Whitespot_STATUS.place(x=400, y=190)
 
         self.Lamp_LN_status = tk.StringVar()
         self.Lamp_LN_status.set("OFF")  # initializing the choice, i.e. Python
         status = ["ON", "OFF"]
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="Lamp L# %:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=4, y=220)
+                 justify=tk.LEFT).place(x=4, y=220)
         self.Lamp_number = tk.StringVar()
         self.Lamp_percentage = tk.StringVar()
         self.Lamp_number.set("L2")
         self.Lamp_percentage.set("50")
-        entry_Lamp_number = tk.Entry(
-                self.frame0l, textvariable=self.Lamp_number,  width=4,  bd=3)
+        entry_Lamp_number = ttk.Entry(
+                self.main_frame, textvariable=self.Lamp_number,  width=4)
         entry_Lamp_number.place(x=90, y=216)
-        entry_Lamp_percentage = tk.Entry(
-                self.frame0l, textvariable=self.Lamp_percentage, width=4,  bd=3)
+        entry_Lamp_percentage = ttk.Entry(
+                self.main_frame, textvariable=self.Lamp_percentage, width=4)
         entry_Lamp_percentage.place(x=130, y=216)
-        button_Lamp_Enable = tk.Radiobutton(self.frame0l,
+        button_Lamp_Enable = ttk.Radiobutton(self.main_frame,
                 text=status[0],
-                padx=5,
                 variable=self.Lamp_LN_status,
                 command=partial(self.Lamp_LN_option_TCS, status[0]),
                            value="ON").place(x=200, y=220)
-        button_Lamp_Disable = tk.Radiobutton(self.frame0l,
+        button_Lamp_Disable = ttk.Radiobutton(self.main_frame,
                            text=status[1],
-                           padx=5,
                            variable=self.Lamp_LN_status,
                            command=partial(self.Lamp_LN_option_TCS, status[1]),
                            value="OFF").place(x=300, y=220)
-        button_Lamp_STATUS = tk.Button(
-                    self.frame0l, text="STATUS", command=partial(self.Lamp_LN_option_TCS, "STATUS"))
+        button_Lamp_STATUS = ttk.Button(
+                    self.main_frame, text="STATUS", command=partial(self.Lamp_LN_option_TCS, "STATUS"))
         button_Lamp_STATUS.place(x=400, y=220)
 
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="ADC %:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=4, y=250)
-#        button_ADC_MOVE = tk.Button(
-#            self.frame0l, text="ADC MOVE %", command=partial(self.ADC_option_TCS, "MOVE"))
+                 justify=tk.LEFT).place(x=4, y=250)
+#        button_ADC_MOVE = ttk.Button(
+#            self.main_frame, text="ADC MOVE %", command=partial(self.ADC_option_TCS, "MOVE"))
 #        button_ADC_MOVE.place(x=4, y=250)
         self.ADC_MOVE_msg = tk.StringVar()
         self.ADC_MOVE_msg.set("0.0")
-        entry_ADC_MOVE = tk.Entry(
-            self.frame0l, textvariable=self.ADC_MOVE_msg, width=4,  bd=3)
+        entry_ADC_MOVE = ttk.Entry(
+            self.main_frame, textvariable=self.ADC_MOVE_msg, width=4)
         entry_ADC_MOVE.place(x=130, y=248)
         self.v_ADC = tk.StringVar()
         self.v_ADC.set("PARK")
         ADC_status = ["IN", "PARK", "TRACK"]
-        button_ADC_IN = tk.Radiobutton(self.frame0l,
+        button_ADC_IN = ttk.Radiobutton(self.main_frame,
                    text=ADC_status[0],
-                   padx=2,
                    variable=self.v_ADC,
                    # self.ADC_option_TCS,
                    command=partial(self.ADC_option_TCS, ADC_status[0]),
                    value="IN").place(x=200, y=250)
-        button_ADC_PARK = tk.Radiobutton(self.frame0l,
+        button_ADC_PARK = ttk.Radiobutton(self.main_frame,
                    text=ADC_status[1],
-                   padx=2,
                    variable=self.v_ADC,
                    # self.ADC_option_TCS,
                    command=partial(self.ADC_option_TCS, ADC_status[1]),
                    value="PARK").place(x=250, y=250)
-        button_ADC_TRACK = tk.Radiobutton(self.frame0l,
+        button_ADC_TRACK = ttk.Radiobutton(self.main_frame,
                    text=ADC_status[2],
-                   padx=2,
                    variable=self.v_ADC,
                    # self.ADC_option_TCS,
                    command=partial(self.ADC_option_TCS, ADC_status[2]),
                    value="TRACK").place(x=320, y=250)
-        button_CLM_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.ADC_option_TCS, "STATUS"))
+        button_CLM_STATUS = ttk.Button(
+            self.main_frame, text="STATUS", command=partial(self.ADC_option_TCS, "STATUS"))
         button_CLM_STATUS.place(x=400, y=248)
 
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="IPA:",
-                 justify=tk.LEFT,
-                 padx=8).place(x=4, y=280)
-        button_IPA_MOVE = tk.Button(
-            self.frame0l, text="MOVE", command=partial(self.IPA_option_TCS, "MOVE"))
+                 justify=tk.LEFT).place(x=4, y=280)
+        button_IPA_MOVE = ttk.Button(
+            self.main_frame, text="MOVE", command=partial(self.IPA_option_TCS, "MOVE"))
         button_IPA_MOVE.place(x=60, y=276)
         self.IPA_MOVE_msg = tk.StringVar()
         self.IPA_MOVE_msg.set("0.0")
-        entry_IPA_MOVE = tk.Entry(
-            self.frame0l, textvariable=self.IPA_MOVE_msg, width=20,  bd=3)
+        entry_IPA_MOVE = ttk.Entry(
+            self.main_frame, textvariable=self.IPA_MOVE_msg, width=20)
         entry_IPA_MOVE.place(x=200, y=278)
-        button_IPA_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.IPA_option_TCS, "STATUS"))
+        button_IPA_STATUS = ttk.Button(
+            self.main_frame, text="STATUS", command=partial(self.IPA_option_TCS, "STATUS"))
         button_IPA_STATUS.place(x=400, y=280)
 
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="Instrument:",
-                 justify=tk.LEFT,
-                 padx=8).place(x=4, y=310)
-        button_Instrument_MOVE = tk.Button(
-            self.frame0l, text="MOVE", command=partial(self.Instrument_option_TCS, "MOVE"))
+                 justify=tk.LEFT).place(x=4, y=310)
+        button_Instrument_MOVE = ttk.Button(
+            self.main_frame, text="MOVE", command=partial(self.Instrument_option_TCS, "MOVE"))
         button_Instrument_MOVE.place(x=100, y=306)
         self.Instrument_MOVE_msg = tk.StringVar()
         self.Instrument_MOVE_msg.set("SAM")
-        entry_Instrument_MOVE = tk.Entry(
-            self.frame0l, textvariable=self.Instrument_MOVE_msg, width=20,  bd=3)
+        entry_Instrument_MOVE = ttk.Entry(
+            self.main_frame, textvariable=self.Instrument_MOVE_msg, width=20)
         entry_Instrument_MOVE.place(x=200, y=308)
-        button_Instrument_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.Instrument_option_TCS, "STATUS"))
+        button_Instrument_STATUS = ttk.Button(
+            self.main_frame, text="STATUS", command=partial(self.Instrument_option_TCS, "STATUS"))
         button_Instrument_STATUS.place(x=400, y=310)
 
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="Target:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=4, y=370)
-        tk.Label(self.frame0l,
+                 justify=tk.LEFT).place(x=4, y=370)
+        ttk.Label(self.main_frame,
                  text="RA:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=70, y=370)
+                 justify=tk.LEFT).place(x=70, y=370)
         self.Target_RA_msg = tk.StringVar()
         self.Target_RA_msg.set("07:43:48.40")
-        entry_Target_RA = tk.Entry(
-            self.frame0l, textvariable=self.Target_RA_msg, width=11,  bd=3)
+        entry_Target_RA = ttk.Entry(
+            self.main_frame, textvariable=self.Target_RA_msg, width=11)
         entry_Target_RA.place(x=105, y=366)
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="DEC:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=235, y=370)
+                 justify=tk.LEFT).place(x=235, y=370)
         self.Target_DEC_msg = tk.StringVar()
         self.Target_DEC_msg.set("-28:57:18.00")
-        entry_Target_DEC = tk.Entry(
-            self.frame0l, textvariable=self.Target_DEC_msg, width=11,  bd=3)
+        entry_Target_DEC = ttk.Entry(
+            self.main_frame, textvariable=self.Target_DEC_msg, width=11)
         entry_Target_DEC.place(x=280, y=366)
-        tk.Label(self.frame0l,
+        ttk.Label(self.main_frame,
                  text="Epoch:",
-                 justify=tk.LEFT,
-                 padx=2).place(x=70, y=400)
+                 justify=tk.LEFT).place(x=70, y=400)
         self.Target_EPOCH_msg = tk.StringVar()
         self.Target_EPOCH_msg.set("2000.0")
-        entry_Target_EPOCH = tk.Entry(
-            self.frame0l, textvariable=self.Target_EPOCH_msg, width=6,  bd=3)
+        entry_Target_EPOCH = ttk.Entry(
+            self.main_frame, textvariable=self.Target_EPOCH_msg, width=6)
         entry_Target_EPOCH.place(x=127, y=396)
         self.Target_variable = tk.StringVar()
         self.Target_variable.set("MOVE")
         Target_options = ["MOVE", "MOUNT", "STOP"]
-        button_Target_MOVE = tk.Radiobutton(self.frame0l,
+        button_Target_MOVE = ttk.Radiobutton(self.main_frame,
                    text=Target_options[0],
-                   padx=0,
                    variable=self.Target_variable,
                    command=partial(self.Target_option_TCS, Target_options[0]),
                    value="MOVE").place(x=180, y=430)
-        button_Target_MOUNT = tk.Radiobutton(self.frame0l,
+        button_Target_MOUNT = ttk.Radiobutton(self.main_frame,
                    text=Target_options[1],
-                   padx=0,
                    variable=self.Target_variable,
                    command=partial(self.Target_option_TCS, Target_options[1]),
                    value="MOUNT").place(x=250, y=430)
-        button_Target_STOP = tk.Radiobutton(self.frame0l,
+        button_Target_STOP = ttk.Radiobutton(self.main_frame,
                    text=Target_options[2],
-                   padx=0,
                    variable=self.Target_variable,
                    command=partial(self.Target_option_TCS, Target_options[2]),
                    value="STOP").place(x=330, y=430)
-        button_Focus_STATUS = tk.Button(
-            self.frame0l, text="STATUS", command=partial(self.Target_option_TCS, "STATUS"))
+        button_Focus_STATUS = ttk.Button(
+            self.main_frame, text="STATUS", command=partial(self.Target_option_TCS, "STATUS"))
         button_Focus_STATUS.place(x=400, y=428)
 
-        label_INFO = tk.Button(self.frame0l, text="INFO",
+        label_INFO = ttk.Button(self.main_frame, text="INFO",
             command=partial(self.Handle_Infox, "INFO"))
         label_INFO.place(x=600, y=4)
-        label_INFOx = tk.Button(
-            self.frame0l, text="INFOX",
+        label_INFOx = ttk.Button(
+            self.main_frame, text="INFOX",
             command=partial(self.Handle_Infox, "INFOX"))
         label_INFOx.place(x=675, y=4)
-        label_GINFO = tk.Button(
-            self.frame0l, text="GINFO",
+        label_GINFO = ttk.Button(
+            self.main_frame, text="GINFO",
             command=partial(self.Handle_Infox, "GINFO"))
         label_GINFO.place(x=750, y=4)
-        label_SINFO = tk.Button(
-            self.frame0l, text="SINFO",
+        label_SINFO = ttk.Button(
+            self.main_frame, text="SINFO",
             command=partial(self.Handle_Infox, "SINFO"))
         label_SINFO.place(x=825, y=4)
-        label_ROTPOS = tk.Button(
-            self.frame0l, text="ROTPOS",
+        label_ROTPOS = ttk.Button(
+            self.main_frame, text="ROTPOS",
             command=partial(self.Handle_Infox, "ROTPOS"))
         label_ROTPOS.place(x=900, y=4)
-        label_INFOA = tk.Button(
-            self.frame0l, text="INFOA",
+        label_INFOA = ttk.Button(
+            self.main_frame, text="INFOA",
             command=partial(self.Handle_Infox, "INFOA"))
         label_INFOA.place(x=975, y=4)
 
         '''
         self.INFOxxx_msg=tk.StringVar()
         self.INFOxxx_msg.set("")
-        entry_INFOxxx = tk.Text(self.frame0l,  height=20, width=50,  bd =3)
-        scroll = tk.Scrollbar(self.frame0l)
+        entry_INFOxxx = ttk.Text(self.main_frame,  height=20, width=50,  bd =3)
+        scroll = ttk.Scrollbar(self.main_frame)
         entry_INFOxxx.configure(yscrollcommand=scroll.set)
         entry_INFOxxx.place(x=600, y=40)
         scroll.config(command=entry_INFOxxx.yview)
         scroll.place(side=tk.RIGHT, fill=tk.Y)
         entry_INFOxxx.insert(tk.END, "lorem ipsum")
         '''
-        from tkinter import scrolledtext
-        self.text_area = tk.scrolledtext.ScrolledText(self.frame0l, wrap=tk.WORD,
+        self.text_area = ScrolledText(self.main_frame, wrap=tk.WORD,
                                                       width=53, height=25,
                                                       font=("Times New Roman", 15))
-        self.text_area.grid(column=0, row=2, pady=40, padx=600)
-######################################
+        self.text_area.grid(row=20, column=0, columnspan=6, sticky=TK_STICKY_ALL)
+
 
     def Send_to_TCS(self):
-        """ to be written """
-        self.Send_to_TCS_msg.set("you should write something here")
-        message = self.Send_to_TCS_msg.get()
-        msg_back = SOAR.send_to_TCS(message)
-        self.text_area.insert(tk.END, 'sent: \n>'+message +
-                              '\nreceived: \n>'+str(msg_back))
-        self.text_area.yview(tk.END)
+        self._log(f"Sending {self.Send_to_TCS_msg.get()}")
+        reply = self.SOAR.send_to_TCS(self.Send_to_TCS_msg.get())
+        self._log(f"Received {reply}")
 
-    def WAY(self):
-        """ (Who are you?) This command returns an identification string
+
+    def way(self):
+        """ 
+        (Who are you?) This command returns an identification string
 
         For example
             WAY
             DONE SOAR 4.2m
         """
-        message = "WAY"
-        # self.WAY_msg.set(message)
-        msg_back = SOAR.send_to_TCS(message)
-        self.text_area.insert(tk.END, '\nsent: \n>' +
-                              message+'\nreceived: \n>'+str(msg_back))
-        self.text_area.yview(tk.END)
+        self._log("Sent WAY")
+        reply = self.SOAR.send_to_tcs("WAY")
+        self._log(f"Received {reply}")
+
 
     def Offset_option_TCS(self, event):
         """
@@ -586,44 +509,8 @@ class SOARPage(ttk.Frame):
                               message+'\nreceived: \n>'+str(msg_back))
         self.text_area.yview(tk.END)
 
-    def create_menubar(self, parent):
-        """ to be written """
-        parent.geometry("1100x500")
-        parent.title("SOAR TCS")
 
-        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED,
-                          activebackground="#80B9DC")
-
-        # Filemenu
-        filemenu = tk.Menu(menubar, tearoff=0,
-                           relief=tk.RAISED, activebackground="#026AA9")
-        menubar.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(
-            label="Config", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_command(
-            label="DMD", command=lambda: parent.show_frame("DMDPage"))
-        filemenu.add_command(label="Recalibrate CCD2DMD",
-                             command=lambda: parent.show_frame("CCD2DMDPage"))
-        filemenu.add_command(
-            label="Motors", command=lambda: parent.show_frame("MotorsPage"))
-        filemenu.add_command(
-            label="CCD", command=lambda: parent.show_frame("CCDPage"))
-        filemenu.add_command(
-            label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
-        filemenu.add_command(
-            label="MainPage", command=lambda: parent.show_frame("MainPage"))
-        filemenu.add_command(
-            label="Close", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_separator()
-        filemenu.add_command(
-            label="ETC", command=lambda: parent.show_frame("ETCPage"))
-        filemenu.add_command(label="Exit", command=parent.quit)
-
-        # help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
-        help_menu.add_separator()
-
-        return menubar
+    def _log(self, message):
+        self.logger.info("Adding '{}' to log".format(message))
+        self.text_area.insert(tk.END, f"{datetime.now()}: {message}\n")
+        self.text_area.yview(tk.END)

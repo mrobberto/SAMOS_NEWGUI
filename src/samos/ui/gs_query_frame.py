@@ -25,13 +25,13 @@ class GSQueryFrame(tk.LabelFrame):
         }
 
         # UI
-        tk.Label(self, text="Survey").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self, text="Survey").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.survey_selected = tk.StringVar(self, list(self.SURVEY_MAP.keys())[0])
         ttk.OptionMenu(self, self.survey_selected, *list(self.SURVEY_MAP.keys())).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.survey_filter = tk.StringVar(self, "i")
-        tk.Label(self, text="Filter:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self, text="Filter:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(self, textvariable=self.survey_filter).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        tk.Button(self, text="Run Query", command=self.run_query).grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        ttk.Button(self, text="Run Query", command=self.run_query).grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
 
     def run_query(self):

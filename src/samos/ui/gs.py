@@ -33,14 +33,14 @@ class GSPage(SAMOSFrame):
         self.fits_dir = get_fits_dir()
 
         # FITS manager
-        frame = tk.LabelFrame(self.main_frame, text="FITS Manager", background="pink")
+        frame = ttk.LabelFrame(self.main_frame, text="FITS Manager")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         # RA, DEC Entry box
         self.ra = tk.DoubleVar(self, 150.17110)
-        tk.Label(frame, text="RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.ra).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.dec = tk.DoubleVar(self, -54.79004)
-        tk.Label(frame, text="Dec:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Dec:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
         # QUERY Server
@@ -48,7 +48,7 @@ class GSPage(SAMOSFrame):
         self.gs_query_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # GINGA DISPLAY
-        frame = tk.LabelFrame(self.main_frame, text="Survey Image", relief=tk.RAISED)
+        frame = ttk.LabelFrame(self.main_frame, text="Survey Image", relief=tk.RAISED)
         frame.grid(row=0, column=1, rowspan=4, sticky=TK_STICKY_ALL)
         frame.rowconfigure(0, minsize=800, weight=1)
         frame.columnconfigure(0, minsize=800, weight=1)
@@ -77,54 +77,54 @@ class GSPage(SAMOSFrame):
         self.drawtypes = self.drawing_canvas.get_drawtypes()
         self.drawtypes.sort()
         self.fits_image.set_window_size(1028, 1044)
-        self.readout = tk.Label(frame, text='')
+        self.readout = ttk.Label(frame, text='')
         self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # Guide Star Pickup Frame
-        frame = tk.LabelFrame(self.main_frame, text="Guide Star Pickup", font=BIGFONT)
+        frame = ttk.LabelFrame(self.main_frame, text="Guide Star Pickup")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         # Low Mag (bright end)
         self.low_mag = tk.IntVar(self, 11)
-        tk.Label(frame, text="Low Mag:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Low Mag:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         s = tk.Spinbox(frame, increment=1, textvariable=self.low_mag, from_=0, to=25)
         s.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         # High mag (faint end)
-        tk.Label(frame, text="High Mag:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="High Mag:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.high_mag = tk.IntVar(self, 13)
         s = tk.Spinbox(frame, increment=1, textvariable=self.high_mag, from_=0, to=25)
         s.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # SLIT POINTER ENABLED
         self.guide_star_pickup_enabled = tk.IntVar(self, 1)
-        b = tk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
+        b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
         b.grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         # Candidate Guide Star Co-ordinates
         self.gs_ra = tk.DoubleVar(self, self.ra.get())
-        tk.Label(frame, text="RA:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="RA:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_ra).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         self.gs_dec = tk.DoubleVar(self, self.dec.get())
-        tk.Label(frame, text="Dec:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Dec:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_dec).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         # X Shift
         self.gs_xshift = tk.DoubleVar(self, 0.)
-        tk.Label(frame, text="X Shift (mm)").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="X Shift (mm)").grid(row=5, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_xshift).grid(row=5, column=1, sticky=TK_STICKY_ALL)
         # Y Shift
         self.gs_yshift = tk.DoubleVar(self, -0.)
-        tk.Label(frame, text="Y Shift (mm)").grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Y Shift (mm)").grid(row=6, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_yshift).grid(row=6, column=1, sticky=TK_STICKY_ALL)
         # Magnitude
         self.gs_mag = tk.DoubleVar(self, 0.0)
-        tk.Label(frame, text="Magnitude:").grid(row=7, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Magnitude:").grid(row=7, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_mag).grid(row=7, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR)
+        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR)
         b.grid(row=8, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Ginga Tools Box
-        frame = tk.LabelFrame(self.main_frame, text="Image Tools", font=BIGFONT)
+        frame = ttk.LabelFrame(self.main_frame, text="Image Tools")
         frame.grid(row=4, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.drawtypes = self.drawing_canvas.get_drawtypes()
         # W Draw (?)
-        wdrawtype = tk.Entry(frame)
+        wdrawtype = ttk.Entry(frame)
         wdrawtype.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         wdrawtype.insert(0, 'box')
         wdrawtype.bind("<Return>", self.set_drawparams)
@@ -140,17 +140,17 @@ class GSPage(SAMOSFrame):
         self.vfill = tk.IntVar(self, 0)
         tk.Checkbutton(frame, text="Fill", variable=self.vfill).grid(row=0, column=2, sticky=TK_STICKY_ALL)
         self.walpha = tk.DoubleVar(self, 1.0)
-        tk.Label(frame, text="Alpha:").grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Alpha:").grid(row=0, column=3, sticky=TK_STICKY_ALL)
         e = tk.Entry(frame, textvariable=self.walpha)
         e.grid(row=0, column=4, sticky=TK_STICKY_ALL)
         e.bind("<Return>", self.set_drawparams)
         # Buttons
-        tk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Save Canvas", command=self.save_canvas).grid(row=1, column=2, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Open Canvas", command=self.open_canvas).grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Save Image", command=self.save_gs).grid(row=1, column=4, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Load Image", command=self.load_gs).grid(row=1, column=5, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Save Canvas", command=self.save_canvas).grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Open Canvas", command=self.open_canvas).grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Save Image", command=self.save_gs).grid(row=1, column=4, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Load Image", command=self.load_gs).grid(row=1, column=5, sticky=TK_STICKY_ALL)
 
 
     def set_drawparams(self, evt):

@@ -19,8 +19,11 @@ class CCD():
         self.PAR = par
         self.DMD = dmd
         self.logger = logger
-    
-    
+        self.initialized = False
+        self.ccd_on = False
+        self.cooler_on = False
+
+
     def get_url(self, url_name, post_data=None, as_string=False):
         if post_data is not None:
             post_data = post_data.encode()

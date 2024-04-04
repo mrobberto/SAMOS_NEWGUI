@@ -1,6 +1,7 @@
 """
 SAMOS CCD tk Frame Class
 """
+from astropy import units as u
 import logging
 
 import tkinter as tk
@@ -10,7 +11,7 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
-from .common_frame import SAMOSFrame
+from .common_frame import SAMOSFrame, check_enabled
 
 
 class CCDPage(SAMOSFrame):
@@ -18,64 +19,63 @@ class CCDPage(SAMOSFrame):
         super().__init__(parent, container, "CCD Control", **kwargs)
         self.logger.debug('Initializing CCD control frame')
 
-        # CCD Setup Panel
-        self.main_frame.config(background="cyan")
+        # Initialize CCD Connection
+        w = ttk.Button(self.main_frame, text="Initialize CCD Connection", command=self.initialize_ccd)
+        w.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self.CCD, "initialized", False)]
 
         # CAMERA ON/OFF SWITCH
-        self.camera_is_on = False
-        self.label_camera = tk.Label(self.main_frame, text=self.cam, fg="grey", font=BIGFONT)
-        self.label_camera.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        self.button_camera = tk.Button(self.main_frame, image=self.cam_img, bd=0, command=self.toggle_camera)
-        self.button_camera.grid(row=0, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
+        ttk.Label(self.main_frame, text="CCD", font=BIGFONT).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        w = tk.Button(self.main_frame, image=self.cam_img, command=self.toggle_camera)
+        w.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self.CCD, "initialized", True)]
+        self.button_camera = w
 
         # COOLER ON/OFF SWITCH
-        self.cooler_is_on = False
-        self.label_cooler = tk.Label(self.main_frame, text=self.cool, fg="grey", font=BIGFONT)
-        self.label_cooler.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        self.button_cooler = tk.Button(self.main_frame, image=self.cool_img, bd=0, command=self.toggle_cooler)
-        self.button_cooler.grid(row=1, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
+        ttk.Label(self.main_frame, text="Cooler", font=BIGFONT).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        w = tk.Button(self.main_frame, image=self.cool_img, command=self.toggle_cooler)
+        w.grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self.CCD, "initialized", True)]
+        self.button_cooler = w
 
         # COOLER TEMPERATURE SETUP AND VALUE
-        l = tk.Label(self.main_frame, text="CCD Temperature Sepoint (C)")
-        l.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        self.Tset = tk.StringVar()
-        self.Tset.set("-90")
-        entry_Tset = tk.Entry(self.main_frame, textvariable=self.Tset, width=5, bd=3)
-        entry_Tset.grid(row=2, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        l = tk.Label(self.main_frame, text="Current CCD Temperature (K)")
-        l.grid(row=3, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        self.Tdet = tk.IntVar()
-        tk.Label(self.main_frame, textvariable=self.Tdet, font=('Arial', 16), borderwidth=3, relief="sunken", 
-                 bg="green", fg="white", text=str(273)).grid(row=3, column=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        self.Tdet.set(273)
+        self.Tset = tk.DoubleVar(self, -90)
+        self.Tdet = tk.DoubleVar(self, 273)
+        self.Tdet_c = tk.DoubleVar(self, 0)
+        ttk.Label(self.main_frame, text="CCD Temperature Setpoint (C)").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Entry(self.main_frame, textvariable=self.Tset, width=5)
+        w.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self.CCD, "initialized", True)]
+        ttk.Label(self.main_frame, text="Current CCD Temperature (K)").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self.main_frame, textvariable=self.Tdet, width=5).grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(self.main_frame, text="Current CCD Temperature (C)").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self.main_frame, textvariable=self.Tdet_c, width=5).grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        self.set_enabled()
 
 
+    @check_enabled
+    def initialize_ccd(self):
+        # Currently we just set values. If there's a way to query the CCD, we will do that
+        # later.
+        self.CCD.initialized = True
+        self.CCD.ccd_on = False
+        self.CCD.cooler_on = False
+
+
+    @check_enabled
     def toggle_camera(self):
-        if self.camera_is_on:
-            self.camera_is_on = False
+        if self.CCD.ccd_on:
+            self.CCD.ccd_on = False
         else:
-            self.camera_is_on = True
-        self.button_camera.config(image=self.cam_img)
-        self.label_camera.config(text=self.cam, fg="grey")
+            self.CCD.ccd_on = True
 
 
+    @check_enabled
     def toggle_cooler(self):
-        if self.cooler_is_on:
-            self.cooler_is_on = False
+        if self.CCD.cooler_on:
+            self.CCD.cooler_on = False
         else:
-            self.cooler_is_on = True
-        self.button_cooler.config(image=self.cool_img)
-        self.label_cooler.config(text=self.cool, fg="green")
-    
-    
-    @property
-    def cam(self):
-        """
-        This property holds valid text for the camera button based on its current state.
-        """
-        if self.camera_is_on:
-            return "Camera is ON"
-        return "Camera is OFF"
+            self.CCD.cooler_on = True
     
     
     @property
@@ -84,19 +84,9 @@ class CCDPage(SAMOSFrame):
         This property points to the appropriate image for the camera button given the 
         camera state
         """
-        if self.camera_is_on:
+        if self.CCD.ccd_on:
             return self.on_big
         return self.off_big
-
-
-    @property
-    def cool(self):
-        """
-        This property holds valid text for the cooler button based on its current state.
-        """
-        if self.cooler_is_on:
-            return "Cooler is ON"
-        return "Cooler is OFF"
     
     
     @property
@@ -105,6 +95,13 @@ class CCDPage(SAMOSFrame):
         This property points to the appropriate image for the cooler button given the 
         cooler state
         """
-        if self.cooler_is_on:
+        if self.CCD.cooler_on:
             return self.on_big
         return self.off_big
+
+
+    def set_enabled(self):
+        super().set_enabled()
+        self.button_camera.config(image=self.cam_img)
+        self.button_cooler.config(image=self.cool_img)
+        self.Tdet_c.set(self.Tdet.get() - 273.15)

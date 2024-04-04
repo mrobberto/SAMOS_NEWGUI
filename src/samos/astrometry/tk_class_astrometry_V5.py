@@ -42,37 +42,37 @@ class Astrometry(tk.Toplevel):
         # Set up basic contents
         self.title("Astrometry")
         self.geometry("900x600")
-        tk.label(self, text="Astrometry Window").pack(expand=0)
+        ttk.Label(self, text="Astrometry Window").pack(expand=0)
 
         # Main frame
-        self.main_frame = tk.Frame(self, background="cyan").pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.main_frame = ttk.Frame(self, background="cyan").pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Enter Co-ordinates frame
-        coord_frame =  tk.LabelFrame(self.main_frame, text="Enter Coordinates", font=("Arial", 24))
+        coord_frame =  ttk.LabelFrame(self.main_frame, text="Enter Coordinates", font=("Arial", 24))
         coord_frame.pack(anchor=tk.NW, expand=True, padx=10, pady=10)
 
-        label_EnterRA =  tk.Label(coord_frame, text="RA")
+        label_EnterRA =  ttk.Label(coord_frame, text="RA")
         label_EnterRA.place(x=4,y=10)
         self.string_RA_center = tk.StringVar(value="00:00:00.0")
         entry_RA = tk.Entry(coord_frame, width=11,  bd =3, textvariable=self.string_RA_center)
         entry_RA.place(x=40, y=8)
-        label_RA_template =  tk.Label(coord_frame, text="(HH:MM:SS.x)")
+        label_RA_template =  ttk.Label(coord_frame, text="(HH:MM:SS.x)")
         label_RA_template.place(x=150,y=10)
 
-        label_EnterDEC =  tk.Label(coord_frame, text="DEC")
+        label_EnterDEC = ttk.Label(coord_frame, text="DEC")
         label_EnterDEC.place(x=4,y=40)
         self.string_DEC_center= tk.StringVar(value="+00:00:00.00")
         entry_DEC = tk.Entry(coord_frame, width=11,  bd =3, textvariable=self.string_DEC_center)
         entry_DEC.place(x=40, y=38)
-        label_DEC_template =  tk.Label(coord_frame, text="(\u00b1DD:MM:SS.xx)")
+        label_DEC_template = ttk.Label(coord_frame, text="(\u00b1DD:MM:SS.xx)")
         label_DEC_template.place(x=150,y=40)
 
-        label_EnterEpoch =  tk.Label(coord_frame, text="Epoch")
+        label_EnterEpoch = ttk.Label(coord_frame, text="Epoch")
         label_EnterEpoch.place(x=4,y=70)
         self.string_Epoch= tk.StringVar(value="2000.0")
         entry_Epoch = tk.Entry(coord_frame, width=6,  bd =3, textvariable=self.string_Epoch)
         entry_Epoch.place(x=40, y=68)
-        label_Epoch_template =  tk.Label(coord_frame, text="e.g. 2000.0")
+        label_Epoch_template = ttk.Label(coord_frame, text="e.g. 2000.0")
         label_Epoch_template.place(x=110,y=70)
   
         
@@ -80,21 +80,21 @@ class Astrometry(tk.Toplevel):
 #      QUERY SIMBAD
 # 
 # =============================================================================
-        labelframe_Query_Simbad =  tk.LabelFrame(self.main_frame, text="Query Simbad", 
+        labelframe_Query_Simbad = ttk.LabelFrame(self.main_frame, text="Query Simbad", 
                                                      width=300,height=140,
                                                      font=("Arial", 24),
                                                      sticky=TK_STICKY_ALL)
         labelframe_Query_Simbad.place(x=5, y=150)
 
-        button_Query_Simbad =  tk.Button(labelframe_Query_Simbad, text="Query Simbad", bd=3, command=self.Query_Simbad)
+        button_Query_Simbad = ttk.Button(labelframe_Query_Simbad, text="Query Simbad", bd=3, command=self.Query_Simbad)
         button_Query_Simbad.place(x=5, y=35)
 
 
-        button_Show_Simbad =  tk.Button(labelframe_Query_Simbad, text="Show Simbad", bd=3, command=self.Show_Simbad)
+        button_Show_Simbad = ttk.Button(labelframe_Query_Simbad, text="Show Simbad", bd=3, command=self.Show_Simbad)
         button_Show_Simbad.place(x=5, y=65)
 
 
-        self.label_SelectSurvey = tk.Label(labelframe_Query_Simbad, text="Survey")
+        self.label_SelectSurvey = ttk.Label(labelframe_Query_Simbad, text="Survey")
         self.label_SelectSurvey.place(x=5, y=5)
 #        # Dropdown menu options
         Survey_options = [
@@ -110,24 +110,24 @@ class Astrometry(tk.Toplevel):
 #        # initial menu text
         self.Survey_selected.set(Survey_options[0])
 #        # Create Dropdown menu
-        self.menu_Survey = tk.OptionMenu(labelframe_Query_Simbad, self.Survey_selected ,  *Survey_options)
+        self.menu_Survey = ttk.OptionMenu(labelframe_Query_Simbad, self.Survey_selected ,  *Survey_options)
         self.menu_Survey.place(x=65, y=5)
 
         print(self.Survey_selected.get())
 
         
-        self.readout_Simbad = tk.Label(self.main_frame, text='')
+        self.readout_Simbad = ttk.Label(self.main_frame, text='')
 # =============================================================================
 #      QUERY Gaia
 # 
 # =============================================================================
-        labelframe_Query_Gaia =  tk.LabelFrame(self.main_frame, text="Query Gaia", 
+        labelframe_Query_Gaia = ttk.LabelFrame(self.main_frame, text="Query Gaia", 
                                                      width=300,height=140,
                                                      font=("Arial", 24),
                                                      sticky=TK_STICKY_ALL)
         labelframe_Query_Gaia.place(x=5,y=300)
 
-        button_Query_Gaia =  tk.Button(labelframe_Query_Gaia, text="Query Gaia", bd=3, command=self.Query_Gaia)
+        button_Query_Gaia = ttk.Button(labelframe_Query_Gaia, text="Query Gaia", bd=3, command=self.Query_Gaia)
         button_Query_Gaia.place(x=5,y=5)
 
 
@@ -135,11 +135,11 @@ class Astrometry(tk.Toplevel):
 # #           LAST TWO LINES
 # =============================================================================
 
-        self.hbox = tk.Frame(self.main_frame)
+        self.hbox = ttk.Frame(self.main_frame)
         self.hbox.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
 #        self.hbox.place(x=0,y=560)
    
-        self.readout_Simbad = tk.Label(self.main_frame, text='tbd')
+        self.readout_Simbad = ttk.Label(self.main_frame, text='tbd')
         self.readout_Simbad.pack(side=tk.BOTTOM, fill=tk.X, expand=0)
 #        self.readout_Simbad.place(x=0,y=530)
 
@@ -150,12 +150,12 @@ class Astrometry(tk.Toplevel):
 # =============================================================================
 
     def Show_Simbad(self):
-            self.frame_DisplaySimbad = tk.Frame(self.main_frame,background="pink")#, width=400, height=800)
+            self.frame_DisplaySimbad = ttk.Frame(self.main_frame,background="pink")#, width=400, height=800)
             self.frame_DisplaySimbad.place(x=310, y=5, anchor="nw", width=528, height=516, sticky=TK_STICKY_ALL)
 
             self.logger.setLevel(40)
 
-            canvas = tk.Canvas(self.main_frame, bg="grey", height=516, width=528)
+            canvas = ttk.Canvas(self.main_frame, bg="grey", height=516, width=528)
             canvas.place(x=310,y=5)
                   
             fi = CanvasView(logger)
@@ -191,12 +191,12 @@ class Astrometry(tk.Toplevel):
 
             self.drawtypes = fi.get_drawtypes()
 
-            wdrawtype = tk.Entry(self.hbox, width=12)
+            wdrawtype = ttk.Entry(self.hbox, width=12)
             wdrawtype.insert(0, 'rectangle')
             wdrawtype.bind("<Return>", self.set_drawparams)
             self.wdrawtype = wdrawtype
      
-            wdrawcolor = tk.Entry(self.hbox, width=12)
+            wdrawcolor = ttk.Entry(self.hbox, width=12)
             wdrawcolor.insert(0, 'blue')
             wdrawcolor.bind("<Return>", self.set_drawparams)
             self.wdrawcolor = wdrawcolor
@@ -205,13 +205,13 @@ class Astrometry(tk.Toplevel):
             wfill = tk.Checkbutton(self.hbox, text="Fill", variable=self.vfill)
             self.wfill = wfill
     
-            walpha = tk.Entry(self.hbox, width=12)
+            walpha = ttk.Entry(self.hbox, width=12)
             walpha.insert(0, '1.0')
             walpha.bind("<Return>", self.set_drawparams)
             self.walpha = walpha
     
-            wclear = tk.Button(self.hbox, text="Clear Canvas", command=self.clear_canvas)
-            wquit = tk.Button(self.hbox, text="Quit", command=lambda: self.quit())
+            wclear = ttk.Button(self.hbox, text="Clear Canvas", command=self.clear_canvas)
+            wquit = ttk.Button(self.hbox, text="Quit", command=lambda: self.quit())
             
             ui_elements = [wquit, wclear, walpha, tk-Label(self.hbox, text='Alpha:'),
                            wfill, wdrawcolor, wdrawtype]
@@ -259,7 +259,7 @@ class Astrometry(tk.Toplevel):
 
 
 # =============================================================================
-#         labelframe_SolveAstrometry =  tk.LabelFrame(self.main_frame, text="Solve Astrometry", font=("Arial", 24))
+#         labelframe_SolveAstrometry = ttk.LabelFrame(self.main_frame, text="Solve Astrometry", font=("Arial", 24))
 #         labelframe_SolveAstrometry.pack(fill="both", expand="yes")
 #         
 # =============================================================================

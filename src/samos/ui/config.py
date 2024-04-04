@@ -25,7 +25,7 @@ class ConfigPage(SAMOSFrame):
         super().__init__(parent, container, "SAMOS Configuration", **kwargs)
 
         # Set up directories frame
-        frame = tk.LabelFrame(self.main_frame, text="Files", font=BIGFONT, borderwidth=2)
+        frame = ttk.LabelFrame(self.main_frame, text="Files", borderwidth=2)
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
         initial_files_location = "module"
@@ -36,23 +36,26 @@ class ConfigPage(SAMOSFrame):
         if "SAMOS_CUSTOM_FILES_LOCATION" in os.environ:
             custom_files_initial = os.environ["SAMOS_CUSTOM_FILES_LOCATION"]
         self.custom_files_path = tk.StringVar(self, custom_files_initial)
-        tk.Label(frame, text="Store files:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Store files:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text="In Module", variable=self.files_loc, value="module", command=self.set_files_base,
-                           anchor=tk.W)
+                            anchor=tk.W)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text="Home Directory", variable=self.files_loc, value="home", command=self.set_files_base,
-                           anchor=tk.W)
+                            anchor=tk.W)
         b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text="Working Directory", variable=self.files_loc, value="cwd", command=self.set_files_base,
-                           anchor=tk.W)
+                            anchor=tk.W)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text="Custom Location", variable=self.files_loc, value="custom", command=self.set_files_base,
-                           anchor=tk.W)
+                            anchor=tk.W)
         b.grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, textvariable=self.custom_files_path).grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, textvariable=self.custom_files_path).grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text="Nightly Files Location:").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        self.nightly_files_dir = tk.StringVar(self, get_fits_dir())
+        tk.Label(frame, textvariable=self.nightly_files_dir).grid(row=5, column=1, sticky=TK_STICKY_ALL)
 
         # Set up servers frame
-        frame = tk.LabelFrame(self.main_frame, text="Servers", font=BIGFONT, borderwidth=2)
+        frame = ttk.LabelFrame(self.main_frame, text="Servers", borderwidth=2)
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
         self.ip_loc = tk.StringVar(self, "inside")
@@ -63,11 +66,11 @@ class ConfigPage(SAMOSFrame):
         b = tk.Radiobutton(frame, text='SIMULATED', fg='red', variable=self.ip_loc, value='simulated', command=self.load_IP_default)
         b.grid(row=0, column=2, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="PCM").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text="CCD").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text="DMD").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text="SOAR Telescope").grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text="SOAR SAMI").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="PCM").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="CCD").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="DMD").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="SOAR Telescope").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="SOAR SAMI").grid(row=5, column=0, sticky=TK_STICKY_ALL)
 
         self.IP_PCM = tk.StringVar()
         self.IP_PCM.set(self.PAR.IP_dict['IP_PCM'])
@@ -85,64 +88,65 @@ class ConfigPage(SAMOSFrame):
         self.IP_SAMI.set(self.PAR.IP_dict['IP_SAMI'])
         tk.Entry(frame, width=20, textvariable=self.IP_SAMI).grid(row=5, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
-        self.IP_Motors_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.Motors_switch)
+        self.IP_Motors_on_button = ttk.Button(frame, image=self.off_sm, command=self.Motors_switch)
         self.IP_Motors_on_button.grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        self.CCD_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.CCD_switch)
+        self.CCD_on_button = ttk.Button(frame, image=self.off_sm, command=self.CCD_switch)
         self.CCD_on_button.grid(row=2, column=3, sticky=TK_STICKY_ALL)
-        self.DMD_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.DMD_switch)
+        self.DMD_on_button = ttk.Button(frame, image=self.off_sm, command=self.DMD_switch)
         self.DMD_on_button.grid(row=3, column=3, sticky=TK_STICKY_ALL)
-        self.SOAR_Tel_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.SOAR_switch)
+        self.SOAR_Tel_on_button = ttk.Button(frame, image=self.off_sm, command=self.SOAR_switch)
         self.SOAR_Tel_on_button.grid(row=4, column=3, sticky=TK_STICKY_ALL)
-        self.SOAR_SAMI_on_button = tk.Button(frame, image=self.off_sm, bd=0, command=self.SAMI_switch)
+        self.SOAR_SAMI_on_button = ttk.Button(frame, image=self.off_sm, command=self.SAMI_switch)
         self.SOAR_SAMI_on_button.grid(row=5, column=3, sticky=TK_STICKY_ALL)
 
         # Other entries
-        frame = tk.LabelFrame(self.main_frame, text="Observer Data", font=BIGFONT, borderwidth=2)
+        frame = ttk.LabelFrame(self.main_frame, text="Observer Data", borderwidth=2)
         frame.grid(row=0, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        tk.Label(frame, text="Telescope").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Telescope").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.Telescope = tk.StringVar()
         self.Telescope.set(self.PAR.PotN['Telescope'])
         tk.Entry(frame, width=20, textvariable=self.Telescope).grid(row=0, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Program ID").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Program ID").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.Program_ID = tk.StringVar()
         self.Program_ID.set(self.PAR.PotN['Program ID'])
         tk.Entry(frame, width=20, textvariable=self.Program_ID).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Proposal Title").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Proposal Title").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         self.Proposal_Title = tk.StringVar()
         self.Proposal_Title.set(self.PAR.PotN['Proposal Title'])
         tk.Entry(frame, width=20, textvariable=self.Proposal_Title).grid(row=2, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Principal Investigator").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Principal Investigator").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.Principal_Investigator = tk.StringVar()
         self.Principal_Investigator.set(self.PAR.PotN['Principal Investigator'])
         tk.Entry(frame, width=20, textvariable=self.Principal_Investigator).grid(row=3, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Observer").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Observer").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         self.Observer = tk.StringVar()
         self.Observer.set(self.PAR.PotN['Observer'])
         tk.Entry(frame, width=20, textvariable=self.Observer).grid(row=4, column=1, sticky=TK_STICKY_ALL)
 
-        tk.Label(frame, text="Telescope Operator ").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Telescope Operator ").grid(row=5, column=0, sticky=TK_STICKY_ALL)
         self.TO_var = tk.StringVar()
         self.TO_var.set(self.PAR.PotN['Telescope Operator'])
         tk.Entry(frame, width=20, textvariable=self.TO_var).grid(row=5, column=1, sticky=TK_STICKY_ALL)
 
         # Initialize
-        frame = tk.LabelFrame(self.main_frame, text="Logbook", font=BIGFONT, borderwidth=2)
+        frame = ttk.LabelFrame(self.main_frame, text="Logbook", borderwidth=2)
         frame.grid(row=1, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        b = tk.Button(frame, text="Initialize Logbook", relief="raised", command=self.LogBookstartup)
+        b = ttk.Button(frame, text="Initialize Logbook", command=self.LogBookstartup)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
 
     def set_files_base(self):
         os.environ["SAMOS_FILES_LOCATION"] = self.files_loc.get()
         if self.files_loc.get() == "custom" and (not Path(self.custom_files_path.get()).is_dir()):
-            custom_loc = tk.filedialog.askdirectory(initialdir=Path.cwd(), title="Select a Location to store files")
+            custom_loc = ttk.filedialog.askdirectory(initialdir=Path.cwd(), title="Select a Location to store files")
             self.custom_files_path.set(custom_loc)
             os.environ["SAMOS_CUSTOM_FILES_LOCATION"] = custom_loc
+        self.nightly_files_dir.set(get_fits_dir())
 
 
     def LogBookstartup(self):
@@ -168,23 +172,6 @@ class ConfigPage(SAMOSFrame):
         if self.PAR.IP_status_dict['IP_PCM'] == True:
             PCM.power_on()
         self.logger.info("CONFIG_GUI: startup complete.")
-
-
-    def load_dir_default(self):
-        return self._load_dir("dirlist_default.csv")
-
-
-    def load_dir_user(self):
-        return self._load_dir("dirlist_user.csv")
-
-
-    def save_dir_user(self):
-        with open(get_data_file("system", "dirlist_user.csv"), "w") as file_dirlist:
-            with csv.writer(file_dirlist) as w:
-                for system in self.SYSTEMS:
-                    key = "dir_{}".format(system)
-                    w.writerow([key, getattr(self, key)])
-                    self.PAR.dir_dict[key] = getattr(self, key)
 
 
     def load_IP_user(self):
@@ -354,27 +341,12 @@ class ConfigPage(SAMOSFrame):
         self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
     
 
-    def _load_dir(self, data_file):
-        dict_from_csv = {}
-
-        with open(get_data_file("system", data_file)) as inp:
-            reader = csv.reader(inp)
-            dict_from_csv = {rows[0]: rows[1] for rows in reader}
-        
-        for system in self.SYSTEMS:
-            key = "dir_{}".format(system)
-            setattr(self, key, dict_from_csv[key])
-            self.PAR.dir_dict[key] = dict_from_csv[key]
-
-        return self.PAR.dir_dict
-    
-    
     def _load_ip(self, data_file):
         with open(data_file, mode='r') as inp:
             reader = csv.reader(inp)
             dict_from_csv = {rows[0]: rows[1] for rows in reader}
         
-        for system in self.SYSTEMS[:-2]:
+        for system in self.SYSTEMS:
             key = "IP_{}".format(system)
             self.PAR.IP_dict[key] = dict_from_csv[key]
             getattr(self, key).set(dict_from_csv[key])
@@ -387,4 +359,4 @@ class ConfigPage(SAMOSFrame):
         return self.PAR.IP_dict
 
 
-    SYSTEMS = ["PCM", "CCD", "DMD", "SOAR", "SAMI", "Astrom", "system"]
+    SYSTEMS = ["PCM", "CCD", "DMD", "SOAR", "SAMI"]

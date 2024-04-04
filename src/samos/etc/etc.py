@@ -820,7 +820,7 @@ class ETC:
                     warning += "correct format is erg/s/cm2 in two-column format with a space "
                     warning += "or comma as the delimiter. Also please check that you have "
                     warning += "chosen the correct wavelength units."
-                    tk.messagebox.showarning(title='Check spectrum', message=warning.format(self.source_filename, band))
+                    ttk.messagebox.showarning(title='Check spectrum', message=warning.format(self.source_filename, band))
 
                 # convolve with the resolution of mosfire
                 userSig_degrade = self.degrade_resolution(wavelengths=self.user_Wave, flux=self.user_Flux, 
@@ -1007,7 +1007,7 @@ class ETC:
             
         #checking if the signal is saturating the detector
         if max_epp_scalar > sat_limit:
-            tk.messagebox.showerror(title="Saturated Exposure", message="Detector saturated!\n\nTry to increase Nexp.")
+            ttk.messagebox.showerror(title="Saturated Exposure", message="Detector saturated!\n\nTry to increase Nexp.")
 
         summary_struct["value"] = [np.round(center,4), np.round(res * 1e4,1), np.round(stat['disp'],2),
                                    np.round(tp,2), np.round(signal,2), np.round(background,2),

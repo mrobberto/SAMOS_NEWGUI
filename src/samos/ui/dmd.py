@@ -21,82 +21,94 @@ from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
-from .common_frame import SAMOSFrame
+from .common_frame import SAMOSFrame, check_enabled
 
 
 class DMDPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "DMD Control", **kwargs)
         self.initialized = False
-        self.buttons = {}
         
         # Set up basic frames
-        button_frame = tk.LabelFrame(self.main_frame, text="Controls", font=BIGFONT, borderwidth=3, width=250)
+        button_frame = ttk.LabelFrame(self.main_frame, text="Controls", borderwidth=3, width=250)
         button_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        display_frame = tk.Frame(self.main_frame, borderwidth=3, width=350)
+        display_frame = ttk.Frame(self.main_frame, borderwidth=3, width=350)
         display_frame.grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        hadamard_frame = tk.Frame(self.main_frame, borderwidth=3, width=250)
+        hadamard_frame = ttk.Frame(self.main_frame, borderwidth=3, width=250)
         hadamard_frame.grid(row=0, column=3, sticky=TK_STICKY_ALL)
 
         # dmd.initialize()
-        self.buttons["initialize"] = tk.Button(button_frame, text="Initialize", command=self.dmd_initialize)
-        self.buttons["initialize"].grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Button(button_frame, text="Initialize", command=self.dmd_initialize)
+        w.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", False)]
 
         # Basic Patterns
-        tk.Label(button_frame, text="Basic Patterns:", anchor="w").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        self.buttons["whiteout"] = tk.Button(button_frame, text="Blackout", bd=3, command=self.dmd_whiteout)
-        self.buttons["whiteout"].grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        self.buttons["blackout"] = tk.Button(button_frame, text="Whiteout", bd=3, command=self.dmd_blackout)
-        self.buttons["blackout"].grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.buttons["checkerboard"] = tk.Button(button_frame, text="Checkerboard", bd=3, command=self.dmd_checkerboard)
-        self.buttons["checkerboard"].grid(row=3, column=2, sticky=TK_STICKY_ALL)
-        self.buttons["invert"] = tk.Button(button_frame, text="Invert", bd=3, command=self.dmd_invert)
-        self.buttons["invert"].grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        self.buttons["antinvert"] = tk.Button(button_frame, text="AntInvert", bd=3, command=self.dmd_antinvert)
-        self.buttons["antinvert"].grid(row=4, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(button_frame, text="Basic Patterns:", anchor="w").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        w = ttk.Button(button_frame, text="Blackout", command=self.dmd_whiteout)
+        w.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Button(button_frame, text="Whiteout", command=self.dmd_blackout)
+        w.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Button(button_frame, text="Checkerboard",command=self.dmd_checkerboard)
+        w.grid(row=3, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Button(button_frame, text="Invert", command=self.dmd_invert)
+        w.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Button(button_frame, text="AntInvert", command=self.dmd_antinvert)
+        w.grid(row=4, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
 
         # Custom Patterns
-        tk.Label(button_frame, text="Custom Patterns:", anchor="w").grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        self.buttons["edit_map"] = tk.Button(button_frame, text="Edit DMD Map", command=self.browse_map)
-        self.buttons["edit_map"].grid(row=7, column=0, sticky=TK_STICKY_ALL)
-        self.buttons["load_map"] = tk.Button(button_frame, text="Load DMD Map", command=self.load_map)
-        self.buttons["load_map"].grid(row=7, column=2, sticky=TK_STICKY_ALL)
-        label_filename = tk.Label(button_frame, text="Current DMD Map:", anchor="w")
+        ttk.Label(button_frame, text="Custom Patterns:", anchor="w").grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        w = ttk.Button(button_frame, text="Edit DMD Map", command=self.browse_map)
+        w.grid(row=7, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Button(button_frame, text="Load DMD Map", command=self.load_map)
+        w.grid(row=7, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        label_filename = ttk.Label(button_frame, text="Current DMD Map:", anchor="w")
         label_filename.grid(row=8, column=0, sticky=TK_STICKY_ALL)
-        self.str_map_filename = tk.StringVar()
+        self.str_map_filename = tk.StringVar(self, "none")
+        self.str_map_filename_path = None
         l = tk.Label(button_frame, textvariable=self.str_map_filename, bg="grey")
         l.grid(row=8, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Custom Slit
-        tk.Label(button_frame, text="Custom Slit:", anchor="w").grid(row=10, column=0, sticky=TK_STICKY_ALL)
-        custom_frame = tk.Frame(button_frame, borderwidth=0)
+        ttk.Label(button_frame, text="Custom Slit:", anchor="w").grid(row=10, column=0, sticky=TK_STICKY_ALL)
+        custom_frame = ttk.Frame(button_frame, borderwidth=0)
         custom_frame.grid(row=11, column=0, rowspan=1, columnspan=3, sticky=TK_STICKY_ALL)
-        tk.Label(custom_frame, text="x0").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(custom_frame, text="x0").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.x0 = tk.IntVar(self, 540)
         tk.Entry(custom_frame, textvariable=self.x0, width=5).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        tk.Label(custom_frame, text="y0").grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(custom_frame, text="y0").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         self.y0 = tk.IntVar(self, 1024)
         tk.Entry(custom_frame, textvariable=self.y0, width=5).grid(row=0, column=3, sticky=TK_STICKY_ALL)
 
-        tk.Label(custom_frame, text="x1").grid(row=0, column=4, sticky=TK_STICKY_ALL)
+        ttk.Label(custom_frame, text="x1").grid(row=0, column=4, sticky=TK_STICKY_ALL)
         self.x1 = tk.IntVar(self, 540)
         tk.Entry(custom_frame, textvariable=self.x1, width=5).grid(row=0, column=5, sticky=TK_STICKY_ALL)
-        tk.Label(custom_frame, text="y1").grid(row=0, column=6, sticky=TK_STICKY_ALL)
+        ttk.Label(custom_frame, text="y1").grid(row=0, column=6, sticky=TK_STICKY_ALL)
         self.y1 = tk.IntVar(self, 1024)
         tk.Entry(custom_frame, textvariable=self.y1, width=5).grid(row=0, column=7, sticky=TK_STICKY_ALL)
 
         # Slit Buttons
-        self.buttons["add_slit"] = tk.Button(button_frame, text="Add", command=self.add_slit)
-        self.buttons["add_slit"].grid(row=13, column=0, sticky=TK_STICKY_ALL)
-        self.buttons["push_map"] = tk.Button(button_frame, text="Push", command=self.push_current_map)
-        self.buttons["push_map"].grid(row=13, column=1, sticky=TK_STICKY_ALL)
-        self.buttons["save_map"] = tk.Button(button_frame, text="Save", command=self.save_map)
-        self.buttons["save_map"].grid(row=13, column=2, sticky=TK_STICKY_ALL)
+        w = ttk.Button(button_frame, text="Add", command=self.add_slit)
+        w.grid(row=13, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
+        w = ttk.Button(button_frame, text="Push", command=self.push_current_map)
+        w.grid(row=13, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
+        w = ttk.Button(button_frame, text="Save", command=self.save_map)
+        w.grid(row=13, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
 
         # Load Slit
-        self.buttons["load_slit"] = tk.Button(button_frame, text="Load Slit List", command=self.load_slits)
-        self.buttons["load_slit"].grid(row=15, column=2, sticky=TK_STICKY_ALL)
-        tk.Label(button_frame, text="Current Slit List").grid(row=16, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Button(button_frame, text="Load Slit List", command=self.load_slits)
+        w.grid(row=15, column=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        ttk.Label(button_frame, text="Current Slit List").grid(row=16, column=0, sticky=TK_STICKY_ALL)
         self.str_filename_slits = tk.StringVar()
         l = tk.Label(button_frame, textvariable=self.str_filename_slits, bg="grey", anchor="w")
         l.grid(row=16, column=1, columnspan=2, sticky=TK_STICKY_ALL)
@@ -105,84 +117,86 @@ class DMDPage(SAMOSFrame):
         self.canvas = tk.Canvas(display_frame, width=300, height=270, bg="dark gray")
         self.canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
-        hadamard_conf_frame = tk.LabelFrame(hadamard_frame, text="Hadamard Configuration")
+        hadamard_conf_frame = ttk.LabelFrame(hadamard_frame, text="Hadamard Configuration")
         hadamard_conf_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
 
         # Matrix Type and order
         self.SHMatrix_Checked = tk.StringVar(self, "S")
         tk.Radiobutton(hadamard_conf_frame, text="S Matrix", variable=self.SHMatrix_Checked, value="S", 
-                       command=self.set_SH_matrix).grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+                        command=self.set_SH_matrix).grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         tk.Radiobutton(hadamard_conf_frame, text="H Matrix", variable=self.SHMatrix_Checked, value="H", 
-                       command=self.set_SH_matrix).grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        tk.Label(hadamard_conf_frame, text="Order: ").grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
+                        command=self.set_SH_matrix).grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Order: ").grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
         self.Sorders = (3, 7, 11, 15, 19, 23, 31, 35, 43, 47, 63, 71, 79, 83, 103, 127, 255)
         self.Horders = (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)
         self.order = tk.IntVar(self, self.Sorders[1])
         self.order_menu = ttk.OptionMenu(hadamard_conf_frame, self.order, *self.Sorders, command=self.set_SH_matrix)
         self.order_menu.grid(row=0, column=3, rowspan=2, sticky=TK_STICKY_ALL)
-        
+
         # Slit Dimensions
-        tk.Label(hadamard_conf_frame, text="Slit Width:", anchor="w").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Slit Width:", anchor="w").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.slit_width = tk.IntVar(self, 3)
         box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_width, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        tk.Label(hadamard_conf_frame, text="Length:", anchor="w").grid(row=3, column=3, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Length:", anchor="w").grid(row=3, column=3, sticky=TK_STICKY_ALL)
         self.slit_length = tk.IntVar(self, 256)
         box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_length, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=4, sticky=TK_STICKY_ALL)
 
         # Field Centre
-        tk.Label(hadamard_conf_frame, text="Field Centre:", anchor="w").grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(hadamard_conf_frame, text="Xo", anchor="w").grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Field Centre:", anchor="w").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Xo", anchor="w").grid(row=4, column=1, sticky=TK_STICKY_ALL)
         self.slit_xc = tk.IntVar(self, 540)
         tk.Entry(hadamard_conf_frame, textvariable=self.slit_xc, width=5).grid(row=4, column=2, sticky=TK_STICKY_ALL)
-        tk.Label(hadamard_conf_frame, text="Yo", anchor="w").grid(row=4, column=3, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Yo", anchor="w").grid(row=4, column=3, sticky=TK_STICKY_ALL)
         self.slit_yc = tk.IntVar(self, 1045)
         tk.Entry(hadamard_conf_frame, textvariable=self.slit_yc, width=5).grid(row=4, column=4, sticky=TK_STICKY_ALL)
 
         # Field Width
-        tk.Label(hadamard_conf_frame, text="Width:", anchor="w").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Width:", anchor="w").grid(row=5, column=0, sticky=TK_STICKY_ALL)
         self.field_width = tk.IntVar(self, 21)
         txt = tk.Entry(hadamard_conf_frame,  textvariable=self.field_width, bg="red", fg="white", font=BIGFONT_15)
         txt.grid(row=5, column=1, columnspan=4, sticky=TK_STICKY_ALL)
         
         # Generate
-        self.buttons["gen_frame"] = tk.Button(hadamard_conf_frame, text="GENERATE", bg='#A877BA', font=BIGFONT, 
-                                              command=self.generate_hts)
-        self.buttons["gen_frame"].grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        w = ttk.Button(hadamard_conf_frame, text="GENERATE", command=self.generate_hts)
+        w.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
 
         # Name / Rename
-        tk.Label(hadamard_conf_frame, text="Name:").grid(row=8, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(hadamard_conf_frame, text="Name:").grid(row=8, column=0, sticky=TK_STICKY_ALL)
         self.mask_name = tk.StringVar(self, "")
         tk.Label(hadamard_conf_frame, textvariable=self.mask_name).grid(row=8, column=1, columnspan=4, sticky=TK_STICKY_ALL)
         rename_button_text = "Rename '{}' to:".format(self.mask_name.get())
-        self.buttons["rename"] = tk.Button(hadamard_conf_frame, text=rename_button_text, command=self.rename_masks_file)
-        self.buttons["rename"].grid(row=9, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.rename_button = ttk.Button(hadamard_conf_frame, text=rename_button_text, command=self.rename_masks_file)
+        self.rename_button.grid(row=9, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[self.rename_button] = [("condition", self, "initialized", True), ("tknot", self.mask_name, "")]
         self.rename_value = tk.StringVar(self, "")
         e = tk.Entry(hadamard_conf_frame, textvariable=self.rename_value)
         e.grid(row=9, column=2, columnspan=3, sticky=TK_STICKY_ALL)
 
         # Ra/Dec
-        radec_frame = tk.LabelFrame(hadamard_frame, text="Generate from RA/DEC")
+        radec_frame = ttk.LabelFrame(hadamard_frame, text="Generate from RA/DEC")
         radec_frame.grid(row=4, column=0, rowspan=2, sticky=TK_STICKY_ALL)
-        tk.Label(radec_frame, text="Target RA:", anchor="w").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(radec_frame, text="Target RA:", anchor="w").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.target_ra = tk.DoubleVar(self, 1.234567)
         e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
         e.grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        tk.Label(radec_frame, text="(decimal degrees)").grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        tk.Label(radec_frame, text="Target DEC:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(radec_frame, text="(decimal degrees)").grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        ttk.Label(radec_frame, text="Target DEC:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.target_dec = tk.DoubleVar(self, 1.234567)
         e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
         e.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        tk.Label(radec_frame, text="(decimal degrees)").grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        self.buttons["gen_radec"] = tk.Button(radec_frame, text="GENERATE", bg='#A877BA', font=BIGFONT_20, 
-                                              command=self.generate_hts_from_radec)
-        self.buttons["gen_radec"].grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self._set_buttons()
+        ttk.Label(radec_frame, text="(decimal degrees)").grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        w = ttk.Button(radec_frame, text="GENERATE", command=self.generate_hts_from_radec)
+        w.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.set_enabled()
 
 
+    @check_enabled
     def generate_hts_from_radec(self):
         """ 
         Generates HTS mask centered on RADEC coordinates
@@ -200,7 +214,7 @@ class DMDPage(SAMOSFrame):
         ad = np.array([[ra_HTS_center, dec_HTS_center]]).astype(float)
         if not self.PAR.valid_wcs:
             self.logger.error("Attempting to generate map from RA/DEC with no valid WCS")
-            tk.messagebox.showerror(title="No valid WCS!", message="SAMOS has no valid WCS.\nUnable to set mask from RA/DEC.")
+            ttk.messagebox.showerror(title="No valid WCS!", message="SAMOS has no valid WCS.\nUnable to set mask from RA/DEC.")
             return
         x_CCD_HTS_center, y_CCD_HTS_center = self.PAR.wcs.all_world2pix(ad, 0)[0]
 
@@ -213,9 +227,9 @@ class DMDPage(SAMOSFrame):
 
         # generate mask
         self.generate_hts()
-        self._set_buttons()
 
 
+    @check_enabled
     def rename_masks_file(self, event=None):
         """ rename the mask file, only the part starting with 'mask' """
         old_mask_name = self.mask_name.get()
@@ -229,14 +243,15 @@ class DMDPage(SAMOSFrame):
             file.rename(parent_path / new_name)
         self.mask_name.set(new_mask_name)
         self.rename_value.set("")
-        self._set_buttons()
 
 
+    @check_enabled
     def calculate_field_width(self, event=None):
         """ calculate_field_width """
         self.field_width.set(self.slit_width.get() * self.order)
 
 
+    @check_enabled
     def set_SH_matrix(self, event=None):
         """ set_SH_matrix """
         if self.SHMatrix_Checked.get() == "S":
@@ -254,6 +269,7 @@ class DMDPage(SAMOSFrame):
         self.logger.debug("Mask Arrays are: {}".format(self.mask_arrays))
 
 
+    @check_enabled
     def generate_hts(self):
         """ HTS_generate """
         DMD_size = self.DMD.dmd_size
@@ -277,19 +293,18 @@ class DMDPage(SAMOSFrame):
             name = f"H{order}_mask_{slit_width}w_ab_{order:03d}.bmp"
         self.mask_name.set(name)
         self.rename_value.set("")
-        self._set_buttons()
 
 
+    @check_enabled
     def dmd_initialize(self):
         """ dmd_initialize """
         self.DMD.initialize()
         self.DMD._open()
         self._set_slit_image("current_dmd_state.png", "initial state")
-        self.str_map_filename.set("none")
         self.initialized = True
-        self._set_buttons()
 
 
+    @check_enabled
     def dmd_whiteout(self):
         """ 
         sets all mirrors "ON" as seen by the imaging channel. From the point of view of 
@@ -297,9 +312,9 @@ class DMDPage(SAMOSFrame):
         """
         self.DMD.apply_blackout()
         self._set_slit_image("current_dmd_state.png", "whiteout")
-        self._set_buttons()
 
 
+    @check_enabled
     def dmd_blackout(self):
         """ 
         sets all mirrors "OFF" as seen by the imaging channel. From the point of view of 
@@ -307,16 +322,16 @@ class DMDPage(SAMOSFrame):
         """
         self.DMD.apply_whiteout()
         self._set_slit_image("current_dmd_state.png", "blackout")
-        self._set_buttons()
 
 
+    @check_enabled
     def dmd_checkerboard(self):
         """ dmd_checkerboard """
         self.DMD.apply_checkerboard()
         self._set_slit_image("current_dmd_state.png", "checkerboard")
-        self._set_buttons()
 
 
+    @check_enabled
     def dmd_invert(self):
         """ dmd_invert """
         self.DMD.apply_invert()
@@ -325,9 +340,9 @@ class DMDPage(SAMOSFrame):
         else:
             state_name = "{} inverted".format(self.str_map_filename.get())
         self._set_slit_image("current_dmd_state.png", state_name)
-        self._set_buttons()
 
 
+    @check_enabled
     def dmd_antinvert(self):
         """ dmd_antinvert """
         self.DMD.apply_antinvert()
@@ -336,33 +351,36 @@ class DMDPage(SAMOSFrame):
         else:
             state_name = "{} inverted".format(self.str_map_filename.get())
         self._set_slit_image("current_dmd_state.png", state_name)
-        self._set_buttons()
 
 
+    @check_enabled
     def browse_map(self):
         """ BrowseMapFiles """
-        self.str_map_filename.set("")
+        self.str_map_filename.set("none")
+        self.str_map_filename_path = None
         filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
                                    filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
         try:
             os.startfile(filename)
         except AttributeError:
             subprocess.call(['open', filename])
-        self.str_map_filename.set(Path(filename).name)
-        self._set_buttons()
+        self.str_map_filename_path = Path(filename)
+        self.str_map_filename.set(self.str_map_filename_path.name)
 
 
+    @check_enabled
     def load_map(self):
         """ LoadMap """
-        self.str_map_filename.set("")
+        self.str_map_filename.set("none")
+        self.str_map_filename_path = None
         self.str_filename_slits.set("")
         filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
                                    filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
-        file_path = Path(filename)
-        self.logger.info("Loading Map {}".format(filename))
-        self.str_map_filename.set(file_path.name)
-        self.main_fits_header.set_param("dmdmap", file_path.name)
-        map_list = self._load_map(file_path)
+        self.str_map_filename_path = Path(filename)
+        self.logger.info("Loading Map {}".format(self.str_map_filename_path))
+        self.str_map_filename.set(self.str_map_filename_path.name)
+        self.main_fits_header.set_param("dmdmap", self.str_map_filename_path.name)
+        map_list = self._load_map(self.str_map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)
         self.DMD.apply_shape(dmd_shape)
 
@@ -381,13 +399,13 @@ class DMDPage(SAMOSFrame):
                 self.logger.debug(output)
                 f.write("{}\n".format(output))
 
-        self.str_map_filename.set(file_path.name[:-3]+"reg")
+        self.str_map_filename.set(self.str_map_filename_path.name[:-3]+"reg")
         main_page = self.parent.frames['MainPage']
         main_page.str_filename_regfile_xyAP.set(file_path.name[:-3]+"reg")
         self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
-        self._set_buttons()
 
 
+    @check_enabled
     def load_slits(self):
         """ LoadSlits """
         self.string_var_filename.set("")
@@ -409,9 +427,9 @@ class DMDPage(SAMOSFrame):
             slit_shape[x1[i]:x2[i], y1[i]:y2[i]] = 0
         self.DMD.apply_shape(slit_shape)
         self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
-        self._set_buttons()
 
 
+    @check_enabled
     def add_slit(self):
         """
         # 1. read the current filename
@@ -422,14 +440,14 @@ class DMDPage(SAMOSFrame):
         filename_in_text = self.str_map_filename.get()
         if filename_in_text[-4:] != ".csv":
             filename_in_text += ".csv"
-        self.map_filename = get_data_file("dmd.csv.maps", filename_in_text)
-        map_list = self._load_map(self.map_filename)
+        self.str_map_filename_path = get_data_file("dmd.csv.maps", filename_in_text)
+        map_list = self._load_map(self.str_map_filename_path)
         row = [str(x) for x in [self.x0.get(), self.x1.get(), self.y0.get(), self.y1.get(), 0]]
         map_list.append(row)
         self.map = map_list
-        self._set_buttons()
 
 
+    @check_enabled
     def save_map(self):
         """ SaveMap """
         self.logger.info("Saving current DMD map")
@@ -442,25 +460,24 @@ class DMDPage(SAMOSFrame):
             self.logger.info("Creating custom map file {}".format(filename_in_text))
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
-        self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
+        self.str_map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
         pandas_map = pd.DataFrame(self.map)
-        pandas_map.to_csv(self.map_filename, index=False, header=None)
-        self._set_buttons()
+        pandas_map.to_csv(self.str_map_filename_path, index=False, header=None)
         self.logger.info("Map {} saved".format(filename_in_text))
 
 
+    @check_enabled
     def push_current_map(self):
         """ Push to the DMD the file in Current DMD Map Textbox """
         self.logger.info("Pushing map to DMD")
         filename_in_text = self.str_map_filename.get()
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
-        self.map_filename = get_data_file("dmd.scv.maps", filename_in_text)
-        map_list = self._load_map(self.map_filename)
+        self.str_map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
+        map_list = self._load_map(self.str_map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)
         self.DMD.apply_shape(dmd_shape)
         self._set_slit_image("current_dmd_state.png", "Current Map")
-        self._set_buttons()
 
 
     def _set_slit_image(self, image_file, image_name):
@@ -471,42 +488,11 @@ class DMDPage(SAMOSFrame):
         with Image.open(get_data_file("dmd", image_file)) as image_map:
             image_scaled = image_map.resize((300, 270))
             tk_image = ImageTk.PhotoImage(image_scaled)
-            label1 = tk.Label(self.canvas, image=tk_image)
+            label1 = ttk.Label(self.canvas, image=tk_image)
             label1.image = tk_image
             label1.grid(row=0, column=0)
         self.str_map_filename.set(image_name)
-
-
-    def _set_buttons(self):
-        """Set buttons to enabled or disabled based on DMD state"""
-        self.buttons["rename"].config(text="Rename '{}' to:".format(self.mask_name))
-        for button in self.buttons:
-            if button == "initialize":
-                if self.initialized:
-                    self.buttons[button]['state'] = "disabled"
-                else:
-                    self.buttons[button]['state'] = "normal"
-            elif button in ["gen_frame", "gen_radec"]:
-                if self.initialized:
-                    self.buttons[button]['state'] = "normal"
-                else:
-                    self.buttons[button]['state'] = "disabled"
-            else:
-                if self.initialized:
-                    if button in ["push_map", "add_slit"]:
-                        if self.str_map_filename.get() in ['', 'none']:
-                            self.buttons[button]['state'] = "disabled"
-                        else:
-                            self.buttons[button]['state'] = "normal"
-                    elif button == "rename":
-                        if self.mask_name in ["", "none"]:
-                            self.buttons[button]['state'] = "disabled"
-                        else:
-                            self.buttons[button]['state'] = "normal"
-                    else:
-                        self.buttons[button]['state'] = "normal"
-                else:
-                    self.buttons[button]['state'] = "disabled"
+        self.str_map_filename_path = image_file
 
 
     def _load_map(self, filename):
@@ -529,3 +515,8 @@ class DMDPage(SAMOSFrame):
         for row in map_list:
             dmd_shape[row[0]:row[1], row[2]:row[3]] = row[4]
         return dmd_shape
+
+
+    def set_enabled(self):
+        super().set_enabled()
+        self.rename_button.config(text=f"Rename '{self.mask_name.get()}' to:")

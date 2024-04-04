@@ -135,7 +135,7 @@ def convert_ginga_to_astropy(ginga_regions):
 # not actually used that I can see, but I want to keep it available for the moment.
 #     def push_objects_to_slits(self):
 #         self.logger.info("Creating DMD slit file")
-#         save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".pix")],
+#         save_file = ttk.filedialog.asksaveasfile(filetypes=[("txt file", ".pix")],
 #                                                 defaultextension=".pix",
 #                                                 initialdir=get_data_file("dmd.scv.maps"))
 #         self.logger.info("Collecting current slits")

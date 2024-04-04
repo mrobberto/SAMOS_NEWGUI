@@ -64,10 +64,10 @@ class GUI_SOAR(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
         self.title("SOAR module driver")
         #Creation of init_window
         self.geometry("610x407")
-        #label = tk.Label(self, text ="SOAR Control Window")
+        #label = ttk.Label(self, text ="SOAR Control Window")
         #label.pack()
 #       
-        #self.frame0l = tk.Frame(self,background="green")
+        #self.frame0l = ttk.Frame(self,background="green")
         #self.frame0l.place(x=0, y=0, anchor="nw", width=390, height=320)
 
         #self.Echo_String = StringVar()         
@@ -78,18 +78,18 @@ class GUI_SOAR(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
 #  #    Startup Frame
 #         
 # =============================================================================
-        self.frame_startup = tk.Frame(self,background="light gray")
+        self.frame_startup = ttk.Frame(self,background="light gray")
         self.frame_startup.place(x=4, y=4, anchor="nw", width=290, height=400)
 
 # =============================================================================
 #       SOAR WAY (Who are you?)
 # =============================================================================
         #SOAR.initialize()
-        button_WAY =  tk.Button(self.frame_startup, text="Who are you", bd=3, command=self.SOAR_way) # bg='#0052cc'
+        button_WAY = ttk.Button(self.frame_startup, text="Who are you", bd=3, command=self.SOAR_way) # bg='#0052cc'
         button_WAY.place(x=4,y=4)
 
 #
-        self.frame_OFFSET = tk.Frame(self.frame_startup,background="gray")
+        self.frame_OFFSET = ttk.Frame(self.frame_startup,background="gray")
         self.frame_OFFSET.place(x=24, y=24, anchor="nw", width=190, height=190)
 
 
@@ -97,47 +97,47 @@ class GUI_SOAR(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
 # ==========================================================================
 #       Load Basic Patterns
 # =============================================================================
-        button_Blackout =  tk.Button(self.frame_startup, text="Blackout", bd=3, command=self.SOAR_blackout) # bg='#0052cc',
+        button_Blackout = ttk.Button(self.frame_startup, text="Blackout", bd=3, command=self.SOAR_blackout) # bg='#0052cc',
         button_Blackout.place(x=4,y=34)
-        button_Whiteout =  tk.Button(self.frame_startup, text="Whiteout", bd=3, command=self.SOAR_whiteout) #bg='#0052cc',
+        button_Whiteout = ttk.Button(self.frame_startup, text="Whiteout", bd=3, command=self.SOAR_whiteout) #bg='#0052cc',
         button_Whiteout.place(x=4,y=64)
-        button_Checkerboard =  tk.Button(self.frame_startup, text="Checkerboard", bd=3, command=self.SOAR_checkerboard) #bg='#0052cc',
+        button_Checkerboard = ttk.Button(self.frame_startup, text="Checkerboard", bd=3, command=self.SOAR_checkerboard) #bg='#0052cc',
         button_Checkerboard.place(x=4,y=94)
-        button_Invert =  tk.Button(self.frame_startup, text="Invert", bd=3, command=self.SOAR_invert) #bg='#0052cc',
+        button_Invert = ttk.Button(self.frame_startup, text="Invert", bd=3, command=self.SOAR_invert) #bg='#0052cc',
         button_Invert.place(x=4,y=124)
 
-        button_antInvert =  tk.Button(self.frame_startup, text="AntInvert", bd=3, command=self.SOAR_antinvert) #bg='#0052cc',
+        button_antInvert = ttk.Button(self.frame_startup, text="AntInvert", bd=3, command=self.SOAR_antinvert) #bg='#0052cc',
         button_antInvert.place(x=140,y=124)
         """  
 # ==========================================================================
 #       Load Custom Patterns
 # =============================================================================
     
-        button_edit = tk.Button(self.frame_startup,
+        button_edit = ttk.Button(self.frame_startup,
                         text = "Edit SOAR File",
                         command = self.browseFiles)
         button_edit.place(x=4,y=164)
 
-        button_load_map = tk.Button(self.frame_startup,
+        button_load_map = ttk.Button(self.frame_startup,
                         text = "Load SOAR Map",
                         command = self.LoadMap)
         button_load_map.place(x=4,y=212)
 
-        label_filename = tk.Label(self.frame_startup, text="Current SOAR Map")
+        label_filename = ttk.Label(self.frame_startup, text="Current SOAR Map")
         label_filename.place(x=4,y=240)
         self.str_filename = tk.StringVar() 
-        self.textbox_filename = tk.Text(self.frame_startup, height = 1, width = 22)      
+        self.textbox_filename = ttk.Text(self.frame_startup, height = 1, width = 22)      
         self.textbox_filename.place(x=120,y=240)
 
-        button_load_slits = tk.Button(self.frame_startup,
+        button_load_slits = ttk.Button(self.frame_startup,
                        text = "Load Slit Grid",
                        command = self.LoadSlits)
         button_load_slits.place(x=4,y=272)
 
-        label_filename_slits = tk.Label(self.frame_startup, text="Current Slit Grid")
+        label_filename_slits = ttk.Label(self.frame_startup, text="Current Slit Grid")
         label_filename_slits.place(x=4,y=300)
         self.str_filename_slits = tk.StringVar() 
-        self.textbox_filename_slits = tk.Text(self.frame_startup, height = 1, width = 22)      
+        self.textbox_filename_slits = ttk.Text(self.frame_startup, height = 1, width = 22)      
         self.textbox_filename_slits.place(x=120,y=300)
 
    
@@ -146,14 +146,14 @@ class GUI_SOAR(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
 #       Display Patterns
 # =============================================================================
 
-        self.canvas = tk.Canvas(self, width = 300, height = 270, bg="dark gray") 
+        self.canvas = ttk.Canvas(self, width = 300, height = 270, bg="dark gray") 
         self.canvas.place(x=300,y=4)
 
 # =============================================================================
 # 
 #         # Exit
 # =====================================================================off.========
-        quitButton = tk.Button(self, text="Exit",command=self.client_exit)
+        quitButton = ttk.Button(self, text="Exit",command=self.client_exit)
         quitButton.place(x=180, y=350)
 
 
@@ -234,8 +234,8 @@ class GUI_SOAR(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
 # =============================================================================
 
     def LoadMap(self):
-        self.textbox_filename.delete('1.0', tk.END)
-        self.textbox_filename_slits.delete('1.0', tk.END)
+        self.textbox_filename.delete('1.0',ttk.END)
+        self.textbox_filename_slits.delete('1.0',ttk.END)
         filename = filedialog.askopenfilename(initialdir = local_dir+"/SOAR_maps_csv",
                                         title = "Select a File",
                                         filetypes = (("Text files",
@@ -280,8 +280,8 @@ class GUI_SOAR(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
 # =============================================================================
         
     def LoadSlits(self):
-        self.textbox_filename.delete('1.0', tk.END)
-        self.textbox_filename_slits.delete('1.0', tk.END)
+        self.textbox_filename.delete('1.0',ttk.END)
+        self.textbox_filename_slits.delete('1.0',ttk.END)
         filename_slits = filedialog.askopenfilename(initialdir = local_dir+"/SOAR_maps_csv",
                                         title = "Select a File",
                                         filetypes = (("Text files",
@@ -312,7 +312,7 @@ class GUI_SOAR(tk.Toplevel):  #this is a sublclass of whatver is Toplevel
 #         image_map.close()
         image_map = Image.open(local_dir + "/current_SOAR_state.png")        
         test = ImageTk.PhotoImage(image_map)
-        label1 = tk.Label(self.canvas,image=test)
+        label1 = ttk.Label(self.canvas,image=test)
         label1.image = test
         # Position image
         label1.place(x=-100, y=0)
@@ -342,7 +342,7 @@ root = GUI_SOAR()
 #root.geometry("400x330")
 
 #Then we actually create the instance.
-#app = Tk.Window(root)    
+#app = ttk.Window(root)    
 
 #Finally, show it and begin the mainloop.
 root.mainloop()

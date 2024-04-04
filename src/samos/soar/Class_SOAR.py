@@ -32,9 +32,7 @@ class Class_SOAR:
         self.SOAR_TCS_IP = '139.229.15.163'   #copied from above
         self.SOAR_TCS_port=1000               # to be checked
         self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
-        
-        print('echo from server:') 
-        print(self.echo_client())
+
 
     def echo_client(self):
         import socket

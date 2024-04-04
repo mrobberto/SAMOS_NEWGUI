@@ -29,11 +29,6 @@ parent_dir = str(path.parent)
 from .hadamard_class_v3 import *
 HTSI = HTSI_Models()
 
-from samos.dmd import DigitalMicroMirrorDevice
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-dmd = DigitalMicroMirrorDevice(par=SAMOS_Parameters())
-dmd.initialize()
-
 import pandas as pd
 #%% Generate the DMD patterns from the matrix
 

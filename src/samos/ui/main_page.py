@@ -36,9 +36,8 @@ from samos.system.SlitTableViewer import SlitTableView as STView
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 from samos.utilities.utils import convert_ginga_to_astropy
-from samos.utilities.tk import all_children, select_widgets, set_widgets, check_widgets
 
-from .common_frame import SAMOSFrame
+from .common_frame import SAMOSFrame, check_enabled
 from .exposure import ExposureProgressWindow
 from .gs_query_frame import GSQueryFrame
 
@@ -66,12 +65,12 @@ class MainPage(SAMOSFrame):
         self.loaded_reg_file_path = None
 
         # Create column frames to hopefully keep things as even as possible
-        fleft = tk.Frame(self.main_frame)
+        fleft = ttk.Frame(self.main_frame)
         fleft.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        fctr = tk.Frame(self.main_frame)
+        fctr = ttk.Frame(self.main_frame)
         fctr.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         fctr.rowconfigure(0, weight=1)
-        fright = tk.Frame(self.main_frame)
+        fright = ttk.Frame(self.main_frame)
         fright.grid(row=0, column=2, sticky=TK_STICKY_ALL)
         self.main_frame.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(0, weight=1)
@@ -81,91 +80,91 @@ class MainPage(SAMOSFrame):
         # LEFT COLUMN
 
         # Observation Info Frame
-        frame = tk.LabelFrame(fleft, text="Observer Information", font=BIGFONT)
+        frame = ttk.LabelFrame(fleft, text="Observer Information")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         frame.columnconfigure(1, weight=1)
         self.observer_names = tk.StringVar(self, self.PAR.PotN['Observer'])
-        tk.Label(frame, text="Observer Name(s):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Observer Name(s):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.observer_names).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.program_id = tk.StringVar(self, self.PAR.PotN['Program ID'])
-        tk.Label(frame, text="Program ID:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Program ID:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.program_id).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.telescope_operator = tk.StringVar(self, self.PAR.PotN['Telescope Operator'])
-        tk.Label(frame, text="Telescope Operator:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Telescope Operator:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.telescope_operator).grid(row=2, column=1, sticky=TK_STICKY_ALL)
 
         # Filter and Grating Status
-        frame = tk.LabelFrame(fleft, text="Filter and Grating Status", font=BIGFONT)
+        frame = ttk.LabelFrame(fleft, text="Filter and Grating Status")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Filter
-        filter_frame = tk.Label(frame, text="Filter", anchor=tk.W)
+        filter_frame = ttk.Label(frame, text="Filter")
         filter_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.filter_data = ascii.read(get_data_file("system", 'SAMOS_Filter_positions.txt'))
         filter_names = list(self.filter_data['Filter'][:12])
         self.current_filter = tk.StringVar(self, filter_names[2])
-        tk.Label(filter_frame, text="Current Filter:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(filter_frame, text="Current Filter:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(filter_frame, textvariable=self.current_filter, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.filter_option_menu = ttk.OptionMenu(filter_frame, self.current_filter, *filter_names)
         self.filter_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(filter_frame, text="Set Filter", command=self.set_filter).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        ttk.Button(filter_frame, text="Set Filter", command=self.set_filter).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         # Grating
-        grating_frame = tk.Label(frame, text="Grating", anchor=tk.W)
+        grating_frame = ttk.Label(frame, text="Grating")
         grating_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.grating_names = list(self.filter_data['Filter'][12:18])
         self.grating_positions = list(self.filter_data['Position'][12:18])
         self.current_grating = tk.StringVar(self, self.grating_names[2])
-        tk.Label(grating_frame, text="Current Grating:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(grating_frame, text="Current Grating:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(grating_frame, textvariable=self.current_grating, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.grating_option_menu = ttk.OptionMenu(grating_frame, self.current_grating, *self.grating_names)
         self.grating_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(grating_frame, text="Set Grating", command=self.set_grating).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        ttk.Button(grating_frame, text="Set Grating", command=self.set_grating).grid(row=2, column=1, sticky=TK_STICKY_ALL)
 
         # CCD Management
-        frame = tk.LabelFrame(fleft, text="CCD Setup", font=BIGFONT)
+        frame = ttk.LabelFrame(fleft, text="CCD Setup")
         frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         frame.columnconfigure(0, weight=1)
         # Take Image
-        acquire_frame = tk.LabelFrame(frame, text="Acquire", font=BIGFONT)
+        acquire_frame = ttk.LabelFrame(frame, text="Acquire")
         acquire_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         acquire_frame.columnconfigure(1, weight=1)
         self.image_type_options = ["Science", "Bias", "Dark", "Flat", "Buffer"]
         self.image_type = tk.StringVar(self, self.image_type_options[0])
-        tk.Label(acquire_frame, text="Exposure Type:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(acquire_frame, text="Exposure Type:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         m = ttk.OptionMenu(acquire_frame, self.image_type, *self.image_type_options, command=self.change_acq_type)
         m.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.image_base_name = tk.StringVar(self, self.PAR.PotN['Base Filename'])
-        tk.Label(acquire_frame, text="Base Filename:", anchor=tk.W).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(acquire_frame, text="Base Filename:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(acquire_frame, textvariable=self.image_base_name).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.image_exptime = tk.DoubleVar(self, 0.01)
-        tk.Label(acquire_frame, text="Exposure Time (s):", anchor=tk.W).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(acquire_frame, text="Exposure Time (s):").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(acquire_frame, textvariable=self.image_exptime).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.image_expnum = tk.IntVar(self, 1)
-        tk.Label(acquire_frame, text="Exposure Nr:", anchor=tk.W).grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(acquire_frame, text="Exposure Nr:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.expnum = tk.Spinbox(acquire_frame, textvariable=self.image_expnum, increment=1, from_=1, to=1000, format="%04.0f")
         self.expnum.grid(row=3, column=1, sticky=TK_STICKY_ALL)
         self.image_log = tk.IntVar(self, 0)
         c = tk.Checkbutton(acquire_frame, text="Save to Logbook", variable=self.image_log, onvalue=1, offvalue=0)
         c.grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        l = tk.Label(acquire_frame, text="Correct Quicklook Image For:", anchor="w")
+        l = ttk.Label(acquire_frame, text="Correct Quicklook Image For:")
         l.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        cframe = tk.Frame(acquire_frame)
+        cframe = ttk.Frame(acquire_frame)
         cframe.grid(row=6, column=0, columnspan=2)
         self.ql_bias = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Bias', variable=self.ql_bias, onvalue=1, offvalue=0, anchor=tk.W)
+        b = tk.Checkbutton(cframe, text='Bias', variable=self.ql_bias, onvalue=1, offvalue=0)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.ql_dark = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Dark', variable=self.ql_dark, onvalue=1, offvalue=0, anchor=tk.W)
+        b = tk.Checkbutton(cframe, text='Dark', variable=self.ql_dark, onvalue=1, offvalue=0)
         b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.ql_flat = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Flat', variable=self.ql_flat, onvalue=1, offvalue=0, anchor=tk.W)
+        b = tk.Checkbutton(cframe, text='Flat', variable=self.ql_flat, onvalue=1, offvalue=0)
         b.grid(row=0, column=2, sticky=TK_STICKY_ALL)
         self.ql_buffer = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Buffer', variable=self.ql_buffer, onvalue=1, offvalue=0, anchor=tk.W)
+        b = tk.Checkbutton(cframe, text='Buffer', variable=self.ql_buffer, onvalue=1, offvalue=0)
         b.grid(row=0, column=3, sticky=TK_STICKY_ALL)
         # Image Type Frame
-        self.image_frame = tk.LabelFrame(frame, text=self.image_type.get(), font=BIGFONT)
+        self.image_frame = ttk.LabelFrame(frame, text=self.image_type.get())
         self.image_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.image_frame.columnconfigure(1, weight=1)
         self.image_type_label_options = ["Object Name:", "Master Bias:", "Master Dark:", "Master Flat File:", "Master Buffer File:"]
@@ -173,62 +172,62 @@ class MainPage(SAMOSFrame):
         tk.Label(self.image_frame, textvariable=self.image_label).grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.image_name = tk.StringVar(self, self.PAR.PotN['Object Name'])
         tk.Entry(self.image_frame, textvariable=self.image_name).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        tk.Label(self.image_frame, text="Nr. of Frames:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self.image_frame, text="Nr. of Frames:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.image_frames = tk.IntVar(self, 1)
         tk.Entry(self.image_frame, textvariable=self.image_frames).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        tk.Label(self.image_frame, text="Comments:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self.image_frame, text="Comments:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         self.image_comments = tk.StringVar(self, "")
         tk.Entry(self.image_frame, textvariable=self.image_comments).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.image_save_single = tk.IntVar(self, 0)
         c = tk.Checkbutton(self.image_frame, text="Save Single Frames", variable=self.image_save_single, onvalue=1, offvalue=0)
         c.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         # Take Exposure Frame
-        exp_frame = tk.LabelFrame(frame, text="Take Exposure", font=BIGFONT)
+        exp_frame = ttk.LabelFrame(frame, text="Take Exposure")
         exp_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         exp_frame.columnconfigure(0, weight=1)
         exp_frame.columnconfigure(1, weight=1)
-        b = tk.Button(exp_frame, text="START", font=BIGFONT, command=self.start_an_exposure)
+        b = ttk.Button(exp_frame, text="START", command=self.start_an_exposure)
         b.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
         # FITS manager
-        frame = tk.LabelFrame(fleft, text="FITS Manager", font=BIGFONT)
+        frame = ttk.LabelFrame(fleft, text="FITS Manager")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Load Existing File", command=self.load_existing_file).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Load Existing File", command=self.load_existing_file).grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.fits_ra = tk.DoubleVar(self, 150.17110)
-        tk.Label(frame, text="RA:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="RA:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_ra).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.fits_dec = tk.DoubleVar(self, -54.79004)
-        tk.Label(frame, text="DEC:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="DEC:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_ra).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.fits_nstars = tk.IntVar(self, 25)
-        tk.Label(frame, text="Nr. of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Nr. of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
-        tk.Button(frame, text="Send to SOAR", command=self.send_RADEC_to_SOAR).grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry).grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Send to SOAR", command=self.send_RADEC_to_SOAR).grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(frame, self.fits_ra, self.fits_dec, self.Query_Survey, self.logger)
         self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         # Chosen Star Frame
-        cntr_frame = tk.Frame(frame)
+        cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         self.ra_cntr = tk.DoubleVar(self, self.fits_ra.get())
-        tk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.ra_cntr_mm = tk.DoubleVar(self, 0.)
-        tk.Label(cntr_frame, text="X (mm):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(cntr_frame, text="X (mm):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr_mm, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
         self.dec_cntr = tk.DoubleVar(self, self.fits_dec.get())
-        tk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.dec_cntr_mm = tk.DoubleVar(self, 0.)
-        tk.Label(cntr_frame, text="Y (mm):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(cntr_frame, text="Y (mm):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr_mm, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
         # CENTRE COLUMN
 
         # GINGA Display
-        frame = tk.LabelFrame(fctr, text="Display")
+        frame = ttk.LabelFrame(fctr, text="Display")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
@@ -260,16 +259,16 @@ class MainPage(SAMOSFrame):
         fi.get_canvas().add(self.canvas)
         self.drawtypes = self.canvas.get_drawtypes()
         self.drawtypes.sort()
-        self.readout = tk.Label(frame, text='')
+        self.readout = ttk.Label(frame, text='')
         self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # Ginga Tool Box
-        frame = tk.LabelFrame(fctr, text="Tools")
+        frame = ttk.LabelFrame(fctr, text="Tools")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Early variable definition because it's needed to set an enable condition.
         self.source_pickup_enabled = tk.IntVar(self, 0)
         # Shape
-        tk.Label(frame, text="Shape:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Shape:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.draw_type = tk.StringVar(self, "box")
         e = tk.Entry(frame, textvariable=self.draw_type)
         e.bind("<Return>", self.set_drawparams)
@@ -284,7 +283,7 @@ class MainPage(SAMOSFrame):
         self.draw_fill = tk.IntVar(self, 0)
         c = tk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=1, offvalue=0)
         c.grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text="Alpha:").grid(row=0, column=4, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Alpha:").grid(row=0, column=4, sticky=TK_STICKY_ALL)
         self.draw_alpha = tk.DoubleVar(self, 1.0)
         e = tk.Entry(frame, width=8, textvariable=self.draw_alpha)
         e.bind("<Return>", self.set_drawparams)
@@ -293,38 +292,38 @@ class MainPage(SAMOSFrame):
         b = tk.Checkbutton(frame, text="Source Pickup", variable=self.source_pickup_enabled, command=self.set_slit_drawtype)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Buttons
-        tk.Button(frame, text="Show Traces", command=self.show_traces).grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Remove Traces", command=self.remove_traces).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=2, column=2, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=2, column=3, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Open File", command=self.open_quicklook_file).grid(row=2, column=5, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Show Traces", command=self.show_traces).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Remove Traces", command=self.remove_traces).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=2, column=2, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Open File", command=self.open_quicklook_file).grid(row=2, column=5, sticky=TK_STICKY_ALL)
 
         # Slit Configuration Frame
-        frame = tk.LabelFrame(fctr, text="Slit Configuration:", font=BIGFONT)
+        frame = ttk.LabelFrame(fctr, text="Slit Configuration:")
         frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         # Slit Size Controls
-        slit_frame = tk.LabelFrame(frame, text="Slit Size")
+        slit_frame = ttk.LabelFrame(frame, text="Slit Size")
         slit_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.slit_w = tk.IntVar(self, 3)
-        tk.Label(slit_frame, text="Slit Width (mirrors):", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(slit_frame, text="Slit Width (mirrors):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
-                       from_=0, to=1080)
+                        from_=0, to=1080)
         b.bind("<Return>", self.slit_width_length_adjust)
         b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("is_something", self.selected_object_tag)]
         self.slit_l = tk.IntVar(self, 9)
-        tk.Label(slit_frame, text="Slit Length (mirrors):", anchor=tk.W).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(slit_frame, text="Slit Length (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         b = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
-                       from_=0, to=1080)
+                        from_=0, to=1080)
         b.bind("<Return>", self.slit_width_length_adjust)
         b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("is_something", self.selected_object_tag)]
         self.force_orthonormal = tk.IntVar(self, 0)
         b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal)
         b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        tk.Button(slit_frame, text="Apply to All", command=self.apply_to_all).grid(row=3, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        ttk.Button(slit_frame, text="Apply to All", command=self.apply_to_all).grid(row=3, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         # Slit Draw Controls
-        draw_frame = tk.LabelFrame(frame, text="Slit Mode")
+        draw_frame = ttk.LabelFrame(frame, text="Slit Mode")
         draw_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.slit_mode = tk.StringVar(self, "draw")
         self.draw_mode = tk.Radiobutton(draw_frame, text="Draw", variable=self.slit_mode, value="draw", command=self.set_mode_cb)
@@ -334,12 +333,12 @@ class MainPage(SAMOSFrame):
         self.draw_mode = tk.Radiobutton(draw_frame, text="Delete", variable=self.slit_mode, value="delete", command=self.set_mode_cb)
         self.draw_mode.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         # Misc
-        tk.Button(frame, text="View Slit Table", command=self.show_slit_table).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Button(frame, text="Find Stars", command=self.find_stars).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="View Slit Table", command=self.show_slit_table).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Find Stars", command=self.find_stars).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # Pattern Series
-        pattern_frame = tk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
+        pattern_frame = ttk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
         pattern_frame.grid(row=0, column=1, rowspan=2, sticky=TK_STICKY_ALL)
-        b = tk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
+        b = ttk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
         self.base_pattern_name = tk.StringVar(self, "Base Pattern Name")
@@ -349,90 +348,90 @@ class MainPage(SAMOSFrame):
         self.pattern_group = ttk.Combobox(pattern_frame, width=25, textvariable=self.selected_dmd_pattern, style="TCombobox")
         self.pattern_group.bind("<<ComboboxSelected>>", self.selected_dmd_group_pattern)
         self.pattern_group.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Button(pattern_frame, text="Save Displayed Pattern", command=self.save_selected_sub_pattern)
+        b = ttk.Button(pattern_frame, text="Save Displayed Pattern", command=self.save_selected_sub_pattern)
         b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Button(pattern_frame, text="Save All Patterns", command=self.save_all_sub_patterns)
+        b = ttk.Button(pattern_frame, text="Save All Patterns", command=self.save_all_sub_patterns)
         b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
 
         # RIGHT COLUMN
 
         # RADEC Module
-        frame = tk.LabelFrame(fright, text="Sky Regions (RA, DEC)", font=BIGFONT)
+        frame = ttk.LabelFrame(fright, text="Sky Regions (RA, DEC)")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Load Regions from DS9/RADEC Region File", command=self.load_regions_radec)
+        b = ttk.Button(frame, text="Load Regions from DS9/RADEC Region File", command=self.load_regions_radec)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text="Loaded Region File:", anchor=tk.W).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, textvariable=self.loaded_reg_file, anchor=tk.W).grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC, anchor=tk.E)
+        ttk.Label(frame, text="Loaded Region File:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, textvariable=self.loaded_reg_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        l = tk.Label(frame, text="Point, take and image, and twirl WCS from GAIA", anchor=tk.W)
+        l = ttk.Label(frame, text="Point, take and image, and twirl WCS from GAIA")
         l.grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file, anchor=tk.E)
+        b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file)
         b.grid(row=5, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR), ("valid_file", self.loaded_reg_file_path)]
-        b = tk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs, anchor=tk.E)
+        b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs)
         b.grid(row=6, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR)]
 
         # CCD Module
-        frame = tk.LabelFrame(fright, text="CCD Regions (x, y)", font=BIGFONT)
+        frame = ttk.LabelFrame(fright, text="CCD Regions (x, y)")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Load (x, y) Regions from DS9 Region file", command=self.load_regions_pix, anchor=tk.W)
+        b = ttk.Button(frame, text="Load (x, y) Regions from DS9 Region file", command=self.load_regions_pix)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR)]
         self.loaded_ginga_file = tk.StringVar(self, "")
         self.loaded_ginga_file_path = None
-        tk.Label(frame, text="Loaded File in CCD Units:", anchor=tk.W).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Label(frame, textvariable=self.loaded_ginga_file, anchor=tk.W).grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_pix, anchor=tk.W)
+        ttk.Label(frame, text="Loaded File in CCD Units:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, textvariable=self.loaded_ginga_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_pix)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
 
         # DMD Module
-        frame = tk.LabelFrame(fright, text="DMD Slits", font=BIGFONT)
+        frame = ttk.LabelFrame(fright, text="DMD Slits")
         frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         self.saved_slit_file = tk.StringVar(self, "")
         self.saved_slit_file_path = None
-        b = tk.Button(frame, text="Send Current Slits to DMD", font=BIGFONT, relief=tk.RAISED, command=self.push_slit_shape)
+        b = ttk.Button(frame, text="Send Current Slits to DMD", command=self.push_slit_shape)
         b.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Save Slit List", command=self.save_slit_table)
+        b = ttk.Button(frame, text="Save Slit List", command=self.save_slit_table)
         b.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.saved_slit_file_path)]
-        tk.Label(frame, text="Saved Slit List:", anchor=tk.W).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Saved Slit List:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.saved_slit_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Load and Push Slit List from File", command=self.load_slits)
+        b = ttk.Button(frame, text="Load and Push Slit List from File", command=self.load_slits)
         b.grid(row=3, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.current_slit_file_path = None
         self.current_slit_file = tk.StringVar(self, "")
-        tk.Label(frame, text="Current Slit List:", anchor=tk.W).grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Current Slit List:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.current_slit_file).grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Convert Slit Regions to Pixels", command=self.draw_slits)
+        b = ttk.Button(frame, text="Convert Slit Regions to Pixels", command=self.draw_slits)
         b.grid(row=4, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.current_slit_file_path)]
 
         # HTS Module
-        frame = tk.LabelFrame(fright, text="HTS", font=BIGFONT)
+        frame = ttk.LabelFrame(fright, text="HTS")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         # Load Mask
         self.current_mask_file = tk.StringVar(self, "")
         self.current_mask_file_path = None
-        tk.Label(frame, text="Loaded Mask:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Loaded Mask:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.current_mask_file).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Load Mask", command=self.load_masks_file_HTS)
+        b = ttk.Button(frame, text="Load Mask", command=self.load_masks_file_HTS)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Push Mask
         self.pushed_mask_file = tk.StringVar(self, "")
-        tk.Label(frame, text="Pushed Mask:", anchor=tk.W).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Pushed Mask:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.pushed_mask_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        b = tk.Button(frame, text="Push Mask", command=self.push_masks_file_HTS)
+        b = ttk.Button(frame, text="Push Mask", command=self.push_masks_file_HTS)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
         # Next Mask
-        b = tk.Button(frame, text="Next Mask", command=self.next_masks_file_HTS)
+        b = ttk.Button(frame, text="Next Mask", command=self.next_masks_file_HTS)
         b.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
 
         # Status Indicator Frame
-        frame = tk.LabelFrame(fright, text="STATUS")
+        frame = ttk.LabelFrame(fright, text="STATUS")
         frame.grid(row=5, column=0, sticky=TK_STICKY_ALL)
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
@@ -449,10 +448,10 @@ class MainPage(SAMOSFrame):
         self.status_box.create_text(260, 70, text="TCS")
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
-
         self.set_enabled()
 
 
+    @check_enabled
     def save_ginga_regions_pix(self):
         """
         Save regions defined on the current canvas (and thus in Ginga (x, y) co-ordinates)
@@ -460,7 +459,7 @@ class MainPage(SAMOSFrame):
         (using the Ginga utilities).
         """
         self.logger.info("Saving Canvas Regions to Astropy File (pixel format)")
-        save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
+        save_file = ttk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                                 defaultextension=".reg",
                                                 initialdir=get_data_file("regions.pixels"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
@@ -469,6 +468,7 @@ class MainPage(SAMOSFrame):
         self.logger.info("Saved regions to {}".format(save_file.name))
 
 
+    @check_enabled
     def save_ginga_regions_wcs(self):
         """ 
         As above but save to ra/dec (WCS-enabled) regions instead of pixel-on-image regions.
@@ -478,7 +478,7 @@ class MainPage(SAMOSFrame):
         - valid WCS
         """
         self.logger.info("Saving Canvas Regions to Astropy File (WCS format)")
-        save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
+        save_file = ttk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                                 defaultextension=".reg",
                                                 initialdir=get_data_file("regions.radec"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
@@ -488,6 +488,7 @@ class MainPage(SAMOSFrame):
         self.logger.info("Saved regions to {}".format(save_file.name))
 
 
+    @check_enabled
     def load_region_file(self):
         """ 
         converting ds9/radec Regions to AP/radec Regions
@@ -511,6 +512,7 @@ class MainPage(SAMOSFrame):
         self.logger.info("Finished displaying regions and loading slit tab view")
 
 
+    @check_enabled
     def draw_slits(self):
         """
         Takes a slit list (.csv file with each row defining a region in slit space), uses
@@ -537,6 +539,7 @@ class MainPage(SAMOSFrame):
                 self.canvas.add(obj, tag='@slit_{}'.format(i))
 
 
+    @check_enabled
     def convert_astropy_to_ginga_pix(self, regions, tag='loaded'):
         """ 
         converting (x,y) Astropy Regions to (x,y) Ginga Regions
@@ -558,6 +561,7 @@ class MainPage(SAMOSFrame):
         return ginga_objects
 
 
+    @check_enabled
     def push_RADEC(self):
         """
         Load canvas RA/DEC from entries
@@ -566,6 +570,7 @@ class MainPage(SAMOSFrame):
         self.fits_dec.set(self.dec_cntr.get())
 
 
+    @check_enabled
     def load_regions_radec(self):
         """ 
         Read (RA,DEC) Regions from .reg file
@@ -577,7 +582,7 @@ class MainPage(SAMOSFrame):
         None
         """
         self.logger.info("Loading Region File")
-        reg_file = tk.filedialog.askopenfilename(initialdir=get_data_file("regions.radec"), title="Select a File",
+        reg_file = ttk.filedialog.askopenfilename(initialdir=get_data_file("regions.radec"), title="Select a File",
                                                  filetypes=(("Text files", "*.reg"), ("all files", "*.*")))
         self.loaded_reg_file_path = Path(reg_file)
         self.loaded_reg_file.set(self.loaded_reg_file_path.name)
@@ -604,9 +609,9 @@ class MainPage(SAMOSFrame):
             self.ra_cntr.set(ra)
             self.dec_cntr.set(dec)
         self.loaded_astropy_regions = astropy_regions_radec
-        self.set_enabled()
 
 
+    @check_enabled
     def load_regions_pix(self):
         """ 
         read (x,y) Astropy  Regions from ds9 .reg file
@@ -621,7 +626,7 @@ class MainPage(SAMOSFrame):
         - Valid WCS
         """
         self.logger.info("Loading DS9 pixel region file to Astropy Pixels")
-        reg_file = tk.filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
+        reg_file = ttk.filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
                                                  initialdir=get_data_file("regions.pixels"))
         self.loaded_ginga_file_path = Path(reg_file)
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
@@ -635,9 +640,9 @@ class MainPage(SAMOSFrame):
         self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=asatropy_regions_pix, img_wcs=self.PAR.wcs)
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
         self.loaded_ginga_regions = ginga_regions
-        self.set_enabled()
 
 
+    @check_enabled
     def collect_slit_shape(self):
         """
         collect selected slits to DMD pattern
@@ -718,6 +723,7 @@ class MainPage(SAMOSFrame):
         return slit_shape
 
 
+    @check_enabled
     def push_slit_shape(self):
         """
         push selected slits to DMD pattern
@@ -729,6 +735,7 @@ class MainPage(SAMOSFrame):
         self.push_slits(slit_shape)
                 
 
+    @check_enabled
     def push_slits(self, slit_shape):
         """ Actual push of the slit_shape to the DMD """
         self.logger.info("Applying slit shape to DMD")
@@ -737,6 +744,7 @@ class MainPage(SAMOSFrame):
         self.DMD.apply_shape(slit_shape)
 
 
+    @check_enabled
     def set_filter(self):
         self.logger.info("Setting Filter to {}".format(self.current_filter.get()))
         current_filter = self.current_filter.get()
@@ -755,6 +763,7 @@ class MainPage(SAMOSFrame):
         self.header_entry_string += entry_string
 
 
+    @check_enabled
     def set_grating(self):
         self.logger.info("Setting Grating to {}".format(self.current_grating.get()))
         current_grating = self.current_grating.get()
@@ -772,6 +781,7 @@ class MainPage(SAMOSFrame):
         self.header_entry_string += entry_string
 
 
+    @check_enabled
     def set_drawparams(self, evt):
         """
         Check and update user drawing
@@ -786,10 +796,12 @@ class MainPage(SAMOSFrame):
         self.canvas.set_drawtype(kind, **params)
 
 
+    @check_enabled
     def clear_canvas(self):
         self.canvas.delete_all_objects(redraw=True)
 
 
+    @check_enabled
     def start_an_exposure(self):
         """ 
         This is the landing procedure after the START button has been pressed
@@ -826,14 +838,15 @@ class MainPage(SAMOSFrame):
         exp_window.start_exposure(self.image_type.get(), **exposure_params)
 
 
+    @check_enabled
     def display_exposure(self, results):
         self.handle_log(results["images"])
         self.Display(self.fits_image_ql)
         self.fits_image.rotate(self.PAR.Ginga_PA)
         self._set_expnum()
-        self.set_enabled()
 
 
+    @check_enabled
     def update_PotN(self):
         """
         Updates the parameters of the night variables and files for logging the observations
@@ -856,6 +869,7 @@ class MainPage(SAMOSFrame):
         self.PAR.update_PotN()
 
 
+    @check_enabled
     def handle_log(self, newfiles):
         """ 
         handles the writeup of an entry line in the loogbook
@@ -874,10 +888,11 @@ class MainPage(SAMOSFrame):
             for file in newfiles:
                 file_name = Path(file).name
                 logbook.write(f"{today.strftime('%Y-%m-%d')},time.strftime('%H:%M:%S', self.start_time),")
-                logbook.write(f"{self.PAR.PotN['Object Name]},{self.current_filter.get()},{len(newfiles)},")
+                logbook.write(f"{self.PAR.PotN['Object Name']},{self.current_filter.get()},{len(newfiles)},")
                 logbook.write(f"{self.image_exptime.get()},{file_name}\n")
 
 
+    @check_enabled
     def change_acq_type(self, event):
         """
         When the acquisition tab is changed
@@ -886,33 +901,27 @@ class MainPage(SAMOSFrame):
         self.image_label.set(self.image_type_label_options[self.image_type_options.index(self.image_type.get())])
 
 
+    @check_enabled
     def Display(self, imagefile):
         self.AstroImage = load_data(imagefile, logger=self.logger)
         self.fits_image.set_image(self.AstroImage)
         self.fits_image_ql = imagefile
 
 
-    def reset_progress_bars(self):
-        self.exp_progbar["value"] = 0
-        self.var_perc_exp_done.set(0)
-        self.exp_progbar_style.configure('text.Horizontal.TProgressbar',
-                                         text='Expose {:g} %'.format(self.var_perc_exp_done.get()))
-        self.readout_progbar["value"] = 0
-        self.var_perc_read_done.set(0)
-        self.readout_progbar_style.configure('text.Horizontal.RProgressbar',
-                                             text='Readout {:g} %'.format(self.var_perc_read_done.get()))
-
+    @check_enabled
     def load_existing_file(self):
-        loaded_file = tk.filedialog.askopenfilename(initialdir=self.PAR.QL_images,                                                          title="Select a File",
+        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images,                                                          title="Select a File",
                                                     filetypes=(("fits files", "*.fits"), ("all files","*.*")))
         self.fits_image_ql  = loaded_file
         self.Display(loaded_file)
 
 
+    @check_enabled
     def send_RADEC_to_SOAR(self):
         pass
 
 
+    @check_enabled
     def Query_Survey(self, catalog):
         self.catalog = catalog
         self.clear_canvas()
@@ -926,6 +935,7 @@ class MainPage(SAMOSFrame):
         self.fits_image.set_image(self.AstroImage)
 
 
+    @check_enabled
     def twirl_Astrometry(self):
         self.PAR.valid_wcs = False
         self.Display(self.fits_image_ql)
@@ -997,6 +1007,7 @@ class MainPage(SAMOSFrame):
         self.dec_cntr_mm.set(Delta_DEC_mm)
 
 
+    @check_enabled
     def find_stars(self):
         self.Display(self.fits_image_ql)
         self.fits_image.rotate(self.PAR.Ginga_PA)  
@@ -1037,9 +1048,10 @@ class MainPage(SAMOSFrame):
             self.slit_tab_view.add_slit_obj(region, obj.tag, self.fits_image)
 
 
+    @check_enabled
     def open_quicklook_file(self):
         """ to be written """
-        filename = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"),
+        filename = ttk.filedialog.askopenfilename(filetypes=[("allfiles", "*"),
                                                  ("fitsfiles", "*.fits")])
         self.Display(filename)
         if self.AstroImage.wcs.wcs.has_celestial:
@@ -1047,6 +1059,7 @@ class MainPage(SAMOSFrame):
             self.PAR.valid_wcs = True
 
 
+    @check_enabled
     def slits_only(self):
         """ erase all objects in the canvas except slits (boxes) """
         # Get all slit objects
@@ -1093,6 +1106,7 @@ class MainPage(SAMOSFrame):
         self.readout.config(text=text)
 
 
+    @check_enabled
     def set_slit_drawtype(self):
         self.slit_mode.set("draw")  # Possibly need to set self.draw_mode instead?
         self.set_mode_cb()
@@ -1101,9 +1115,9 @@ class MainPage(SAMOSFrame):
         else:
             self.draw_type.set("box")
         self.canvas.set_drawtype(self.draw_type.get())
-        self.set_enabled()
 
 
+    @check_enabled
     def set_mode_cb(self):
         mode = self.slit_mode.get()
         if mode != "draw":
@@ -1111,6 +1125,7 @@ class MainPage(SAMOSFrame):
         self.canvas.set_draw_mode(mode)
 
 
+    @check_enabled
     def draw_cb(self, canvas, tag):
         obj = canvas.get_object_by_tag(tag)
         obj.pickable = True
@@ -1152,6 +1167,7 @@ class MainPage(SAMOSFrame):
         # Done draw_cb
 
 
+    @check_enabled
     def slit_handler(self, obj):
         self.logger.info("Creating a slit for object {} ({})".format(obj, obj.kind))
         img_data = self.AstroImage.get_data()
@@ -1223,6 +1239,7 @@ class MainPage(SAMOSFrame):
         return new_obj
 
 
+    @check_enabled
     def show_traces(self):
         """ Show Traces """
         # keep only the slits/boxes
@@ -1243,6 +1260,7 @@ class MainPage(SAMOSFrame):
         CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
 
 
+    @check_enabled
     def remove_traces(self):
         """ 
         Use "try:/except:"
@@ -1253,6 +1271,7 @@ class MainPage(SAMOSFrame):
         CM.CompoundMixin.delete_objects(self.canvas, trace_objects)
 
 
+    @check_enabled
     def save_all_sub_patterns(self):
         pattern_directory = get_fits_dir() / "SubPatterns"
         pattern.mkdir(parents=True, exist_ok=True)
@@ -1265,6 +1284,7 @@ class MainPage(SAMOSFrame):
                 sky_regions.write(new_file_name, overwrite=True, format="ds9")
 
 
+    @check_enabled
     def save_selected_sub_pattern(self):
         pattern_directory = get_fits_dir() / "SubPatterns"
         pattern_list_index = self.pattern_group.current()
@@ -1277,6 +1297,7 @@ class MainPage(SAMOSFrame):
             sky_regions.write(new_file_name, overwrite=True, format="ds9")
 
 
+    @check_enabled
     def create_astropy_RectangleSkyRegion(self, pattern_row):
         """
         Requires
@@ -1297,6 +1318,7 @@ class MainPage(SAMOSFrame):
 
 
 
+    @check_enabled
     def create_pattern_series_from_traces(self):
         """
         Input: Primary DMD pattern that is shown in the display.
@@ -1343,9 +1365,9 @@ class MainPage(SAMOSFrame):
                 obj.color = c
                 obj.alpha = 1
                 obj.tag = '@slit_{}_{}'.format(pattern_name, obj.tag[1:])
-        self.set_enabled()
 
 
+    @check_enabled
     def selected_dmd_group_pattern(self, event):
         self.slits_only()
         pattern_list_index = self.pattern_group.current()
@@ -1365,6 +1387,7 @@ class MainPage(SAMOSFrame):
         self.canvas.redraw()
 
 
+    @check_enabled
     def apply_to_all(self):
         """ apply the default slit width/length to all slits """
         self.slits_only()
@@ -1379,6 +1402,7 @@ class MainPage(SAMOSFrame):
         np.array(list(map(self.slit_tab_view.update_table_from_obj, updated_objs, viewer_list)))
 
 
+    @check_enabled
     def get_dmd_coords_of_picked_slit(self, picked_slit):
         """ get_dmd_coords_of_picked_slit """
         x0, y0, x1, y1 = picked_slit.get_llur()
@@ -1396,6 +1420,7 @@ class MainPage(SAMOSFrame):
         return dmd_xc, dmd_yc, dmd_x0, dmd_y0, dmd_x1, dmd_y1, dmd_width, dmd_length
 
 
+    @check_enabled
     def slit_width_length_adjust(self, event=None):
         if self.selected_obj_tag is None:
             self.logger.error("Trying to adjust width of selected slit with no slit selected.")
@@ -1440,9 +1465,9 @@ class MainPage(SAMOSFrame):
         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=12, redraw=True, value=int(dmd_y0))
         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=13, redraw=True, value=int(dmd_x1))
         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=14, redraw=True, value=int(dmd_y1))
-        self.set_enabled()
 
 
+    @check_enabled
     def pick_cb(self, obj, canvas, event, pt, ptype):
         self.logger.info(f"Pick {ptype} on object {obj.tag} of kind {obj.kind} at ({pt[0]}, {pt[1]})")
         if self.selected_obj_tag is not None:
@@ -1495,6 +1520,7 @@ class MainPage(SAMOSFrame):
         return True
 
 
+    @check_enabled
     def edit_cb(self, obj):
         self.logger.info(f"Object {obj.kind} has been edited")
         tab_row_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(int(obj.tag.strip("@")))
@@ -1503,6 +1529,7 @@ class MainPage(SAMOSFrame):
         return True
 
 
+    @check_enabled
     def initialize_slit_table(self):
         if (not hasattr(self, "slit_window")) or (self.slit_window is None):
             self.slit_window = tk.Toplevel()
@@ -1512,6 +1539,7 @@ class MainPage(SAMOSFrame):
             self.slit_window.withdraw()
 
 
+    @check_enabled
     def show_slit_table(self):
         try:
             self.slit_window.deiconify()
@@ -1530,8 +1558,9 @@ class MainPage(SAMOSFrame):
                 self.slit_window.deiconify()
 
 
+    @check_enabled
     def load_slits(self):
-        filename_slits = tk.filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.slits"),
+        filename_slits = ttk.filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.slits"),
                                                        title="Select a File",
                                                        filetypes=(("Text files", "*.csv"),
                                                                   ("all files", "*.*")))
@@ -1553,37 +1582,37 @@ class MainPage(SAMOSFrame):
         image_map = Image.open(get_data_file("dmd", "current_dmd_state.png"))
         self.img = ImageTk.PhotoImage(image_map)
         image_map.close()
-        self.set_enabled()
 
 
+    @check_enabled
     def save_slit_table(self):
-        file = tk.filedialog.asksaveasfile(filetypes=[("csv file", ".csv")],
+        file = ttk.filedialog.asksaveasfile(filetypes=[("csv file", ".csv")],
                                            defaultextension=".csv",
                                            initialdir=get_data_file("dmd.scv.slits"),
                                            initialfile=self.filename_regfile_RADEC[0:-4]+".csv")
         slit_shape = self.collect_slit_shape()
         pandas_slit_shape = pd.DataFrame(slit_shape)
         pandas_slit_shape.to_csv(file.name)
-        self.set_enabled()
 
 
+    @check_enabled
     def load_masks_file_HTS(self):
         """load_masks_file for upload on DMD"""
-        filename_masks = tk.filedialog.askopenfilename(initialdir=get_data_file('hadamard.mask_sets'),
+        filename_masks = ttk.filedialog.askopenfilename(initialdir=get_data_file('hadamard.mask_sets'),
                                                        title="Select a File",
                                                        filetypes=(("Text files", "*.bmp"),
                                                                   ("all files", "*.*")))
         self.current_mask_file_path = Path(filename_masks)
         self.current_mask_file.set(self.current_mask_file_path.name)
-        self.set_enabled()
 
 
+    @check_enabled
     def push_masks_file_HTS(self):
         slit_shape = np.asarray(Image.open(self.current_mask_file_path), dtype='int')
         self.push_slits(slit_shape)
-        self.set_enabled()
 
 
+    @check_enabled
     def next_masks_file_HTS(self):
         """look at the currently loaded mask and push the next one to the DMD"""
         # => find all positions of the '_' string in the filename
@@ -1597,7 +1626,7 @@ class MainPage(SAMOSFrame):
         # if we have reached the last mask and we are not in Hmask_a, exit with message
         if ((int(counter) == int(order)) and (ab_ != 'a')):
             self.logger.warning("Tried to get next mask from last mask file")
-            tk.messagebox.showinfo(title='No Next Mask', message='This is the last mask in the series')
+            ttk.messagebox.showinfo(title='No Next Mask', message='This is the last mask in the series')
             return
 
         # increment and set as the current mask:
@@ -1617,9 +1646,9 @@ class MainPage(SAMOSFrame):
         self.current_mask_file.set(self.current_mask_file_path.name)
         # Push to the DMD
         self.push_masks_file_HTS()
-        self.set_enabled()
 
 
+    @check_enabled
     def _set_expnum(self):
         min_num = 0
         match_str = "*_" + "[0-9]" * 4 + ".fits"

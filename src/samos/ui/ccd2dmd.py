@@ -31,7 +31,7 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
-from .common_frame import SAMOSFrame
+from .common_frame import SAMOSFrame, check_enabled
 
 
 """
@@ -50,26 +50,24 @@ class CCD2DMDPage(SAMOSFrame):
         self.DMD_PIX_df = None
         self.afftest = None
         self.coord_text = None
-        self.wdir = Path(os.getcwd())
-        filelist = os.listdir(self.wdir)
+        self.loaded_image = False
 
         # Buttons
-        button_frame = tk.Frame(self.main_frame, background="cyan", borderwidth=5)
+        button_frame = ttk.Frame(self.main_frame, borderwidth=5)
         button_frame.grid(row=0, column=0, rowspan=2, sticky=TK_STICKY_ALL, padx=5, pady=5)
-        b = tk.Button(button_frame, text="Open Grid FITS File", bg="#9D76A4", command=self.browse_grid_fits_files)
+        b = ttk.Button(button_frame, text="Open Grid FITS File", command=self.browse_grid_fits_files)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.source_find_button = tk.Button(button_frame, text="Run IRAFStarFinder",
-                                            bg="#9D76A4", state="disabled", command=self.iraf_starfind)
-        self.source_find_button.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.run_coord_transf_button = tk.Button(button_frame, text="Initialize Coord Transform", bg="#9D76A4", 
-                                                 state="disabled", command=self.run_coord_transf)
-        self.run_coord_transf_button.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        
+        w = ttk.Button(button_frame, text="Run IRAFStarFinder", command=self.iraf_starfind)
+        w.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "loaded_image", True)]
+        w = ttk.Button(button_frame, text="Initialize Coord Transform", command=self.run_coord_transform)
+        w.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "loaded_image", True)]
+
         # DMD pattern information
-        tk.Label(self.main_frame, text="DMD Pattern:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        self.dmd_pattern_text = " "
-        self.dmd_pattern_label = tk.Label(self.main_frame, text=self.dmd_pattern_text)
-        self.dmd_pattern_label.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self.main_frame, text="DMD Pattern:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.dmd_pattern_text = tk.StringVar(self, "")
+        ttk.Label(self.main_frame, textvariable=self.dmd_pattern_text).grid(row=3, column=0, sticky=TK_STICKY_ALL)
 
         # FITS file markup canvas
         canvas = tk.Canvas(self.main_frame, bg="grey", width=528, height=516)
@@ -91,8 +89,10 @@ class CCD2DMDPage(SAMOSFrame):
         # Table of sources
         self.tk_grid_sources_table = tksheet.Sheet(self.main_frame, column_width=60)
         self.tk_grid_sources_table.grid(row=8, column=0, rowspan=3, columnspan=9, sticky=TK_STICKY_ALL, padx=5, pady=5)
+        self.set_enabled()
 
 
+    @check_enabled
     def cursor_cb(self, event):
         if self.fits_hdu is None:
             return
@@ -100,30 +100,29 @@ class CCD2DMDPage(SAMOSFrame):
         self.logger.info("CCD2DMD Recalibrate: Click at ({},{})".format(x, y))
 
 
+    @check_enabled
     def browse_grid_fits_files(self):
         filename = askopenfilename(initialdir=get_data_file("dmd.pixel_mapping"), filetypes=[("FITS files", "*fits")],
                                    title="Select a FITS File", parent=self)
 
         if filename == '':
             self.logger.error("CCD2DMD Recalibrate: Null selection for FITS image!")
-            tk.messagebox.showerror(title="No File Selected", message="No FITS grid file selected")
+            ttk.messagebox.showerror(title="No File Selected", message="No FITS grid file selected")
             return
 
+        self.loaded_image = True
         self.astro_image = load_data(filename, logger=self.logger)
         self.fitsimage.set_image(self.astro_image)
         self.fits_header = self.astro_image.as_hdu().header
         self.grid_pattern_name = self.fits_header["DMDMAP"]
-        dmd_pattern_text = "DMD Pattern: {}".format(self.grid_pattern_name)
-        self.dmd_pattern_label["text"] = dmd_pattern_text
+        self.dmd_pattern_text.set(self.grid_pattern_name)
 
         self.grid_pattern_fullPath = get_data_file("dmd.csv.slits", self.grid_pattern_name)
         dmd_table = pd.read_csv(self.grid_pattern_fullPath)
         self.dmd_table = dmd_table
 
-        self.source_find_button["state"] = "active"
-        self.run_coord_transf_button["state"] = "active"
 
-
+    @check_enabled
     def rotate_dmd_table_180(self):
         numcols = int(np.sqrt(self.dmd_table.shape[0]))
         rot_dmd_tab = self.dmd_table.sort_values(by="y", ascending=False).reset_index(drop=True)
@@ -142,6 +141,7 @@ class CCD2DMDPage(SAMOSFrame):
         rot_dmd_tab["x"] = np.array(stacked_x_rows)
 
 
+    @check_enabled
     def iraf_starfind(self):
         fwhm = 5  # float(self.source_fwhm_entry.get())
         ccd = self.astro_image.as_nddata().data
@@ -186,7 +186,8 @@ class CCD2DMDPage(SAMOSFrame):
             self.fitsimage.canvas.add(r2g(reg))
 
 
-    def run_coord_transf(self):
+    @check_enabled
+    def run_coord_transform(self):
         self.afftest = CTH.AFFtest(self.DMD_PIX_df)
         self.afftest.fit_wcs_with_sip(3)
 

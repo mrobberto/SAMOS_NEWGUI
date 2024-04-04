@@ -24,14 +24,6 @@ class SAMOS_Parameters():
 
     def __init__(self):
         today = datetime.now()
-        self.dir_dict = {'dir_PCM': '/motors',
-                         'dir_CCD': '/ccd',
-                         'dir_DMD': '/dmd',
-                         'dir_SOAR': '/soar',
-                         'dir_SAMI': '/SAMOS_SAMI_dev',
-                         'dir_Astrom': '/astrometry',
-                         'dir_system': '/system',
-                         }
         #add the directory of the QL images
         self.QL_images = get_data_file("ql")
         
@@ -39,20 +31,13 @@ class SAMOS_Parameters():
         with open(get_data_file("system", "IP_addresses_default.csv"), mode='r') as inp:
             reader = csv.reader(inp)
             self.IP_dict = {rows[0]: rows[1] for rows in reader}
-        self.IP_status_dict = {
-            'IP_PCM': False,
-            'IP_CCD': False,
-            'IP_DMD': False,
-            'IP_SOAR': False,
-            'IP_SAMI': False,
-        }
+            self.IP_status_dict = {rows[0]: False for rows in reader}
         # Is SAMOS running in simulated mode?
         self.simulated = False
         
         # A lot of places use the SAMOS WCS, so it's now here
         self.wcs = None
         self.valid_wcs = False
-
         self.dmd_map_filename = None
 
         # I am adding here the parameters that may change every night, saved in the 

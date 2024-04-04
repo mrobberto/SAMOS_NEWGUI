@@ -25,7 +25,7 @@ class ExposureProgressWindow(tk.Toplevel):
         self.logger = logger
         super().__init__(**kwargs)
 
-        tk.Label(self, text="Running Exposure", font=BIGFONT).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self, text="Running Exposure", font=BIGFONT).grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.exposure_number = tk.StringVar(self)
         tk.Label(self, textvariable=self.exposure_number).grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
@@ -33,7 +33,7 @@ class ExposureProgressWindow(tk.Toplevel):
         tk.Label(self, textvariable=self.exposure_status).grid(row=2, column=0, sticky=TK_STICKY_ALL)
 
         self.progress_status = tk.DoubleVar(self, 0.0)
-        self.exposure_progress = ttk.Progressbar(self, variable=self.progress_status, maximum=100)
+        self.exposure_progress = tk.Progressbar(self, variable=self.progress_status, maximum=100)
         self.exposure_progress.grid(row=3, column=0, sticky=TK_STICKY_ALL)
 
 

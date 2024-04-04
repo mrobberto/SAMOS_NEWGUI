@@ -16,6 +16,7 @@ Dependencies
     
     None.
 """
+import functools
 import logging
 import os
 from pathlib import Path
@@ -31,6 +32,15 @@ from samos.utilities.constants import *
 from samos.utilities.tk import check_widgets
 
 
+def check_enabled(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+        result = func(self, *args, **kwargs)
+        self.set_enabled()
+        return result
+    return wrapper
+
+
 class SAMOSFrame(ttk.Frame):
 
     def __init__(self, parent, container, name, **kwargs):
@@ -39,8 +49,6 @@ class SAMOSFrame(ttk.Frame):
         self.parent = parent
         self.CCD = kwargs["CCD"]
         self.DMD = kwargs['DMD']
-        self.img = kwargs["img"]
-        self.iq = kwargs["iq"]
         self.PCM = kwargs["PCM"]
         self.SOAR = kwargs["SOAR"]
         self.convert = kwargs["convert"]
@@ -49,7 +57,7 @@ class SAMOSFrame(ttk.Frame):
         self.fits_dir = get_fits_dir()
         self.check_widgets = {}
 
-        self.main_frame = tk.LabelFrame(self, text=name, font=BIGFONT, borderwidth=5)
+        self.main_frame = ttk.LabelFrame(self, text=name, borderwidth=5)
         self.main_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
         # Define Our Images
@@ -97,3 +105,5 @@ class SAMOSFrame(ttk.Frame):
         Apply the check_widgets function to everything in the check_widgets dictionary
         """
         check_widgets(self.check_widgets)
+        self.update()
+        self.parent.update()

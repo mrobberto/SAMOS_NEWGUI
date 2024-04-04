@@ -86,17 +86,20 @@ from samos.utilities import get_data_file
 from samos.utilities.constants import *
 
 
-def motor_move(indicator, indicator_type):
-    def dectorator(func):
+def motor_move(indicators):
+    def decorator(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if indicator is not None:
-                indicator.itemconfig(f"{indicator_type}_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
-                indicator.update()
-            result = func(*args, **kwargs)
-            if indicator is not None:
-                indicator.itemconfig(f"{indicator_type}_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-                indicator.update()
+        def wrapper(self, *args, **kwargs):
+            if self.indicator is not None:
+                for item in indicators:
+                    self.indicator.itemconfig(f"{item}_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
+                    self.indicator.update()
+            result = func(self, *args, **kwargs)
+            if self.indicator is not None:
+                for item in indicators:
+                    self.indicator.itemconfig(f"{item}_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+                    self.indicator.update()
+            return result
         return wrapper
     return decorator
 
@@ -125,10 +128,10 @@ class PCM():
         data = ascii.read(get_data_file("motors", 'IDG_Filter_positions.txt'))
         for i, name in enumerate(["A1", "A2", "A3", "A4", "A5", "A6"]):
             self.fw1_positions[name] = data['Counts'][i]
-            self.fw1_commands[name] = b"1e{}R".format(i+1)
+            self.fw1_commands[name] = bytearray("1e{}R".format(i+1), 'utf8')
         for i, name in enumerate(["B1", "B2", "B3", "B4", "B5", "B6"]):
             self.fw1_positions[name] = data['Counts'][i+6]
-            self.fw1_commands[name] = b"2e{}R".format(i+1)
+            self.fw1_commands[name] = bytearray("2e{}R".format(i+1), "utf8")
         self.gra_positions["GR_H1"] = data['Counts'][12]
         self.gra_positions["GR_A1"] = data['Counts'][14]
         self.gra_positions["GR_A2"] = data['Counts'][16]
@@ -146,22 +149,21 @@ class PCM():
     def initialize_motors(self):
         self.set_ip()
         self.check_if_power_is_on()
+        if self.canvas_Indicator is not None:
+            if self.is_on:
+                self.logger.info("Motors connected!")
+                self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+                self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+            else:
+                self.logger.info("Motors not connected!")
+                self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+                self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
 
 
     def initialize_indicator(self, indicator):
         if self.canvas_Indicator is not None:
             self.logger.warning("Overwriting existing indicator widget with a new one!")
         self.canvas_Indicator = indicator
-        self.set_ip()
-        self.check_if_power_is_on()
-        if self.is_on():
-            self.logger.info("Motors connected!")
-            self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-            self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-        else:
-            self.logger.info("Motors not connected!")
-            self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
 
 
     def set_ip(self):
@@ -204,7 +206,7 @@ class PCM():
 
     def send_command_string(self, string):
         self.logger.info("Sending PCM command string {}".format(string))
-        return self._send(b'~@,9600_8N1T2000,{}\n'.format(string))
+        return self._send(bytearray("~@,9600_8N1T2000,{}\n".format(string)), 'utf8')
 
 
     def filter_sensor_status(self, FW):
@@ -218,7 +220,7 @@ class PCM():
 
     def all_ports_status(self):
         self.logger.info("Getting status of all power ports")
-        return self._send(b'~ge,all\n')
+        return self._send(b"~ge,all\n")
 
 
     def initialize_filter_wheel(self, FW):
@@ -313,7 +315,7 @@ class PCM():
         self.logger.info("Result was {}".format(result))
 
 
-    @motor_move(self.canvas_Indicator, "filter")
+    @motor_move(["filter", "grism"])
     def return_wheel_home(self, wheel):
         """
         Homing is automatic on power-up, or can be forced with the following commands.
@@ -330,17 +332,17 @@ class PCM():
         self.logger.error("Received command to home unknown component {}".format(wheel))
 
 
-    @motor_move(self.canvas_Indicator, "filter")
+    @motor_move(["filter", "grism"])
     def go_to_step(self, wheel, step):
         self.logger.info("Commanding {} to {}".format(wheel, step))
         if wheel == "FW1":
-            return self.send_command_string(b"/1A{}R".format(step))
+            return self.send_command_string(bytearray("/1A{}R".format(step), "utf8"))
         elif wheel == "FW2":
-            return self.send_command_string(b"/2A{}R".format(step))
+            return self.send_command_string(bytearray("/2A{}R".format(step), "utf8"))
         elif wheel == "GR_A":
-            return self.send_command_string(b"/3A{}R".format(step))
+            return self.send_command_string(bytearray("/3A{}R".format(step), "utf8"))
         elif wheel == "GR_B":
-            return self.send_command_string(b"/4A{}R".format(step))
+            return self.send_command_string(bytearray("/4A{}R".format(step), "utf8"))
         self.logger.error("Received command to set unknown component {} to {}".format(wheel, step))
 
 
@@ -370,7 +372,7 @@ class PCM():
         self.logger.error("Received motor stop command for unknown component {}".format(wheel))
 
 
-    @motor_move(self.canvas_Indicator, "filter")
+    @motor_move(["filter"])
     def move_filter_wheel(self, position):
         self.logger.info("Commanding filter wheel move {}".format(position))
         if position in ["A1", "A2", "A3", "A4", "A5", "A6"]:
@@ -437,7 +439,7 @@ class PCM():
         self.logger.error("Received status request for unknown grism {}".format(grism))
 
 
-    @motor_move(self.canvas_Indicator, "grism")
+    @motor_move(["grism"])
     def home_grism_rails(self, grism):
         self.logger.info("Returning grism {} to home".format(grism))
         if grism == "GR_A":
@@ -447,7 +449,7 @@ class PCM():
         self.logger.error("Received home command for unknown grism {}".format(grism))
 
 
-    @motor_move(self.canvas_Indicator, "grism")
+    @motor_move(["grism"])
     def fast_home_grism_rails(self, grism):
         self.logger.info("Returning grism {} to home".format(grism))
         if grism == "GR_A":
@@ -457,7 +459,7 @@ class PCM():
         self.logger.error("Received home command for unknown grism {}".format(grism))
 
 
-    @motor_move(self.canvas_Indicator, "grism")
+    @motor_move(["grism"])
     def move_grism_rails(self, position):
         """
         Grism will home automatically on power-up.
