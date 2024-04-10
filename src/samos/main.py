@@ -74,21 +74,11 @@ class App(tk.Tk):
             current_index += 1
         self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
+        self.lift()
 
 
     def show_frame(self, frame):
         self.logger.debug("Selecting frame {}".format(frame))
-#         new_frame = self.frames[frame]
-#         menubar = new_frame.create_menubar(self)
-#         self.configure(menu=menubar)
-#         if hasattr(new_frame, "main_frame"):
-#             self.geometry("{}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
-#             print("New geometry {}x{}".format(new_frame.main_frame.winfo_width(), new_frame.main_frame.winfo_height()))
-#         else:
-#             self.geometry("{}x{}".format(new_frame.winfo_width(), new_framewinfo_height()))
-#             print("New geometry {}x{}".format(new_frame.winfo_width(), new_frame.winfo_height()))
-#         new_frame.tkraise()
-
         new_frame = self.frames[frame]
         menubar = new_frame.create_menubar(self)
         self.configure(menu=menubar)
@@ -107,7 +97,7 @@ class App(tk.Tk):
             if host != "127.0.0.1":
                 self.logger.error("SAMOS simulator can only run on localhost!")
         self.app_pipe, sim_pipe = mp.Pipe()
-        self.simulator = mp.Process(target=start_simulator, args=(self.PAR.IP_dict, sim_pipe))
+        self.simulator = mp.Process(target=start_simulator, args=(self.PAR.IP_dict, sim_pipe, self.PAR))
         self.PAR.simulated = True
         self.simulator.daemon = True
         self.simulator.start()

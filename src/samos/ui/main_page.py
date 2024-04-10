@@ -38,7 +38,7 @@ from samos.utilities.constants import *
 from samos.utilities.utils import convert_ginga_to_astropy
 
 from .common_frame import SAMOSFrame, check_enabled
-from .exposure import ExposureProgressWindow
+from .progress_windows import ExposureProgressWindow
 from .gs_query_frame import GSQueryFrame
 
 

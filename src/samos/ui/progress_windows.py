@@ -27,13 +27,13 @@ class ExposureProgressWindow(tk.Toplevel):
 
         ttk.Label(self, text="Running Exposure", font=BIGFONT).grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.exposure_number = tk.StringVar(self)
-        tk.Label(self, textvariable=self.exposure_number).grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self, textvariable=self.exposure_number).grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         self.exposure_status = tk.StringVar(self)
-        tk.Label(self, textvariable=self.exposure_status).grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self, textvariable=self.exposure_status).grid(row=2, column=0, sticky=TK_STICKY_ALL)
 
         self.progress_status = tk.DoubleVar(self, 0.0)
-        self.exposure_progress = tk.Progressbar(self, variable=self.progress_status, maximum=100)
+        self.exposure_progress = ttk.Progressbar(self, variable=self.progress_status, maximum=100)
         self.exposure_progress.grid(row=3, column=0, sticky=TK_STICKY_ALL)
 
 
@@ -342,3 +342,44 @@ class ExposureProgressWindow(tk.Toplevel):
 
         self.main_fits_header.create_fits_header(primary_header)
         return dmd_hdu
+
+
+class MotorMoveProgressWindow(tk.Toplevel):
+    def __init__(self, pcm, logger, wheel, destination, **kwargs):
+        self.PCM = pcm
+        self.logger = logger
+        super().__init__(**kwargs)
+
+        self.wheel = wheel
+        if "GR" in wheel:
+            self.wheel_type = "grism"
+        else:
+            self.wheel_type = "filter"
+        current_pos = float(self.PCM.extract_steps_from_return_string(self.PCM.current_filter_step(self.wheel)))
+        self.current_pos = tk.StringVar(self, f"{current_pos:10.1f}")
+        self.destination_pos = tk.StringVar(self, f"{destination:10.1f}")
+        ttk.Label(self, text=f"Moving {self.wheel}", font=BIGFONT).grid(row=0, column=0, columnspan=4, sticky=TK_STICKY_ALL)
+        ttk.Label(self, text="Current Step:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(self, textvariable=self.current_pos).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(self, text="Destination:").grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(self, textvariable=self.destination_pos).grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        ttk.Button(self, text="Stop", command=self.send_stop).grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        self.PCM.start_move(self.wheel_type)
+        self.after(2000, self.check_move)
+
+
+    def check_move(self):
+        """ handle the file acquired by the SISI camera"""
+        current_pos = float(self.PCM.extract_steps_from_return_string(self.PCM.current_filter_step(self.wheel)))
+        self.current_pos.set(f"{current_pos:10.1f}")
+        if current_pos == float(self.destination_pos.get().strip()):
+            self.PCM.reset_indicator(self.wheel_type)
+            self.destroy()
+        self.after(2000, self.check_move)
+
+
+    def send_stop(self):
+        """Send a stop command"""
+        self.PCM.motors_stop(self.wheel)
+        self.PCM.reset_indicator(self.wheel_type)
+        self.destroy()

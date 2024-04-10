@@ -45,26 +45,33 @@ def check_widgets(widgets):
             if condition[0] == "valid_wcs":
                 if not condition[1].valid_wcs:
                     widget["state"] = "disabled"
+                    widget.configure(state="disabled")
                     break
             elif condition[0] == "valid_file":
                 if (condition[1] is not None) and (not condition[1].is_file()):
                     widget["state"] = "disabled"
+                    widget.configure(state="disabled")
                     break
             elif condition[0] == "tkvar":
                 if condition[1].get() != condition[2]:
                     widget["state"] = "disabled"
+                    widget.configure(state="disabled")
                     break
             elif condition[0] == "tknot":
                 if condition[1].get() == condition[2]:
                     widget["state"] = "disabled"
+                    widget.configure(state="disabled")
                     break
             elif condition[0] == "is_something":
                 # check for non-None
                 if condition[1] is None:
                     widget["state"] = "disabled"
+                    widget.configure(state="disabled")
                     break
             else:  # implicit condition[0] == "condition"
                 if (hasattr(condition[1], condition[2])) and (getattr(condition[1], condition[2]) != condition[3]):
                     widget["state"] = "disabled"
+                    widget.configure(state="disabled")
                     break
             widget["state"] = "normal"
+            widget.configure(state="normal")

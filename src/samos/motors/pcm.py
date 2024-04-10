@@ -82,26 +82,9 @@ import socket
 import sys
 import time 
 
+from samos.ui.progress_windows import MotorMoveProgressWindow
 from samos.utilities import get_data_file
 from samos.utilities.constants import *
-
-
-def motor_move(indicators):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(self, *args, **kwargs):
-            if self.indicator is not None:
-                for item in indicators:
-                    self.indicator.itemconfig(f"{item}_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
-                    self.indicator.update()
-            result = func(self, *args, **kwargs)
-            if self.indicator is not None:
-                for item in indicators:
-                    self.indicator.itemconfig(f"{item}_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-                    self.indicator.update()
-            return result
-        return wrapper
-    return decorator
 
 
 class PCM():
@@ -110,14 +93,9 @@ class PCM():
         self.logger = logger
         self.set_ip()
         self.is_on = False
-        self.fw1_positions = {}
-        self.fw1_commands = {}
-        self.fw2_positions = {}
-        self.fw2_commands = {}
-        self.gra_positions = {}
-        self.gra_commands = {}
-        self.grb_positions = {}
-        self.grb_commands = {}
+        self.positions = {"FW1": {}, "FW2": {}, "GR_A": {}, "GR_B": {}}
+        self.home = {}
+        self.got_stop = False
 
         # Configure socket wait
         socket.setdefaulttimeout(3)
@@ -127,37 +105,24 @@ class PCM():
 
         data = ascii.read(get_data_file("motors", 'IDG_Filter_positions.txt'))
         for i, name in enumerate(["A1", "A2", "A3", "A4", "A5", "A6"]):
-            self.fw1_positions[name] = data['Counts'][i]
-            self.fw1_commands[name] = bytearray("1e{}R".format(i+1), 'utf8')
+            self.positions["FW1"][name] = data['Counts'][i]
         for i, name in enumerate(["B1", "B2", "B3", "B4", "B5", "B6"]):
-            self.fw1_positions[name] = data['Counts'][i+6]
-            self.fw1_commands[name] = bytearray("2e{}R".format(i+1), "utf8")
-        self.gra_positions["GR_H1"] = data['Counts'][12]
-        self.gra_positions["GR_A1"] = data['Counts'][14]
-        self.gra_positions["GR_A2"] = data['Counts'][16]
-        self.grb_positions["GR_H2"] = data['Counts'][13]
-        self.grb_positions["GR_B1"] = data['Counts'][15]
-        self.grb_positions["GR_B2"] = data['Counts'][17]
-        self.gra_commands["GR_H1"] = b"3e0R"
-        self.gra_commands["GR_A1"] = b"3e1R"
-        self.gra_commands["GR_A2"] = b"3e2R"
-        self.grb_commands["GR_H2"] = b"4e0R"
-        self.grb_commands["GR_B1"] = b"4e1R"
-        self.grb_commands["GR_B2"] = b"4e2R"
+            self.positions["FW2"][name] = data['Counts'][i+6]
+        self.positions["GR_A"]["GR_H1"] = data['Counts'][12]
+        self.positions["GR_A"]["GR_A1"] = data['Counts'][14]
+        self.positions["GR_A"]["GR_A2"] = data['Counts'][16]
+        self.positions["GR_B"]["GR_H2"] = data['Counts'][13]
+        self.positions["GR_B"]["GR_B1"] = data['Counts'][15]
+        self.positions["GR_B"]["GR_B2"] = data['Counts'][17]
+        self.home["FW1"] = self.positions["FW1"]["A4"]
+        self.home["FW2"] = self.positions["FW2"]["B4"]
+        self.home["GR_A"] = self.positions["GR_A"]["GR_H1"]
+        self.home["GR_B"] = self.positions["GR_B"]["GR_H2"]
 
 
     def initialize_motors(self):
         self.set_ip()
-        self.check_if_power_is_on()
-        if self.canvas_Indicator is not None:
-            if self.is_on:
-                self.logger.info("Motors connected!")
-                self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-                self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-            else:
-                self.logger.info("Motors not connected!")
-                self.canvas_Indicator.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-                self.canvas_Indicator.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+        self.is_on = self.check_if_power_is_on()
 
 
     def initialize_indicator(self, indicator):
@@ -176,13 +141,13 @@ class PCM():
 
     def check_if_power_is_on(self):
         self.logger.info("Checking Power Status")
-        reply = self._send(b'~se,all,on\n')
+        reply = self._send(self.PCM_COMMANDS["power_status"])
+        self.reset_indicator("filter")
+        self.reset_indicator("grism")
         if reply is not None:
             if "NO RESPONSE" in reply:
                 self.logger.info("Motor power is off")
-                self.is_on = False
                 return False
-            self.is_on = True
             self.logger.info("Motors replied {}".format(reply))
             return True
         self.logger.warning("No reply from Motors")
@@ -191,36 +156,38 @@ class PCM():
 
     def echo_client(self):
         self.logger.info("Sending PCM echo")
-        return self._send(b'~se,all,on\n')
+        return self._send(self.PCM_COMMANDS["on"])
 
 
     def power_on(self):
         self.logger.info("Sending PCM power on signal")
-        return self._send(b'~se,all,on\n')
+        result = self._send(self.PCM_COMMANDS["on"])
+        self.reset_indicator("filter")
+        self.reset_indicator("grism")
+        return result
 
 
     def power_off(self):
         self.logger.info("Sending PCM power off signal")
-        return self._send(b'~se,all,off\n')
+        result = self._send(self.PCM_COMMANDS["off"])
+        self.reset_indicator("filter")
+        self.reset_indicator("grism")
+        return result
 
 
     def send_command_string(self, string):
         self.logger.info("Sending PCM command string {}".format(string))
-        return self._send(bytearray("~@,9600_8N1T2000,{}\n".format(string)), 'utf8')
+        return self._send(f"{self.PCM_COMMANDS['preamble']}{string}")
 
 
     def filter_sensor_status(self, FW):
         self.logger.info("Getting status from {}".format(FW))
-        if FW == "FW1":
-            return self.send_command_string("/1?0")
-        elif FW == "FW2":
-            return self.send_command_string("/2?0")
-        self.logger.error("Received request for sensor status for unknown component {}".format(FW))
+        return self.send_command_string[self.PCM_COMMANDS["current_step"][FW]]
 
 
     def all_ports_status(self):
         self.logger.info("Getting status of all power ports")
-        return self._send(b"~ge,all\n")
+        return self._send(self.PCM_COMMANDS["power_status"])
 
 
     def initialize_filter_wheel(self, FW):
@@ -246,12 +213,12 @@ class PCM():
             # WHEEL 1
             # Initial drive settings (velocity, steps ratio, current), plus homing routine
             # — this runs automatically on power up.
-            return self.send_command_string(b"/1s0m23l23h0j32n2f1v2500V5000Z100000R")
+            return self.send_command_string("/1s0m23l23h0j32n2f1v2500V5000Z100000R")
         elif FW == "FW2":
             # WHEEL 2
             # Initial drive settings (velocity, steps ratio, current), plus homing routine
             # — this runs automatically on power up.
-            return self.send_command_string(b"/2s0m23l23h0j32n2f1v2500V5000Z100000R")
+            return self.send_command_string("/2s0m23l23h0j32n2f1v2500V5000Z100000R")
         self.logger.error("Received request to initialize unknown component {}".format(FW))
 
 
@@ -266,125 +233,103 @@ class PCM():
 
         self.logger.info("Initializing Wheel 1")
         self.logger.info("Initializing A1")
-        result = self.send_command_string(b"/1s1n0A46667R")
+        result = self.send_command_string("/1s1n0A46667R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing A2")
-        result = self.send_command_string(b"/1s2n0A62222R")
+        result = self.send_command_string("/1s2n0A62222R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing A3")
-        result = self.send_command_string(b"/1s3n0A77778R")
+        result = self.send_command_string("/1s3n0A77778R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing A4")
-        result = self.send_command_string(b"/1s4n0A0R")
+        result = self.send_command_string("/1s4n0A0R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing A5")
-        result = self.send_command_string(b"/1s5n0A15555R")
+        result = self.send_command_string("/1s5n0A15555R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing A6")
-        result = self.send_command_string(b"/1s6n0A31111R")
+        result = self.send_command_string("/1s6n0A31111R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing Wheel 2")
         self.logger.info("Initializing B1")
-        result = self.send_command_string(b"/2s1n0A46667R")
+        result = self.send_command_string("/2s1n0A46667R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing B2")
-        result = self.send_command_string(b"/2s2n0A62222R")
+        result = self.send_command_string("/2s2n0A62222R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing B3")
-        result = self.send_command_string(b"/2s3n0A77778R")
+        result = self.send_command_string("/2s3n0A77778R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing B4")
-        result = self.send_command_string(b"/2s4n0A0R")
+        result = self.send_command_string("/2s4n0A0R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing B5")
-        result = self.send_command_string(b"/2s5n0A15555R")
+        result = self.send_command_string("/2s5n0A15555R")
         self.logger.info("Result was {}".format(result))
 
         self.logger.info("Initializing B6")
-        result = self.send_command_string(b"/2s6n0A31111R")
+        result = self.send_command_string("/2s6n0A31111R")
         self.logger.info("Result was {}".format(result))
 
 
-    @motor_move(["filter", "grism"])
     def return_wheel_home(self, wheel):
         """
         Homing is automatic on power-up, or can be forced with the following commands.
         """
         self.logger.info("Returning {} to home position".format(wheel))
-        if wheel == "FW1":
-            return self.send_command_string(b"/1e0R")
-        elif wheel == "FW2":
-            return self.send_command_string(b"/2e0R")
-        elif wheel == "GR_A":
-            return self.send_command_string(b"/3e10R")
-        elif wheel == "GR_B":
-            return self.send_command_string(b"/4e10R")
-        self.logger.error("Received command to home unknown component {}".format(wheel))
+        motor_window = MotorMoveProgressWindow(self, self.logger, wheel, self.home[wheel])
+        result = self.send_command_string(self.PCM_COMMANDS["home"][wheel])
+        motor_window.wait_window()
+        self.got_stop = False
+        return result
 
 
-    @motor_move(["filter", "grism"])
     def go_to_step(self, wheel, step):
         self.logger.info("Commanding {} to {}".format(wheel, step))
-        if wheel == "FW1":
-            return self.send_command_string(bytearray("/1A{}R".format(step), "utf8"))
-        elif wheel == "FW2":
-            return self.send_command_string(bytearray("/2A{}R".format(step), "utf8"))
-        elif wheel == "GR_A":
-            return self.send_command_string(bytearray("/3A{}R".format(step), "utf8"))
-        elif wheel == "GR_B":
-            return self.send_command_string(bytearray("/4A{}R".format(step), "utf8"))
-        self.logger.error("Received command to set unknown component {} to {}".format(wheel, step))
+        motor_window = MotorMoveProgressWindow(self, self.logger, wheel, step)
+        result = self.send_command_string(self.PCM_COMMANDS["go_step"][wheel].format(step))
+        motor_window.wait_window()
+        self.got_stop = False
+        return result
 
 
     def current_filter_step(self, wheel):
         self.logger.info("Getting step counts for {}".format(wheel))
-        if wheel == "FW1":
-            return self.send_command_string(b"/1?0")
-        elif wheel == "FW2":
-            return self.send_command_string(b"/2?0")
-        elif wheel == "GR_A":
-            return self.send_command_string(b"/3?0")
-        elif wheel == "GR_B":
-            return self.send_command_string(b"/4?0")
-        self.logger.error("Received step count query for unknown component {}".format(wheel))
+        return self.send_command_string(self.PCM_COMMANDS["current_step"][wheel])
 
 
     def motors_stop(self, wheel):
         self.logger.info("Commanding motor stop for {}".format(wheel))
-        if wheel == "FW1":
-            return self.send_command_string(b"/1T")
-        elif wheel == "FW2":
-            return self.send_command_string(b"/2T")
-        elif wheel == "GR_A":
-            return self.send_command_string(b"/3T")
-        elif wheel == "GR_B":
-            return self.send_command_string(b"/4T")
-        self.logger.error("Received motor stop command for unknown component {}".format(wheel))
+        self.got_stop = True
+        return self.send_command_string(self.PCM_COMMANDS["stop"][wheel])
 
 
-    @motor_move(["filter"])
     def move_filter_wheel(self, position):
         self.logger.info("Commanding filter wheel move {}".format(position))
+        results = []
         if position in ["A1", "A2", "A3", "A4", "A5", "A6"]:
-            return self._move_wheel(self.fw1_positions, self.fw1_commands, "FW1", position)
+            results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "FW1", position))
         elif position in ["B1", "B2", "B3", "B4", "B5", "B6"]:
-            return self._move_wheel(self.fw2_positions, self.fw2_commands, "FW2", position)
+            results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "FW2", position))
         elif position.lower() in self.FILTER_WHEEL_MAPPINGS:
             results = []
             for item in self.FILTER_WHEEL_MAPPINGS[position.lower()]:
-                results.append(self.move_filter_wheel(self.FILTER_WHEEL_MAPPINGS[item]))
-            return results
-        self.logger.error("Received filter move command to unknown position {}".format(position))
+                if not self.got_stop:
+                    results.append(self.move_filter_wheel(item))
+                else:
+                    results.append("STOP COMMAND RECEIVED")
+        self.got_stop = False
+        return results
 
 
     def initialize_grism_rails(self):
@@ -396,10 +341,10 @@ class PCM():
         #   I set these already, and they only need to be programmed once. However, we
         # need to be able to send these commands in the event a drive is replaced.
         self.logger.info("Initializing Grism A")
-        result = self.send_command_string(b"/3s0m23l23h0j4V7000v2500n2f1Z100000000R")
+        result = self.send_command_string("/3s0m23l23h0j4V7000v2500n2f1Z100000000R")
         self.logger.info("Result was {}".format(result))
         self.logger.info("Initializing Grism B")
-        result = self.send_command_string(b"/4s0m23l23h0j4V7000v2500n2f1Z100000000R")
+        result = self.send_command_string("/4s0m23l23h0j4V7000v2500n2f1Z100000000R")
 
 
     def stored_grism_rails_procedures(self):
@@ -411,55 +356,48 @@ class PCM():
         self.logger.warning("Re-initializing Grism Rails.")
         self.logger.warning("This should only need to be done before first use or after replacing a controller.")
         self.logger.info("Storing Position 1 (A)")
-        result = self.send_command_string(b"/3s1S12A69000R")
+        result = self.send_command_string("/3s1S12A69000R")
         self.logger.info("Result was {}".format(result))
         self.logger.info("Storing Position 1 (B)")
-        result = self.send_command_string(b"/4s1S12A173000R")
+        result = self.send_command_string("/4s1S12A173000R")
         self.logger.info("Result was {}".format(result))
         self.logger.info("Storing Position 2 (A)")
-        result = self.send_command_string(b"/3s2S12A103300R")
+        result = self.send_command_string("/3s2S12A103300R")
         self.logger.info("Result was {}".format(result))
         self.logger.info("Storing Position 2 (B)")
-        result = self.send_command_string(b"/4s2S12A207850R")
+        result = self.send_command_string("/4s2S12A207850R")
         self.logger.info("Result was {}".format(result))
         self.logger.info("Storing Stowed Position (A)")
-        result = self.send_command_string(b"/3s10A1000Z2000R")
+        result = self.send_command_string("/3s10A1000Z2000R")
         self.logger.info("Result was {}".format(result))
         self.logger.info("Storing Stowed Position (B)")
-        result = self.send_command_string(b"/4s10A1000Z2000R")
+        result = self.send_command_string("/4s10A1000Z2000R")
         self.logger.info("Result was {}".format(result))
 
 
     def grism_sensor_status(self, grism):
         self.logger.info("Getting sensor status for {}".format(grism))
-        if grism == "GR_A":
-            return self.send_command_string(b"/3?4")
-        if grism == "GR_B":
-            return self.send_command_string(b"/4?4")
-        self.logger.error("Received status request for unknown grism {}".format(grism))
+        return self.send_command_string(self.PCM_COMMANDS["status"][grism])
 
 
-    @motor_move(["grism"])
     def home_grism_rails(self, grism):
         self.logger.info("Returning grism {} to home".format(grism))
-        if grism == "GR_A":
-            return self.send_command_string(b"/3e0R")
-        if grism == "GR_B":
-            return self.send_command_string(b"/4e0R")
-        self.logger.error("Received home command for unknown grism {}".format(grism))
+        motor_window = MotorMoveProgressWindow(self, self.logger, wheel, self.home[wheel])
+        result = self.send_command_string(self.PCM_COMMANDS["home"][grism])
+        motor_window.wait_window()
+        self.got_stop = False
+        return result
 
 
-    @motor_move(["grism"])
     def fast_home_grism_rails(self, grism):
         self.logger.info("Returning grism {} to home".format(grism))
-        if grism == "GR_A":
-            return self.send_command_string(b"/3e10R")
-        if grism == "GR_B":
-            return self.send_command_string(b"/4e10R")
-        self.logger.error("Received home command for unknown grism {}".format(grism))
+        motor_window = MotorMoveProgressWindow(self, self.logger, wheel, self.home[wheel])
+        result = self.send_command_string(self.PCM_COMMANDS["fast_home"][grism])
+        motor_window.wait_window()
+        self.got_stop = False
+        return result
 
 
-    @motor_move(["grism"])
     def move_grism_rails(self, position):
         """
         Grism will home automatically on power-up.
@@ -470,35 +408,29 @@ class PCM():
         self.logger.info("Moving grism to {}".format(position))
         results = []
         if position in ["GR_H1", "GR_A1", "GR_A2"]:
-            # Move Grism B to Home
-            results.append(self._move_rail(self.grb_positions, self.grb_commands, "GRB", "GR_H2"))
-            # Move Grism A to commanded location
-            results.append(self._move_rail(self.gra_positions, self.gra_commands, "GRA", position))
+            if not self.got_stop:
+                # Move Grism B to Home
+                results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", "GR_H2"))
+            if not self.got_stop:
+                # Move Grism A to commanded location
+                results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", position))
             return results
         elif position in ["GR_H2", "GR_B1", "GR_B2"]:
-            # Move Grism A to Home
-            results.append(self._move_rail(self.gra_positions, self.gra_commands, "GRA", "GR_H1"))
-            # Move Grism B to commanded location
-            results.append(self._move_rail(self.grb_positions, self.grb_commands, "GRB", position))
-            return results
-        elif position.lower() in self.GRISM_RAIL_MAPPINGS:
-            for item in self.GRISM_RAIL_MAPPINGS[position.lower()]:
-                results.append(self.move_grism_rails(self.GRISM_RAIL_MAPPINGS[item]))
-            return results
-        self.logger.error("Received filter move command to unknown position {}".format(position))
+            if not self.got_stop:
+                # Move Grism A to Home
+                results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", "GR_H1"))
+            if not self.got_stop:
+                # Move Grism B to commanded location
+                results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", position))
+        if self.got_stop:
+            results.append("GOT STOP COMMAND")
+            self.got_stop = False
+        return results
 
 
     def current_grism_step(self, grism):
         self.logger.info("Getting step counts for {}".format(wheel))
-        if wheel == "FW1":
-            return self.send_command_string(b"/1?0")
-        elif wheel == "FW2":
-            return self.send_command_string(b"/2?0")
-        elif wheel == "GR_A":
-            return self.send_command_string(b"/3?0")
-        elif wheel == "GR_B":
-            return self.send_command_string(b"/4?0")
-        self.logger.error("Received step count query for unknown component {}".format(wheel))
+        return self.send_command_string(self.PCM_COMMANDS["current_step"][grism])
 
 
     def write_status(self):
@@ -519,7 +451,22 @@ class PCM():
 
 
     def extract_steps_from_return_string(self, bstring):
-        return bstring[5:-1]   
+        return bstring[5:-1]
+
+
+    def start_move(self, wheel_type):
+        if self.canvas_Indicator is not None:
+            self.canvas_Indicator.itemconfig(f"{wheel_type}_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
+            self.canvas_Indicator.update()
+
+
+    def reset_indicator(self, wheel_type):
+        if self.canvas_Indicator is not None:
+            if self.is_on:
+                self.canvas_Indicator.itemconfig(f"{wheel_type}_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+            else:
+                self.canvas_Indicator.itemconfig(f"{wheel_type}_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+            self.canvas_Indicator.update()
 
 
     def _send(self, message):
@@ -527,9 +474,11 @@ class PCM():
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
                 s.connect((self.IP_Host, self.IP_Port))
-                s.sendall(message)
+                s.sendall(bytearray(f"{message}\n", "utf-8"))
                 data = s.recv(1024)
-                return(data)
+                text = data.decode("utf-8").strip()
+                s.close()
+                return text
             except socket.error as e:
                 self.logger.error("Socket Error {} when contacting motors".format(e))
                 return None
@@ -538,23 +487,10 @@ class PCM():
     def _move_wheel(self, positions, commands, wheel, position):
         current_steps = self.extract_steps_from_return_string(self.current_filter_step(wheel))
         self.logger.info("Current {} position is {}".format(wheel, current_steps))
-        while current_steps != str(positions[position]):
-            response = self.send_command_string(commands[position])
-            self.logger.info("PCM responded {} to move command".format(response))
-            time.sleep(2)
-            current_steps = self.extract_steps_from_return_string(self.current_filter_step(wheel))
-        self.write_status()
-        return position, current_steps
-
-
-    def _move_rail(self, positions, commands, wheel, position):
-        current_steps = self.extract_steps_from_return_string(self.current_grism_step(wheel))
-        self.logger.info("Current {} position is {}".format(wheel, current_steps))
-        while current_steps != str(positions[position]):
-            response = self.send_command_string(commands[position])
-            self.logger.info("PCM responded {} to move command".format(response))
-            time.sleep(2)
-            current_steps = self.extract_steps_from_return_string(self.current_grism_step(wheel))
+        motor_window = MotorMoveProgressWindow(self, self.logger, wheel, positions[wheel][position])
+        response = self.send_command_string(commands[position])
+        self.logger.info("PCM responded {} to move command".format(response))
+        motor_window.wait_window()
         self.write_status()
         return position, current_steps
 
@@ -572,4 +508,70 @@ class PCM():
         "glass": ("A4", "B4"),
         "hbeta": ("A4", "B5"),
         "sii": ("A4", "B6")
+    }
+    
+    PCM_COMMANDS = {
+        "preamble": "~@,9600_8N1T2000,",
+        "on": '~se,all,on',
+        "off": '~se,all,off',
+        "power_status": "~ge,all",
+        "move": {
+            "A1": "1e1R",
+            "A2": "1e2R",
+            "A3": "1e3R",
+            "A4": "1e4R",
+            "A5": "1e5R",
+            "A6": "1e6R",
+            "B1": "2e1R",
+            "B2": "2e2R",
+            "B3": "2e3R",
+            "B4": "2e4R",
+            "B5": "2e5R",
+            "B6": "2e6R",
+            "GR_H1": "3e0R",
+            "GR_A1": "3e1R",
+            "GR_A2": "3e2R",
+            "GR_H2": "4e0R",
+            "GR_B1": "4e1R",
+            "GR_B2": "4e2R",
+            "template": r"(\d)e(\d)R",
+        },
+        "home": {
+            "FW1": "/1e0R",
+            "FW2": "/2e0R",
+            "GR_A": "/3e0R",
+            "GR_B": "/4e0R",
+            "template": r"/(\d)e0R",
+        },
+        "fast_home": {
+            "GR_A": "/3e10R",
+            "GR_B": "/4e10R",
+            "template": r"/(\d)e10R",
+        },
+        "go_step": {
+            "FW1": "/1A{}R",
+            "FW2": "/2A{}R",
+            "GR_A": "/3A{}R",
+            "GR_B": "/4A{}R",
+            "template": r"/(\d)A(\d+)R",
+        },
+        "current_step": {
+            "FW1": "/1?0",
+            "FW2": "/2?0",
+            "GR_A": "/3?0",
+            "GR_B": "/4?0",
+            "template": r"/(\d)\?0",
+        },
+        "stop": {
+            "FW1": "/1T",
+            "FW2": "/2T",
+            "GR_A": "/3T",
+            "GR_B": "/4T",
+            "template": r"/(\d)T",
+        },
+        "status": {
+            "GR_A": "/3?4",
+            "GR_B": "/4?4",
+            "template": r"/(\d)\?4",
+        },
     }
