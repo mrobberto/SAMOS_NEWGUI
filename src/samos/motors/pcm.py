@@ -92,10 +92,12 @@ class PCM():
         self.PAR = par
         self.logger = logger
         self.set_ip()
-        self.is_on = False
+        self.initialized = False
         self.positions = {"FW1": {}, "FW2": {}, "GR_A": {}, "GR_B": {}}
         self.home = {}
         self.got_stop = False
+        self.filter_moving = False
+        self.grism_moving = False
 
         # Configure socket wait
         socket.setdefaulttimeout(3)
@@ -122,7 +124,14 @@ class PCM():
 
     def initialize_motors(self):
         self.set_ip()
-        self.is_on = self.check_if_power_is_on()
+        self.initialized = True
+
+
+    @property
+    def is_on(self):
+        if not self.initialized:
+            return False
+        return self.check_if_power_is_on()
 
 
     def initialize_indicator(self, indicator):
@@ -142,8 +151,7 @@ class PCM():
     def check_if_power_is_on(self):
         self.logger.info("Checking Power Status")
         reply = self._send(self.PCM_COMMANDS["power_status"])
-        self.reset_indicator("filter")
-        self.reset_indicator("grism")
+        self.reset_indicator(["filter", "grism"])
         if reply is not None:
             if "NO RESPONSE" in reply:
                 self.logger.info("Motor power is off")
@@ -162,16 +170,14 @@ class PCM():
     def power_on(self):
         self.logger.info("Sending PCM power on signal")
         result = self._send(self.PCM_COMMANDS["on"])
-        self.reset_indicator("filter")
-        self.reset_indicator("grism")
+        self.reset_indicator(["filter", "grism"])
         return result
 
 
     def power_off(self):
         self.logger.info("Sending PCM power off signal")
         result = self._send(self.PCM_COMMANDS["off"])
-        self.reset_indicator("filter")
-        self.reset_indicator("grism")
+        self.reset_indicator(["filter", "grism"])
         return result
 
 
@@ -311,6 +317,7 @@ class PCM():
     def motors_stop(self, wheel):
         self.logger.info("Commanding motor stop for {}".format(wheel))
         self.got_stop = True
+        self.reset_indicator(["filter", "grism"])
         return self.send_command_string(self.PCM_COMMANDS["stop"][wheel])
 
 
@@ -454,19 +461,18 @@ class PCM():
         return bstring[5:-1]
 
 
-    def start_move(self, wheel_type):
-        if self.canvas_Indicator is not None:
-            self.canvas_Indicator.itemconfig(f"{wheel_type}_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
-            self.canvas_Indicator.update()
+    def start_move(self, wheel_types):
+        if "filter" in wheel_types:
+            self.filter_moving = True
+        if "grism" in wheel_types:
+            self.grism_moving = True
 
 
-    def reset_indicator(self, wheel_type):
-        if self.canvas_Indicator is not None:
-            if self.is_on:
-                self.canvas_Indicator.itemconfig(f"{wheel_type}_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-            else:
-                self.canvas_Indicator.itemconfig(f"{wheel_type}_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.canvas_Indicator.update()
+    def reset_indicator(self, wheel_types):
+        if "filter" in wheel_types:
+            self.filter_moving = False
+        if "grism" in wheel_types:
+            self.grism_moving = False
 
 
     def _send(self, message):

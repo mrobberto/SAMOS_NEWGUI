@@ -16,7 +16,7 @@ from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
-from .common_frame import SAMOSFrame
+from .common_frame import SAMOSFrame, check_enabled
 
 
 class ConfigPage(SAMOSFrame):
@@ -50,9 +50,9 @@ class ConfigPage(SAMOSFrame):
                             anchor=tk.W)
         b.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, textvariable=self.custom_files_path).grid(row=4, column=1, sticky=TK_STICKY_ALL)
-        tk.Label(frame, text="Nightly Files Location:").grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        tk.Label(frame, text="Nightly Files Location:", anchor=tk.W).grid(row=5, column=0, sticky=TK_STICKY_ALL)
         self.nightly_files_dir = tk.StringVar(self, get_fits_dir())
-        tk.Label(frame, textvariable=self.nightly_files_dir).grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        tk.Label(frame, textvariable=self.nightly_files_dir, width=75).grid(row=5, column=1, sticky=TK_STICKY_ALL)
 
         # Set up servers frame
         frame = ttk.LabelFrame(self.main_frame, text="Servers", borderwidth=2)
@@ -66,38 +66,37 @@ class ConfigPage(SAMOSFrame):
         b = tk.Radiobutton(frame, text='SIMULATED', fg='red', variable=self.ip_loc, value='simulated', command=self.load_IP_default)
         b.grid(row=0, column=2, sticky=TK_STICKY_ALL)
 
+        # Hardware Labels
         ttk.Label(frame, text="PCM").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="CCD").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="DMD").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="SOAR Telescope").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="SOAR SAMI").grid(row=5, column=0, sticky=TK_STICKY_ALL)
 
-        self.IP_PCM = tk.StringVar()
-        self.IP_PCM.set(self.PAR.IP_dict['IP_PCM'])
-        tk.Entry(frame, width=20, textvariable=self.IP_PCM).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_CCD = tk.StringVar()
-        self.IP_CCD.set(self.PAR.IP_dict['IP_CCD'])
-        tk.Entry(frame, width=20, textvariable=self.IP_CCD).grid(row=2, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_DMD = tk.StringVar()
-        self.IP_DMD.set(self.PAR.IP_dict['IP_DMD'])
-        tk.Entry(frame, width=20, textvariable=self.IP_DMD).grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_SOAR = tk.StringVar()
-        self.IP_SOAR.set(self.PAR.IP_dict['IP_SOAR'])
-        tk.Entry(frame, width=20, textvariable=self.IP_SOAR).grid(row=4, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_SAMI = tk.StringVar()
-        self.IP_SAMI.set(self.PAR.IP_dict['IP_SAMI'])
-        tk.Entry(frame, width=20, textvariable=self.IP_SAMI).grid(row=5, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        # Status Indicator Frame
+        self.status_box = tk.Canvas(frame, background="gray", width=50)
+        self.status_box.grid(row=1, column=1, rowspan=5, sticky=TK_STICKY_ALL)
+        self.status_box.create_oval(10, 10, 40, 40, fill=INDICATOR_LIGHT_PENDING_COLOR, outline=None, tags=["pcm_ind"])
+        self.status_box.create_oval(10, 48, 40, 78, fill=INDICATOR_LIGHT_PENDING_COLOR, tags=["ccd_ind"], outline=None)
+        self.status_box.create_oval(10, 86, 40, 116, fill=INDICATOR_LIGHT_PENDING_COLOR, tags=["dmd_ind"], outline=None)
+        self.status_box.create_oval(10, 124, 40, 154, fill=INDICATOR_LIGHT_PENDING_COLOR, tags=["soar_ind"], outline=None)
+        self.status_box.create_oval(10, 162, 40, 192, fill=INDICATOR_LIGHT_PENDING_COLOR, tags=["sami_ind"], outline=None)
+        # Register the frame with PAR
+        self.PAR.add_status_indicator(self.status_box, self.update_status_box)
 
-        self.IP_Motors_on_button = ttk.Button(frame, image=self.off_sm, command=self.Motors_switch)
-        self.IP_Motors_on_button.grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        self.CCD_on_button = ttk.Button(frame, image=self.off_sm, command=self.CCD_switch)
-        self.CCD_on_button.grid(row=2, column=3, sticky=TK_STICKY_ALL)
-        self.DMD_on_button = ttk.Button(frame, image=self.off_sm, command=self.DMD_switch)
-        self.DMD_on_button.grid(row=3, column=3, sticky=TK_STICKY_ALL)
-        self.SOAR_Tel_on_button = ttk.Button(frame, image=self.off_sm, command=self.SOAR_switch)
-        self.SOAR_Tel_on_button.grid(row=4, column=3, sticky=TK_STICKY_ALL)
-        self.SOAR_SAMI_on_button = ttk.Button(frame, image=self.off_sm, command=self.SAMI_switch)
-        self.SOAR_SAMI_on_button.grid(row=5, column=3, sticky=TK_STICKY_ALL)
+        self.IP_PCM = tk.StringVar(self, self.PAR.IP_dict['IP_PCM'])
+        tk.Entry(frame, width=20, textvariable=self.IP_PCM).grid(row=1, column=2, columnspan=2, sticky=TK_STICKY_ALL)
+        self.IP_CCD = tk.StringVar(self, self.PAR.IP_dict['IP_CCD'])
+        tk.Entry(frame, width=20, textvariable=self.IP_CCD).grid(row=2, column=2, columnspan=2, sticky=TK_STICKY_ALL)
+        self.IP_DMD = tk.StringVar(self, self.PAR.IP_dict['IP_DMD'])
+        tk.Entry(frame, width=20, textvariable=self.IP_DMD).grid(row=3, column=2, columnspan=2, sticky=TK_STICKY_ALL)
+        self.IP_SOAR = tk.StringVar(self, self.PAR.IP_dict['IP_SOAR'])
+        tk.Entry(frame, width=20, textvariable=self.IP_SOAR).grid(row=4, column=2, columnspan=2, sticky=TK_STICKY_ALL)
+        self.IP_SAMI = tk.StringVar(self, self.PAR.IP_dict['IP_SAMI'])
+        tk.Entry(frame, width=20, textvariable=self.IP_SAMI).grid(row=5, column=2, columnspan=2, sticky=TK_STICKY_ALL)
+
+        b = ttk.Button(frame, text="Initialize Components", command=self.startup)
+        b.grid(row=6, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Other entries
         frame = ttk.LabelFrame(self.main_frame, text="Observer Data", borderwidth=2)
@@ -160,20 +159,20 @@ class ConfigPage(SAMOSFrame):
         self.PAR.create_log_file()
 
 
+    @check_enabled
     def startup(self):
         self.logger.info("CONFIG_GUI: entering startup.")
-        self.load_IP_default()
-        self.IP_echo()
-        
-        if self.PAR.IP_status_dict['IP_DMD'] == True:
-            IP = self.PAR.IP_dict['IP_DMD']
-            [host, port] = IP.split(":")
-            self.DMD.initialize(address=host, port=int(port))
-        if self.PAR.IP_status_dict['IP_PCM'] == True:
-            PCM.power_on()
+        self.PCM.initialize_motors()
+        self.PCM.power_on()
+        self.CCD.initialize_ccd()
+        self.DMD.initialize()
+        self.DMD._open()
+        self.SOAR.echo_client()
+        self.update_status_box()
         self.logger.info("CONFIG_GUI: startup complete.")
 
 
+    @check_enabled
     def load_IP_user(self):
         if self.ip_loc.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_user_inside.csv")
@@ -186,6 +185,7 @@ class ConfigPage(SAMOSFrame):
         return self._load_ip(ip_file)
 
 
+    @check_enabled
     def load_IP_default(self):
         if self.ip_loc.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
@@ -216,130 +216,41 @@ class ConfigPage(SAMOSFrame):
         self.save_IP_status()
 
 
-    def save_IP_status(self):
-        with open(get_data_file("system", "IP_status_dict.csv"), "w") as outf:
-            with csv.writer(outf) as w:
-                for key, val in self.PAR.IP_status_dict.items():
-                    w.writerow([key, val])
-
-
-    def IP_echo(self):
-        # Motors Alive?
-        self.logger.info("Checking Motor Status")
-        IP = self.PAR.IP_dict['IP_PCM']
-        [host, port] = IP.split(":")
-        PCM.initialize(address=host, port=int(port))
-        answer = PCM.echo_client()
-        if answer != "no connection":
-            self.logger.info("Motors are on")
-            self.IP_Motors_on_button.config(image=self.on_sm)
-            self.logger.info('echo from server:')
+    def update_status_box(self):
+        if self.PCM.is_on:
             self.PAR.IP_status_dict['IP_PCM'] = True
-            # PCM.power_on()
-
+            self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+            if self.PCM.filter_moving or self.PCM.grism_moving:
+                self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
         else:
-            self.logger.warning("Motors are off")
-            self.IP_Motors_on_button.config(image=self.off_sm)
+            self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
             self.PAR.IP_status_dict['IP_PCM'] = False
-
-
-        # CCD alive?
-        self.logger.info("Checking CCD status")
-        url_name = "http://"+os.path.join(self.PAR.IP_dict['IP_CCD'])  # +'/'
-        answer = (CCD.get_url_as_string(url_name))[:6]  # expect <HTML>
-        self.logger.info("CCD returns: '''{}'''".format(answer))
-        if str(answer) == '<HTML>':
-            self.logger.info("CCD is on")
-            self.CCD_on_button.config(image=self.on_sm)
+        if self.CCD.ccd_on:
             self.PAR.IP_status_dict['IP_CCD'] = True
+            self.status_box.itemconfig("ccd_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         else:
-            self.logger.warning("CCD is off\n")
-            self.CCD_on_button.config(image=self.off_sm)
+            self.status_box.itemconfig("ccd_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
             self.PAR.IP_status_dict['IP_CCD'] = False
-
-        # DMD alive?
-        self.logger.info("Checking DMD status")
-        IP = self.PAR.IP_dict['IP_DMD']
-        [host, port] = IP.split(":")
-        self.DMD.initialize(address=host, port=int(port))
-        answer = self.DMD._open()
-        if answer != "no DMD":
-            self.logger.info("DMD is on")
-            self.DMD_on_button.config(image=self.on_sm)
+        if self.DMD.is_on:
             self.PAR.IP_status_dict['IP_DMD'] = True
+            self.status_box.itemconfig("dmd_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         else:
-            self.logger.warning("DMD is off")
-            self.DMD_on_button.config(image=self.off_sm)
+            self.status_box.itemconfig("dmd_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
             self.PAR.IP_status_dict['IP_DMD'] = False
-
-        self.save_IP_status()
-        return self.PAR.IP_dict
-
-
-    # Define our switch functions
-    def Motors_switch(self):
-        """ Determine is on or off """
-        if self.PAR.IP_status_dict['IP_PCM']:
-            self.IP_Motors_on_button.config(image=self.off_sm)
-            self.PAR.IP_status_dict['IP_PCM'] = False
-            PCM.power_off()
-        else:
-            self.IP_Motors_on_button.config(image=self.on_sm)
-            self.PAR.IP_status_dict['IP_PCM'] = True
-            self.save_IP_status()
-            PCM.IP_host = self.IP_PCM.get()
-            PCM.power_on()
-        self.save_IP_status()
-        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
-
-
-    def CCD_switch(self):
-        """ Determine is on or off """
-        if self.PAR.IP_status_dict['IP_CCD']:
-            self.CCD_on_button.config(image=self.off_sm)
-            self.PAR.IP_status_dict['IP_CCD'] = False
-        else:
-            self.CCD_on_button.config(image=self.on_sm)
-            self.PAR.IP_status_dict['IP_CCD'] = True
-        self.save_IP_status()
-        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
-
-
-    def DMD_switch(self):
-        """ Determine is on or off """
-        if self.PAR.IP_status_dict['IP_DMD']:
-            self.DMD_on_button.config(image=self.off_sm)
-            self.PAR.IP_status_dict['IP_DMD'] = False
-        else:
-            self.DMD_on_button.config(image=self.on_sm)
-            self.PAR.IP_status_dict['IP_DMD'] = True
-        self.save_IP_status()
-        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
-
-
-    def SOAR_switch(self):
-        """ Determine is on or off """
-        if self.PAR.IP_status_dict['IP_SOAR']:
-            self.SOAR_Tel_on_button.config(image=self.off_sm)
-            self.PAR.IP_status_dict['IP_SOAR'] = False
-        else:
-            self.SOAR_Tel_on_button.config(image=self.on_sm)
+        if self.SOAR.is_on:
             self.PAR.IP_status_dict['IP_SOAR'] = True
-        self.save_IP_status()
-        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
-
-
-    def SAMI_switch(self):
-        """ Determine is on or off """
-        if self.PAR.IP_status_dict['IP_SAMI']:
-            self.SOAR_SAMI_on_button.config(image=self.off_sm)
-            self.PAR.IP_status_dict['IP_SAMI'] = False
+            self.status_box.itemconfig("soar_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         else:
-            self.SOAR_SAMI_on_button.config(image=self.on_sm)
+            self.status_box.itemconfig("soar_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+            self.PAR.IP_status_dict['IP_SOAR'] = False
+        sami_status = False
+        if sami_status:
             self.PAR.IP_status_dict['IP_SAMI'] = True
-        self.save_IP_status()
-        self.logger.info("SAMOS IP: {}".format(self.PAR.IP_status_dict))
-    
+            self.status_box.itemconfig("sami_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+        else:
+            self.status_box.itemconfig("sami_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+            self.PAR.IP_status_dict['IP_SAMI'] = False
+
 
     def _load_ip(self, data_file):
         with open(data_file, mode='r') as inp:

@@ -517,6 +517,6 @@ class DMDPage(SAMOSFrame):
         return dmd_shape
 
 
-    def set_enabled(self):
-        super().set_enabled()
+    def set_enabled(self, run_from_main=False):
+        super().set_enabled(run_from_main=run_from_main)
         self.rename_button.config(text=f"Rename '{self.mask_name.get()}' to:")

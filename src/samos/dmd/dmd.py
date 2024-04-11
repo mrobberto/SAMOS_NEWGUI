@@ -22,6 +22,7 @@ class DigitalMicroMirrorDevice():
     def __init__(self, logger, par):
         self.logger = logger
         self.PAR = par
+        self.is_on = False
         # Set invert to false
         self.invert = False
 
@@ -62,14 +63,17 @@ class DigitalMicroMirrorDevice():
             try:
                 instrument.connect((dmd_ip, dmd_port))
             except Exception as e:
+                self.is_on = False
                 self.logger.error("DMD did not respond!")
                 self.logger.error("Error was {}".format(e))
                 return("no DMD")
             
+            self.is_on = True
             self.logger.info("Sending test message")
             instrument.sendall(b':TEST\n')
             response = instrument.recv(1024)
             self.logger.info("Received response '{}'".format(response.decode('ascii')))
+            instrument.close()
         return response
 
 
@@ -89,8 +93,10 @@ class DigitalMicroMirrorDevice():
             try:
                 instrument.connect((dmd_ip, dmd_port))
             except Exception as e:
+                self.is_on = False
                 self.logger.error("DMD did not respond!")
                 self.logger.error("Error was {}".format(e))
+                raise RuntimeError("Unable to contact DMD controller")
 
             if isinstance(command, list):
                 message_type = command[-1][4]
@@ -107,6 +113,7 @@ class DigitalMicroMirrorDevice():
                 self.logger.error("Invalid command sent to DMD controller")
                 raise ValueError("An invalid command was sent to the controller.")
             elif response == b'':
+                self.is_on = False
                 self.logger.error("Controller not responding as if a message was sent")
                 raise RuntimeError("The controller is not responding as if a message was sent.")
             else:

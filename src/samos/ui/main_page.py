@@ -446,6 +446,8 @@ class MainPage(SAMOSFrame):
         self.status_box.create_text(190, 70, text="Mirror")
         self.status_box.create_oval(240, 20, 280, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["tcs_ind"], outline=None)
         self.status_box.create_text(260, 70, text="TCS")
+        # Register the frame with PAR
+        self.PAR.add_status_indicator(self.status_box, self.update_status_box)
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
         self.set_enabled()
@@ -747,16 +749,11 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def set_filter(self):
         self.logger.info("Setting Filter to {}".format(self.current_filter.get()))
-        current_filter = self.current_filter.get()
-        main_fits_header.set_param("filter", current_filter)
-        filter_pos_ind = list(self.filter_data["Filter"]).index(current_filter)
-        filter_pos = list(self.filter_data["Position"])[filter_pos_ind]
-        main_fits_header.set_param("filtpos", filter_pos)
-        self.status_box.itemconfig("filter_ind", fill=indicator_light_pending_color)
-        self.status_box.update()
+        new_filter = self.current_filter.get()
+        self.main_fits_header.set_param("filter", new_filter)
+        filter_pos = self.PCM.FILTER_WHEEL_MAPPINGS[new_filter.lower()]
+        self.main_fits_header.set_param("filtpos", f"{filter_pos[0]},{filter_pos[1]}")
         command_status = self.PCM.move_filter_wheel(current_filter)
-        self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-        self.status_box.update()
         self.logger.info("Motors returned {}".format(command_status))
         self.extra_header_params += 1
         entry_string = param_entry_format.format(self.extra_header_params, 'String', 'FILTER', filter, 'Selected filter')
@@ -1662,3 +1659,25 @@ class MainPage(SAMOSFrame):
         self.expnum.config(from_=min_num)
         if self.image_expnum.get() < min_num:
             self.image_expnum.set(min_num)
+
+
+    def update_status_box(self):
+        if self.PCM.is_on:
+            self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+            self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+            if self.PCM.filter_moving:
+                self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
+            if self.PCM.grism_moving:
+                self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
+        else:
+            self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+            self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+        if self.DMD.is_on:
+            self.status_box.itemconfig("mirror_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+        else:
+            self.status_box.itemconfig("mirror_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+        if self.SOAR.is_on:
+            self.status_box.itemconfig("tcs_ind", fill=INDICATOR_LIGHT_ON_COLOR)
+        else:
+            self.status_box.itemconfig("tcs_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+        self.status_box.update()

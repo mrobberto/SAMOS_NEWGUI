@@ -41,37 +41,47 @@ def check_widgets(widgets):
     Conditions are combined with implicit AND
     """
     for widget in widgets:
+#         sys.stdout.write("Widget {}: ".format(widget))
         for condition in widgets[widget]:
+#             sys.stdout.write("Condition {}: ".format(condition))
             if condition[0] == "valid_wcs":
                 if not condition[1].valid_wcs:
                     widget["state"] = "disabled"
                     widget.configure(state="disabled")
+#                     sys.stdout.write("DISABLING\n")
                     break
             elif condition[0] == "valid_file":
                 if (condition[1] is not None) and (not condition[1].is_file()):
                     widget["state"] = "disabled"
                     widget.configure(state="disabled")
+#                     sys.stdout.write("DISABLING\n")
                     break
             elif condition[0] == "tkvar":
                 if condition[1].get() != condition[2]:
                     widget["state"] = "disabled"
                     widget.configure(state="disabled")
+#                     sys.stdout.write("DISABLING\n")
                     break
             elif condition[0] == "tknot":
                 if condition[1].get() == condition[2]:
                     widget["state"] = "disabled"
                     widget.configure(state="disabled")
+#                     sys.stdout.write("DISABLING\n")
                     break
             elif condition[0] == "is_something":
                 # check for non-None
                 if condition[1] is None:
                     widget["state"] = "disabled"
                     widget.configure(state="disabled")
+#                     sys.stdout.write("DISABLING\n")
                     break
             else:  # implicit condition[0] == "condition"
                 if (hasattr(condition[1], condition[2])) and (getattr(condition[1], condition[2]) != condition[3]):
                     widget["state"] = "disabled"
                     widget.configure(state="disabled")
+#                     sys.stdout.write("DISABLING\n")
                     break
             widget["state"] = "normal"
             widget.configure(state="normal")
+#             sys.stdout.write("ENABLING\n")
+#     sys.stdout.flush()

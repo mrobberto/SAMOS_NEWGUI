@@ -100,10 +100,12 @@ class SAMOSFrame(ttk.Frame):
         return menubar
 
 
-    def set_enabled(self):
+    def set_enabled(self, run_from_main=False):
         """
         Apply the check_widgets function to everything in the check_widgets dictionary
         """
         check_widgets(self.check_widgets)
+        self.PAR.update_status_indicators()
         self.update()
-        self.parent.update()
+        if not run_from_main:
+            self.parent.do_updates()

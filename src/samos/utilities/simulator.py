@@ -52,10 +52,9 @@ class SimulatedPCM:
     Simulates a PCM, including the ability to "remember" where its filter and grating 
     wheels are, simulate wheel moves, and simulate moves taking some time to execute.
     """
-    def __init__(self, logger, par, move_speed=1000):
+    def __init__(self, logger, move_speed=1000):
         self.logger = logger
-        self.PAR = par
-        self.PCM = PCM(self.PAR, self.logger)
+        self.PCM = PCM(SAMOS_Parameters(), self.logger)
         self.is_on = False
         self.move_speed = move_speed  # steps/second
         self.steps = {"FW1": 0, "FW2": 0, "GR_A": self.PCM.positions["GR_A"]["GR_H1"], "GR_B": self.PCM.positions["GR_B"]["GR_H2"]}
@@ -136,14 +135,13 @@ class SimulatedPCM:
 
 
 class SAMOSSimulator:
-    def __init__(self, ip_dict, parent_pipe, par):
+    def __init__(self, ip_dict, parent_pipe):
         self.logger = logging.getLogger("samos")
         self.logger.setLevel(logging.INFO)
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(logging.INFO)
         self.logger.addHandler(handler)
         self.logger.info("Simulator started on localhost.")
-        self.PAR = par
         self.ip_dict = ip_dict
         self.comm_pipe = parent_pipe
         self.shutdown_signal = ExitGracefully()
@@ -161,7 +159,7 @@ class SAMOSSimulator:
                 self.logger.error("Bind failed. Error: {}".format(msg))
                 sys.exit(1)
             self.logger.info("Listening for {} at port {}".format(key, self.port_mappings[key]))
-        self.sim_pcm = SimulatedPCM(self.logger, self.PAR)
+        self.sim_pcm = SimulatedPCM(self.logger)
 
 
     def run(self):
@@ -242,7 +240,7 @@ class SAMOSSimulator:
     COMPONENT_KEYS = ["IP_PCM", "IP_CCD", "IP_DMD", "IP_SOAR", "IP_SAMI"]
 
 
-def start_simulator(ip_dict, parent_pipe, par):
+def start_simulator(ip_dict, parent_pipe):
     """
     Simulated instrument hardware for the SAMOS control software to talk to, either to 
     test out new code or to allow for code running and testing when the actual instrument 
@@ -251,5 +249,5 @@ def start_simulator(ip_dict, parent_pipe, par):
     This function creates a SAMOSSimulator class, and passes it in the appropriate port
     and message passing information.
     """
-    samos_simulator = SAMOSSimulator(ip_dict, parent_pipe, par)
+    samos_simulator = SAMOSSimulator(ip_dict, parent_pipe)
     samos_simulator.run()

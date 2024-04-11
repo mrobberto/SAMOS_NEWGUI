@@ -100,8 +100,8 @@ class CCDPage(SAMOSFrame):
         return self.off_big
 
 
-    def set_enabled(self):
-        super().set_enabled()
+    def set_enabled(self, run_from_main=False):
+        super().set_enabled(run_from_main=run_from_main)
         self.button_camera.config(image=self.cam_img)
         self.button_cooler.config(image=self.cool_img)
         self.Tdet_c.set(self.Tdet.get() - 273.15)

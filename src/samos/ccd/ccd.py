@@ -1,13 +1,14 @@
 from copy import deepcopy
 from datetime import datetime
+from http.client import BadStatusLine
 import logging
 import math
 import os
 from pathlib import Path
 import socket
 from time import sleep, time
-from urllib.request import Request,urlopen
-from urllib.error import URLError,HTTPError
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
 import xml.dom.minidom
 
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
@@ -22,6 +23,20 @@ class CCD():
         self.initialized = False
         self.ccd_on = False
         self.cooler_on = False
+
+
+    def initialize_ccd(self):
+        self.set_ip()
+        reply = self.get_url(f"http://{self.target}", as_string=True)
+        if reply == "":
+            self.ccd_on = False
+        else:
+            self.ccd_on = True
+        self.initialized = True
+
+
+    def set_ip(self):
+        self.target = self.PAR.IP_dict["IP_CCD"]
 
 
     def get_url(self, url_name, post_data=None, as_string=False):
@@ -44,6 +59,8 @@ class CCD():
             self.logger.error("The server refused the connection: {}".format(e))
         except ConnectionResetError as e:
             self.logger.error("The server reset the connection: {}".format(e))
+        except BadStatusLine as e:
+            self.logger.error("Bad response {}".format(e))
         except socket.timeout:
             self.logger.error("Connection timed out")
         
@@ -109,15 +126,15 @@ class CCD():
 
 
     def prep_exposure(self, file_name, start_fnumber):
+        self.set_ip()
         night_dir_basename = get_fits_dir() / file_name
         fnumber = start_fnumber
         self.img_night_dir_list = []
-        target = self.PAR.IP_dict["IP_CCD"]
 
-        target_url = 'http://'+target+'/'
+        target_url = 'http://' + self.target + '/'
 
         # Combine the various XML parameter files
-        xml_str = self.get_url(target+'setup.xml', as_string=True)
+        xml_str = self.get_url(target_url + 'setup.xml', as_string=True)
         if len(xml_str) < 9:
             self.logger.error("Invalid Reponse: '{}': Too short.".format(xml_str))
             return
@@ -126,15 +143,15 @@ class CCD():
         xml_param = xml_str[i:j]
         xml_ftr = xml_str[j:len(xml_str)]
 
-        xml_str = self.get_url(target+'control.xml', as_string=True)
+        xml_str = self.get_url(target_url + 'control.xml', as_string=True)
         i, j = self.param_bounds(xml_str)
         xml_param += xml_str[i:j]
         
-        xml_str = self.get_url(target+'factory.xml', as_string=True)
+        xml_str = self.get_url(target_url + 'factory.xml', as_string=True)
         i, j = self.param_bounds(xml_str)
         xml_param += xml_str[i:j]
         
-        xml_str = self.get_url(target+'miscellaneous.xml', as_string=True)
+        xml_str = self.get_url(target_url + 'miscellaneous.xml', as_string=True)
         i, j = self.param_bounds(xml_str)
         xml_param += xml_str[i:j]
         
@@ -165,7 +182,7 @@ class CCD():
             exposure_time_cmd = self.xml_parameter_tag(param_list, "Exposure Time", "post_name")
             trigger_mode_cmd = self.xml_parameter_tag(param_list, "Trigger Mode", "post_name")
 
-        with xml.dom.minidom.parseString(self.get_url(target+'command.xml', as_string=True)) as dom:
+        with xml.dom.minidom.parseString(self.get_url(target_url + 'command.xml', as_string=True)) as dom:
             dom_list = dom.getElementsByTagName("list")[0]
             param_list = dom_list.getElementsByTagName("parameter")
             acquire_cmd = self.xml_parameter_tag(param_list, "Acquire an image.", "post_name")
@@ -185,16 +202,18 @@ class CCD():
         cmd_str += f"&{serial_phasing_cmd}=2&{parallel_origin_cmd}=0&{parallel_length_cmd}=1032&{parallel_post_scan_cmd}=0"
         cmd_str += f"&{parallel_binning_cmd}=1&{parallel_phasing_cmd}=0&{port_select_cmd}=3&{source_cmd}={source_camera}"
         self.logger.debug("Sending {}".format(cmd_str))
-        reply = self.get_url(target+'command.txt', cmd_str, as_string=True)
+        reply = self.get_url(target_url + 'command.txt', cmd_str, as_string=True)
         self.logger.info("Camera replied {}".format(reply))
         
-        reply = self.get_url(target+'command.txt', "COOLER 1", as_string=True)
+        reply = self.get_url(target_url + 'command.txt', "COOLER 1", as_string=True)
         self.logger.info("Reply to cooler start command: {}".format(reply))
         return startTime
 
 
     def start_exposure(self):
-        reply = self.get_url(target+'command.txt',f"{self.acquire_cmd}", as_string=True)
+        self.set_ip()
+        target_url = 'http://' + self.target + '/'
+        reply = self.get_url(target_url + 'command.txt',f"{self.acquire_cmd}", as_string=True)
         if len(reply) < 9:
             self.logger.error("Reply '{}' too short: failed to expose camera.".format(reply))
             return
@@ -202,7 +221,9 @@ class CCD():
 
 
     def read_exposure(self, parent, callback, params):
-        data = self.get_url(target+'acq.xml', as_string=True)
+        self.set_ip()
+        target_url = 'http://' + self.target + '/'
+        data = self.get_url(target_url + 'acq.xml', as_string=True)
         x = data.split("</display><value>")
         if len(x) < 8:
             self.logger.info("Finished getting data")
@@ -232,10 +253,11 @@ class CCD():
 
 
     def store_exposure(self, file_name, fnumber):
-        target = self.PAR.IP_dict["IP_CCD"]
+        self.set_ip()
+        target_url = 'http://' + self.target + '/'
         night_dir_basename = get_fits_dir() / file_name
         timeRequested = time()
-        data = self.get_url(target + "image.fit")  # Just the pixels (in network byte order)
+        data = self.get_url(target_url + "image.fit")  # Just the pixels (in network byte order)
         timeReceived = time()
         self.logger.info("Read {} bytes in {:.3f} seconds".format(len(data), timeReceived - timeRequested))
         cycle_time = timeReceived - timeCollected

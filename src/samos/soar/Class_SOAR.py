@@ -3,274 +3,231 @@
 """
 Created on Tue Mar 14 20:49:49 2023
 
+# According to SAMI User Manual:
+
+The SAMI data acquisition software runs on the soarhrc computer (IP 139.229.15.163). It is 
+accessed by VNC connection to soarhrc:9. To launch the SAMI GUI, use the icon in the 
+desktop menu in the lower-right corner.
+
+# INFOA
+
+(Taken from the SOAR_TCS_COMMANDS document.)
+TCS command 'INFOA' returns a string of variables with the current telescope settings, 
+which will go into the FITS header. The returned variables are:
+
+- Date, 
+- Universal Time, 
+- Right ascention, 
+- Declination, 
+- Hour Angle, 
+- Telescope Azimuth, 
+- Telescope Elevation, 
+- Sidereal Time, 
+- Parallactic Angle, 
+- MJD, 
+- Telescope Focus, 
+- Airmass, 
+- IPA, 
+- Rotator Position, 
+- IROT, 
+- M3 Position, 
+- Outside Temperature, 
+- Humidity, 
+- Pressure, 
+- Wind Direction, 
+- Wind Speed, 
+- Inside Temperature, 
+- ECS Time Stamp, 
+- Dimm Seeing
+- Dome, 
+- Azimuth, 
+- Shutter Elevation, 
+- Guider Star ID
+- Guider X Position, 
+- Guider Y Position, 
+- Comparison Lamp Mirror, 
+- Lamp 1 State (on/off), 
+- Lamp 1 Tag (Lamp name),
+- Lamp 2 State, 
+- Lamp 2 Tag, 
+- Lamp 3 State, 
+- Lamp 3 Tag,
+- Lamp 4 State, 
+- Lamp 4 Tag, 
+- Lamp 5 State, 
+- Lamp 5 Tag,
+- Lamp 6 State, 
+- Lamp 6 Tag, 
+- Lamp 7 State, 
+- Lamp 7 Tag,
+- Lamp 8 State, 
+- Lamp 8 Tag, 
+- Lamp 9 State, 
+- Lamp 9 Tag,
+- Lamp 10 State, 
+- Lamp 10 Tag
+
+The ouput is formatted as a string of whitespace-separated variables, e.g., 
+'DONE TCS_DATE=2019-06-26 LAMP_1=OFF TAG_1=Hg(Ar)...'
+
 @author: robberto
 """
-import sys, os
 import numpy as np
-
+import os
 from pathlib import Path
-#define the local directory, absolute so it is not messed up when this is called
-path = Path(__file__).parent.absolute()
-local_dir = str(path.absolute())
+import socket
+import sys
+
 
 class Class_SOAR:
     def __init__(self, par):
+        socket.setdefaulttimeout(3)
         self.PAR = par
+        self.is_on = False
 
-        """ switch when the correct IP and PORT are insterted"""
-        # self.SOAR_TCS_IP =  all_IPs['IP_SOAR'][0:i_columns]
-        # self.SOAR_TCS_port = int(all_IPs['IP_SOAR'][i_columns+1:])
-        # self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
-        
-        """
-        According to SAMI User Manual:
-            The SAMI data acquisition software runs on the soarhrc computer (IP 139.229.15.163). 
-            It is accessed by VNC connection to soarhrc:9. To launch the SAMI GUI, u
-            se the icon in the desktop menu in the lower-right corner.
-        #fake address using the motors
-        """
-        self.SOAR_TCS_IP = '139.229.15.163'   #copied from above
-        self.SOAR_TCS_port=1000               # to be checked
-        self.params = {'Host': self.SOAR_TCS_IP, 'Port': self.SOAR_TCS_port}
+
+    def set_ip(self):
+        try:
+            items = self.PAR.IP_dict['IP_SOAR'].split(":")
+            self.SOAR_TCS_IP = items[0]
+            self.SOAR_TCS_PORT = int(items[1])
+        except IndexError as e:
+            # Probably means this isn't a valid IP address. Set to loopback.
+            self.SOAR_TCS_IP = "127.0.0.1"
+            self.SOAR_TCS_PORT = 9898
 
 
     def echo_client(self):
-        import socket
-        socket.setdefaulttimeout(3)
-        
-        # '10.0.0.179'#127.0.0.1'  # The server's hostname or IP address
-        HOST = self.SOAR_TCS_IP#params['Host']
-        # 1000#65432        # The port used by the server
-        PORT = self.SOAR_TCS_port#params['Port']
-
+        self.set_ip()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                #COMMENT THESE TWO LINE AT SOAR!
-                s.connect((HOST, PORT))
-                s.sendall(b'~se,all,on\n')
+                s.connect((self.SOAR_TCS_IP, self.SOAR_TCS_PORT))
+                s.sendall(b"INFOA\n")
                 data = s.recv(1024)
+                self.is_on = True
                 return(data)
             except socket.error:
+                self.is_on = False
                 return("no connection")
             finally:
                 s.close()    
-        
-    def send_to_TCS(self,command):
-        import socket
-        socket.setdefaulttimeout(3)
-
-        HOST = self.SOAR_TCS_IP   #self.params['Host']
-        PORT = self.SOAR_TCS_port #self.params['Port']
-        print('echo from server:') 
-        print(self.echo_client())
 
 
+    def send_to_TCS(self, command):
+        self.set_ip()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                s.connect((HOST, PORT))
-                msg = command.encode('ascii')  #need to append "\n" at the end? 
-                
-                #COMMENT THESE TWO LINE AT SOAR!
-                s.sendall(b'~se,all,on\n')
-                msg = s.recv(1024)
-            
-                
-                """
-                """ """ Coding the message to LabView
-                From: https://forums.ni.com/t5/LabVIEW/TCP-to-Python-Encoding/td-p/4042297""" """
-                #msg = b"Hello, Python!" #<<<< using Byte array not native string
-                length = np.ascontiguousarray(len(msg),dtype='>i4').tobytes()
-                s.sendall(length+msg) 
-
-                
-                """ """Receiving and decoding the message fromm LabView
-                From: https://forums.ni.com/t5/LabVIEW/TCP-to-Python-Encoding/td-p/4042297""" """
-                messagelen = s.recv(4)
-                length = np.frombuffer(messagelen,dtype='>i4')[0]
-                msg = s.recv(length)
-                
-                """
-                
-                return msg
+                s.connect((self.SOAR_TCS_IP, self.SOAR_TCS_PORT))
+                s.sendall(f"{command}\n".encode("ascii"))
+                response = s.recv(1024)
+                return response
             except socket.error:
                 return("no connection")
             finally:
                 s.close()
-    
-    def way(self):
 
-        return_string = self.send_to_TCS("WAY")  
-    
-    def offset(self,param,offset="E 0.0 N  0.0"):
+
+    def way(self):
+        return self.send_to_TCS("WAY")
+
+
+    def offset(self, param, offset="E 0.0 N 0.0"):
         if param == "MOVE":
-            command = "OFFSET MOVE " + offset
+            command = "OFFSET MOVE {}".format(offset)
         if param == "STATUS":
             command = "OFFSET STATUS"
         return self.send_to_TCS(command)  
-        
 
-    def focus(self,param,offset="E 0.0 N  0.0"):
+
+    def focus(self, param, offset="E 0.0 N  0.0"):
         if param == "MOVEABS":
-            command = "FOCUS MOVEABS " + offset
+            command = "FOCUS MOVEABS {}".format(offset)
         if param == "MOVEREL":
-            command = "FOCUS MOVEREL " + offset
+            command = "FOCUS MOVEREL {}".format(offset)
         if param == "STATUS":
             command = "FOCUS STATUS"
-        return self.send_to_TCS(command)  
+        return self.send_to_TCS(command)
 
-    def clm(self,param):
+
+    def clm(self, param):
         if param == "IN":
-            command = "CLM IN "
+            command = "CLM IN"
         if param == "OUT":
-            command = "CLM OUT "
+            command = "CLM OUT"
         if param == "STATUS":
             command = "CLM STATUS"
         return self.send_to_TCS(command)  
-        
-    def guider(self,param):
+
+
+    def guider(self, param):
         if param == "DISABLE":
             command = "GUIDER DISABLE "
         if param == "ENABLE":
-            command = "GUIDER ENABKE "
+            command = "GUIDER ENABLE "
         if param == "STATUS":
             command = "GUIDER STATUS"
         return self.send_to_TCS(command)  
-        
-    def whitespot(self,param, percentage):
+
+
+    def whitespot(self, param, percentage):
         if param == "ON":
-            command = "WHITESPOT ON " + percentage
+            command = "WHITESPOT ON {}".format(percentage)
         if param == "OFF":
-            command = "WHITESPOT OFF "
+            command = "WHITESPOT OFF"
         if param == "STATUS":
             command = "WHITESPOT STATUS"
         return self.send_to_TCS(command)  
-        
-    def lamp_id(self,param, location):
+
+
+    def lamp_id(self, param, location):
         if param == "ON":
-            command = "LAMP ON " + location
+            command = "LAMP ON {}".format(location)
         if param == "OFF":
             command = "LAMP OFF"
         if param == "STATUS":
             command = "LAMP STATUS"
         return self.send_to_TCS(command)  
-        
-    def adc(self,param,percent):
+
+
+    def adc(self, param, percent):
         if param == "MOVE":
-            command = "ADC MOVE "+percent
+            command = "ADC MOVE {}".format(percent)
         if param == "IN":
-            command = "ADC IN "
+            command = "ADC IN"
         if param == "PARK":
-            command = "ADC PARK "
+            command = "ADC PARK"
         if param == "TRACK":
-            command = "ADC TRACK "
+            command = "ADC TRACK"
         if param == "STATUS":
             command = "ADC STATUS"
         return self.send_to_TCS(command)  
 
-    def info_whatever(self,message):
-        return self.send_to_TCS(message)  
 
-#    def infox(self):
-#        command = "INFOX"
-#        return self.send_to_TCS(command)  
-        
-    def target(self,param,RADEC="RA=00:00:00.00 DEC=00:00:00:00 EPOCH=2000.0"):
+    def info_whatever(self, message):
+        return self.send_to_TCS(message)
+
+
+    def target(self, param, radec="RA=00:00:00.00 DEC=00:00:00:00 EPOCH=2000.0"):
         if param == "MOVE":
-            command = "TARGET MOVE " + RADEC
+            command = "TARGET MOVE {}".format(radec)
         if param == "MOUNT":
-            command = "TARGET MOUNT "
+            command = "TARGET MOUNT"
         if param == "STOP":
-            command = "TARGET STOP "
+            command = "TARGET STOP"
         if param == "STATUS":
             command = "TARGET STATUS"
         return self.send_to_TCS(command)  
         
-    def ipa(self,param,ANGLE="00.0"):
+    def ipa(self, param, angle="00.0"):
         if param == "MOVE":
-            command = "IPA MOVE " + ANGLE
+            command = "IPA MOVE {}".format(angle)
         if param == "STATUS":
             command = "IPA STATUS"
         return self.send_to_TCS(command)   
 
-    def instrument(self,param,INSTRUMENT="GOODMAN"):
+    def instrument(self, param, instrument="GOODMAN"):
         if param == "MOVE":
-            command = "INSTRUMENT MOVE " + INSTRUMENT
+            command = "INSTRUMENT MOVE {}".format(instrument)
         if param == "STATUS":
             command = "INSTRUMENT STATUS"
         return self.send_to_TCS(command)   
-
-    def ginfo(self):
-        command = "GINFO"
-        return self.send_to_TCS(command)  
-
-    def sinfo(self):
-        command = "SINFO"
-        return self.send_to_TCS(command)  
-
-    def rotpos(self):
-        command = "ROTPOS"
-        return self.send_to_TCS(command)  
-
-    def infoa(self):
-        command = "INFOA"
-        return self.send_to_TCS(command)  
-        
-        """
-        (Taken from the SOAR_TCS_COMMANDS document.)
-        TCS command 'INFOA' returns a string of variables with the
-        current telescope settings, which will go into the FITS header.  
-        The returned variables are:
-            Date, Universal Time, Right ascention, 
-            Declination, Hour Angle, Telescope Azimuth, 
-            Telescope Elevation, Sidereal Time, 
-            Parallactic Angle, MJD, Telescope Focus, 
-            Airmass, IPA, Rotator Position, IROT, 
-            M3 Position, Outside Temperature, Humidity, 
-            Pressure, Wind Direction, Wind Speed, 
-            Inside Temperature, ECS Time Stamp, Dimm Seeing
-            Dome, Azimuth, Shutter Elevation, Guider Star ID
-            Guider X Position, Guider Y Position, 
-            Comparison Lamp Mirror, 
-            Lamp 1 State (on/off), Lamp 1 Tag (Lamp name),
-            Lamp 2 State, Lamp 2 Tag, Lamp 3 State, Lamp 3 Tag,
-            Lamp 4 State, Lamp 4 Tag, Lamp 5 State, Lamp 5 Tag,
-            Lamp 6 State, Lamp 6 Tag, Lamp 7 State, Lamp 7 Tag,
-            Lamp 8 State, Lamp 8 Tag, Lamp 9 State, Lamp 9 Tag,
-            Lamp 10 State, Lamp 10 Tag
-            
-        The ouput is formatted as a string of whitespace-separated variables,
-        e.g., 'DONE TCS_DATE=2019-06-26 LAMP_1=OFF TAG_1=Hg(Ar)...'
-        
-        """
-        
-        TCS_dict = {}
-        # Get the keyword/value pairs from the return string
-        # and put into dictionary.  Dictionary can then be
-        # added onto the FITS header dictionary.
-        for var in return_string.strip("DONE ").split(" "):
-            
-            key,val = var.split("=")
-            TCS_dict[key] = val
-        
-        return TCS_dict
-            
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        

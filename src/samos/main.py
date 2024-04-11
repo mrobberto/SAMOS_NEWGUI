@@ -80,9 +80,18 @@ class App(tk.Tk):
     def show_frame(self, frame):
         self.logger.debug("Selecting frame {}".format(frame))
         new_frame = self.frames[frame]
+        new_frame.set_enabled()
+        new_frame.update()
         menubar = new_frame.create_menubar(self)
         self.configure(menu=menubar)
         self.container.select(self.frame_indices[frame])
+
+
+    def do_updates(self):
+        for key in self.frames:
+            self.frames[key].set_enabled(run_from_main=True)
+            self.frames[key].update()
+        self.update()
     
     
     def initialize_simulator(self):
@@ -97,7 +106,7 @@ class App(tk.Tk):
             if host != "127.0.0.1":
                 self.logger.error("SAMOS simulator can only run on localhost!")
         self.app_pipe, sim_pipe = mp.Pipe()
-        self.simulator = mp.Process(target=start_simulator, args=(self.PAR.IP_dict, sim_pipe, self.PAR))
+        self.simulator = mp.Process(target=start_simulator, args=(self.PAR.IP_dict, sim_pipe))
         self.PAR.simulated = True
         self.simulator.daemon = True
         self.simulator.start()

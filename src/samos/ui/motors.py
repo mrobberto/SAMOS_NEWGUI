@@ -14,8 +14,6 @@ class MotorsPage(SAMOSFrame):
 
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "Motors", **kwargs)
-        self.initialized = False
-        self.is_on = False
         self.move_window = None
         self.switch_text = {
             True: "Turn Motors OFF",
@@ -29,24 +27,25 @@ class MotorsPage(SAMOSFrame):
         # Initialize all motors
         b = ttk.Button(self.main_frame, text="Initialize", command=self.initialize_pcm)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self.PCM, "initialized", False)]
 
         # Turn motor power on/off
         motor_frame = ttk.LabelFrame(self.main_frame, text="Motor Power")
         motor_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.motor_switch_text = tk.StringVar(self, self.switch_text[self.is_on])
+        self.motor_switch_text = tk.StringVar(self, self.switch_text[self.PCM.is_on])
         l = tk.Label(motor_frame, textvariable=self.motor_switch_text, font=BIGFONT)
         l.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[l] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
-        self.motor_on_button = tk.Button(motor_frame, image=self.switch_img[self.is_on], command=self.power_switch)
+        self.check_widgets[l] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
+        self.motor_on_button = tk.Button(motor_frame, image=self.switch_img[self.PCM.is_on], command=self.power_switch)
         self.motor_on_button.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[self.motor_on_button] = [("condition", self, "initialized", True)]
+        self.check_widgets[self.motor_on_button] = [("condition", self.PCM, "initialized", True)]
 
         # Port Status
         port_status_frame = ttk.LabelFrame(self.main_frame, text="Power Port Status")
         port_status_frame.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(port_status_frame, text="Get Status", command=self.all_ports_status)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         self.port_status_info = tk.StringVar(self, "")
         tk.Label(port_status_frame, textvariable=self.port_status_info).grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
@@ -60,24 +59,24 @@ class MotorsPage(SAMOSFrame):
         self.current_wheel = 'FW1'
         b = tk.Radiobutton(sel_frame, text='FW1', value='FW1', variable=self.active_wheel, command=self.choose_wheel)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         b = tk.Radiobutton(sel_frame, text='FW2', value='FW2', variable=self.active_wheel, command=self.choose_wheel)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         b = tk.Radiobutton(sel_frame, text='GR_A', value='GR_A', variable=self.active_wheel, command=self.choose_wheel)
         b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         b = tk.Radiobutton(sel_frame, text='GR_B', value='GR_B', variable=self.active_wheel, command=self.choose_wheel)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Send home
         b = ttk.Button(frame, text="Send to Home", command=self.home)
         b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Get Position
         b = ttk.Button(frame, text="Get Current Steps", command=self.current_step)
         b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         self.step_position = tk.StringVar(self, "")
         tk.Label(frame, textvariable=self.step_position).grid(row=1, column=2, sticky=TK_STICKY_ALL)
         # Move to step
@@ -85,13 +84,13 @@ class MotorsPage(SAMOSFrame):
         self.step_entry = tk.StringVar(self, "")
         e = tk.Entry(frame, textvariable=self.step_entry)
         e.grid(row=2, column=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[e] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         b = ttk.Button(frame, text="Move to Step", command=self.move_to_step)
         b.grid(row=2, column=3, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         b = ttk.Button(frame, text="Stop", command=self.stop_motors)
         b.grid(row=2, column=4, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Move to Position
         ttk.Label(frame, text="Set Position").grid(row=3, column=1, sticky=TK_STICKY_ALL)
         self.pos_options = {"FW1": ["A1", "A2", "A3", "A4", "A5", "A6"],
@@ -101,7 +100,7 @@ class MotorsPage(SAMOSFrame):
         self.selected_pos = tk.StringVar(self, self.pos_options[self.active_wheel.get()][0])
         self.options = ttk.OptionMenu(frame, self.selected_pos, *self.pos_options[self.active_wheel.get()], command=self.move_to_pos)
         self.options.grid(row=3, column=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[self.options] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[self.options] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Move to Filter
         ttk.Label(self.main_frame, text="Set Filter").grid(row=3, column=0, sticky=TK_STICKY_ALL)
@@ -109,51 +108,45 @@ class MotorsPage(SAMOSFrame):
         self.selected_filter = tk.StringVar(self, self.filter_options[0])
         m = ttk.OptionMenu(self.main_frame, self.selected_filter, *self.filter_options, command=self.move_to_filter)
         m.grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[m] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[m] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Custom Command
         ttk.Label(self.main_frame, text="Enter Command:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         self.command = tk.StringVar(self, "")
         e = tk.Entry(self.main_frame, textvariable=self.command)
         e.grid(row=4, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[e] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         b = ttk.Button(self.main_frame, text="Run", command=self.enter_command)
         b.grid(row=4, column=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Initialize Commands
         b = ttk.Button(self.main_frame, text="Initialize Filter Wheels", command=self.initialize_filters)
         b.grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         b = ttk.Button(self.main_frame, text="Initialize Grism Rails", command=self.initialize_grisms)
         b.grid(row=5, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self, "is_on", True), ("condition", self, "initialized", True)]
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         self.set_enabled()
 
 
     @check_enabled
     def initialize_pcm(self):
         self.logger.info("Initializing contact with PCM")
-        response = self.PCM.echo_client()
-        self.logger.info("Server Responded {}".format(response))
-        if response is not None:
-            self.initialized = True
-            self.is_on = self.PCM.check_if_power_is_on()
+        self.PCM.initialize_motors()
 
 
     @check_enabled
     def power_switch(self):
         """ power_switch """
-        if self.is_on:
+        if self.PCM.is_on:
             self.logger.info("Turning motors off")
             response = self.PCM.power_off()
             self.logger.info("Motors responded {}".format(response))
-            self.is_on = self.PCM.check_if_power_is_on()
         else:
             self.logger.info("Turning motors on")
             response = self.PCM.power_on()
             self.logger.info("Motors responded {}".format(response))
-            self.is_on = self.PCM.check_if_power_is_on()
 
 
     @check_enabled
@@ -254,8 +247,7 @@ class MotorsPage(SAMOSFrame):
         self.logger.info("PCM returned {}".format(result))
 
 
-    def set_enabled(self):
-        super().set_enabled()
-        self.motor_switch_text.set(self.switch_text[self.is_on])
-        self.motor_on_button.config(image=self.switch_img[self.is_on])
-        
+    def set_enabled(self, run_from_main=False):
+        super().set_enabled(run_from_main=run_from_main)
+        self.motor_switch_text.set(self.switch_text[self.PCM.is_on])
+        self.motor_on_button.config(image=self.switch_img[self.PCM.is_on])

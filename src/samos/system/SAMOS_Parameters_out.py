@@ -23,7 +23,7 @@ class SAMOS_Parameters():
     """ Collection of parameters to be shared by the classes """
 
     def __init__(self):
-        today = datetime.now()
+        self.today = datetime.now()
         #add the directory of the QL images
         self.QL_images = get_data_file("ql")
         
@@ -51,10 +51,15 @@ class SAMOS_Parameters():
         self.Program_ID = self.PotN['Program ID']
         self.Telescope_Operator = self.PotN['Telescope Operator']
 
-        SISI_images_dir = get_fits_dir()
-        self.logfile_name = SISI_images_dir / f"SAMOS_LOGFILE_{today.strftime('%Y%m%d')}.csv"
+        self.logfile_name = get_fits_dir() / f"SAMOS_LOGFILE_{self.today.strftime('%Y%m%d')}.csv"
 
         self.Ginga_PA = False
+        
+        self.status_indicators = []
+
+
+    def update_locations(self):
+        self.logfile_name = SISI_images_dir / f"SAMOS_LOGFILE_{self.today.strftime('%Y%m%d')}.csv"
 
 
     def update_PotN(self):
@@ -78,6 +83,17 @@ class SAMOS_Parameters():
                 logfile.write("Date,Local Time,Target,Filter,Repeats,Exposure Time,Filename,Mask Name,")
                 logfile.write("Grating,Sp. Exp.T,Sp. Filename,Comment\n")
         return self.logfile_name
+
+
+    def add_status_indicator(self, widget, callback):
+        indicator = {"widget": widget, "callback": callback}
+        if indicator not in self.status_indicators:
+            self.status_indicators.append(indicator)
+
+
+    def update_status_indicators(self):
+        for indicator in self.status_indicators:
+            indicator["callback"]()
 
 
     @property
