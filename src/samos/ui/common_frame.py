@@ -26,7 +26,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 from samos.utilities.tk import check_widgets
@@ -70,35 +69,6 @@ class SAMOSFrame(ttk.Frame):
     def create_custom_menus(self, parent, menubar):
         pass
         
-
-    def create_menubar(self, parent):
-        parent.title("SAMOS Configuration")
-
-        menubar = tk.Menu(parent, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
-        
-        filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, activebackground="#026AA9")
-        menubar.add_cascade(label="File", menu=filemenu)
-        filemenu.add_command(label="Config", command=lambda: parent.show_frame("ConfigPage"))
-        filemenu.add_command(label="DMD", command=lambda: parent.show_frame("DMDPage"))
-        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: parent.show_frame("CCD2DMDPage"))
-        filemenu.add_command(label="Motors", command=lambda: parent.show_frame("MotorsPage"))
-        filemenu.add_command(label="CCD", command=lambda: parent.show_frame("CCDPage"))
-        filemenu.add_command(label="SOAR TCS", command=lambda: parent.show_frame("SOARPage"))
-        filemenu.add_command(label="MainPage", command=lambda: parent.show_frame("MainPage"))
-        filemenu.add_separator()
-        filemenu.add_command(label="ETC", command=lambda: parent.show_frame("ETCPage"))
-        filemenu.add_command(label="Exit", command=parent.quit)
-        
-        self.create_custom_menus(parent, menubar)
-
-        # help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=about_box)
-        help_menu.add_command(label="Guide Star", command=lambda: parent.show_frame("GSPage"))        
-
-        return menubar
-
 
     def set_enabled(self, run_from_main=False):
         """

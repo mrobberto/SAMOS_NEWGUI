@@ -57,7 +57,6 @@ from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
 from samos.dmd import DigitalMicroMirrorDevice
 from samos.soar.Class_SOAR import Class_SOAR
-from samos.astrometry.tk_class_astrometry_V5 import Astrometry
 from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
 from samos.system import WriteFITSHead as WFH
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters

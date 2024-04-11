@@ -20,6 +20,7 @@ from samos.motors import PCM
 from samos.soar.Class_SOAR import Class_SOAR
 from samos.system import WriteFITSHead as WFH
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
+from samos.tk_utilities.utils import about_box
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage
 from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
@@ -61,6 +62,9 @@ class App(tk.Tk):
         self.container.grid_rowconfigure(0, weight=1)
         self.container.grid_columnconfigure(0, weight=1)
 
+        # Create menus
+        self.configure(menu=self.create_menubar())
+
         # Initialize Frames
         self.frames = {}
         self.frame_indices = {}
@@ -82,8 +86,6 @@ class App(tk.Tk):
         new_frame = self.frames[frame]
         new_frame.set_enabled()
         new_frame.update()
-        menubar = new_frame.create_menubar(self)
-        self.configure(menu=menubar)
         self.container.select(self.frame_indices[frame])
 
 
@@ -143,7 +145,32 @@ class App(tk.Tk):
         self.logger.warning("Finished shutdown functions")
         super().destroy()
 
-    
+
+    def create_menubar(self):
+        menubar = tk.Menu(self, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
+        
+        filemenu = tk.Menu(menubar, tearoff=0, relief=tk.RAISED, activebackground="#026AA9")
+        menubar.add_cascade(label="File", menu=filemenu)
+        filemenu.add_command(label="Config", command=lambda: self.show_frame("ConfigPage"))
+        filemenu.add_command(label="DMD", command=lambda: self.show_frame("DMDPage"))
+        filemenu.add_command(label="Recalibrate CCD2DMD", command=lambda: self.show_frame("CCD2DMDPage"))
+        filemenu.add_command(label="Motors", command=lambda: self.show_frame("MotorsPage"))
+        filemenu.add_command(label="CCD", command=lambda: self.show_frame("CCDPage"))
+        filemenu.add_command(label="SOAR TCS", command=lambda: self.show_frame("SOARPage"))
+        filemenu.add_command(label="MainPage", command=lambda: self.show_frame("MainPage"))
+        filemenu.add_separator()
+        filemenu.add_command(label="ETC", command=lambda: self.show_frame("ETCPage"))
+        filemenu.add_command(label="Exit", command=self.quit)
+
+        # help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=about_box)
+        help_menu.add_command(label="Guide Star", command=lambda: self.show_frame("GSPage"))        
+
+        return menubar
+
+
     FRAME_CLASSES = [
         ConfigPage, 
         DMDPage, 

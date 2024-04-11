@@ -31,7 +31,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
-from samos.astrometry.tk_class_astrometry_V5 import Astrometry
 from samos.system.SlitTableViewer import SlitTableView as STView
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
@@ -485,7 +484,7 @@ class MainPage(SAMOSFrame):
                                                 initialdir=get_data_file("regions.radec"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = convert_ginga_to_astropy(ginga_regions)
-        astropy_regions_wcs = Astrometry.APRegion_pix2RAD(astropy_regions_pix, self.PAR.wcs)
+        astropy_regions_wcs = self.APRegion_pix2RAD(astropy_regions_pix, self.PAR.wcs)
         astropy_regions_wcs.write(save_file.name, overwrite=True)
         self.logger.info("Saved regions to {}".format(save_file.name))
 
@@ -504,7 +503,7 @@ class MainPage(SAMOSFrame):
         - Region File
         """
         self.logger.info("Displaying DS9 Region File on canvas")
-        astropy_regions_pix, astropy_regions_wcs = Astrometry.APRegion_RAD2pix(self.loaded_reg_file_path, self.PAR.wcs, both=True)
+        astropy_regions_pix, astropy_regions_wcs = self.APRegion_RAD2pix(self.loaded_reg_file_path, self.PAR.wcs, both=True)
         self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
         self.logger.info("Converted Astropy pixel regions to Ginga")
@@ -1659,6 +1658,64 @@ class MainPage(SAMOSFrame):
         self.expnum.config(from_=min_num)
         if self.image_expnum.get() < min_num:
             self.image_expnum.set(min_num)
+
+
+    def APRegion_RAD2pix(self, APRegionfile, WCS, both=False):
+        """
+        Convert the region file in ds9/RADEC format to AP/xy format given a WCS solution
+        
+        based on example on 
+        https://astropy-regions.readthedocs.io/en/stable/getting_started.html
+
+        Parameters
+        ----------
+        APRegionfile : TYPE string 
+            DESCRIPTION: a filename containing an Astropy Region in RADEC, ds9 format
+            NOTE: Here we read a APRegionfile in   > format = ds9 <
+            EXAMPLE:
+                # Region file format: DS9 astropy/regions
+                global include=1
+                image
+                box(480.80170584,499.68662062,3.06016566,9.18049699,1.43101865)
+                box(498.89513694,506.20672157,3.06016577,9.18049732,1.42975106)
+            
+        WCS : TYPE 
+            DESCRIPTION: a WCS  
+
+        Returns
+        -------
+        RRR_pix: list of astropy regions in pixel units. 
+        """
+        regions_wcs = Regions.read(APRegionfile, format='ds9')
+        regions_pix = Regions([r.to_pixel(WCS) for r in regions_wcs])
+        APregionfile_pixel = APRegionfile.replace("RADEC","pixels")
+        RRR_pix.write(APregionfile_pixel, overwrite=True)
+
+        if both:
+            return RRR_pix, regions
+        return RRR_pix
+    
+    
+
+    def APRegion_pix2RAD(self, RRR_xyAP, WCS):
+        """
+        based on example on 
+        https://astropy-regions.readthedocs.io/en/stable/getting_started.html
+
+        Parameters
+        ----------
+        APRegionfile : TYPE string 
+            DESCRIPTION: a filename containing an Astropy Region in RADEC
+        WCS : TYPE 
+            DESCRIPTION: a WCS  
+
+        Returns
+        -------
+        region in pixel units
+
+        """
+        regions_wcs = Regions([r.to_sky(WCS) for r in RRR_xyAP])
+        return regions_wcs
 
 
     def update_status_box(self):
