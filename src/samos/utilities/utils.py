@@ -17,6 +17,8 @@ Dependencies
     
     None.
 """
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 from datetime import datetime
 import os
 from pathlib import Path
@@ -123,12 +125,16 @@ def get_fits_dir():
     return fits_dir
 
 
-def convert_ginga_to_astropy(ginga_regions):
-    """ converting (x,y) Ginga Regions to (x,y) Astropy Regions """
-    astropy_regions = Regions()
-    for region in ginga_regions:
-        astropy_regions.append(g2r(region))
-    return astropy_regions
+def ccd_to_dmd(ccd_x, ccd_y, wcs):
+    dmd_x, dmd_y = wcs.all_pix2world(ccd_x, ccd_y, 0)
+    return (dmd_x * 3600., dmd_y*3600. + CCD_DMD_Y_OFFSET)
+
+
+def dmd_to_ccd(dmd_x, dmd_y, wcs):
+    dmd_y -= CCD_DMD_Y_OFFSET
+    dmd_coord = SkyCoord(dmd_x, dmd_y, unit=u.arcsec)
+    ccd_x, ccd_y = wcs.all_world2pix(dmd_coord.ra.deg, dmd_coord.dec.deg)
+    return ccd_x, ccd_y
 
 
 # Contains a naive way of turning a slit array into a CSV file, included here because it's

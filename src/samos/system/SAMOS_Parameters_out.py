@@ -5,6 +5,8 @@ Created on Tue Sep 12 17:52:35 2023
 
 @author: samos_dev
 """
+from astropy.io import fits
+from astropy import wcs
 from datetime import datetime
 import tkinter as tk
 import os
@@ -12,10 +14,6 @@ from pathlib import Path
 import sys
 import csv
 import json #added to handle the Parameters.txt file
-
-path = Path(__file__).parent.absolute()
-local_dir = str(path.absolute())
-parent_dir = str(path.parent)
 
 from samos.utilities import get_data_file, get_fits_dir
 
@@ -101,3 +99,11 @@ class SAMOS_Parameters():
         if self.logfile_name.is_file():
             return True
         return False
+
+
+    @property
+    def dmd_wcs(self):
+        dmd_wcs_file = get_data_file("dmd.convert", "DMD_Mapping_WCS.fits")
+        with fits.open(dmd_wcs_file) as hdul:
+            dmd_wcs = wcs.WCS(hdul[0].header, relax=True)
+        return dmd_wcs

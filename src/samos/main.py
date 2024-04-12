@@ -14,7 +14,6 @@ import tkinter as tk
 from tkinter import ttk
 
 from samos.ccd import CCD
-from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors import PCM
 from samos.soar.Class_SOAR import Class_SOAR
@@ -46,7 +45,6 @@ class App(tk.Tk):
             "DMD": DMD,
             "PCM": PCM(self.PAR, self.logger),
             "SOAR": Class_SOAR(self.PAR),
-            "convert": CONVERT(),
             "main_fits_header": WFH.FITSHead(),
             "PAR": self.PAR
         }

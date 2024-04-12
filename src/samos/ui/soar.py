@@ -52,8 +52,6 @@ import customtkinter
 from customtkinter import CTkSwitch
 
 from samos.ccd import CCD
-from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
-from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
 from samos.dmd import DigitalMicroMirrorDevice
 from samos.soar.Class_SOAR import Class_SOAR

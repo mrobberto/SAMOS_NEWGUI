@@ -25,10 +25,12 @@ from tkinter import ttk
 import tksheet
 from tkinter.filedialog import askopenfilename
 
+from samos.dmd.utilities import iraf_gridsource_find, fit_wcs_with_sip
 from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
 from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir
+from samos.utilities.utils import dmd_to_ccd
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame, check_enabled
@@ -161,14 +163,14 @@ class CCD2DMDPage(SAMOSFrame):
         xpixels, ypixels = [], []
         for i in self.dmd_table.index.values:
             dmd_x, dmd_y = self.dmd_table.loc[i, ["x", "y"]].values
-            pix_x, pix_y = self.convert.DMD2CCD(dmd_x, dmd_y)
+            pix_x, pix_y = dmd_to_ccd(dmd_x, dmd_y, self.PAR.dmd_wcs)
             xpixels.append(pix_x)
             ypixels.append(pix_y)
 
         xypixels = np.vstack((np.array(ypixels), np.array(xpixels))).T
 
-        sources_table, unsorted_sources = CTH.iraf_gridsource_find(ccd, expected_sources=expected_sources, fwhm=fwhm,
-                                                                   threshold=3*std_ccd)
+        sources_table, unsorted_sources = iraf_gridsource_find(ccd, expected_sources=expected_sources, fwhm=fwhm,
+                                                               threshold=3*std_ccd)
         iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
         self.sources_table = sources_table.round(3)
 
@@ -188,11 +190,10 @@ class CCD2DMDPage(SAMOSFrame):
 
     @check_enabled
     def run_coord_transform(self):
-        self.afftest = CTH.AFFtest(self.DMD_PIX_df)
-        self.afftest.fit_wcs_with_sip(3)
+        transform_wcs = fit_wcs_with_sip(3, self.DMD_PIX_df)
 
         new_hdr = self.fits_header.copy()
-        imwcs = self.afftest.ccd_to_dmd_wcs.to_header(relax=True)
+        imwcs = transform_wcs.to_header(relax=True)
         imwcs.rename_keyword("PC1_1", "CD1_1")
         imwcs.rename_keyword("PC1_2", "CD1_2")
         imwcs.rename_keyword("PC2_1", "CD2_1")

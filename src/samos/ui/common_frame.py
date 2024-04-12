@@ -50,7 +50,6 @@ class SAMOSFrame(ttk.Frame):
         self.DMD = kwargs['DMD']
         self.PCM = kwargs["PCM"]
         self.SOAR = kwargs["SOAR"]
-        self.convert = kwargs["convert"]
         self.main_fits_header = kwargs["main_fits_header"]
         self.PAR = kwargs["PAR"]
         self.fits_dir = get_fits_dir()

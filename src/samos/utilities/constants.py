@@ -49,6 +49,10 @@ SAMI_GUIDE_FOV_MM = 100 * u.mm
 SAMI_GUIDE_FOV_ARCSEC = SAMI_GUIDE_FOV_MM * SAMI_GUIDE_SCALE
 SAMI_GUIDE_FOV_SISIPIX = SAMI_GUIDE_FOV_ARCSEC / SISI_PIXEL_SCALE
 
+# Y offset for CCD/DMD conversion
+CCD_DMD_Y_OFFSET = 2048 // 4
+
+
 # Required parameters when initializing the CCD class
 # Trigger Mode = 4: light
 # Trigger Mode = 5: dark

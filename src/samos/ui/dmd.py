@@ -19,6 +19,7 @@ from tkinter.filedialog import askopenfilename
 
 from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
 from samos.utilities import get_data_file, get_temporary_dir
+from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame, check_enabled
@@ -219,7 +220,7 @@ class DMDPage(SAMOSFrame):
         x_CCD_HTS_center, y_CCD_HTS_center = self.PAR.wcs.all_world2pix(ad, 0)[0]
 
         # convert pixels -> DMD mirrors
-        x_DMD_HTS_center, y_DMD_HTS_center = self.convert.CCD2DMD(int(x_CCD_HTS_center), int(y_CCD_HTS_center))
+        x_DMD_HTS_center, y_DMD_HTS_center = ccd_to_dmd(x_CCD_HTS_center, y_CCD_HTS_center, self.PAR.dmd_wcs)
 
         # refresh entrybox field
         self.slit_xc.set(int(x_DMD_HTS_center))
@@ -391,8 +392,8 @@ class DMDPage(SAMOSFrame):
             f.write("global edit=1 width=1 font=Sans Serif fill=0 color=red\n")
             f.write("image\n")
             for row in map_list:
-                x0, y0 = self.convert.DMD2CCD(row[0], row[2])
-                x1, y1 = self.convert.DMD2CCD(row[1], row[3])
+                x0, y0 = dmd_to_ccd(row[0], row[2], self.PAR.dmd_wcs)
+                x1, y1 = dmd_to_ccd(row[1], row[3], self.PAR.dmd_wcs)
                 xc, yc = (x0 + x1)/2., (y0 + y1)/2.
                 dx, dy = x1 - x0, y1 - y0
                 output = "box({},{},{},{},0)".format(xc, yc, dx, dy)

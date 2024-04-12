@@ -36,7 +36,6 @@ from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
 from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
 from ginga.canvas import CompoundMixin as CM
  
-#test plugin
 #from ginga import plugin
  
 from ginga.util import ap_region
@@ -55,31 +54,26 @@ import regions
 from regions import Regions
 from regions import PixCoord, RectanglePixelRegion, PointPixelRegion, RegionVisual, RectangleSkyRegion
  
-from samos.dmd.convert.CONVERT_class import CONVERT
 from samos.utilities import get_data_file
-convert = CONVERT()
+from samos.utilities.utils import ccd_to_dmd
  
 from astropy.wcs import WCS
 from astropy.coordinates import SkyCoord
 import astropy.units as u
- 
- 
+
+
 # popup window for Main_V7 that shows the slit setup
 # when the user drops a slit somewhere, it will show up here
 # user can see the slit parameters in pixel, DMD, and world coordinates.
 # when user selects a slit on the canvas, it should highlight that row.
- 
 
-test_img_twirled = fits.open(get_data_file("astrometry.general", "WCS_150.1679077_-54.7886346.fits"))
-test_wcs = WCS(test_img_twirled[0].header)
-
-test_regf = get_data_file("regions.radec", "NGC3105_RADEC=150.1674444-54.788541.reg")
 
 class SlitTableView(tk.Frame):
    
-    def __init__(self, parent, container):
+    def __init__(self, parent, container, par):
    
         super().__init__(container)
+        self.PAR = par
         
         self.parent = parent
        
@@ -143,14 +137,14 @@ class SlitTableView(tk.Frame):
         fits_x, fits_y = x+1, y+1
         fits_x0, fits_y0 = x0+1, y0+1
         fits_x1, fits_y1 = x1+1, y1+1
-       
-        dmd_x, dmd_y = convert.CCD2DMD(fits_x, fits_y)
-        dmd_x, dmd_y= int(np.floor(dmd_x)), int(np.floor(dmd_y))
+
+        dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
+        dmd_x, dmd_y = int(np.floor(dmd_x)), int(np.floor(dmd_y))
  
-        dmd_x0, dmd_y0 = convert.CCD2DMD(fits_x0, fits_y0)
+        dmd_x0, dmd_y0 = ccd_to_dmd(fits_x0, fits_y0, self.dmd_PAR.wcs)
         dmd_x0, dmd_y0 = int(np.floor(dmd_x0)), int(np.floor(dmd_y0))
         
-        dmd_x1, dmd_y1 = convert.CCD2DMD(fits_x1, fits_y1)
+        dmd_x1, dmd_y1 = ccd_to_dmd(fits_x1, fits_y1, self.PAR.dmd_wcs)
         dmd_x1, dmd_y1 = int(np.floor(dmd_x1)), int(np.floor(dmd_y1))
  
        
@@ -337,7 +331,7 @@ class SlitTableView(tk.Frame):
             if img_wcs is not None:
                 pix_rect = reg_rect.to_pixel(img_wcs)
                 regs_CCD.append(pix_rect)
-                dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs)
+                dmd_rect = pix_rect.to_sky(self.PAR.dmd_wcs)
                
                 pix_w, pix_h = pix_rect.width, pix_rect.height
                 dmd_w, dmd_h = dmd_rect.width.value, dmd_rect.height.value
@@ -349,7 +343,7 @@ class SlitTableView(tk.Frame):
                 pix_x0, pix_y0 = pix_xc - pix_w/2, pix_yc - pix_h/2
                 pix_x1, pix_y1 = pix_xc + pix_w/2, pix_yc + pix_h/2
                
-                dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + convert.yoffset
+                dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + CCD_DMD_Y_OFFSET
                 # dmd center points of region returned in deg. Must also apply y offset
                 dmd_x0, dmd_y0 = dmd_xc - dmd_w/2, dmd_yc - dmd_h/2
                 dmd_x1, dmd_y1 = dmd_xc + dmd_w/2, dmd_yc + dmd_h/2
@@ -413,7 +407,7 @@ class SlitTableView(tk.Frame):
             except:
                 ra, dec = np.nan, np.nan
             
-            dmd_rect = pix_rect.to_sky(convert.ccd2dmd_wcs) # convert to fake dmd "sky" coords
+            dmd_rect = pix_rect.to_sky(self.PAR.dmd_wcs) # convert to fake dmd "sky" coords
  
             pix_w, pix_h = pix_rect.width, pix_rect.height
             dmd_w, dmd_h = dmd_rect.width.value, dmd_rect.height.value
@@ -424,7 +418,7 @@ class SlitTableView(tk.Frame):
             pix_x0, pix_y0 = pix_xc - pix_w/2, pix_yc - pix_h/2
             pix_x1, pix_y1 = pix_xc + pix_w/2, pix_yc + pix_h/2
            
-            dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + convert.yoffset
+            dmd_xc, dmd_yc = dmd_rect.center.ra.degree*3600, dmd_rect.center.dec.degree*3600 + CCD_DMD_Y_OFFSET
             # dmd center points of region returned in deg. Must also apply y offset
             dmd_x0, dmd_y0 = dmd_xc - dmd_w/2, dmd_yc - dmd_h/2
             dmd_x1, dmd_y1 = dmd_xc + dmd_w/2, dmd_yc + dmd_h/2

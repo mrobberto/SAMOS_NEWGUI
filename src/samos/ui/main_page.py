@@ -33,8 +33,8 @@ from tkinter import ttk
 from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
 from samos.system.SlitTableViewer import SlitTableView as STView
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
-from samos.utilities.utils import convert_ginga_to_astropy
 
 from .common_frame import SAMOSFrame, check_enabled
 from .progress_windows import ExposureProgressWindow
@@ -464,7 +464,7 @@ class MainPage(SAMOSFrame):
                                                 defaultextension=".reg",
                                                 initialdir=get_data_file("regions.pixels"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
-        astropy_regions_pix = convert_ginga_to_astropy(ginga_regions)
+        astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
         astropy_regions_pix.write(save_file.name, overwrite=True)
         self.logger.info("Saved regions to {}".format(save_file.name))
 
@@ -483,8 +483,8 @@ class MainPage(SAMOSFrame):
                                                 defaultextension=".reg",
                                                 initialdir=get_data_file("regions.radec"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
-        astropy_regions_pix = convert_ginga_to_astropy(ginga_regions)
-        astropy_regions_wcs = self.APRegion_pix2RAD(astropy_regions_pix, self.PAR.wcs)
+        astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
+        astropy_regions_wcs = Regions([r.to_sky(self.PAR.WCS) for r in astropy_regions_pix])
         astropy_regions_wcs.write(save_file.name, overwrite=True)
         self.logger.info("Saved regions to {}".format(save_file.name))
 
@@ -503,7 +503,8 @@ class MainPage(SAMOSFrame):
         - Region File
         """
         self.logger.info("Displaying DS9 Region File on canvas")
-        astropy_regions_pix, astropy_regions_wcs = self.APRegion_RAD2pix(self.loaded_reg_file_path, self.PAR.wcs, both=True)
+        astropy_regions_wcs = Regions.read(self.loaded_reg_file_path, format='ds9')
+        astropy_regions_pix = Regions([r.to_pixel(self.PAR.WCS) for r in astropy_regions_wcs])
         self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
         self.logger.info("Converted Astropy pixel regions to Ginga")
@@ -529,8 +530,8 @@ class MainPage(SAMOSFrame):
             csv_file = csv.reader(file)
             for i, row in enumerate(csv_file):
                 dmd_row = [int(x) for x in row]
-                x0, y0 = self.convert.DMD2CCD(dmd_row[0], dmd_row[3])
-                x1, y1 = self.convert.DMD2CCD(dmd_row[1], dmd_row[3])
+                x0, y0 = dmd_to_ccd(dmd_row[0], dmd_row[2], self.PAR.dmd_wcs)
+                x1, y1 = dmd_to_ccd(dmd_row[1], dmd_row[3], self.PAR.dmd_wcs)
                 # For a box, we need centre, width, and height
                 box_x = (x0 + x1) / 2
                 box_y = (y0 + y1) / 2
@@ -672,13 +673,13 @@ class MainPage(SAMOSFrame):
             ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
             # first case: figures that have no extensions (i.e. points): do nothing
             if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
-                x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
+                x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 slit_shape[x1, y1] = 0
             elif self.source_pickup_enabled.get() == 1 and obj.kind == 'point':
-                x1, y1 = self.convert.CCD2DMD(ccd_x0, ccd_y0)
+                x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
-                x2, y2 = self.convert.CCD2DMD(ccd_x1, ccd_y1)
+                x2, y2 = ccd_to_dmd(ccd_x1, ccd_y1, self.PAR.dmd_wcs)
                 x2, y2 = int(np.ceil(x2)), int(np.ceil(y2))
             else:
                 print("generic aperture")
@@ -698,9 +699,9 @@ class MainPage(SAMOSFrame):
                     cy0 = ccd_y0 + good_box_y[iymin]
                     cy1 = ccd_y0 + good_box_y[iymax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = self.convert.CCD2DMD(cx0, cy0)
+                    x1, y1 = ccd_to_dmd(cx0, cy0, self.PAR.dmd_wcs)
                     x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = self.convert.CCD2DMD(cx0, cy1)    # and the higher
+                    x2, y2 = ccd_to_dmd(cx0, cy1, self.PAR.dmd_wcs)  # and the higher
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
                     slit_shape[x1-2:x1, y1-2:y2+1] = 1
@@ -715,9 +716,9 @@ class MainPage(SAMOSFrame):
                     cx0 = ccd_x0 + good_box_x[ixmin]
                     cx1 = ccd_x0 + good_box_x[ixmax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = self.convert.CCD2DMD(cx0, cy0)
+                    x1, y1 = ccd_to_dmd(cx0, cy0, self.PAR.dmd_wcs)
                     x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = self.convert.CCD2DMD(cx1, cy0)    # and the higher
+                    x2, y2 = ccd_to_dmd(cx1, cy0, self.PAR.dmd_wcs)  # and the higher
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
                     slit_shape[x1-2:x1, y1-2:y1] = 1
@@ -1083,7 +1084,7 @@ class MainPage(SAMOSFrame):
 
         fits_x, fits_y = data_x + 1, data_y + 1
         text = f"FITS: (x, y) = ({fits_x:6.1f}, {fits_y:6.1f}). Value = {value}"
-        dmd_x, dmd_y = self.convert.CCD2DMD(fits_x, fits_y)
+        dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
         text = f"DMD: (x, y) = ({dmd_x:9.4f}, {dmd_y:9.4f}). " + text
 
         # Calculate WCS RA
@@ -1406,9 +1407,9 @@ class MainPage(SAMOSFrame):
         fits_x1, fits_y1 = x1 + 1, y1 + 1
         fits_xc, fits_yc = picked_slit.get_center_pt() + 1
 
-        dmd_xc, dmd_yc = self.convert.CCD2DMD(fits_xc, fits_yc)
-        dmd_x0, dmd_y0 = self.convert.CCD2DMD(fits_x0, fits_y0)
-        dmd_x1, dmd_y1 = self.convert.CCD2DMD(fits_x1, fits_y1)
+        dmd_xc, dmd_yc = ccd_to_dmd(fits_xc, fits_yc, self.PAR.dmd_wcs)
+        dmd_x0, dmd_y0 = ccd_to_dmd(fits_x0, fits_y0, self.PAR.dmd_wcs)
+        dmd_x1, dmd_y1 = ccd_to_dmd(fits_x1, fits_y1, self.PAR.dmd_wcs)
 
         dmd_width = int(np.ceil(dmd_x1 - dmd_x0))
         dmd_length = int(np.ceil(dmd_y1 - dmd_y0))
@@ -1431,15 +1432,15 @@ class MainPage(SAMOSFrame):
         half_current_dmd_length = current_dmd_length // 2
 
         fits_xc, fits_yc = picked_slit.get_center_pt()
-        dmd_xc, dmd_yc = self.convert.CCD2DMD(fits_xc+1, fits_yc+1)
+        dmd_xc, dmd_yc = ccd_to_dmd(fits_xc + 1, fits_yc + 1, self.PAR.dmd_wcs)
 
         dmd_x0 = dmd_xc - half_current_dmd_width
         dmd_y0 = dmd_yc - half_current_dmd_length
         dmd_x1 = dmd_xc + half_current_dmd_width
         dmd_y1 = dmd_yc + half_current_dmd_length
 
-        fits_x0, fits_y0 = self.convert.DMD2CCD(dmd_x0 - 1, dmd_y0 - 1)
-        fits_x1, fits_y1 = self.convert.DMD2CCD(dmd_x1 - 1, dmd_y1 - 1)
+        fits_x0, fits_y0 = dmd_to_ccd(dmd_x0 - 1, dmd_y0 - 1, self.PAR.dmd_wcs)
+        fits_x1, fits_y1 = dmd_to_ccd(dmd_x1 - 1, dmd_y1 - 1, self.PAR.dmd_wcs)
 
         fits_length = np.ceil(fits_y1 - fits_y0)
         fits_width = np.ceil(fits_x1 - fits_x0)
@@ -1658,64 +1659,6 @@ class MainPage(SAMOSFrame):
         self.expnum.config(from_=min_num)
         if self.image_expnum.get() < min_num:
             self.image_expnum.set(min_num)
-
-
-    def APRegion_RAD2pix(self, APRegionfile, WCS, both=False):
-        """
-        Convert the region file in ds9/RADEC format to AP/xy format given a WCS solution
-        
-        based on example on 
-        https://astropy-regions.readthedocs.io/en/stable/getting_started.html
-
-        Parameters
-        ----------
-        APRegionfile : TYPE string 
-            DESCRIPTION: a filename containing an Astropy Region in RADEC, ds9 format
-            NOTE: Here we read a APRegionfile in   > format = ds9 <
-            EXAMPLE:
-                # Region file format: DS9 astropy/regions
-                global include=1
-                image
-                box(480.80170584,499.68662062,3.06016566,9.18049699,1.43101865)
-                box(498.89513694,506.20672157,3.06016577,9.18049732,1.42975106)
-            
-        WCS : TYPE 
-            DESCRIPTION: a WCS  
-
-        Returns
-        -------
-        RRR_pix: list of astropy regions in pixel units. 
-        """
-        regions_wcs = Regions.read(APRegionfile, format='ds9')
-        regions_pix = Regions([r.to_pixel(WCS) for r in regions_wcs])
-        APregionfile_pixel = APRegionfile.replace("RADEC","pixels")
-        RRR_pix.write(APregionfile_pixel, overwrite=True)
-
-        if both:
-            return RRR_pix, regions
-        return RRR_pix
-    
-    
-
-    def APRegion_pix2RAD(self, RRR_xyAP, WCS):
-        """
-        based on example on 
-        https://astropy-regions.readthedocs.io/en/stable/getting_started.html
-
-        Parameters
-        ----------
-        APRegionfile : TYPE string 
-            DESCRIPTION: a filename containing an Astropy Region in RADEC
-        WCS : TYPE 
-            DESCRIPTION: a WCS  
-
-        Returns
-        -------
-        region in pixel units
-
-        """
-        regions_wcs = Regions([r.to_sky(WCS) for r in RRR_xyAP])
-        return regions_wcs
 
 
     def update_status_box(self):
