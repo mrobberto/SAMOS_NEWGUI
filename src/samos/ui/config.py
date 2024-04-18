@@ -103,7 +103,7 @@ class ConfigPage(SAMOSFrame):
         self.IP_SAMI = tk.StringVar(self, self.PAR.IP_dict['IP_SAMI'])
         tk.Entry(frame, width=20, textvariable=self.IP_SAMI).grid(row=5, column=2, columnspan=2, sticky=TK_STICKY_ALL)
 
-        b = ttk.Button(frame, text="Initialize Components", command=self.startup)
+        b = ttk.Button(frame, text="Initialize Components", command=self.startup, bootstyle="success")
         b.grid(row=6, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Observer Data
