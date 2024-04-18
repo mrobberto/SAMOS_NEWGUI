@@ -11,7 +11,6 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import xml.dom.minidom
 
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from samos.utilities import get_fits_dir
 
 

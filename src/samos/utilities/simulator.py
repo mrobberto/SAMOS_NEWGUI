@@ -34,7 +34,8 @@ import socket
 import sys
 
 from samos.motors import PCM
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
+from samos.system.config import SAMOSConfig
+from samos.system.fits_header import FITSHead
 
 
 class ExitGracefully:
@@ -54,7 +55,9 @@ class SimulatedPCM:
     """
     def __init__(self, logger, move_speed=1000):
         self.logger = logger
-        self.PCM = PCM(SAMOS_Parameters(), self.logger)
+        self.PAR = SAMOSConfig()
+        self.FH = FITSHead(self.PAR, self.logger)
+        self.PCM = PCM(self.PAR, self.logger, self.FH)
         self.is_on = False
         self.move_speed = move_speed  # steps/second
         self.steps = {"FW1": 0, "FW2": 0, "GR_A": self.PCM.positions["GR_A"]["GR_H1"], "GR_B": self.PCM.positions["GR_B"]["GR_H2"]}

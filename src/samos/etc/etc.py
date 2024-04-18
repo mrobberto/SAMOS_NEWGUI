@@ -13,8 +13,7 @@ import pandas as pd
 from scipy import interpolate
 
 import tkinter as tk
-from tkinter import ttk
-
+import ttkbootstrap as ttk
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 

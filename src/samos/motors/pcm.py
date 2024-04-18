@@ -88,9 +88,10 @@ from samos.utilities.constants import *
 
 
 class PCM():
-    def __init__(self, par, logger, canvas_Indicator=None):
+    def __init__(self, par, logger, fits_head, canvas_Indicator=None):
         self.PAR = par
         self.logger = logger
+        self.main_fits_head = fits_head
         self.set_ip()
         self.initialized = False
         self.positions = {"FW1": {}, "FW2": {}, "GR_A": {}, "GR_B": {}}
@@ -98,6 +99,7 @@ class PCM():
         self.got_stop = False
         self.filter_moving = False
         self.grism_moving = False
+        self.have_initial_status = False
 
         # Configure socket wait
         socket.setdefaulttimeout(3)
@@ -156,6 +158,10 @@ class PCM():
             if "NO RESPONSE" in reply:
                 self.logger.info("Motor power is off")
                 return False
+            if not self.have_initial_status:
+                self.have_initial_status = True
+                for wheel in ['FW1', 'FW2', 'GR_A', 'GR_B']:
+                    reply = self.current_filter_step(wheel)
             self.logger.info("Motors replied {}".format(reply))
             return True
         self.logger.warning("No reply from Motors")
@@ -311,7 +317,15 @@ class PCM():
 
     def current_filter_step(self, wheel):
         self.logger.info("Getting step counts for {}".format(wheel))
-        return self.send_command_string(self.PCM_COMMANDS["current_step"][wheel])
+        result = self.send_command_string(self.PCM_COMMANDS["current_step"][wheel])
+        param_name = f"{wheel.replace('_','').lower()}step"
+        try:
+            step = self.extract_steps_from_return_string(result)
+        except Exception as e:
+            self.logger.error(f"Trying to extract filter steps from {result} caused {e}")
+            step = "UNKNOWN"
+        self.main_fits_head.set_param(param_name, step)
+        return result
 
 
     def motors_stop(self, wheel):
@@ -415,20 +429,36 @@ class PCM():
         self.logger.info("Moving grism to {}".format(position))
         results = []
         if position in ["GR_H1", "GR_A1", "GR_A2"]:
+            # Moving grism A away from home. Must home grism B
+            if self.get_wheel_position("GR_B") != self.home["GR_B"]:
+                if not self.got_stop:
+                    self.logger.info("Moving grism B home.")
+                    results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", "GR_H2"))
+            # Move Grism A to position
             if not self.got_stop:
-                # Move Grism B to Home
-                results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", "GR_H2"))
-            if not self.got_stop:
-                # Move Grism A to commanded location
+                self.logger.info(f"Moving grism A to {position}")
                 results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", position))
-            return results
         elif position in ["GR_H2", "GR_B1", "GR_B2"]:
+            # Moving grism B away from home. Must home grism A
+            if self.get_wheel_position("GR_A") != self.home["GR_A"]:
+                if not self.got_stop:
+                    self.logger.info("Moving grism A home.")
+                    results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", "GR_H1"))
+            # Move Grism B to position
             if not self.got_stop:
-                # Move Grism A to Home
-                results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", "GR_H1"))
-            if not self.got_stop:
-                # Move Grism B to commanded location
+                self.logger.info(f"Moving grism B to {position}")
                 results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", position))
+        elif position.lower() in self.GRISM_RAIL_MAPPINGS:
+            pos_a, pos_b = self.GRISM_RAIL_MAPPINGS[position.lower()]
+            if pos_a != "GR_H1":
+                # Treat as a grism A move
+                results = self.move_grism_rails(pos_a)
+            elif pos_b != "GR_H2":
+                # Treat as a grism b move
+                results = self.move_grism_rails(pos_b)
+            else:
+                # Both home. Treat as grism A
+                results = seulf.move_grism_rails(pos_a)
         if self.got_stop:
             results.append("GOT STOP COMMAND")
             self.got_stop = False
@@ -475,6 +505,57 @@ class PCM():
             self.grism_moving = False
 
 
+    def get_wheel_position(self, wheel, tolerance=5):
+        """
+        Return the position of the given wheel, by comparing the current step to the 
+        defined positions (with a hit being defined as within the provided step 
+        tolerance).
+        """
+        current_step = self.extract_steps_from_return_string(self.current_filter_step(wheel))
+        try:
+            current_step = int(current_step)
+        except Exception as e:
+            self.logger.error(f"Invalid {wheel} step value {current_step}")
+            return "INVALID"
+
+        for position in self.positions[wheel]:
+            if abs(current_step - self.positions[wheel][position]) <= tolerance:
+                self.logger.info(f"{wheel} step {current_step} corresponds to {position} ({self.positions[wheel][position]})")
+                return position
+        self.logger.warning(f"Current {wheel} position {current_step} has no known mapping.")
+        return "UNKNOWN"
+
+
+    def get_filter_label(self, tolerance=5):
+        """
+        Get the label assigned to the current pair of filter wheel positions (or UNKNOWN)
+        """
+        f1_pos = self.get_wheel_position("FW1", tolerance)
+        f2_pos = self.get_wheel_position("FW2", tolerance)
+        combined_pos = (f1_pos, f2_pos)
+        self.logger.info(f"FW1 reports {f1_pos}, FW2 reports {f2_pos}")
+        for mapping in self.FILTER_WHEEL_MAPPINGS:
+            if combined_pos == self.FILTER_WHEEL_MAPPINGS[mapping]:
+                self.logger.info(f"{f1_pos},{f2_pos} corresponds to {mapping}")
+                return mapping
+        return "UNKNOWN"
+
+
+    def get_grating_label(self, tolerance=5):
+        """
+        Get the label assigned to the current pair of grating rail positions (or UNKNOWN)
+        """
+        ga_pos = self.get_wheel_position("GR_A", tolerance)
+        gb_pos = self.get_wheel_position("GR_B", tolerance)
+        combined_pos = (ga_pos, gb_pos)
+        self.logger.info(f"GR_A reports {ga_pos}, GR_B reports {gb_pos}")
+        for mapping in self.GRISM_RAIL_MAPPINGS:
+            if combined_pos == self.GRISM_RAIL_MAPPINGS[mapping]:
+                self.logger.info(f"{ga_pos},{gb_pos} corresponds to {mapping}")
+                return mapping
+        return "UNKNOWN"
+
+
     def _send(self, message):
         self.set_ip()
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -493,10 +574,13 @@ class PCM():
     def _move_wheel(self, positions, commands, wheel, position):
         current_steps = self.extract_steps_from_return_string(self.current_filter_step(wheel))
         self.logger.info("Current {} position is {}".format(wheel, current_steps))
-        motor_window = MotorMoveProgressWindow(self, self.logger, wheel, positions[wheel][position])
-        response = self.send_command_string(commands[position])
-        self.logger.info("PCM responded {} to move command".format(response))
-        motor_window.wait_window()
+        if current_steps != positions[wheel][position]:
+            motor_window = MotorMoveProgressWindow(self, self.logger, wheel, positions[wheel][position])
+            response = self.send_command_string(commands[position])
+            self.logger.info("PCM responded {} to move command".format(response))
+            motor_window.wait_window()
+        else:
+            self.logger.info(f"{wheel} already at {position}")
         self.write_status()
         return position, current_steps
 
@@ -514,6 +598,14 @@ class PCM():
         "glass": ("A4", "B4"),
         "hbeta": ("A4", "B5"),
         "sii": ("A4", "B6")
+    }
+    
+    GRISM_RAIL_MAPPINGS = {
+        "grating home": ("GR_H1", "GR_H2"),
+        "low-red": ("GR_A1", "GR_H2"),
+        "low-blue": ("GR_A2", "GR_H2"),
+        "h-beta": ("GR_H1", "GR_B1"),
+        "h-alpha": ("GR_H1", "GR_B2")
     }
     
     PCM_COMMANDS = {

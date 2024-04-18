@@ -22,7 +22,13 @@ from pathlib import Path
 import sys
 
 import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
+
+def about_box():
+    """
+    Display a dialog with application info
+    """
+    ttk.messagebox.showinfo('About SAMOS', "This is the control software for the SAMOS instrument.")
 
 
 def check_widgets(widgets):

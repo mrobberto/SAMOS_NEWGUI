@@ -14,7 +14,7 @@ import numpy as np
 
 # Actually import the controller
 from .dmd import DigitalMicroMirrorDevice
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
+from samos.system.config import SAMOSConfig
 import time
 
 import pandas as pd
@@ -26,7 +26,7 @@ t0=time.perf_counter()
 # Config ID can map to device specifics in the future
 # I've left that up to whomever write the upper levels for the STUF
 
-dmd = DigitalMicroMirrorDevice(par=SAMOS_Parameters())
+dmd = DigitalMicroMirrorDevice(par=SAMOSConfig())
 dmd.initialize()
 
 # As we run commands we can check out whether or not they're working with a little nanny cam set up here  :

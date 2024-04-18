@@ -5,9 +5,7 @@ from astropy import units as u
 import logging
 
 import tkinter as tk
-from tkinter import ttk
-
-from samos.tk_utilities.utils import about_box
+import ttkbootstrap as ttk
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 

@@ -6,7 +6,6 @@ Created on Thu Jan  6 18:11:10 2022
 @author: robberto
 """
 
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
 from .CCD import CCD
 
 params = {'Exposure Time':100,'CCD Temperature':2300,'Trigger Mode': 4, 'NofFrames': 1}

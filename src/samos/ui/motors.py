@@ -2,8 +2,7 @@
 SAMOS Motors tk Frame Class
 """
 import tkinter as tk
-from tkinter import ttk
-
+import ttkbootstrap as ttk
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
@@ -26,7 +25,7 @@ class MotorsPage(SAMOSFrame):
 
         # Initialize all motors
         b = ttk.Button(self.main_frame, text="Initialize", command=self.initialize_pcm)
-        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "initialized", False)]
 
         # Turn motor power on/off
@@ -42,16 +41,16 @@ class MotorsPage(SAMOSFrame):
 
         # Port Status
         port_status_frame = ttk.LabelFrame(self.main_frame, text="Power Port Status")
-        port_status_frame.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        port_status_frame.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(port_status_frame, text="Get Status", command=self.all_ports_status)
-        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         self.port_status_info = tk.StringVar(self, "")
         tk.Label(port_status_frame, textvariable=self.port_status_info).grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # Mechanism Selection
         frame = ttk.LabelFrame(self.main_frame, text="Filter/Grating Control")
-        frame.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        frame.grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         sel_frame = ttk.Frame(frame)
         sel_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
         # Select Mechanism to Act On
@@ -70,36 +69,35 @@ class MotorsPage(SAMOSFrame):
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Send home
-        b = ttk.Button(frame, text="Send to Home", command=self.home)
-        b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Send to Home", command=self.home, bootstyle='success')
+        b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Get Position
-        b = ttk.Button(frame, text="Get Current Steps", command=self.current_step)
-        b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Get Current Steps:", command=self.current_step, bootstyle='info')
+        b.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         self.step_position = tk.StringVar(self, "")
-        tk.Label(frame, textvariable=self.step_position).grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        tk.Label(frame, textvariable=self.step_position).grid(row=0, column=2, sticky=TK_STICKY_ALL)
         # Move to step
-        ttk.Label(frame, text="Step:").grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.step_entry = tk.StringVar(self, "")
         e = tk.Entry(frame, textvariable=self.step_entry)
-        e.grid(row=2, column=2, sticky=TK_STICKY_ALL)
+        e.grid(row=1, column=2, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        b = ttk.Button(frame, text="Move to Step", command=self.move_to_step)
-        b.grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Move to Step:", command=self.move_to_step, bootstyle="success")
+        b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        b = ttk.Button(frame, text="Stop", command=self.stop_motors)
-        b.grid(row=2, column=4, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Stop", command=self.stop_motors, bootstyle='warning')
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Move to Position
-        ttk.Label(frame, text="Set Position").grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Set Position").grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.pos_options = {"FW1": ["A1", "A2", "A3", "A4", "A5", "A6"],
                             "FW2": ["B1", "B2", "B3", "B4", "B5", "B6"],
                             "GR_A": ["GR_A1", "GR_A2"],
                             "GR_B": ["GR_B1", "BR_B2"]}
         self.selected_pos = tk.StringVar(self, self.pos_options[self.active_wheel.get()][0])
         self.options = ttk.OptionMenu(frame, self.selected_pos, *self.pos_options[self.active_wheel.get()], command=self.move_to_pos)
-        self.options.grid(row=3, column=2, sticky=TK_STICKY_ALL)
+        self.options.grid(row=2, column=2, sticky=TK_STICKY_ALL)
         self.check_widgets[self.options] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Move to Filter
@@ -107,7 +105,7 @@ class MotorsPage(SAMOSFrame):
         self.filter_options = ["open", "SLOAN-g", "SLOAN-r", "SLOAN-i", "SLOAN-z", "Ha", "O[III]", "S[II]"]
         self.selected_filter = tk.StringVar(self, self.filter_options[0])
         m = ttk.OptionMenu(self.main_frame, self.selected_filter, *self.filter_options, command=self.move_to_filter)
-        m.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        m.grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[m] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Custom Command
@@ -116,16 +114,16 @@ class MotorsPage(SAMOSFrame):
         e = tk.Entry(self.main_frame, textvariable=self.command)
         e.grid(row=4, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        b = ttk.Button(self.main_frame, text="Run", command=self.enter_command)
-        b.grid(row=4, column=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(self.main_frame, text="Run", command=self.enter_command, bootstyle='success')
+        b.grid(row=4, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Initialize Commands
-        b = ttk.Button(self.main_frame, text="Initialize Filter Wheels", command=self.initialize_filters)
-        b.grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(self.main_frame, text="Initialize Filter Wheels", command=self.initialize_filters, bootstyle='danger')
+        b.grid(row=5, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        b = ttk.Button(self.main_frame, text="Initialize Grism Rails", command=self.initialize_grisms)
-        b.grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(self.main_frame, text="Initialize Grism Rails", command=self.initialize_grisms, bootstyle='danger')
+        b.grid(row=5, column=1, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         self.set_enabled()
 
@@ -226,7 +224,7 @@ class MotorsPage(SAMOSFrame):
         new_pos = self.selected_pos.get()
         if "GR" in current_wheel:
             result = self.PCM.move_grism_rails(new_pos)
-            self.main_fits_header.set_param("grismpos", new_pos)
+            self.main_fits_header.set_param("gratpos", new_pos)
         else:
             result = self.PCM.move_filter_wheel(new_pos)
             self.main_fits_header.set_param("filtpos", new_pos)

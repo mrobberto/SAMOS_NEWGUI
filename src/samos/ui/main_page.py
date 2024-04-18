@@ -28,10 +28,9 @@ from PIL import Image, ImageTk
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
 
 import tkinter as tk
-from tkinter import ttk
-
-from samos.dmd.pattern_helpers.Class_DMDGroup import DMDGroup
-from samos.system.SlitTableViewer import SlitTableView as STView
+import ttkbootstrap as ttk
+from samos.dmd.utilities import DMDGroup
+from samos.ui.slit_table_view import SlitTableView as STView
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
@@ -53,7 +52,6 @@ class MainPage(SAMOSFrame):
         self.extra_header_params = 0
         # keep string of entries to write to a file after acquisition.
         self.header_entry_string = ''
-        self.main_fits_header.create_main_params_dict()
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
         self.pattern_series = []
@@ -99,26 +97,30 @@ class MainPage(SAMOSFrame):
         filter_frame = ttk.Label(frame, text="Filter")
         filter_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.filter_data = ascii.read(get_data_file("system", 'SAMOS_Filter_positions.txt'))
-        filter_names = list(self.filter_data['Filter'][:12])
+        filter_names = list(self.PCM.FILTER_WHEEL_MAPPINGS.keys())
         self.current_filter = tk.StringVar(self, filter_names[2])
         ttk.Label(filter_frame, text="Current Filter:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(filter_frame, textvariable=self.current_filter, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.current_filter, *filter_names)
+        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.current_filter, self.current_filter.get(), *filter_names)
         self.filter_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(filter_frame, text="Set Filter", command=self.set_filter).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(filter_frame, text="Set Filter", command=self.set_filter, bootstyle="success")
+        b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True)]
         # Grating
         grating_frame = ttk.Label(frame, text="Grating")
         grating_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.grating_names = list(self.filter_data['Filter'][12:18])
+        grating_names = list(self.PCM.GRISM_RAIL_MAPPINGS.keys())
         self.grating_positions = list(self.filter_data['Position'][12:18])
-        self.current_grating = tk.StringVar(self, self.grating_names[2])
+        self.current_grating = tk.StringVar(self, grating_names[2])
         ttk.Label(grating_frame, text="Current Grating:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(grating_frame, textvariable=self.current_grating, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.current_grating, *self.grating_names)
+        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.current_grating, self.current_grating.get(), *grating_names)
         self.grating_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(grating_frame, text="Set Grating", command=self.set_grating).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(grating_frame, text="Set Grating", command=self.set_grating, bootstyle="success")
+        b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self.PCM, "is_on", True)]
 
         # CCD Management
         frame = ttk.LabelFrame(fleft, text="CCD Setup")
@@ -185,13 +187,14 @@ class MainPage(SAMOSFrame):
         exp_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         exp_frame.columnconfigure(0, weight=1)
         exp_frame.columnconfigure(1, weight=1)
-        b = ttk.Button(exp_frame, text="START", command=self.start_an_exposure)
-        b.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(exp_frame, text="START", command=self.start_an_exposure, bootstyle="success")
+        b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
         # FITS manager
         frame = ttk.LabelFrame(fleft, text="FITS Manager")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Load Existing File", command=self.load_existing_file).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Load Existing File", command=self.load_existing_file)
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.fits_ra = tk.DoubleVar(self, 150.17110)
         ttk.Label(frame, text="RA:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_ra).grid(row=1, column=1, sticky=TK_STICKY_ALL)
@@ -202,8 +205,11 @@ class MainPage(SAMOSFrame):
         ttk.Label(frame, text="Nr. of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
-        ttk.Button(frame, text="Send to SOAR", command=self.send_RADEC_to_SOAR).grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry).grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Send to SOAR", command=self.send_RADEC_to_SOAR, bootstyle="success")
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
+        b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
+        b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(frame, self.fits_ra, self.fits_dec, self.Query_Survey, self.logger)
         self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
@@ -291,11 +297,16 @@ class MainPage(SAMOSFrame):
         b = tk.Checkbutton(frame, text="Source Pickup", variable=self.source_pickup_enabled, command=self.set_slit_drawtype)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Buttons
-        ttk.Button(frame, text="Show Traces", command=self.show_traces).grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Remove Traces", command=self.remove_traces).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=2, column=2, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=2, column=3, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Open File", command=self.open_quicklook_file).grid(row=2, column=5, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Show Traces", command=self.show_traces, bootstyle="info")
+        b.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Remove Traces", command=self.remove_traces, bootstyle="info")
+        b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Slits Only", command=self.slits_only, bootstyle="info")
+        b.grid(row=2, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas, bootstyle="info")
+        b.grid(row=2, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Open File", command=self.open_quicklook_file)
+        b.grid(row=2, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # Slit Configuration Frame
         frame = ttk.LabelFrame(fctr, text="Slit Configuration:")
@@ -320,7 +331,8 @@ class MainPage(SAMOSFrame):
         self.force_orthonormal = tk.IntVar(self, 0)
         b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal)
         b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        ttk.Button(slit_frame, text="Apply to All", command=self.apply_to_all).grid(row=3, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(slit_frame, text="Apply to All", command=self.apply_to_all, bootstyle="success")
+        b.grid(row=3, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         # Slit Draw Controls
         draw_frame = ttk.LabelFrame(frame, text="Slit Mode")
         draw_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -332,13 +344,15 @@ class MainPage(SAMOSFrame):
         self.draw_mode = tk.Radiobutton(draw_frame, text="Delete", variable=self.slit_mode, value="delete", command=self.set_mode_cb)
         self.draw_mode.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         # Misc
-        ttk.Button(frame, text="View Slit Table", command=self.show_slit_table).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Find Stars", command=self.find_stars).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="View Slit Table", command=self.show_slit_table)
+        b.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Find Stars", command=self.find_stars)
+        b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # Pattern Series
         pattern_frame = ttk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
         pattern_frame.grid(row=0, column=1, rowspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
-        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
         self.base_pattern_name = tk.StringVar(self, "Base Pattern Name")
         e = tk.Entry(pattern_frame, width=15, textvariable=self.base_pattern_name)
@@ -348,9 +362,9 @@ class MainPage(SAMOSFrame):
         self.pattern_group.bind("<<ComboboxSelected>>", self.selected_dmd_group_pattern)
         self.pattern_group.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Save Displayed Pattern", command=self.save_selected_sub_pattern)
-        b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Save All Patterns", command=self.save_all_sub_patterns)
-        b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # RIGHT COLUMN
 
@@ -358,53 +372,53 @@ class MainPage(SAMOSFrame):
         frame = ttk.LabelFrame(fright, text="Sky Regions (RA, DEC)")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load Regions from DS9/RADEC Region File", command=self.load_regions_radec)
-        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="Loaded Region File:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, textvariable=self.loaded_reg_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC)
-        b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         l = ttk.Label(frame, text="Point, take and image, and twirl WCS from GAIA")
         l.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file)
-        b.grid(row=5, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=5, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR), ("valid_file", self.loaded_reg_file_path)]
         b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs)
-        b.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR)]
 
         # CCD Module
         frame = ttk.LabelFrame(fright, text="CCD Regions (x, y)")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load (x, y) Regions from DS9 Region file", command=self.load_regions_pix)
-        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR)]
         self.loaded_ginga_file = tk.StringVar(self, "")
         self.loaded_ginga_file_path = None
         ttk.Label(frame, text="Loaded File in CCD Units:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, textvariable=self.loaded_ginga_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_pix)
-        b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # DMD Module
         frame = ttk.LabelFrame(fright, text="DMD Slits")
         frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         self.saved_slit_file = tk.StringVar(self, "")
         self.saved_slit_file_path = None
-        b = ttk.Button(frame, text="Send Current Slits to DMD", command=self.push_slit_shape)
-        b.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Send Current Slits to DMD", command=self.push_slit_shape, bootstyle="success")
+        b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Save Slit List", command=self.save_slit_table)
-        b.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.saved_slit_file_path)]
         ttk.Label(frame, text="Saved Slit List:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.saved_slit_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load and Push Slit List from File", command=self.load_slits)
-        b.grid(row=3, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        b.grid(row=3, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.current_slit_file_path = None
         self.current_slit_file = tk.StringVar(self, "")
         ttk.Label(frame, text="Current Slit List:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.current_slit_file).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert Slit Regions to Pixels", command=self.draw_slits)
-        b.grid(row=4, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        b.grid(row=4, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.current_slit_file_path)]
 
         # HTS Module
@@ -416,17 +430,17 @@ class MainPage(SAMOSFrame):
         ttk.Label(frame, text="Loaded Mask:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.current_mask_file).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load Mask", command=self.load_masks_file_HTS)
-        b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # Push Mask
         self.pushed_mask_file = tk.StringVar(self, "")
         ttk.Label(frame, text="Pushed Mask:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.pushed_mask_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Push Mask", command=self.push_masks_file_HTS)
-        b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
         # Next Mask
         b = ttk.Button(frame, text="Next Mask", command=self.next_masks_file_HTS)
-        b.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
 
         # Status Indicator Frame
@@ -753,28 +767,24 @@ class MainPage(SAMOSFrame):
         self.main_fits_header.set_param("filter", new_filter)
         filter_pos = self.PCM.FILTER_WHEEL_MAPPINGS[new_filter.lower()]
         self.main_fits_header.set_param("filtpos", f"{filter_pos[0]},{filter_pos[1]}")
-        command_status = self.PCM.move_filter_wheel(current_filter)
+        command_status = self.PCM.move_filter_wheel(new_filter)
         self.logger.info("Motors returned {}".format(command_status))
         self.extra_header_params += 1
-        entry_string = param_entry_format.format(self.extra_header_params, 'String', 'FILTER', filter, 'Selected filter')
+        entry_string = PARAM_ENTRY_FORMAT.format(self.extra_header_params, 'String', 'FILTER', new_filter, 'Selected filter')
         self.header_entry_string += entry_string
 
 
     @check_enabled
     def set_grating(self):
         self.logger.info("Setting Grating to {}".format(self.current_grating.get()))
-        current_grating = self.current_grating.get()
-        grating_pos_ind = self.grating_names.index(current_grating)
-        grating_pos = self.grating_positions[grating_pos_ind]
-        main_fits_header.set_param("grating", GR_pos)
-        self.status_box.itemconfig("grism_ind", fill=indicator_light_pending_color)
-        self.status_box.update()
-        command_status = self.PCM.move_grism_rails(GR_pos)
-        self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-        self.status_box.update()
+        new_grating = self.current_grating.get()
+        self.main_fits_header.set_param("grating", new_grating)
+        grating_pos = self.PCM.GRISM_RAIL_MAPPINGS[new_grating.lower()]
+        self.main_fits_header.set_param("gratpos", f"{grating_pos[0]},{grating_pos[1]}")
+        command_status = self.PCM.move_grism_rails(new_grating)
         self.logger.info("Motors returned {}".format(command_status))
         self.extra_header_params += 1
-        entry_string = param_entry_format.format(self.extra_header_params, 'String', 'GRISM', i_selected, 'Grism position')
+        entry_string = PARAM_ENTRY_FORMAT.format(self.extra_header_params, 'String', 'GRISM', new_grating, 'Grism position')
         self.header_entry_string += entry_string
 
 
@@ -853,15 +863,15 @@ class MainPage(SAMOSFrame):
         self.PAR.PotN['Telescope Operator'] = self.telescope_operator.get()
         if self.image_type.get() == "Science":
             self.PAR.PotN['Object Name'] = self.image_name.get()
-            self.PAR.PotN['Comment'] = self.image_comments.get()
+            self.PAR.PotN['Comments'] = self.image_comments.get()
         elif self.image_type.get() == "Bias":
-            self.PAR.PotN['Bias Comment'] = self.image_comments.get()
+            self.PAR.PotN['Bias Comments'] = self.image_comments.get()
         elif self.image_type.get() == "Dark":
-            self.PAR.PotN['Dark Comment'] = self.image_comments.get()
+            self.PAR.PotN['Dark Comments'] = self.image_comments.get()
         elif self.image_type.get() == "Bias":
-            self.PAR.PotN['Flat Comment'] = self.image_comments.get()
+            self.PAR.PotN['Flat Comments'] = self.image_comments.get()
         elif self.image_type.get() == "Buffer":
-            self.PAR.PotN['Buffer Comment'] = self.image_comments.get()
+            self.PAR.PotN['Buffer Comments'] = self.image_comments.get()
         self.PAR.PotN['Base Filename'] = self.image_base_name.get()
         self.PAR.update_PotN()
 
@@ -984,7 +994,7 @@ class MainPage(SAMOSFrame):
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)
 
         hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = get_data_file('astrometry.general') / "WCS_{}_{}.fits".format(ra, dec)
+        self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
         self.Display(self.wcs_filename)
@@ -1330,7 +1340,7 @@ class MainPage(SAMOSFrame):
         self.slits_only()
         self.logger.info("Creating pattern series. Current pattern is {}".format(self.base_pattern_name_entry.get()))
 
-        self.DMD_Group = DMDGroup(dmd_slitview_df=self.slit_tab_view.slitDF, regfile=self.loaded_reg_file_path)
+        self.DMD_Group = DMDGroup(self.slit_tab_view.slitDF, self.logger, regfile=self.loaded_reg_file_path)
         good_patterns = [self.slit_tab_view.slitDF]
         redo_pattern = self.slit_tab_view.slitDF.copy()
         base_name = self.base_pattern_name_entry.get()
@@ -1532,7 +1542,7 @@ class MainPage(SAMOSFrame):
             self.slit_window = tk.Toplevel()
             self.slit_window.title("Slit Table")
             self.slit_window.geometry("700x407")
-            self.slit_tab_view = STView(self.slit_window, self.parent)
+            self.slit_tab_view = STView(self.slit_window, self.parent, self.PAR, self.logger)
             self.slit_window.withdraw()
 
 
@@ -1669,6 +1679,8 @@ class MainPage(SAMOSFrame):
                 self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
             if self.PCM.grism_moving:
                 self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
+            self.current_filter.set(self.PCM.get_filter_label())
+            self.current_grating.set(self.PCM.get_grating_label())
         else:
             self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
             self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_OFF_COLOR)

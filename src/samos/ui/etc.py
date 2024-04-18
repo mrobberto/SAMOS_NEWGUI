@@ -9,8 +9,7 @@ import yaml
 from astropy import units as u
 
 import tkinter as tk
-from tkinter import ttk
-
+import ttkbootstrap as ttk
 from samos.etc import ETC
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
@@ -27,6 +26,8 @@ class ETCPage(SAMOSFrame):
         left_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         right_frame = ttk.Frame(self.main_frame)
         right_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.rowconfigure(0, weight=1)
         
         # Top Left Frame:
         frame = ttk.LabelFrame(left_frame, text="ETC Options", relief=tk.RIDGE)
@@ -173,10 +174,10 @@ class ETCPage(SAMOSFrame):
         self.calculation_type = tk.StringVar(self, "calc_exptime")
         b = tk.Radiobutton(frame, text="Calculate Time from SNR", value="calc_exptime", variable=self.calculation_type, 
                            command=self.set_enabled)
-        b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text="Calculate SNR from Time", value="calc_snr", variable=self.calculation_type,
                            command=self.set_enabled)
-        b.grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         # Exptime
         subframe = ttk.Frame(frame)
         subframe.grid(row=1, column=0, sticky=TK_STICKY_ALL)
@@ -230,11 +231,14 @@ class ETCPage(SAMOSFrame):
         # Calculate Frame
         frame = ttk.LabelFrame(left_frame, text="Run")
         frame.grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="CALCULATE", command=self.run_calculation).grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="CALCULATE", command=self.run_calculation, bootstyle='success')
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # First right frame
         frame = ttk.LabelFrame(right_frame, text="Output")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        right_frame.columnconfigure(0, weight=1)
+        right_frame.rowconfigure(0, weight=1)
         # Header text
         self.header_text = tk.StringVar(self, "")
         t = tk.Label(frame, textvariable=self.header_text)

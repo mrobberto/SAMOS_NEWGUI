@@ -2,15 +2,14 @@
 SAMOS Guide Star Query Frame Interface
 """
 import tkinter as tk
-from tkinter import ttk
-
+import ttkbootstrap as ttk
 from samos.astrometry.guide_stars import GenericGuideStar, PanSTARRSGuideStar, SDSSGuideStar, SkyMapperGuideStar
 from samos.utilities.constants import *
 
 
-class GSQueryFrame(tk.LabelFrame):
-    def __init__(self, parent, ra_var, dec_var, query_callback, logger, cnf={}, **kw):
-        super().__init__(parent, cnf, text="Query Image Server", font=BIGFONT, **kw)
+class GSQueryFrame(ttk.LabelFrame):
+    def __init__(self, parent, ra_var, dec_var, query_callback, logger, **kw):
+        super().__init__(parent, text="Query Image Server", **kw)
         self.ra_var = ra_var
         self.dec_var = dec_var
         self.query_callback = query_callback

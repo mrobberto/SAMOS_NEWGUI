@@ -38,6 +38,7 @@ dependencies:
     - regions
     - tksheet
     - twirl
+    - ttkbootstrap
 
     # Current package
     - -e .

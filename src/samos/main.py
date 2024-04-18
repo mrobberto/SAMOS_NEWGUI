@@ -11,30 +11,31 @@ from ginga.util import iqcalc
 from ginga.AstroImage import AstroImage
 
 import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
 
 from samos.ccd import CCD
 from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors import PCM
-from samos.soar.Class_SOAR import Class_SOAR
-from samos.system import WriteFITSHead as WFH
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-from samos.tk_utilities.utils import about_box
+from samos.soar import SOAR
+from samos.system.fits_header import FITSHead
+from samos.system.config import SAMOSConfig
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage
 from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
+from samos.utilities.tk import about_box
 
 
-class App(tk.Tk):
-    def __init__(self):
-        super().__init__()
+class App(ttk.Window):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.logger = logging.getLogger('samos')
         self.logger.setLevel(logging.INFO)
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(logging.INFO)
         self.logger.addHandler(handler)
         self.logger.info("Initializing App")
-        self.PAR = SAMOS_Parameters()
+        self.PAR = SAMOSConfig()
+        self.main_fits_header = FITSHead(self.PAR, self.logger)
         self.simulator = None
         self.protocol("WM_DELETE_WINDOW", self.destroy)
         
@@ -43,15 +44,15 @@ class App(tk.Tk):
         self.samos_classes = {
             "CCD": CCD(self.PAR, DMD, self.logger),
             "DMD": DMD,
-            "PCM": PCM(self.PAR, self.logger),
-            "SOAR": Class_SOAR(self.PAR),
-            "main_fits_header": WFH.FITSHead(),
+            "PCM": PCM(self.PAR, self.logger, self.main_fits_header),
+            "SOAR": SOAR(self.PAR),
+            "main_fits_header": self.main_fits_header,
             "PAR": self.PAR
         }
         
         # Setting up Initial Things
         self.title("SAMOS Control System")
-        self.resizable(False, False)
+        self.resizable(True, True)
 
         # Create a container Notebook
         self.container = ttk.Notebook(self)
@@ -183,9 +184,9 @@ class App(tk.Tk):
 
 
 def run_samos():
-    app = App()
-    combostyle = ttk.Style()
-    combostyle.configure("TCombobox", fieldbackground="dark gray", foreground="black", background="white")
+    app = App(themename="cosmo")
+#     combostyle = ttk.Style()
+#     combostyle.configure("TCombobox", fieldbackground="dark gray", foreground="black", background="white")
     app.mainloop()
 
 

@@ -10,8 +10,7 @@ import numpy as np
 import time
 
 import tkinter as tk
-from tkinter import ttk
-
+import ttkbootstrap as ttk
 from samos.utilities import get_fits_dir
 from samos.utilities.constants import *
 
@@ -135,14 +134,10 @@ class ExposureProgressWindow(tk.Toplevel):
         self.main_fits_header.set_param("FILENAME", f'{file_name.name}')
         self.main_fits_header.set_param("FILEDIR", f'{file_name.parent}')
         # Nightly Parameters
-        self.main_fits_header.set_param("OBSERVERS", self.PAR.PotN["Observer"])
-        self.main_fits_header.set_param("PROGRAMID", self.PAR.PotN["Program ID"])
-        self.main_fits_header.set_param("TELOPERATORS", self.PAR.PotN["Telescope Operator"])
         self.main_fits_header.set_param("OBJNAME", params["image_name"])
         self.main_fits_header.set_param("OBSTYPE", image_type)
         self.main_fits_header.set_param("COMBINED", "F")
         self.main_fits_header.set_param("NCOMBINED", 0)
-        self.main_fits_header.create_fits_header(original_header)
 
 
     def handle_exposure(self):
@@ -167,15 +162,14 @@ class ExposureProgressWindow(tk.Toplevel):
                 if exptype == "sci":
                     if not hasattr(self.main_fits_header, "dmdmap"):
                         try:
-                            dmd_hdu = self.create_dmd_pattern_hdu(self.main_fits_header.output_header)
+                            dmd_hdu = self.create_dmd_pattern_hdu(original_header)
                             hdul.append(dmd_hdu)
                         except Exception as e:
                             self.logger.error("Unable to add DMD map to main fits header")
                             self.logger.error("Error was {}".format(e))
 
                 # update header for new filename/filepath
-                self.main_fits_header.create_fits_header(main_fits_header.output_header)
-                hdul[0].header = self.main_fits_header.output_header
+                hdul[0].header = self.main_fits_header.create_fits_header(original_header)
 
 
     def combine_files(self):
@@ -302,8 +296,7 @@ class ExposureProgressWindow(tk.Toplevel):
         self.main_fits_header.set_param("combined", "T")
         self.mail_fits_header.set_param("ncombined", len(files))
         self.main_fits_header.set_param("obstype", image_type.upper())
-        self.main_fits_header.create_fits_header(superfile_header)
-        super_hdu = fits.PrimaryHDU(header=self.main_fits_header.output_header, data=superfile_data)
+        super_hdu = fits.PrimaryHDU(header=elf.main_fits_header.create_fits_header(superfile_header), data=superfile_data)
         hdul = fits.HDUList(hdus=[super_hdu])
         if image_type == "sci" and dmd_hdu is not None:
             hdul.append(dmd_hdu)
@@ -314,8 +307,7 @@ class ExposureProgressWindow(tk.Toplevel):
         self.main_fits_header.set_param("combined", "T")
         self.mail_fits_header.set_param("ncombined", len(files))
         self.main_fits_header.set_param("obstype", image_type.upper())
-        self.main_fits_header.create_fits_header(superfile_header)
-        super_hdu = fits.PrimaryHDU(header=self.main_fits_header.output_header, data=superfile_data)
+        super_hdu = fits.PrimaryHDU(header=self.main_fits_header.create_fits_header(superfile_header), data=superfile_data)
         hdul = fits.HDUList(hdus=[super_hdu])
         if image_type == "sci" and dmd_hdu is not None:
             hdul.append(dmd_hdu)
@@ -339,8 +331,6 @@ class ExposureProgressWindow(tk.Toplevel):
             dmd_hdu.header["DMDMAP"] = primary_header["DMDMAP"]
         elif 'unavail' in primary_header["GRIDFNAM"]:
             dmd_hdu.header["GRIDFNAM"] = primary_header["GRIDFNAM"]
-
-        self.main_fits_header.create_fits_header(primary_header)
         return dmd_hdu
 
 

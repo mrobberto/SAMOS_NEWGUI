@@ -14,10 +14,10 @@ import pandas as pd
 from PIL import Image, ImageTk, ImageOps
 
 import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
 from tkinter.filedialog import askopenfilename
 
-from samos.hadamard.generate_DMD_patterns_samos import make_S_matrix_masks, make_H_matrix_masks
+from samos.hadamard.patterns import make_S_matrix_masks, make_H_matrix_masks
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
@@ -40,34 +40,34 @@ class DMDPage(SAMOSFrame):
 
         # dmd.initialize()
         w = ttk.Button(button_frame, text="Initialize", command=self.dmd_initialize)
-        w.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        w.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", False)]
 
         # Basic Patterns
         ttk.Label(button_frame, text="Basic Patterns:", anchor="w").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         w = ttk.Button(button_frame, text="Blackout", command=self.dmd_whiteout)
-        w.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        w.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         w = ttk.Button(button_frame, text="Whiteout", command=self.dmd_blackout)
-        w.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        w.grid(row=3, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         w = ttk.Button(button_frame, text="Checkerboard",command=self.dmd_checkerboard)
-        w.grid(row=3, column=2, sticky=TK_STICKY_ALL)
+        w.grid(row=3, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         w = ttk.Button(button_frame, text="Invert", command=self.dmd_invert)
-        w.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        w.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         w = ttk.Button(button_frame, text="AntInvert", command=self.dmd_antinvert)
-        w.grid(row=4, column=2, sticky=TK_STICKY_ALL)
+        w.grid(row=4, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
         # Custom Patterns
         ttk.Label(button_frame, text="Custom Patterns:", anchor="w").grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         w = ttk.Button(button_frame, text="Edit DMD Map", command=self.browse_map)
-        w.grid(row=7, column=0, sticky=TK_STICKY_ALL)
+        w.grid(row=7, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         w = ttk.Button(button_frame, text="Load DMD Map", command=self.load_map)
-        w.grid(row=7, column=2, sticky=TK_STICKY_ALL)
+        w.grid(row=7, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         label_filename = ttk.Label(button_frame, text="Current DMD Map:", anchor="w")
         label_filename.grid(row=8, column=0, sticky=TK_STICKY_ALL)
@@ -96,18 +96,18 @@ class DMDPage(SAMOSFrame):
 
         # Slit Buttons
         w = ttk.Button(button_frame, text="Add", command=self.add_slit)
-        w.grid(row=13, column=0, sticky=TK_STICKY_ALL)
+        w.grid(row=13, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
         w = ttk.Button(button_frame, text="Push", command=self.push_current_map)
-        w.grid(row=13, column=1, sticky=TK_STICKY_ALL)
+        w.grid(row=13, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
         w = ttk.Button(button_frame, text="Save", command=self.save_map)
-        w.grid(row=13, column=2, sticky=TK_STICKY_ALL)
+        w.grid(row=13, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
         # Load Slit
         w = ttk.Button(button_frame, text="Load Slit List", command=self.load_slits)
-        w.grid(row=15, column=2, sticky=TK_STICKY_ALL)
+        w.grid(row=15, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         ttk.Label(button_frame, text="Current Slit List").grid(row=16, column=0, sticky=TK_STICKY_ALL)
         self.str_filename_slits = tk.StringVar()
@@ -123,16 +123,19 @@ class DMDPage(SAMOSFrame):
 
         # Matrix Type and order
         self.SHMatrix_Checked = tk.StringVar(self, "S")
-        tk.Radiobutton(hadamard_conf_frame, text="S Matrix", variable=self.SHMatrix_Checked, value="S", 
-                        command=self.set_SH_matrix).grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        tk.Radiobutton(hadamard_conf_frame, text="H Matrix", variable=self.SHMatrix_Checked, value="H", 
-                        command=self.set_SH_matrix).grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        w = ttk.Radiobutton(hadamard_conf_frame, text="S Matrix", variable=self.SHMatrix_Checked, value="S", command=self.set_SH_matrix)
+        w.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        w = ttk.Radiobutton(hadamard_conf_frame, text="H Matrix", variable=self.SHMatrix_Checked, value="H", command=self.set_SH_matrix)
+        w.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
         ttk.Label(hadamard_conf_frame, text="Order: ").grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
         self.Sorders = (3, 7, 11, 15, 19, 23, 31, 35, 43, 47, 63, 71, 79, 83, 103, 127, 255)
         self.Horders = (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)
         self.order = tk.IntVar(self, self.Sorders[1])
         self.order_menu = ttk.OptionMenu(hadamard_conf_frame, self.order, *self.Sorders, command=self.set_SH_matrix)
         self.order_menu.grid(row=0, column=3, rowspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[self.order_menu] = [("condition", self, "initialized", True)]
 
         # Slit Dimensions
         ttk.Label(hadamard_conf_frame, text="Slit Width:", anchor="w").grid(row=3, column=0, sticky=TK_STICKY_ALL)
@@ -140,11 +143,13 @@ class DMDPage(SAMOSFrame):
         box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_width, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[box] = [("condition", self, "initialized", True)]
         ttk.Label(hadamard_conf_frame, text="Length:", anchor="w").grid(row=3, column=3, sticky=TK_STICKY_ALL)
         self.slit_length = tk.IntVar(self, 256)
         box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_length, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=4, sticky=TK_STICKY_ALL)
+        self.check_widgets[box] = [("condition", self, "initialized", True)]
 
         # Field Centre
         ttk.Label(hadamard_conf_frame, text="Field Centre:", anchor="w").grid(row=4, column=0, sticky=TK_STICKY_ALL)
@@ -162,8 +167,8 @@ class DMDPage(SAMOSFrame):
         txt.grid(row=5, column=1, columnspan=4, sticky=TK_STICKY_ALL)
         
         # Generate
-        w = ttk.Button(hadamard_conf_frame, text="GENERATE", command=self.generate_hts)
-        w.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        w = ttk.Button(hadamard_conf_frame, text="GENERATE", command=self.generate_hts, bootstyle='success')
+        w.grid(row=6, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
         # Name / Rename
@@ -172,11 +177,12 @@ class DMDPage(SAMOSFrame):
         tk.Label(hadamard_conf_frame, textvariable=self.mask_name).grid(row=8, column=1, columnspan=4, sticky=TK_STICKY_ALL)
         rename_button_text = "Rename '{}' to:".format(self.mask_name.get())
         self.rename_button = ttk.Button(hadamard_conf_frame, text=rename_button_text, command=self.rename_masks_file)
-        self.rename_button.grid(row=9, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.rename_button.grid(row=9, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[self.rename_button] = [("condition", self, "initialized", True), ("tknot", self.mask_name, "")]
         self.rename_value = tk.StringVar(self, "")
         e = tk.Entry(hadamard_conf_frame, textvariable=self.rename_value)
         e.grid(row=9, column=2, columnspan=3, sticky=TK_STICKY_ALL)
+        self.check_widgets[e] = [("condition", self, "initialized", True)]
 
         # Ra/Dec
         radec_frame = ttk.LabelFrame(hadamard_frame, text="Generate from RA/DEC")
@@ -185,14 +191,16 @@ class DMDPage(SAMOSFrame):
         self.target_ra = tk.DoubleVar(self, 1.234567)
         e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
         e.grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[e] = [("condition", self, "initialized", True)]
         ttk.Label(radec_frame, text="(decimal degrees)").grid(row=0, column=3, sticky=TK_STICKY_ALL)
         ttk.Label(radec_frame, text="Target DEC:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.target_dec = tk.DoubleVar(self, 1.234567)
         e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
         e.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[e] = [("condition", self, "initialized", True)]
         ttk.Label(radec_frame, text="(decimal degrees)").grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        w = ttk.Button(radec_frame, text="GENERATE", command=self.generate_hts_from_radec)
-        w.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        w = ttk.Button(radec_frame, text="GENERATE", command=self.generate_hts_from_radec, bootstyle='success')
+        w.grid(row=2, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         self.set_enabled()
 

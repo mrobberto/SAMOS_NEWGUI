@@ -21,14 +21,11 @@ import pandas as pd
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
 
 import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
 import tksheet
 from tkinter.filedialog import askopenfilename
 
 from samos.dmd.utilities import iraf_gridsource_find, fit_wcs_with_sip
-from samos.dmd.pixel_mapping import Coord_Transform_Helpers as CTH
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-from samos.tk_utilities.utils import about_box
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.utils import dmd_to_ccd
 from samos.utilities.constants import *

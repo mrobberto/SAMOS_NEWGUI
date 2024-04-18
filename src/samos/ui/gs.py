@@ -13,7 +13,7 @@ from ginga.tkw.ImageViewTk import CanvasView
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
 
 import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
 from tkinter.filedialog import askopenfilename
 
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
@@ -26,7 +26,6 @@ from .gs_query_frame import GSQueryFrame
 class GSPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "Guide Star", **kwargs)
-        self.main_fits_header.create_main_params_dict()
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
         self.loaded_regfile = None
@@ -95,8 +94,8 @@ class GSPage(SAMOSFrame):
         s.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # SLIT POINTER ENABLED
         self.guide_star_pickup_enabled = tk.IntVar(self, 1)
-        b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
-        b.grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star, bootstyle="success")
+        b.grid(row=2, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
         # Candidate Guide Star Co-ordinates
         self.gs_ra = tk.DoubleVar(self, self.ra.get())
         ttk.Label(frame, text="RA:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
@@ -116,8 +115,8 @@ class GSPage(SAMOSFrame):
         self.gs_mag = tk.DoubleVar(self, 0.0)
         ttk.Label(frame, text="Magnitude:").grid(row=7, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_mag).grid(row=7, column=1, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR)
-        b.grid(row=8, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR, bootstyle="success")
+        b.grid(row=8, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Ginga Tools Box
         frame = ttk.LabelFrame(self.main_frame, text="Image Tools")
@@ -145,12 +144,12 @@ class GSPage(SAMOSFrame):
         e.grid(row=0, column=4, sticky=TK_STICKY_ALL)
         e.bind("<Return>", self.set_drawparams)
         # Buttons
-        ttk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Save Canvas", command=self.save_canvas).grid(row=1, column=2, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Open Canvas", command=self.open_canvas).grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Save Image", command=self.save_gs).grid(row=1, column=4, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Load Image", command=self.load_gs).grid(row=1, column=5, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Save Canvas", command=self.save_canvas).grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Open Canvas", command=self.open_canvas).grid(row=1, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Save Image", command=self.save_gs).grid(row=1, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        ttk.Button(frame, text="Load Image", command=self.load_gs).grid(row=1, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
 
     def set_drawparams(self, evt):

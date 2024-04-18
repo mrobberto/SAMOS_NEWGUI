@@ -23,9 +23,7 @@ from pathlib import Path
 import shutil
 
 import tkinter as tk
-from tkinter import ttk
-
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
+import ttkbootstrap as ttk
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 from samos.utilities.tk import check_widgets

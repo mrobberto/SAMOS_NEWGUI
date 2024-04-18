@@ -7,12 +7,10 @@ import logging
 import os
 from pathlib import Path
 import shutil
+import yaml
 
 import tkinter as tk
-from tkinter import ttk
-
-from samos.system.SAMOS_Parameters_out import SAMOS_Parameters
-from samos.tk_utilities.utils import about_box
+import ttkbootstrap as ttk
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 
@@ -23,6 +21,13 @@ class ConfigPage(SAMOSFrame):
 
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "SAMOS Configuration", **kwargs)
+        self.prefs_dict = {}
+        try:
+            prefs_file = get_data_file("system", "preferences.yaml")
+            with open(prefs_file, 'r') as inf:
+                self.prefs_dict = yaml.safe_load(inf)
+        except FileNotFoundError as e:
+            self.logger.warning("No preferences file found")
 
         # Set up directories frame
         frame = ttk.LabelFrame(self.main_frame, text="Files", borderwidth=2)
@@ -31,23 +36,23 @@ class ConfigPage(SAMOSFrame):
         initial_files_location = "module"
         if "SAMOS_FILES_LOCATION" in os.environ:
             initial_files_location = os.environ["SAMOS_FILES_LOCATION"]
+        elif "files_location" in self.prefs_dict:
+            initial_files_location = self.prefs_dict["files_location"]
+            if (initial_files_location == "custom") and ("custom_files_location" in self.prefs_dict):
+                os.environ["SAMOS_CUSTOM_FILES_LOCATION"] = self.prefs_dict["custom_files_location"]
         self.files_loc = tk.StringVar(self, initial_files_location)
         custom_files_initial = ""
         if "SAMOS_CUSTOM_FILES_LOCATION" in os.environ:
             custom_files_initial = os.environ["SAMOS_CUSTOM_FILES_LOCATION"]
         self.custom_files_path = tk.StringVar(self, custom_files_initial)
         ttk.Label(frame, text="Store files:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Radiobutton(frame, text="In Module", variable=self.files_loc, value="module", command=self.set_files_base,
-                            anchor=tk.W)
+        b = ttk.Radiobutton(frame, text="In Module", variable=self.files_loc, value="module", command=self.set_files_base)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Radiobutton(frame, text="Home Directory", variable=self.files_loc, value="home", command=self.set_files_base,
-                            anchor=tk.W)
+        b = ttk.Radiobutton(frame, text="Home Directory", variable=self.files_loc, value="home", command=self.set_files_base)
         b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Radiobutton(frame, text="Working Directory", variable=self.files_loc, value="cwd", command=self.set_files_base,
-                            anchor=tk.W)
+        b = ttk.Radiobutton(frame, text="Working Directory", variable=self.files_loc, value="cwd", command=self.set_files_base)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Radiobutton(frame, text="Custom Location", variable=self.files_loc, value="custom", command=self.set_files_base,
-                            anchor=tk.W)
+        b = ttk.Radiobutton(frame, text="Custom Location", variable=self.files_loc, value="custom", command=self.set_files_base)
         b.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, textvariable=self.custom_files_path).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         tk.Label(frame, text="Nightly Files Location:", anchor=tk.W).grid(row=5, column=0, sticky=TK_STICKY_ALL)
@@ -58,7 +63,10 @@ class ConfigPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="Servers", borderwidth=2)
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        self.ip_loc = tk.StringVar(self, "inside")
+        initial_ip_loc = "inside"
+        if "ip_loc" in self.prefs_dict:
+            initial_ip_loc = self.prefs_dict["ip_loc"]
+        self.ip_loc = tk.StringVar(self, initial_ip_loc)
         b = tk.Radiobutton(frame, text='Inside', variable=self.ip_loc, value='inside', command=self.load_IP_default)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text='Outside (with VPN)', variable=self.ip_loc, value='outside', command=self.load_IP_default)
@@ -98,64 +106,79 @@ class ConfigPage(SAMOSFrame):
         b = ttk.Button(frame, text="Initialize Components", command=self.startup)
         b.grid(row=6, column=0, columnspan=2, sticky=TK_STICKY_ALL)
 
-        # Other entries
+        # Observer Data
         frame = ttk.LabelFrame(self.main_frame, text="Observer Data", borderwidth=2)
         frame.grid(row=0, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
-
+        # Telescope
         ttk.Label(frame, text="Telescope").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.Telescope = tk.StringVar()
-        self.Telescope.set(self.PAR.PotN['Telescope'])
-        tk.Entry(frame, width=20, textvariable=self.Telescope).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-
+        self.Telescope = tk.StringVar(self, self.PAR.PotN['Telescope'])
+        ttk.Entry(frame, width=20, textvariable=self.Telescope).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        # Program ID
         ttk.Label(frame, text="Program ID").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.Program_ID = tk.StringVar()
-        self.Program_ID.set(self.PAR.PotN['Program ID'])
-        tk.Entry(frame, width=20, textvariable=self.Program_ID).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-
+        self.Program_ID = tk.StringVar(self, self.PAR.PotN['Program ID'])
+        ttk.Entry(frame, width=20, textvariable=self.Program_ID).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        # Proposal Title
         ttk.Label(frame, text="Proposal Title").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        self.Proposal_Title = tk.StringVar()
-        self.Proposal_Title.set(self.PAR.PotN['Proposal Title'])
-        tk.Entry(frame, width=20, textvariable=self.Proposal_Title).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-
+        self.Proposal_Title = tk.StringVar(self, self.PAR.PotN['Proposal Title'])
+        ttk.Entry(frame, width=20, textvariable=self.Proposal_Title).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        # Principal Investigator
         ttk.Label(frame, text="Principal Investigator").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        self.Principal_Investigator = tk.StringVar()
-        self.Principal_Investigator.set(self.PAR.PotN['Principal Investigator'])
-        tk.Entry(frame, width=20, textvariable=self.Principal_Investigator).grid(row=3, column=1, sticky=TK_STICKY_ALL)
-
+        self.Principal_Investigator = tk.StringVar(self, self.PAR.PotN['Principal Investigator'])
+        ttk.Entry(frame, width=20, textvariable=self.Principal_Investigator).grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        # Observer
         ttk.Label(frame, text="Observer").grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        self.Observer = tk.StringVar()
-        self.Observer.set(self.PAR.PotN['Observer'])
-        tk.Entry(frame, width=20, textvariable=self.Observer).grid(row=4, column=1, sticky=TK_STICKY_ALL)
-
+        self.Observer = tk.StringVar(self, self.PAR.PotN['Observer'])
+        ttk.Entry(frame, width=20, textvariable=self.Observer).grid(row=4, column=1, sticky=TK_STICKY_ALL)
+        # TO
         ttk.Label(frame, text="Telescope Operator ").grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        self.TO_var = tk.StringVar()
-        self.TO_var.set(self.PAR.PotN['Telescope Operator'])
-        tk.Entry(frame, width=20, textvariable=self.TO_var).grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        self.Telescope_Operator = tk.StringVar(self, self.PAR.PotN['Telescope Operator'])
+        ttk.Entry(frame, width=20, textvariable=self.Telescope_Operator).grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        # Save        
+        w = ttk.Button(frame, text="Save Changes", command=self.save_potn_changes)
+        w.grid(row=6, column=0, sticky=TK_STICKY_ALL)
 
         # Initialize
         frame = ttk.LabelFrame(self.main_frame, text="Logbook", borderwidth=2)
         frame.grid(row=1, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        b = ttk.Button(frame, text="Initialize Logbook", command=self.LogBookstartup)
-        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.init_logbook_button = ttk.Button(frame, text="Initialize Logbook", command=self.LogBookstartup)
+        self.init_logbook_label = ttk.Label(frame, text="Logbook File:")
+        self.logbook_location = tk.StringVar(self, self.PAR.logfile_name)
+        self.logbook_location_label = ttk.Label(frame, textvariable=self.logbook_location)
+        if self.PAR.logbook_exists:
+            self.init_logbook_label.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+            self.logbook_location_label.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        else:
+            self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
 
+    @check_enabled
     def set_files_base(self):
         os.environ["SAMOS_FILES_LOCATION"] = self.files_loc.get()
+        self.prefs_dict["files_location"] = self.files_loc.get()
         if self.files_loc.get() == "custom" and (not Path(self.custom_files_path.get()).is_dir()):
             custom_loc = ttk.filedialog.askdirectory(initialdir=Path.cwd(), title="Select a Location to store files")
             self.custom_files_path.set(custom_loc)
             os.environ["SAMOS_CUSTOM_FILES_LOCATION"] = custom_loc
+            self.prefs_dict["custom_files_location"] = custom_loc
+        prefs_file = get_data_file("system") / "preferences.yaml"
+        with open(prefs_file, "w") as outf:
+            yaml.dump(self.prefs_dict, outf, default_flow_style=False)
         self.nightly_files_dir.set(get_fits_dir())
 
 
-    def LogBookstartup(self):
-        self.PAR.PotN['Program ID'] = self.Program_ID.get()
-        self.PAR.PotN['Observer'] = self.Observer.get()
-        self.PAR.PotN['Telescope Operator'] = self.TO_var.get()
-        self.PAR.PotN['Telescope'] = self.Telescope.get()
-        self.PAR.PotN['PI'] = self.Principal_Investigator.get()
-        self.PAR.PotN['ProposalTitle'] = self.Proposal_Title.get()
+    def save_potn_changes(self):
+        self.PAR.PotN['Telescope'] = self.Telescope.get().strip()
+        self.PAR.PotN['Program ID'] = self.Program_ID.get().strip()
+        self.PAR.PotN['Proposal Title'] = self.Proposal_Title.get().strip()
+        self.PAR.PotN['Principal Investigator'] = self.Principal_Investigator.get().strip()
+        self.PAR.PotN['Observer'] = self.Observer.get().strip()
+        self.PAR.PotN['Telescope Operator'] = self.Telescope_Operator.get().strip()
         self.PAR.update_PotN()
+
+
+    @check_enabled
+    def LogBookstartup(self):
+        self.save_potn_changes()
         self.PAR.create_log_file()
 
 
@@ -187,6 +210,10 @@ class ConfigPage(SAMOSFrame):
 
     @check_enabled
     def load_IP_default(self):
+        self.prefs_dict["ip_loc"] = self.ip_loc.get()
+        prefs_file = get_data_file("system") / "preferences.yaml"
+        with open(prefs_file, "w") as outf:
+            yaml.dump(self.prefs_dict, outf, default_flow_style=False)
         if self.ip_loc.get() == 'inside':
             ip_file = get_data_file("system", "IP_addresses_default_inside.csv")
         elif self.ip_loc.get() == 'outside':
@@ -268,6 +295,18 @@ class ConfigPage(SAMOSFrame):
             self.parent.destroy_simulator()
 
         return self.PAR.IP_dict
+
+
+    def set_enabled(self, run_from_main=False):
+        super().set_enabled(run_from_main=run_from_main)
+        if self.PAR.logbook_exists:
+            self.init_logbook_button.grid_forget()
+            self.init_logbook_label.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+            self.logbook_location_label.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        else:
+            self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+            self.init_logbook_label.grid_forget()
+            self.logbook_location_label.grid_forget()            
 
 
     SYSTEMS = ["PCM", "CCD", "DMD", "SOAR", "SAMI"]

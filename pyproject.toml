@@ -1,6 +1,7 @@
 [build-system]
 requires = ["setuptools>=61.0", "matplotlib", "astropy<6", "photutils", "ginga",
-            "astroquery", "numpy", "pandas", "aplpy", "regions", "tksheet", "twirl"]
+            "astroquery", "numpy", "pandas", "aplpy", "regions", "tksheet", "twirl",
+            "ttkbootstrap"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,11 +10,13 @@ authors = [
   { name="Brian York", email="york@stsci.edu" },
   { name="Massimo Robberto", email="robberto@stsci.edu" },
   { name="Jonathan Hoover", email="unknown@example.com" },
+  { name="Dana Koeppe", email="dkoeppe1@jhu.edu" },
   { name="Kathleen Lorraine Oram", email="kxo3594@g.rit.edu" }
 ]
 maintainers = [
   { name="Brian York", email="york@stsci.edu" },
   { name="Massimo Robberto", email="robberto@stsci.edu" },
+  { name="Dana Koeppe", email="dkoeppe1@jhu.edu" }
 ]
 description = "Control Software for the SAMOS astronomical instrument"
 readme = "README.md"
