@@ -93,7 +93,7 @@ Observer Data
 This data is taken from (and saved to) the Parameters of the Night (PotN) file (found on 
 disk as parameters_of_the_night.yaml). SAMOS stores a default PotN file in its 
 data/system directory but, on launch, will copy that file to the currently nightly data 
-directory ($SAMOS_FILES_LOCATION/SISI_images/SAMOS_date/) if no such file exists in that 
+directory ($SAMOS_FILES_LOCATION/SISI_images/SAMOS_<date>/) if no such file exists in that 
 directory. Any changes made to the values in the configuration tab will be saved to the 
 nightly file, rather than to the defaults file, and if you create a nightly file before 
 launching SAMOS, then the values in that file will be used to populate these tabs.

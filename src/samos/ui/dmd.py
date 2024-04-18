@@ -39,25 +39,25 @@ class DMDPage(SAMOSFrame):
         hadamard_frame.grid(row=0, column=3, sticky=TK_STICKY_ALL)
 
         # dmd.initialize()
-        w = ttk.Button(button_frame, text="Initialize", command=self.dmd_initialize)
+        w = ttk.Button(button_frame, text="Initialize", command=self.dmd_initialize, bootstyle="success")
         w.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", False)]
 
         # Basic Patterns
         ttk.Label(button_frame, text="Basic Patterns:", anchor="w").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        w = ttk.Button(button_frame, text="Blackout", command=self.dmd_whiteout)
+        w = ttk.Button(button_frame, text="Blackout", command=self.dmd_whiteout, bootstyle="success")
         w.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Whiteout", command=self.dmd_blackout)
+        w = ttk.Button(button_frame, text="Whiteout", command=self.dmd_blackout, bootstyle="success")
         w.grid(row=3, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Checkerboard",command=self.dmd_checkerboard)
+        w = ttk.Button(button_frame, text="Checkerboard",command=self.dmd_checkerboard, bootstyle="success")
         w.grid(row=3, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Invert", command=self.dmd_invert)
+        w = ttk.Button(button_frame, text="Invert", command=self.dmd_invert, bootstyle="success")
         w.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="AntInvert", command=self.dmd_antinvert)
+        w = ttk.Button(button_frame, text="AntInvert", command=self.dmd_antinvert, bootstyle="success")
         w.grid(row=4, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
@@ -98,7 +98,7 @@ class DMDPage(SAMOSFrame):
         w = ttk.Button(button_frame, text="Add", command=self.add_slit)
         w.grid(row=13, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
-        w = ttk.Button(button_frame, text="Push", command=self.push_current_map)
+        w = ttk.Button(button_frame, text="Push", command=self.push_current_map, bootstyle="success")
         w.grid(row=13, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
         w = ttk.Button(button_frame, text="Save", command=self.save_map)
@@ -167,7 +167,7 @@ class DMDPage(SAMOSFrame):
         txt.grid(row=5, column=1, columnspan=4, sticky=TK_STICKY_ALL)
         
         # Generate
-        w = ttk.Button(hadamard_conf_frame, text="GENERATE", command=self.generate_hts, bootstyle='success')
+        w = ttk.Button(hadamard_conf_frame, text="GENERATE", command=self.generate_hts)
         w.grid(row=6, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
@@ -199,7 +199,7 @@ class DMDPage(SAMOSFrame):
         e.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self, "initialized", True)]
         ttk.Label(radec_frame, text="(decimal degrees)").grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        w = ttk.Button(radec_frame, text="GENERATE", command=self.generate_hts_from_radec, bootstyle='success')
+        w = ttk.Button(radec_frame, text="GENERATE", command=self.generate_hts_from_radec)
         w.grid(row=2, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         self.set_enabled()
