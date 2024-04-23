@@ -145,6 +145,13 @@ hardware. The following basic patterns are available:
 The checkerboard pattern is not currently stored in the DMD as a quick pattern, and so 
 although the selection button is available, it is disabled by default.
 
+In addition to the basic pattern sets, there are also advanced pattern features.
+
+* The "Edit DMD Map" button asks the user to select a pattern file, and attempts to open 
+  it in the default available text editor. It is provided primarily as a convenience.
+* The "Load DMD Map" button loads an existing pattern file and sends it to the DMD as a 
+  commanded pattern.
+
 .. [1] Although they may affect what parameters are later sent to the hardware. For 
    example, selecting a filter or grism setting in the main page does not command the 
    hardware, but does affect the command that will be sent if the corresponding "set" 
