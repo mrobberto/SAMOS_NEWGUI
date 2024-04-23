@@ -25,6 +25,8 @@ class DigitalMicroMirrorDevice():
         self.is_on = False
         # Set invert to false
         self.invert = False
+        # Are the extended basic patterns (e.g. checkerboard) available as single commands?
+        self.extended_patterns = False
 
 
     def initialize(self, **kwargs):

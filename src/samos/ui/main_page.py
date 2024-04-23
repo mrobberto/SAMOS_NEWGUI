@@ -917,7 +917,7 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def load_existing_file(self):
-        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images,                                                          title="Select a File",
+        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
                                                     filetypes=(("fits files", "*.fits"), ("all files","*.*")))
         self.fits_image_ql  = loaded_file
         self.Display(loaded_file)

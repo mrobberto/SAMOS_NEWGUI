@@ -118,6 +118,33 @@ Logbook
 This frame either allows the user to create a nightly logbook (if none exists) or shows 
 the location of the current nightly logbook (if one already exists).
 
+DMD Tab
+=======
+
+.. image:: src/samos/data/documentation/images/dmd.png
+
+The DMD tab allows the user to select and generate DMD configurations. While some of the 
+basic functionality can be found on the main tab, fine control over the DMD pattern is 
+best done on this tab. The DMD tab has three major frames, and one display area.
+
+Controls
+--------
+
+This frame allows the DMD connection to be initialized (and most DMD functions will not be 
+available until the hardware has been initialized), allows basic DMD patterns to be set, 
+allows DMD maps to be loaded and saved, and allows DMD patterns to be pushed to the 
+hardware. The following basic patterns are available:
+
+* Blackout sets all mirrors to the spectroscopic channel (and they are therefore "off" to
+  the imaging channel).
+* Whiteout sets all mirrors to the imaging channel (and they are therefore "off" to the 
+  spectroscopic channel)
+* Invert inverts the current pattern, and sets the "inverted" flag to True
+* Antinvert also inverts the current pattern, and sets the "inverted" flag to False
+
+The checkerboard pattern is not currently stored in the DMD as a quick pattern, and so 
+although the selection button is available, it is disabled by default.
+
 .. [1] Although they may affect what parameters are later sent to the hardware. For 
    example, selecting a filter or grism setting in the main page does not command the 
    hardware, but does affect the command that will be sent if the corresponding "set" 

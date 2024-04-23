@@ -57,7 +57,7 @@ def check_widgets(widgets):
 #                     sys.stdout.write("DISABLING\n")
                     break
             elif condition[0] == "valid_file":
-                if (condition[1] is not None) and (not condition[1].is_file()):
+                if (condition[1] is None) or (not condition[1].is_file()):
                     widget["state"] = "disabled"
                     widget.configure(state="disabled")
 #                     sys.stdout.write("DISABLING\n")

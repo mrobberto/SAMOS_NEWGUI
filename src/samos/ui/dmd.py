@@ -29,6 +29,7 @@ class DMDPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "DMD Control", **kwargs)
         self.initialized = False
+        self.map = None
         
         # Set up basic frames
         button_frame = ttk.LabelFrame(self.main_frame, text="Controls", borderwidth=3, width=250)
@@ -45,15 +46,15 @@ class DMDPage(SAMOSFrame):
 
         # Basic Patterns
         ttk.Label(button_frame, text="Basic Patterns:", anchor="w").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        w = ttk.Button(button_frame, text="Blackout", command=self.dmd_whiteout, bootstyle="success")
+        w = ttk.Button(button_frame, text="Blackout", command=self.dmd_blackout, bootstyle="success")
         w.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Whiteout", command=self.dmd_blackout, bootstyle="success")
+        w = ttk.Button(button_frame, text="Whiteout", command=self.dmd_whiteout, bootstyle="success")
         w.grid(row=3, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         w = ttk.Button(button_frame, text="Checkerboard",command=self.dmd_checkerboard, bootstyle="success")
         w.grid(row=3, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.check_widgets[w] = [("condition", self, "initialized", True), ("condition", self.DMD, "extended_patterns", True)]
         w = ttk.Button(button_frame, text="Invert", command=self.dmd_invert, bootstyle="success")
         w.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
@@ -66,7 +67,7 @@ class DMDPage(SAMOSFrame):
         w = ttk.Button(button_frame, text="Edit DMD Map", command=self.browse_map)
         w.grid(row=7, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Load DMD Map", command=self.load_map)
+        w = ttk.Button(button_frame, text="Load DMD Map", command=self.load_map, bootstyle="success")
         w.grid(row=7, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         label_filename = ttk.Label(button_frame, text="Current DMD Map:", anchor="w")
@@ -86,7 +87,6 @@ class DMDPage(SAMOSFrame):
         ttk.Label(custom_frame, text="y0").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         self.y0 = tk.IntVar(self, 1024)
         tk.Entry(custom_frame, textvariable=self.y0, width=5).grid(row=0, column=3, sticky=TK_STICKY_ALL)
-
         ttk.Label(custom_frame, text="x1").grid(row=0, column=4, sticky=TK_STICKY_ALL)
         self.x1 = tk.IntVar(self, 540)
         tk.Entry(custom_frame, textvariable=self.x1, width=5).grid(row=0, column=5, sticky=TK_STICKY_ALL)
@@ -103,7 +103,7 @@ class DMDPage(SAMOSFrame):
         self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
         w = ttk.Button(button_frame, text="Save", command=self.save_map)
         w.grid(row=13, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.check_widgets[w] = [("condition", self, "initialized", True), ("condition", self, "map", not None)]
 
         # Load Slit
         w = ttk.Button(button_frame, text="Load Slit List", command=self.load_slits)
@@ -187,22 +187,33 @@ class DMDPage(SAMOSFrame):
         # Ra/Dec
         radec_frame = ttk.LabelFrame(hadamard_frame, text="Generate from RA/DEC")
         radec_frame.grid(row=4, column=0, rowspan=2, sticky=TK_STICKY_ALL)
-        ttk.Label(radec_frame, text="Target RA:", anchor="w").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(radec_frame, text="Load from current WCS", command=self.load_ra_dec)
+        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self, "initialized", True), ("condition", self.PAR, "valid_wcs", True)]
+        ttk.Label(radec_frame, text="Target RA:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.target_ra = tk.DoubleVar(self, 1.234567)
-        e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
-        e.grid(row=0, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = [("condition", self, "initialized", True)]
-        ttk.Label(radec_frame, text="(decimal degrees)").grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        ttk.Label(radec_frame, text="Target DEC:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.target_dec = tk.DoubleVar(self, 1.234567)
         e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
         e.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self, "initialized", True)]
         ttk.Label(radec_frame, text="(decimal degrees)").grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        ttk.Label(radec_frame, text="Target DEC:", anchor="w").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.target_dec = tk.DoubleVar(self, 1.234567)
+        e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
+        e.grid(row=2, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[e] = [("condition", self, "initialized", True)]
+        ttk.Label(radec_frame, text="(decimal degrees)").grid(row=2, column=3, sticky=TK_STICKY_ALL)
         w = ttk.Button(radec_frame, text="GENERATE", command=self.generate_hts_from_radec)
-        w.grid(row=2, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
+        w.grid(row=3, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         self.set_enabled()
+
+
+    @check_enabled
+    def load_ra_dec(self):
+        header = self.PAR.wcs.to_header()
+        sky = self.PAR.wcs.pixel_to_world(header["CRPIX1"], header["CRPIX2"])
+        self.target_ra.set(sky.ra)
+        self.target_dec.set(sky.dec)
 
 
     @check_enabled
