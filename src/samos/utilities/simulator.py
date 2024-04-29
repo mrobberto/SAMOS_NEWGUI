@@ -38,6 +38,22 @@ from samos.system.config import SAMOSConfig
 from samos.system.fits_header import FITSHead
 
 
+def is_socket_closed(sock: socket.socket) -> bool:
+    try:
+        # this will try to read bytes without blocking and also without removing them from buffer (peek only)
+        data = sock.recv(16, socket.MSG_DONTWAIT | socket.MSG_PEEK)
+        if len(data) == 0:
+            return True
+    except BlockingIOError:
+        return False  # socket is open and reading from it would block
+    except ConnectionResetError:
+        return True  # socket was closed for some other reason
+    except Exception as e:
+        logger.exception("unexpected exception when checking if a socket is closed")
+        return False
+    return False
+
+
 class ExitGracefully:
   kill_now = False
   def __init__(self):
@@ -139,10 +155,12 @@ class SimulatedPCM:
 
 class SAMOSSimulator:
     def __init__(self, ip_dict, parent_pipe):
-        self.logger = logging.getLogger("samos")
-        self.logger.setLevel(logging.INFO)
+        self.logger = logging.getLogger("samos_simulator")
+        self.logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.logger.info("Simulator started on localhost.")
         self.ip_dict = ip_dict
@@ -194,6 +212,14 @@ class SAMOSSimulator:
                     component = self.connected_sockets[sock]
                     self.logger.info("Receiving data for {}".format(component))
                     self._receive(connection, component)
+
+            closed_sockets = []
+            for connection in self.connected_sockets:
+                if is_socket_closed(connection):
+                    connection.close()
+                    closed_sockets.append(connection)
+            for connection in closed_sockets:
+                del self.connected_sockets[connection]
             # End for loop
         # End while loop
 
@@ -214,6 +240,8 @@ class SAMOSSimulator:
         except ConnectionResetError:
             self.logger.info("Connnection to {} closed by remote".format(component))
             data = b""
+        except Exception as e:
+            self.logger.warning(f"Other error {e}")
         
         if data:
             text = data.decode("utf-8")

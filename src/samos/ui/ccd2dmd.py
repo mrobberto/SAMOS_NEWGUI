@@ -104,21 +104,32 @@ class CCD2DMDPage(SAMOSFrame):
         filename = askopenfilename(initialdir=get_data_file("dmd.pixel_mapping"), filetypes=[("FITS files", "*fits")],
                                    title="Select a FITS File", parent=self)
 
-        if filename == '':
-            self.logger.error("CCD2DMD Recalibrate: Null selection for FITS image!")
-            ttk.messagebox.showerror(title="No File Selected", message="No FITS grid file selected")
+        try:
+            if filename == '':
+                self.logger.error("CCD2DMD Recalibrate: Null selection for FITS image!")
+                tk.messagebox.showerror(title="No File Selected", message="No FITS grid file selected")
+                return
+
+            self.astro_image = load_data(filename, logger=self.logger)
+            self.fitsimage.set_image(self.astro_image)
+            self.fits_header = self.astro_image.as_hdu().header
+            self.grid_pattern_name = self.fits_header["DMDMAP"]
+            self.dmd_pattern_text.set(self.grid_pattern_name)
+
+            self.grid_pattern_fullPath = get_data_file("dmd.csv.slits", self.grid_pattern_name)
+            dmd_table = pd.read_csv(self.grid_pattern_fullPath)
+            self.dmd_table = dmd_table
+            self.loaded_image = True
+        except KeyError as k:
+            if "DMDMAP" in str(k):
+                msg = "Mapping file must contain a DMDMAP header keyword which contains the name of the corresponding DMD map."
+                tk.messagebox.showerror(title="No DMD Map in FITS Header", message=msg)
+                return
+            tk.messagebox.showerror(title="Missing Key", message=f"Missing Key error for {k}")
             return
-
-        self.loaded_image = True
-        self.astro_image = load_data(filename, logger=self.logger)
-        self.fitsimage.set_image(self.astro_image)
-        self.fits_header = self.astro_image.as_hdu().header
-        self.grid_pattern_name = self.fits_header["DMDMAP"]
-        self.dmd_pattern_text.set(self.grid_pattern_name)
-
-        self.grid_pattern_fullPath = get_data_file("dmd.csv.slits", self.grid_pattern_name)
-        dmd_table = pd.read_csv(self.grid_pattern_fullPath)
-        self.dmd_table = dmd_table
+        except Exception as e:
+            tk.messagebox.showerror(title="ERROR", message=f"ERROR {e} while loading FITS file")
+            return
 
 
     @check_enabled

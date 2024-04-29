@@ -558,17 +558,18 @@ class PCM():
 
     def _send(self, message):
         self.set_ip()
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.connect((self.IP_Host, self.IP_Port))
-                s.sendall(bytearray(f"{message}\n", "utf-8"))
-                data = s.recv(1024)
-                text = data.decode("utf-8").strip()
-                s.close()
-                return text
-            except socket.error as e:
-                self.logger.error("Socket Error {} when contacting motors".format(e))
-                return None
+        text = None
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            s.connect((self.IP_Host, self.IP_Port))
+            s.sendall(bytearray(f"{message}\n", "utf-8"))
+            data = s.recv(1024)
+            text = data.decode("utf-8").strip()
+        except socket.error as e:
+            self.logger.error("Socket Error {} when contacting motors".format(e))
+        finally:
+            s.close()
+        return text
 
 
     def _move_wheel(self, positions, commands, wheel, position):

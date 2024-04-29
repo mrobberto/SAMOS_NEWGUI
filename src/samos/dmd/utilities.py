@@ -151,7 +151,7 @@ def fit_wcs_with_sip(sip_degree, pattern_source_df, plot_hists=True):
             l0, l1 = f"{label[0]}_wcs", f"{label[1]}_wcs_inv"
             ax.hist(data, bins=10, label=l0, alpha=0.8, edgecolor='b', linewidth=1.3)
             ax.hist(data, bins=10, label=l1, alpha=1, edgecolor='red', linestyle='--', hatch="/", fill=False, linewidth=1.3)
-            ax.hists.legend(fontsize=12)
+            ax.legend(fontsize=12)
 
         ax1a_hists.set_title(r"$\Delta$ (DMD$_{X,known}$,DMD$_{X,out}$)")
         ax1b_hists.set_title(r"$\Delta$ (DMD$_{Y,known}$,DMD$_{Y,out}$)")

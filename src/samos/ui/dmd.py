@@ -15,10 +15,10 @@ from PIL import Image, ImageTk, ImageOps
 
 import tkinter as tk
 import ttkbootstrap as ttk
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from samos.hadamard.patterns import make_S_matrix_masks, make_H_matrix_masks
-from samos.utilities import get_data_file, get_temporary_dir
+from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
 
@@ -30,6 +30,7 @@ class DMDPage(SAMOSFrame):
         super().__init__(parent, container, "DMD Control", **kwargs)
         self.initialized = False
         self.map = None
+        self.logger.info("Initializing DMD Page")
         
         # Set up basic frames
         button_frame = ttk.LabelFrame(self.main_frame, text="Controls", borderwidth=3, width=250)
@@ -45,42 +46,43 @@ class DMDPage(SAMOSFrame):
         self.check_widgets[w] = [("condition", self, "initialized", False)]
 
         # Basic Patterns
-        ttk.Label(button_frame, text="Basic Patterns:", anchor="w").grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        w = ttk.Button(button_frame, text="Blackout", command=self.dmd_blackout, bootstyle="success")
+        frame = ttk.LabelFrame(button_frame, text="Basic Patterns")
+        frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Button(frame, text="Blackout", command=self.dmd_blackout, bootstyle="success")
         w.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Whiteout", command=self.dmd_whiteout, bootstyle="success")
+        w = ttk.Button(frame, text="Whiteout", command=self.dmd_whiteout, bootstyle="success")
         w.grid(row=3, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Checkerboard",command=self.dmd_checkerboard, bootstyle="success")
+        w = ttk.Button(frame, text="Checkerboard",command=self.dmd_checkerboard, bootstyle="success")
         w.grid(row=3, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True), ("condition", self.DMD, "extended_patterns", True)]
-        w = ttk.Button(button_frame, text="Invert", command=self.dmd_invert, bootstyle="success")
+        w = ttk.Button(frame, text="Invert", command=self.dmd_invert, bootstyle="success")
         w.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="AntInvert", command=self.dmd_antinvert, bootstyle="success")
+        w = ttk.Button(frame, text="AntInvert", command=self.dmd_antinvert, bootstyle="success")
         w.grid(row=4, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
         # Custom Patterns
-        ttk.Label(button_frame, text="Custom Patterns:", anchor="w").grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        w = ttk.Button(button_frame, text="Edit DMD Map", command=self.browse_map)
-        w.grid(row=7, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        frame = ttk.LabelFrame(button_frame, text="Custom Maps")
+        frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Button(frame, text="Edit DMD Map", command=self.browse_map)
+        w.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(button_frame, text="Load DMD Map", command=self.load_map, bootstyle="success")
-        w.grid(row=7, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        w = ttk.Button(frame, text="Load DMD Map", command=self.load_map, bootstyle="success")
+        w.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        label_filename = ttk.Label(button_frame, text="Current DMD Map:", anchor="w")
-        label_filename.grid(row=8, column=0, sticky=TK_STICKY_ALL)
-        self.str_map_filename = tk.StringVar(self, "none")
-        self.str_map_filename_path = None
-        l = tk.Label(button_frame, textvariable=self.str_map_filename, bg="grey")
-        l.grid(row=8, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Current DMD Map:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.map_filename = tk.StringVar(self, "none")
+        self.map_filename_path = None
+        ttk.Label(frame, textvariable=self.map_filename).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
         # Custom Slit
-        ttk.Label(button_frame, text="Custom Slit:", anchor="w").grid(row=10, column=0, sticky=TK_STICKY_ALL)
-        custom_frame = ttk.Frame(button_frame, borderwidth=0)
-        custom_frame.grid(row=11, column=0, rowspan=1, columnspan=3, sticky=TK_STICKY_ALL)
+        frame = ttk.LabelFrame(button_frame, text="Custom Slits")
+        frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        custom_frame = ttk.Frame(frame, borderwidth=0)
+        custom_frame.grid(row=0, column=0, rowspan=1, columnspan=3, sticky=TK_STICKY_ALL)
         ttk.Label(custom_frame, text="x0").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.x0 = tk.IntVar(self, 540)
         tk.Entry(custom_frame, textvariable=self.x0, width=5).grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -93,26 +95,28 @@ class DMDPage(SAMOSFrame):
         ttk.Label(custom_frame, text="y1").grid(row=0, column=6, sticky=TK_STICKY_ALL)
         self.y1 = tk.IntVar(self, 1024)
         tk.Entry(custom_frame, textvariable=self.y1, width=5).grid(row=0, column=7, sticky=TK_STICKY_ALL)
-
         # Slit Buttons
-        w = ttk.Button(button_frame, text="Add", command=self.add_slit)
-        w.grid(row=13, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
-        w = ttk.Button(button_frame, text="Push", command=self.push_current_map, bootstyle="success")
-        w.grid(row=13, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.str_map_filename_path)]
-        w = ttk.Button(button_frame, text="Save", command=self.save_map)
-        w.grid(row=13, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True), ("condition", self, "map", not None)]
-
-        # Load Slit
-        w = ttk.Button(button_frame, text="Load Slit List", command=self.load_slits)
-        w.grid(row=15, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.slits_filename = tk.StringVar(self, "none")
+        self.slits_filename_path = None
+        w = ttk.Button(frame, text="Add", command=self.add_slit)
+        w.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.slits_filename_path)]
+        w = ttk.Button(frame, text="Push", command=self.push_current_map, bootstyle="success")
+        w.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.slits_filename_path)]
+        w = ttk.Button(frame, text="Save", command=self.save_slits)
+        w.grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.slits_filename_path)]
+        # Create New Slit List
+        w = ttk.Button(frame, text="New Slit List", command=self.create_slits)
+        w.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        ttk.Label(button_frame, text="Current Slit List").grid(row=16, column=0, sticky=TK_STICKY_ALL)
-        self.str_filename_slits = tk.StringVar()
-        l = tk.Label(button_frame, textvariable=self.str_filename_slits, bg="grey", anchor="w")
-        l.grid(row=16, column=1, columnspan=2, sticky=TK_STICKY_ALL)
+        # Load Slit List
+        w = ttk.Button(frame, text="Load Slit List", command=self.load_slits)
+        w.grid(row=2, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        ttk.Label(frame, text="Current Slit List:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, textvariable=self.slits_filename, anchor="w").grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
         # Canvas display for DMD pattern
         self.canvas = tk.Canvas(display_frame, width=300, height=270, bg="dark gray")
@@ -188,7 +192,7 @@ class DMDPage(SAMOSFrame):
         radec_frame = ttk.LabelFrame(hadamard_frame, text="Generate from RA/DEC")
         radec_frame.grid(row=4, column=0, rowspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(radec_frame, text="Load from current WCS", command=self.load_ra_dec)
-        b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self, "initialized", True), ("condition", self.PAR, "valid_wcs", True)]
         ttk.Label(radec_frame, text="Target RA:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.target_ra = tk.DoubleVar(self, 1.234567)
@@ -205,7 +209,9 @@ class DMDPage(SAMOSFrame):
         w = ttk.Button(radec_frame, text="GENERATE", command=self.generate_hts_from_radec)
         w.grid(row=3, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
+        self.logger.info("Finished initializing DMD Page. Setting initial widget status.")
         self.set_enabled()
+        self.logger.info("Finished initial widget status.")
 
 
     @check_enabled
@@ -355,10 +361,10 @@ class DMDPage(SAMOSFrame):
     def dmd_invert(self):
         """ dmd_invert """
         self.DMD.apply_invert()
-        if "inverted" in self.str_map_filename.get():
-            state_name = self.str_map_filename.get().replace(" inverted", "")
+        if "inverted" in self.map_filename.get():
+            state_name = self.map_filename.get().replace(" inverted", "")
         else:
-            state_name = "{} inverted".format(self.str_map_filename.get())
+            state_name = "{} inverted".format(self.map_filename.get())
         self._set_slit_image("current_dmd_state.png", state_name)
 
 
@@ -366,41 +372,42 @@ class DMDPage(SAMOSFrame):
     def dmd_antinvert(self):
         """ dmd_antinvert """
         self.DMD.apply_antinvert()
-        if "inverted" in self.str_map_filename.get():
-            state_name = self.str_map_filename.get().replace(" inverted", "")
+        if "inverted" in self.map_filename.get():
+            state_name = self.map_filename.get().replace(" inverted", "")
         else:
-            state_name = "{} inverted".format(self.str_map_filename.get())
+            state_name = "{} inverted".format(self.map_filename.get())
         self._set_slit_image("current_dmd_state.png", state_name)
 
 
     @check_enabled
     def browse_map(self):
         """ BrowseMapFiles """
-        self.str_map_filename.set("none")
-        self.str_map_filename_path = None
+        self.map_filename.set("none")
+        self.map_filename_path = None
         filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
                                    filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
         try:
             os.startfile(filename)
         except AttributeError:
             subprocess.call(['open', filename])
-        self.str_map_filename_path = Path(filename)
-        self.str_map_filename.set(self.str_map_filename_path.name)
+        self.map_filename_path = Path(filename)
+        self.map_filename.set(self.map_filename_path.name)
 
 
     @check_enabled
     def load_map(self):
         """ LoadMap """
-        self.str_map_filename.set("none")
-        self.str_map_filename_path = None
-        self.str_filename_slits.set("")
+        self.map_filename.set("none")
+        self.map_filename_path = None
+        self.slits_filename.set("")
+        self.slits_filename_path = None
         filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
                                    filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
-        self.str_map_filename_path = Path(filename)
-        self.logger.info("Loading Map {}".format(self.str_map_filename_path))
-        self.str_map_filename.set(self.str_map_filename_path.name)
-        self.main_fits_header.set_param("dmdmap", self.str_map_filename_path.name)
-        map_list = self._load_map(self.str_map_filename_path)
+        self.map_filename_path = Path(filename)
+        self.logger.info("Loading Map {}".format(self.map_filename_path))
+        self.map_filename.set(self.map_filename_path.name)
+        self.main_fits_header.set_param("dmdmap", self.map_filename_path.name)
+        map_list = self._load_map(self.map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)
         self.DMD.apply_shape(dmd_shape)
 
@@ -419,33 +426,48 @@ class DMDPage(SAMOSFrame):
                 self.logger.debug(output)
                 f.write("{}\n".format(output))
 
-        self.str_map_filename.set(self.str_map_filename_path.name[:-3]+"reg")
+        self.map_filename.set(self.map_filename_path.name[:-3]+"reg")
         main_page = self.parent.frames['MainPage']
         main_page.str_filename_regfile_xyAP.set(file_path.name[:-3]+"reg")
         self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
 
 
     @check_enabled
+    def create_slits(self):
+        self.map_filename.set("none")
+        self.map_filename_path = None
+        self.slits_filename_path = Path(asksaveasfilename(initialdir=get_fits_dir(), title="Create a new Slits file"))
+        self.slits_filename.set(self.slits_filename_path.name)
+        self.logger.info(f"Creating new slit map {self.map_filename.get()}")
+        map_list = [[str(x) for x in [self.x0.get(), self.x1.get(), self.y0.get(), self.y1.get(), 0]]]
+        self.map = map_list
+        self.save_slits()
+
+
+    @check_enabled
     def load_slits(self):
         """ LoadSlits """
-        self.string_var_filename.set("")
-        self.str_filename_slits.set("")
-        filename_slits = askopenfilename(initialdir=get_data_file("dmd.csv.slits"), title="Select a File",
-                                         filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
-        file_path = Path(filename_slits)
-        self.str_filename_slits.set(file_path.name)
-        main_fits_header.set_param("dmdmap", file_path.name)
-        table = pd.read_csv(filename_slits)
+        self.slits_filename_path = Path(askopenfilename(initialdir=get_data_file("dmd.csv.slits"), title="Select a File"))
+        self.slits_filename.set(self.slits_filename_path.name)
+        self.map_filename.set("none")
+        self.map_filename_path = None
+        self.main_fits_header.set_param("dmdmap", self.slits_filename_path.name)
+        self.map = []
+        table = pd.read_csv(self.slits_filename_path)
         xoffset = 0
         yoffset = np.full(len(table.index), int(2048/4))
-        y1 = (round(table['x'])-np.floor(table['dx1'])).astype(int) + yoffset
-        y2 = (round(table['x'])+np.ceil(table['dx2'])).astype(int) + yoffset
-        x1 = (round(table['y'])-np.floor(table['dy1'])).astype(int) + xoffset
-        x2 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
-        slit_shape = np.ones((1080, 2048))  # This is the size of the DC2K
+        y0 = (round(table['x'])-np.floor(table['dx1'])).astype(int) + yoffset
+        y1 = (round(table['x'])+np.ceil(table['dx2'])).astype(int) + yoffset
+        x0 = (round(table['y'])-np.floor(table['dy1'])).astype(int) + xoffset
+        x1 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
         for i in table.index:
-            slit_shape[x1[i]:x2[i], y1[i]:y2[i]] = 0
-        self.DMD.apply_shape(slit_shape)
+            self.map.append([x0, x1, y0, y1, 0])
+
+
+    @check_enabled
+    def push_slits(self):
+        dmd_shape = self._make_dmd_array(self.map)
+        self.DMD.apply_shape(dmd_shape)
         self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
 
 
@@ -457,21 +479,26 @@ class DMDPage(SAMOSFrame):
         # 3. add the slit
         """
         # 1. read the current filename
-        filename_in_text = self.str_map_filename.get()
+        filename_in_text = self.map_filename.get()
         if filename_in_text[-4:] != ".csv":
             filename_in_text += ".csv"
-        self.str_map_filename_path = get_data_file("dmd.csv.maps", filename_in_text)
-        map_list = self._load_map(self.str_map_filename_path)
+        self.map_filename_path = get_data_file("dmd.csv.maps", filename_in_text)
+        map_list = self._load_map(self.map_filename_path)
         row = [str(x) for x in [self.x0.get(), self.x1.get(), self.y0.get(), self.y1.get(), 0]]
         map_list.append(row)
         self.map = map_list
 
 
     @check_enabled
+    def save_slits(self):
+        self._save_map(self.map, self.slits_filename_path)
+
+
+    @check_enabled
     def save_map(self):
         """ SaveMap """
         self.logger.info("Saving current DMD map")
-        filename_in_text = self.str_map_filename.get()
+        filename_in_text = self.map_filename.get()
         
         # If there is no filename defined, create one based on current date
         if (len(filename_in_text) == 0) or (filename_in_text == "none"):
@@ -480,21 +507,20 @@ class DMDPage(SAMOSFrame):
             self.logger.info("Creating custom map file {}".format(filename_in_text))
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
-        self.str_map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
-        pandas_map = pd.DataFrame(self.map)
-        pandas_map.to_csv(self.str_map_filename_path, index=False, header=None)
-        self.logger.info("Map {} saved".format(filename_in_text))
+        if (self.map_filename_path is not None) and (filename_in_text != self.map_filename_path.name):
+            self.map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
+        self._save_map(self.map, self.map_filename_path)
 
 
     @check_enabled
     def push_current_map(self):
         """ Push to the DMD the file in Current DMD Map Textbox """
         self.logger.info("Pushing map to DMD")
-        filename_in_text = self.str_map_filename.get()
+        filename_in_text = self.map_filename.get()
         if filename_in_text[-4:] != ".csv":
             filename_in_text.append(".csv")
-        self.str_map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
-        map_list = self._load_map(self.str_map_filename_path)
+        self.map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
+        map_list = self._load_map(self.map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)
         self.DMD.apply_shape(dmd_shape)
         self._set_slit_image("current_dmd_state.png", "Current Map")
@@ -511,8 +537,8 @@ class DMDPage(SAMOSFrame):
             label1 = ttk.Label(self.canvas, image=tk_image)
             label1.image = tk_image
             label1.grid(row=0, column=0)
-        self.str_map_filename.set(image_name)
-        self.str_map_filename_path = image_file
+        self.map_filename.set(image_name)
+        self.map_filename_path = image_file
 
 
     def _load_map(self, filename):
@@ -535,6 +561,12 @@ class DMDPage(SAMOSFrame):
         for row in map_list:
             dmd_shape[row[0]:row[1], row[2]:row[3]] = row[4]
         return dmd_shape
+
+
+    def _save_map(self, map_to_save, map_file):
+        pandas_map = pd.DataFrame(map_to_save)
+        pandas_map.to_csv(map_file, index=False, header=None)
+        self.logger.info(f"Map saved to {map_file}")
 
 
     def set_enabled(self, run_from_main=False):

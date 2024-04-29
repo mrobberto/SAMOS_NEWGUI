@@ -1083,6 +1083,10 @@ class MainPage(SAMOSFrame):
         """
         This gets called when the data position relative to the cursor changes.
         """
+        # Start by checking if there's even an image to look at.
+        if viewer.get_image() is None:
+            return
+
         # Get the value under the data coordinates
         try:
             # We report the value across the pixel, even though the coords

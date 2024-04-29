@@ -20,6 +20,7 @@ from samos.soar import SOAR
 from samos.system.fits_header import FITSHead
 from samos.system.config import SAMOSConfig
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage
+from samos.ui.logging_window import LoggingWindow
 from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
 from samos.utilities.tk import about_box
@@ -29,10 +30,16 @@ class App(ttk.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logging.getLogger('samos')
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.INFO)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
         self.logger.addHandler(handler)
+        self.log_window = LoggingWindow(self)
+        self.log_window.text_handler.setLevel(logging.INFO)
+        self.log_window.text_handler.setFormatter(formatter)
+        self.logger.addHandler(self.log_window.text_handler)
         self.logger.info("Initializing App")
         self.PAR = SAMOSConfig()
         self.main_fits_header = FITSHead(self.PAR, self.logger)
@@ -69,15 +76,18 @@ class App(ttk.Window):
         self.frame_indices = {}
         current_index = 0
         for frame_class in self.FRAME_CLASSES:
+            self.logger.info(f"Creating Frame {frame_class.__name__}")
             frame = frame_class(self, self.container, **self.samos_classes)
             self.frames[frame_class.__name__] = frame
             self.frame_indices[frame_class.__name__] = current_index
             frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
             self.container.add(frame, text=frame_class.__name__)
             current_index += 1
+            self.logger.info(f"Finished creating frame {frame_class.__name__}")
         self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
         self.lift()
+        self.log_window.withdraw()
 
 
     def show_frame(self, frame):
@@ -145,6 +155,10 @@ class App(ttk.Window):
         super().destroy()
 
 
+    def show_logging_window(self):
+        self.log_window.deiconify()
+
+
     def create_menubar(self):
         menubar = tk.Menu(self, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
         
@@ -157,8 +171,9 @@ class App(ttk.Window):
         filemenu.add_command(label="CCD", command=lambda: self.show_frame("CCDPage"))
         filemenu.add_command(label="SOAR TCS", command=lambda: self.show_frame("SOARPage"))
         filemenu.add_command(label="MainPage", command=lambda: self.show_frame("MainPage"))
-        filemenu.add_separator()
         filemenu.add_command(label="ETC", command=lambda: self.show_frame("ETCPage"))
+        filemenu.add_separator()
+        filemenu.add_command(label="Logging", command=self.show_logging_window)
         filemenu.add_command(label="Exit", command=self.quit)
 
         # help menu

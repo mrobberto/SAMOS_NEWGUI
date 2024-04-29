@@ -24,7 +24,7 @@ class MotorsPage(SAMOSFrame):
         }
 
         # Initialize all motors
-        b = ttk.Button(self.main_frame, text="Initialize", command=self.initialize_pcm)
+        b = ttk.Button(self.main_frame, text="Initialize", command=self.initialize_pcm, bootstyle="success")
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "initialized", False)]
 
@@ -42,7 +42,7 @@ class MotorsPage(SAMOSFrame):
         # Port Status
         port_status_frame = ttk.LabelFrame(self.main_frame, text="Power Port Status")
         port_status_frame.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(port_status_frame, text="Get Status", command=self.all_ports_status)
+        b = ttk.Button(port_status_frame, text="Get Status", command=self.all_ports_status, bootstyle="info")
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         self.port_status_info = tk.StringVar(self, "")
@@ -96,7 +96,7 @@ class MotorsPage(SAMOSFrame):
                             "GR_A": ["GR_A1", "GR_A2"],
                             "GR_B": ["GR_B1", "BR_B2"]}
         self.selected_pos = tk.StringVar(self, self.pos_options[self.active_wheel.get()][0])
-        self.options = ttk.OptionMenu(frame, self.selected_pos, *self.pos_options[self.active_wheel.get()], command=self.move_to_pos)
+        self.options = ttk.OptionMenu(frame, self.selected_pos, *self.pos_options[self.active_wheel.get()], command=self.move_to_pos, bootstyle="success")
         self.options.grid(row=2, column=2, sticky=TK_STICKY_ALL)
         self.check_widgets[self.options] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
@@ -104,7 +104,7 @@ class MotorsPage(SAMOSFrame):
         ttk.Label(self.main_frame, text="Set Filter").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.filter_options = ["open", "SLOAN-g", "SLOAN-r", "SLOAN-i", "SLOAN-z", "Ha", "O[III]", "S[II]"]
         self.selected_filter = tk.StringVar(self, self.filter_options[0])
-        m = ttk.OptionMenu(self.main_frame, self.selected_filter, *self.filter_options, command=self.move_to_filter)
+        m = ttk.OptionMenu(self.main_frame, self.selected_filter, *self.filter_options, command=self.move_to_filter, bootstyle="success")
         m.grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[m] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 

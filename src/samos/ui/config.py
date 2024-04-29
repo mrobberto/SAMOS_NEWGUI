@@ -21,6 +21,7 @@ class ConfigPage(SAMOSFrame):
 
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "SAMOS Configuration", **kwargs)
+        self.logger.info("Setting up config page")
         self.prefs_dict = {}
         try:
             prefs_file = get_data_file("system", "preferences.yaml")
@@ -149,6 +150,9 @@ class ConfigPage(SAMOSFrame):
             self.logbook_location_label.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         else:
             self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.logger.info("Finished setting up config page. Starting initial widget check.")
+        self.set_enabled()
+        self.logger.info("Finished initial widget check.")
 
 
     @check_enabled

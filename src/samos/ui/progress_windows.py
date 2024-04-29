@@ -353,7 +353,7 @@ class MotorMoveProgressWindow(tk.Toplevel):
         ttk.Label(self, textvariable=self.current_pos).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         ttk.Label(self, text="Destination:").grid(row=1, column=2, sticky=TK_STICKY_ALL)
         ttk.Label(self, textvariable=self.destination_pos).grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        ttk.Button(self, text="Stop", command=self.send_stop).grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        ttk.Button(self, text="Stop", command=self.send_stop, bootstyle="warning").grid(row=2, column=3, sticky=TK_STICKY_ALL)
         self.PCM.start_move(self.wheel_type)
         self.after(2000, self.check_move)
 

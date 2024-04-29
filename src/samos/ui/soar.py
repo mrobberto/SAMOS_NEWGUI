@@ -97,7 +97,7 @@ class SOARPage(SAMOSFrame):
         w = ttk.Button(frame, text="Get ADC", command=partial(self.tcs_adc, "STATUS"), bootstyle="info")
         w.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.OptionMenu(frame, self.adc, self.adc.get(), *adc_options, command=partial(self.tcs_adc, "SET"))
+        w = ttk.OptionMenu(frame, self.adc, self.adc.get(), *adc_options, command=partial(self.tcs_adc, "SET"), bootstyle="success")
         w.grid(row=6, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         ttk.Label(frame, text="ADC %:").grid(row=6, column=2, sticky=TK_STICKY_ALL)
@@ -105,7 +105,7 @@ class SOARPage(SAMOSFrame):
         w.grid(row=6, column=3, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         w = ttk.Button(frame, text="Set ADC %", command=partial(self.tcs_adc, "SET"), bootstyle="success")
-        w.grid(row=5, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        w.grid(row=6, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         # IPA
         self.ipa = tk.DoubleVar(self, 0.)
@@ -157,7 +157,7 @@ class SOARPage(SAMOSFrame):
         w = ttk.Button(frame, text="MOUNT", command=partial(self.tcs_target, "MOUNT"), bootstyle="success")
         w.grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Button(frame, text="STOP", command=partial(self.tcs_target, "STOP"), bootstyle="success")
+        w = ttk.Button(frame, text="STOP", command=partial(self.tcs_target, "STOP"), bootstyle="warning")
         w.grid(row=1, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
@@ -339,7 +339,7 @@ class SOARPage(SAMOSFrame):
 
 
     @check_enabled
-    def tcs_adc(self, event):
+    def tcs_adc(self, event, option=None):
         message = self.adc.get()
         percentage = self.adc_pct.get()
         if message != "IN":
