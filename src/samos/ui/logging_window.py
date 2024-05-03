@@ -53,7 +53,7 @@ class LoggingWindow(ttk.Toplevel):
         self.main_frame.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(0, weight=1)
         self.text_handler = TextHandler(self.text)
-        self.geometry('800x300')
+        self.geometry('800x600')
 
     def destroy(self):
         self.withdraw()

@@ -228,7 +228,7 @@ used if these values have been lost, or need to be changed.
 CCD Tab
 =======
 
-.. image:: src/samos/data/documentation/images.ccd.png
+.. image:: src/samos/data/documentation/images/ccd.png
 
 The CCD tab provides interfaces to report the CCD temperature, adjust the CCD temperature
 set point, and turn both the CCD and CCD cooler on or off. CCD exposures are handled from
@@ -270,6 +270,120 @@ order to test whether it is possible to contact it.
 
 Below all of the commands is a scrolling text area which shows both all of the commands
 sent to SOAR as well as the telescope's response to those commands.
+
+Main Tab
+========
+
+The main tab provides an interface for adjusting user parameters, setting up and taking
+exposures, loading skymapper surveys, drawing slit patterns and sending them to the DMD,
+and applying existing DMD masks.
+
+Observer Information Frame
+--------------------------
+
+This allows observer details to be set (much in the same way as the configuration tab
+does). Observer details are saved to the Parameters of the Night dictionary and file 
+whenever an exposure is started.
+
+Filter and Grating Status Frame
+-------------------------------
+
+This frame shows the current filter and grism status, and allows the filter and grism to
+be moved to any of the pre-defined filter or grism combinations.
+
+CCD Setup Frame
+---------------
+
+This frame allows the user to select an observation type, set the file name, exposure, 
+image number, and other parameters, and then start the exposure (or set of exposures).
+Valid exposure types are Science, Bias, Flat, Dark, and Buffer. The Acquire frame is 
+common between all exposure types, whereas the frame below it is specific to the selected
+exposure type. Once an exposure has started, control is handed over to a progress dialog,
+although the main interface remains interactive.
+
+FITS Manager Frame
+------------------
+
+This frame allows the user to load a previous exposure in the display area (as opposed to
+the default display of the most recent quicklook image). In addition to the ability to
+load a chosen previous exposure, there is also a copy of the Image Server query frame from
+the guide star tab, which allows one of the available image servers to be queried, and the
+result loaded in to the display frame. Finally, this frame allows the user to perform 
+astrometry on the current image (using twirl).
+
+Display Frame
+-------------
+
+This frame displays the current image. By default, it is set to the most recent exposed 
+image from the quicklook directory every time a CCD exposure is taken, but it can also be
+set to an older image, a survey image download, or another arbitrary FITS image.
+
+Tools Frame
+-----------
+
+The tools frame offers the ability to select how points or regions are drawn on the
+display frame. In general, this is used for drawing slits or selecting guide star sources.
+As such, the most frequently used shapes are "box" and "point". In addition to drawing
+slits or regions, the user is also able to open existing files to display them on the
+image canvas.
+
+Slit Configuration Frame
+------------------------
+
+The slit configuration frame has two main sections. The Slit Size sub-frame allows the
+user to apply a common size to all slits, and to force all slits to be orthonormal on the
+DMD. The "Create Pattern Series" section is equivalent to the Hadamard section on the DMD
+control tab. It also allows one or more patterns to be saved to a file for future use.
+
+Sky Regions Frame
+-----------------
+
+This frame allows a regions file to be loaded and displayed on the current image, as long 
+as that image has valid WCS information. If the region file has a central RA/DEC in its
+name, the "Get Centre/Point from Filename" button will send that information to the FITS 
+manager frame. The "Convert DS9 Regions -> Ginga" button will convert the regions, first
+from RA/DEC space to pixel space, and second from DS9 regions to Ginga regions. The "Save 
+Ginga Regions -> DS9 Region File" performs the reverse operation, and saves the result to
+a region (.reg) file.
+
+CCD Regions Frame
+-----------------
+
+This frame allows regions that are already in pixel space to be loaded from a file, 
+displayed on the canvas, or saved to a DS9 file (in pixel space).
+
+HTS Frame
+---------
+
+The HTS frame allows a Hadamard mask to be loaded, and allows the user to step between
+Hadamard masks of the same set.
+
+Status Frame
+------------
+
+This frame shows the status, if available, of the hardware components.
+
+ETC Tab
+=======
+
+.. image src/samos/data/documentation/images/etc.png
+
+The ETC tab allows for a simulated SAMOS exposure. It allows the user to choose either a 
+flat spectrum or an emission line with no continuum, and to simulate signal-to-noise
+(given exposure time) or exposure time (given signal-to-noise) for any of the SAMOS
+gratings. In addition, there are several options for customizing weather conditions and
+telescope mode.
+
+Guide Star Tab
+==============
+
+.. image src/samos/data/documentation/images/etc.png
+
+This tab allows the user to load a view of the sky from the selected survey, find sources
+with a given magnitude (and located within the acceptable guide star zone for an
+observation centered at the centre of the image), and select one of them to act as a guide
+star. It has a stub function for sending that guide star information to SOAR, but the
+function is not currently implemented.
 
 .. [1] Although they may affect what parameters are later sent to the hardware. For 
    example, selecting a filter or grism setting in the main page does not command the 

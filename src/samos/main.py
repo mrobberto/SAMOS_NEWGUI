@@ -16,10 +16,11 @@ import ttkbootstrap as ttk
 from samos.ccd import CCD
 from samos.dmd import DigitalMicroMirrorDevice
 from samos.motors import PCM
+from samos.sami import SAMI
 from samos.soar import SOAR
 from samos.system.fits_header import FITSHead
 from samos.system.config import SAMOSConfig
-from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage
+from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage
 from samos.ui.logging_window import LoggingWindow
 from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
@@ -53,6 +54,7 @@ class App(ttk.Window):
             "DMD": DMD,
             "PCM": PCM(self.PAR, self.logger, self.main_fits_header),
             "SOAR": SOAR(self.PAR),
+            "SAMI": SAMI(self.PAR, self.logger),
             "main_fits_header": self.main_fits_header,
             "PAR": self.PAR
         }
@@ -192,6 +194,7 @@ class App(ttk.Window):
         MotorsPage, 
         CCDPage, 
         SOARPage, 
+        SAMIPage,
         MainPage, 
         ETCPage, 
         GSPage

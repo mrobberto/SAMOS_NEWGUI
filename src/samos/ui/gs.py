@@ -94,7 +94,7 @@ class GSPage(SAMOSFrame):
         s.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # SLIT POINTER ENABLED
         self.guide_star_pickup_enabled = tk.IntVar(self, 1)
-        b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star, bootstyle="success")
+        b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
         b.grid(row=2, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
         # Candidate Guide Star Co-ordinates
         self.gs_ra = tk.DoubleVar(self, self.ra.get())
@@ -118,51 +118,6 @@ class GSPage(SAMOSFrame):
         b = ttk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR, bootstyle="success")
         b.grid(row=8, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
-        # Ginga Tools Box
-        frame = ttk.LabelFrame(self.main_frame, text="Image Tools")
-        frame.grid(row=4, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.drawtypes = self.drawing_canvas.get_drawtypes()
-        # W Draw (?)
-        wdrawtype = ttk.Entry(frame)
-        wdrawtype.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        wdrawtype.insert(0, 'box')
-        wdrawtype.bind("<Return>", self.set_drawparams)
-        self.wdrawtype = wdrawtype
-        # Draw Colour
-        wdrawcolor = ttk.Combobox(frame, values=self.drawcolors, style="TCombobox")
-        wdrawcolor.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        color_index = self.drawcolors.index('red')
-        wdrawcolor.current(color_index)
-        wdrawcolor.bind("<<ComboboxSelected>>", self.set_drawparams)
-        self.wdrawcolor = wdrawcolor
-        # Draw Fill
-        self.vfill = tk.IntVar(self, 0)
-        tk.Checkbutton(frame, text="Fill", variable=self.vfill).grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        self.walpha = tk.DoubleVar(self, 1.0)
-        ttk.Label(frame, text="Alpha:").grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        e = tk.Entry(frame, textvariable=self.walpha)
-        e.grid(row=0, column=4, sticky=TK_STICKY_ALL)
-        e.bind("<Return>", self.set_drawparams)
-        # Buttons
-        b = ttk.Button(frame, text="Slits Only", command=self.slits_only).grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas).grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Save Canvas", command=self.save_canvas).grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Open Canvas", command=self.open_canvas).grid(row=1, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Save Image", command=self.save_gs).grid(row=1, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        ttk.Button(frame, text="Load Image", command=self.load_gs).grid(row=1, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
-
-
-    def set_drawparams(self, evt):
-        kind = self.wdrawtype.get()
-        color = self.wdrawcolor.get()
-        alpha = self.walpha.get()
-        fill = self.vfill.get() != 0
-        params = {'color': color, 'alpha': alpha}
-        if kind in ('circle', 'rectangle', 'polygon', 'triangle', 'righttriangle', 'ellipse', 'square', 'box'):
-            params['fill'] = fill
-            params['fillalpha'] = alpha
-        self.drawing_canvas.set_drawtype(kind, **params)
-
 
     def save_canvas(self):
         """
@@ -178,17 +133,13 @@ class GSPage(SAMOSFrame):
             r.write(get_fits_dir() / "current_regions.reg", format='ds9')
 
 
-    def clear_canvas(self):
-        self.drawing_canvas.delete_all_objects(redraw=True)
-
-
     def send_RADEC_to_SOAR(self):
         self.logger.warning("send_RADEC_to_SOAR has not been implemented!")
 
 
     def run_query(self, catalog):
         self.catalog = catalog
-        self.clear_canvas()
+        self.drawing_canvas.delete_all_objects(redraw=True)
         self.logger.info("Setting local canvas")
         self.data_GS = self.catalog.image[0].data
         self.logger.info("Setting local header information")
@@ -204,7 +155,7 @@ class GSPage(SAMOSFrame):
 
     def pick_guide_star(self):
         self.logger.info("Selecting Guide Star")
-        self.clear_canvas()
+        self.drawing_canvas.delete_all_objects(redraw=True)
 
         # Filter table by low and high magnitudes
         low_mag = self.low_mag.get()
@@ -259,18 +210,9 @@ class GSPage(SAMOSFrame):
 
     def open_canvas(self):
         if hasattr(self, 'catalog') and (self.catalog.saved_regions is not None):
-            self.clear_canvas()
+            self.drawing_canvas.delete_all_objects(redraw=True)
             for region in enumerate(self.catalog.saved_regions):
                 self.drawing_canvas.add(r2g(region))
-
-
-    def slits_only(self):
-        """ erase all objects in the canvas except slits (boxes) """
-        # We want to remove everything but boxes
-        kinds = ['point', 'circle', 'rectangle', 'polygon', 'triangle', 'righttriangle', 'ellipse', 'square']
-        if CM.CompoundMixin.is_compound(self.drawing_canvas.objects):
-            to_remove = CM.CompoundMixin.get_objects_by_kinds(self.drawing_canvas, kinds)
-            CM.CompoundMixin.delete_objects(self.drawing_canvas, list(to_remove))
 
 
     def pick_cb(self, obj, canvas, event, pt, ptype):
@@ -320,7 +262,7 @@ class GSPage(SAMOSFrame):
         if cat_type not in self.catalogs:
             self.logger.error("Invalid catalog type {}".format(cat_type))
             raise ValueError("Invalid Catalog type {}".format(cat_type))
-        self.clear_canvas()
+        self.drawing_canvas.delete_all_objects(redraw=True)
         self.catalog = self.catalogs[cat_type].initFromFits(gs_file, self.logger)
         self.data_GS = self.catalog.image[0].data
         self.header_GS = self.catalog.image[0].header

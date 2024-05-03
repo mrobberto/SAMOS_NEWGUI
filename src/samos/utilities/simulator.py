@@ -250,6 +250,10 @@ class SAMOSSimulator:
             if component == "IP_PCM":
                 status = self.sim_pcm.update()
                 reply = self.sim_pcm.handle_command(text)
+            elif component == "IP_SAMI":
+                # For the moment, always just reply with DONE, and right away.
+                # In the future, maybe schedule some sort of wait for "expose" commands.
+                reply = "DONE"
             else:
                 # Currently, by default, reply with "success"
                 reply = "SUCCESS"

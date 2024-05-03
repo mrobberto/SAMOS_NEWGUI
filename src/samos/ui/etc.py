@@ -231,7 +231,7 @@ class ETCPage(SAMOSFrame):
         # Calculate Frame
         frame = ttk.LabelFrame(left_frame, text="Run")
         frame.grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="CALCULATE", command=self.run_calculation, bootstyle='success')
+        b = ttk.Button(frame, text="CALCULATE", command=self.run_calculation)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # First right frame
