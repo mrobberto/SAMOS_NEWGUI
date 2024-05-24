@@ -1,0 +1,22 @@
+custom_files_location: ''
+files_location: cwd
+ip_loc: simulated
+ip_addresses:
+    inside:
+        PCM: "172.16.0.128:1000"
+        CCD: "172.16.0.245:80"
+        DMD: "172.16.0.141:8888"
+        SOAR: "TBD"
+        SAMI: "TBD"
+    outside:
+        PCM: "128.220.146.254:8889"
+        CCD: "128.220.146.254:8900"
+        DMD: "128.220.146.254:8888"
+        SOAR: "TBD"
+        SAMI: "TBD"
+    simulated:
+        PCM: "127.0.0.1:4544"
+        CCD: "127.0.0.1:4545"
+        DMD: "127.0.0.1:4546"
+        SOAR: "127.0.0.1:4547"
+        SAMI: "127.0.0.1:4548"
