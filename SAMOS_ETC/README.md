@@ -1,2 +1,0 @@
-# SAMOS_ETC
-SAMOS_ETC 
