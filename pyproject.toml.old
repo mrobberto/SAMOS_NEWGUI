@@ -1,7 +1,7 @@
 [build-system]
-requires = ["setuptools>=61.0", "matplotlib", "astropy", "photutils", "ginga",
-            "astroquery", "numpy", "pandas", "regions", "tksheet", "twirl",
-            "ttkbootstrap", "platformdirs"]
+requires = ["setuptools>=61.0", "matplotlib", "astropy<6", "photutils", "ginga",
+            "astroquery", "numpy", "pandas", "aplpy", "regions", "tksheet", "twirl",
+            "ttkbootstrap"]
 build-backend = "setuptools.build_meta"
 
 [project]
