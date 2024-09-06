@@ -206,7 +206,6 @@ def run_samos():
 #     combostyle = ttk.Style()
 #     combostyle.configure("TCombobox", fieldbackground="dark gray", foreground="black", background="white")
     app.mainloop()
-
-
+    
 if __name__ == "__main__":
     run_samos()
