@@ -189,13 +189,13 @@ class App(ttk.Window):
 
     FRAME_CLASSES = [
         ConfigPage, 
+        MainPage, 
         DMDPage, 
         CCD2DMDPage, 
         MotorsPage, 
         CCDPage, 
         SOARPage, 
         SAMIPage,
-        MainPage, 
         ETCPage, 
         GSPage
     ]
