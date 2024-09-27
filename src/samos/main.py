@@ -89,7 +89,6 @@ class App(ttk.Window):
         self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
         self.lift()
-        self.log_window.withdraw()
 
 
     def show_frame(self, frame):
