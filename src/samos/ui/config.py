@@ -163,8 +163,8 @@ class ConfigPage(SAMOSFrame):
         if (self.files_loc.get() == "custom") and (self.old_files_loc != "custom"):
             initial_dir = Path.cwd()
             if Path(self.custom_files_path.get()).is_dir():
-                initial_dir = Path(self.custom_files_pathl.get())
-            custom_loc = ttk.filedialog.askdirectory(initialdir=initial_dir, title="Select a Location to store files")
+                initial_dir = Path(self.custom_files_path.get())
+            custom_loc = tk.filedialog.askdirectory(initialdir=initial_dir, title="Select a Location to store files")
             self.custom_files_path.set(custom_loc)
             os.environ["SAMOS_CUSTOM_FILES_LOCATION"] = custom_loc
             self.prefs_dict["custom_files_location"] = custom_loc
