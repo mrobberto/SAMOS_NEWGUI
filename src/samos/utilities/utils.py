@@ -126,7 +126,10 @@ def get_fits_dir():
 
 
 def ccd_to_dmd(ccd_x, ccd_y, wcs):
-    dmd_x, dmd_y = wcs.pixel_to_world(ccd_x, ccd_y)
+#    dmd_x, dmd_y = wcs.pixel_to_world(ccd_x, ccd_y)
+    dmd_x = wcs.pixel_to_world(ccd_x, ccd_y).ra.value
+    dmd_y = wcs.pixel_to_world(ccd_x, ccd_y).dec.value
+    
     return (dmd_x * 3600., dmd_y*3600. + CCD_DMD_Y_OFFSET)
 
 

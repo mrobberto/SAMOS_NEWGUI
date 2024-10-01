@@ -89,7 +89,6 @@ class App(ttk.Window):
         self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
         self.lift()
-        self.log_window.withdraw()
 
 
     def show_frame(self, frame):
@@ -189,13 +188,13 @@ class App(ttk.Window):
 
     FRAME_CLASSES = [
         ConfigPage, 
+        MainPage, 
         DMDPage, 
         CCD2DMDPage, 
         MotorsPage, 
         CCDPage, 
         SOARPage, 
         SAMIPage,
-        MainPage, 
         ETCPage, 
         GSPage
     ]
@@ -206,7 +205,6 @@ def run_samos():
 #     combostyle = ttk.Style()
 #     combostyle.configure("TCombobox", fieldbackground="dark gray", foreground="black", background="white")
     app.mainloop()
-
-
+    
 if __name__ == "__main__":
     run_samos()

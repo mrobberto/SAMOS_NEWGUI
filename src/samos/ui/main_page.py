@@ -474,7 +474,7 @@ class MainPage(SAMOSFrame):
         (using the Ginga utilities).
         """
         self.logger.info("Saving Canvas Regions to Astropy File (pixel format)")
-        save_file = ttk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
+        save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                                 defaultextension=".reg",
                                                 initialdir=get_data_file("regions.pixels"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
@@ -493,7 +493,7 @@ class MainPage(SAMOSFrame):
         - valid WCS
         """
         self.logger.info("Saving Canvas Regions to Astropy File (WCS format)")
-        save_file = ttk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
+        save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                                 defaultextension=".reg",
                                                 initialdir=get_data_file("regions.radec"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
@@ -598,7 +598,7 @@ class MainPage(SAMOSFrame):
         None
         """
         self.logger.info("Loading Region File")
-        reg_file = ttk.filedialog.askopenfilename(initialdir=get_data_file("regions.radec"), title="Select a File",
+        reg_file = tk.filedialog.askopenfilename(initialdir=get_data_file("regions.radec"), title="Select a File",
                                                  filetypes=(("Text files", "*.reg"), ("all files", "*.*")))
         self.loaded_reg_file_path = Path(reg_file)
         self.loaded_reg_file.set(self.loaded_reg_file_path.name)
@@ -642,7 +642,7 @@ class MainPage(SAMOSFrame):
         - Valid WCS
         """
         self.logger.info("Loading DS9 pixel region file to Astropy Pixels")
-        reg_file = ttk.filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
+        reg_file = tk.filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
                                                  initialdir=get_data_file("regions.pixels"))
         self.loaded_ginga_file_path = Path(reg_file)
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
@@ -917,7 +917,8 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def load_existing_file(self):
-        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
+#        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
+        loaded_file = tk.filedialog.askopenfilename(title="Select a File",
                                                     filetypes=(("fits files", "*.fits"), ("all files","*.*")))
         self.fits_image_ql  = loaded_file
         self.Display(loaded_file)
@@ -1058,7 +1059,7 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def open_quicklook_file(self):
         """ to be written """
-        filename = ttk.filedialog.askopenfilename(filetypes=[("allfiles", "*"),
+        filename = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"),
                                                  ("fitsfiles", "*.fits")])
         self.Display(filename)
         if self.AstroImage.wcs.wcs.has_celestial:
@@ -1571,7 +1572,7 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def load_slits(self):
-        filename_slits = ttk.filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.slits"),
+        filename_slits = tk.filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.slits"),
                                                        title="Select a File",
                                                        filetypes=(("Text files", "*.csv"),
                                                                   ("all files", "*.*")))
@@ -1597,7 +1598,7 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def save_slit_table(self):
-        file = ttk.filedialog.asksaveasfile(filetypes=[("csv file", ".csv")],
+        file = tk.filedialog.asksaveasfile(filetypes=[("csv file", ".csv")],
                                            defaultextension=".csv",
                                            initialdir=get_data_file("dmd.scv.slits"),
                                            initialfile=self.filename_regfile_RADEC[0:-4]+".csv")
@@ -1609,7 +1610,7 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def load_masks_file_HTS(self):
         """load_masks_file for upload on DMD"""
-        filename_masks = ttk.filedialog.askopenfilename(initialdir=get_data_file('hadamard.mask_sets'),
+        filename_masks = tk.filedialog.askopenfilename(initialdir=get_data_file('hadamard.mask_sets'),
                                                        title="Select a File",
                                                        filetypes=(("Text files", "*.bmp"),
                                                                   ("all files", "*.*")))

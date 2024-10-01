@@ -22,23 +22,22 @@ channels:
   - defaults
 
 dependencies:
-  - python==3.12
+  - python
   - pip
 
   - pip:
-    - matplotlib==3.8.3
-    # REVISIT: Once aplpy doesn't depend on astropy.configuration.update_default_config
-    - astropy==5.3.4
-    - photutils==1.11.0
-    - ginga==4.1.1
-    - astroquery==0.4.6
-    - numpy==1.26.4
-    - pandas==2.2.0
-    - aplpy==2.1.0
-    - regions==0.8
-    - tksheet==7.0.5
-    - twirl==0.4.2
-    - ttkbootstrap==1.10.1
+    - matplotlib
+    - astropy
+    - photutils
+    - ginga
+    - astroquery
+    - numpy
+    - pandas
+    - regions
+    - tksheet
+    - twirl
+    - ttkbootstrap
+    - platformdirs
 
     # Current package
     - -e .
