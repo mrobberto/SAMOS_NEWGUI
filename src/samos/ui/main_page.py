@@ -814,6 +814,10 @@ class MainPage(SAMOSFrame):
         This is the landing procedure after the START button has been pressed
         """
         self.update_PotN()
+        if (not self.ccd.initialized) or (not self.ccd.ccd_on):
+            # Open a test image
+            image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
+            self.Display(image_to_open)
         exposure_params = {
             'file_number': self.image_expnum.get(),
             'exptime': self.image_exptime.get() * 1000,  # ms
@@ -911,6 +915,10 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def Display(self, imagefile):
         self.AstroImage = load_data(imagefile, logger=self.logger)
+        if self.PAR.flip_x_on_open:
+            data = self.AstroImage.get_data()
+            transformed_data = np.fliplr(data)
+            self.AstroImage.set_data(transformed_data)
         self.fits_image.set_image(self.AstroImage)
         self.fits_image_ql = imagefile
 
@@ -1098,9 +1106,15 @@ class MainPage(SAMOSFrame):
             value = "Invalid"
 
         fits_x, fits_y = data_x + 1, data_y + 1
-        text = f"FITS: (x, y) = ({fits_x:6.1f}, {fits_y:6.1f}). Value = {value}"
+        if self.PAR.flip_x_on_open:
+            text = f"FITS: (x, y) = ({(1032 - fits_x):6.1f}, {fits_y:6.1f}). Value = {value}"
+        else:
+            text = f"FITS: (x, y) = ({fits_x:6.1f}, {fits_y:6.1f}). Value = {value}"
         dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
-        text = f"DMD: (x, y) = ({dmd_x:9.4f}, {dmd_y:9.4f}). " + text
+        if self.PAR.flip_x_on_open:
+            text = f"DMD: (x, y) = ({(1080 - dmd_x):9.4f}, {dmd_y:9.4f}). " + text
+        else:
+            text = f"DMD: (x, y) = ({dmd_x:9.4f}, {dmd_y:9.4f}). " + text
 
         # Calculate WCS RA
         try:
