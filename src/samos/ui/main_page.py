@@ -264,7 +264,7 @@ class MainPage(SAMOSFrame):
         fi.get_canvas().add(self.canvas)
         self.drawtypes = self.canvas.get_drawtypes()
         self.drawtypes.sort()
-        self.readout = ttk.Label(frame, text='')
+        self.readout = ttk.Label(frame, text='', font='TkFixedFont')
         self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # Ginga Tool Box
