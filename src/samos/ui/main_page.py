@@ -1734,12 +1734,13 @@ class MainPage(SAMOSFrame):
 
     def set_enabled(self, run_from_main=False):
         super().set_enabled(run_from_main=run_from_main)
-        if self.PAR.flip_x_on_open != self.flip_x_on_open.set():
-            if hasattr(self, "AstroImage"):
-                title = "Flip Current Image?"
-                message = "Flip the current image?"
-                if tk.messagebox.askyesno(title=title, message=message):
-                    data = self.AstroImage.get_data()
-                    transformed_data = np.fliplr(data)
-                    self.AstroImage.set_data(transformed_data)
-        self.flip_x_on_open.set(self.PAR.flip_x_on_open)
+        if hasattr(self, "flip_x_on_open"):
+            if self.PAR.flip_x_on_open != self.flip_x_on_open.get():
+                if hasattr(self, "AstroImage"):
+                    title = "Flip Current Image?"
+                    message = "Flip the current image?"
+                    if tk.messagebox.askyesno(title=title, message=message):
+                        data = self.AstroImage.get_data()
+                        transformed_data = np.fliplr(data)
+                        self.AstroImage.set_data(transformed_data)
+            self.flip_x_on_open.set(self.PAR.flip_x_on_open)
