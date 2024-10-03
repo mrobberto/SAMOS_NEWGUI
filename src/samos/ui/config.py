@@ -35,16 +35,18 @@ class ConfigPage(SAMOSFrame):
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
         initial_files_location = "module"
+        custom_files_initial = ""
         if "SAMOS_FILES_LOCATION" in os.environ:
             initial_files_location = os.environ["SAMOS_FILES_LOCATION"]
-        elif "files_location" in self.prefs_dict:
+            if initial_files_location == "custom" and "SAMOS_CUSTOM_FILES_LOCATION" in os.environ:
+                custom_files_initial = os.environ["SAMOS_CUSTOM_FILES_LOCATION"]
+        if "files_location" in self.prefs_dict:
             initial_files_location = self.prefs_dict["files_location"]
+            os.environ["SAMOS_FILES_LOCATION"] = self.prefs_dict["files_location"]
             if (initial_files_location == "custom") and ("custom_files_location" in self.prefs_dict):
+                custom_files_initial = self.prefs_dict["custom_files_location"]
                 os.environ["SAMOS_CUSTOM_FILES_LOCATION"] = self.prefs_dict["custom_files_location"]
         self.files_loc = tk.StringVar(self, initial_files_location)
-        custom_files_initial = ""
-        if "SAMOS_CUSTOM_FILES_LOCATION" in os.environ:
-            custom_files_initial = os.environ["SAMOS_CUSTOM_FILES_LOCATION"]
         self.custom_files_path = tk.StringVar(self, custom_files_initial)
         ttk.Label(frame, text="Store files:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Radiobutton(frame, text="In Module", variable=self.files_loc, value="module", command=self.set_files_base)
