@@ -152,9 +152,6 @@ class ConfigPage(SAMOSFrame):
             self.logbook_location_label.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         else:
             self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.logger.info("Finished setting up config page. Starting initial widget check.")
-        self.set_enabled()
-        self.logger.info("Finished initial widget check.")
 
         # Settings
         frame = ttk.LabelFrame(self.main_frame, text="Settings", borderwidth=2)
@@ -164,6 +161,10 @@ class ConfigPage(SAMOSFrame):
         self.flip_x_on_open = tk.BooleanVar(self, self.PAR.flip_x_on_open)
         b = ttk.Checkbutton(frame, command=self.set_image_flip, text="Flip Images on Open", variable=self.flip_x_on_open, onvalue=True, offvalue=False)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+
+        self.logger.info("Finished setting up config page. Starting initial widget check.")
+        self.set_enabled()
+        self.logger.info("Finished initial widget check.")
 
 
     @check_enabled
