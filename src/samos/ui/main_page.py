@@ -814,7 +814,7 @@ class MainPage(SAMOSFrame):
         This is the landing procedure after the START button has been pressed
         """
         self.update_PotN()
-        if (not self.ccd.initialized) or (not self.ccd.ccd_on):
+        if (not self.CCD.initialized) or (not self.CCD.ccd_on):
             # Open a test image
             image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
             self.Display(image_to_open)
