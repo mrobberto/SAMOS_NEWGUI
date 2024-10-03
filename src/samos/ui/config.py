@@ -156,6 +156,15 @@ class ConfigPage(SAMOSFrame):
         self.set_enabled()
         self.logger.info("Finished initial widget check.")
 
+        # Settings
+        frame = ttk.LabelFrame(self.main_frame, text="Settings", borderwidth=2)
+        frame.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
+
+        # Flip the X axis when loading images
+        self.flip_x_on_open = tk.IntVar(self, self.PAR.flip_x_on_open)
+        b = ttk.Checkbutton(frame, command=self.set_image_flip, text="Flip Images on Open", variable=self.flip_x_on_open, onvalue=1, offvalue=0)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+
 
     @check_enabled
     def set_files_base(self):
@@ -176,6 +185,15 @@ class ConfigPage(SAMOSFrame):
         with open(prefs_file, "w") as outf:
             yaml.dump(self.prefs_dict, outf, default_flow_style=False)
         self.nightly_files_dir.set(get_fits_dir())
+
+
+    def set_image_flip(self):
+        if self.flip_x_on_open.get() == 0:
+            self.flip_x_on_open.set(1)
+            self.PAR.flip_x_on_open = True
+        else:
+            self.flip_x_on_open.set(0)
+            self.PAR.flip_x_on_open = False
 
 
     def save_potn_changes(self):

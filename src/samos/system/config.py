@@ -34,6 +34,9 @@ class SAMOSConfig():
 
         # Has the connection to the various components been initialized/tested?
         self.connections_initialized = False
+
+        # Should FITS files be flipped in X on open
+        flip_x_on_open = False
         
         # A lot of places use the SAMOS WCS, so it's now here
         self.wcs = None
