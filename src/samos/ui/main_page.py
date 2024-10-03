@@ -818,6 +818,7 @@ class MainPage(SAMOSFrame):
             # Open a test image
             image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
             self.Display(image_to_open)
+            return
         exposure_params = {
             'file_number': self.image_expnum.get(),
             'exptime': self.image_exptime.get() * 1000,  # ms
