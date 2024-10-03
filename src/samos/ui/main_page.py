@@ -1102,20 +1102,23 @@ class MainPage(SAMOSFrame):
             # We report the value across the pixel, even though the coords
             # change halfway across the pixel
             value = viewer.get_data(int(data_x + viewer.data_off), int(data_y + viewer.data_off))
-            value = f"{value:10g}"
+            value = f"{value:8g}"
         except Exception as e:
             value = "Invalid"
 
-        fits_x, fits_y = data_x + 1, data_y + 1
+        fits_x = int(np.floor(data_x) + 1)
+        fits_y = int(np.floor(data_y) + 1)
         if self.PAR.flip_x_on_open:
-            text = f"FITS: ({(1032 - fits_x):5d}, {fits_y:5d}). Value = {value}"
+            text = f"FITS: ({(1032 - fits_x):4d}, {fits_y:4d}). Value = {value}"
         else:
-            text = f"FITS: ({fits_x:5d}, {fits_y:5d}). Value = {value}"
+            text = f"FITS: ({fits_x:4d}, {fits_y:4d}). Value = {value}"
         dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
+        dmd_x = int(np.floor(dmd_x))
+        dmd_y = int(np.floor(dmd_y))
         if self.PAR.flip_x_on_open:
-            text = f"DMD: ({(1080 - dmd_x):9d}, {dmd_y:9d}). " + text
+            text = f"DMD: ({(1080 - dmd_x):7d}, {dmd_y:7d}). " + text
         else:
-            text = f"DMD: ({dmd_x:9d}, {dmd_y:9d}). " + text
+            text = f"DMD: ({dmd_x:7d}, {dmd_y:7d}). " + text
 
         # Calculate WCS RA
         try:
@@ -1126,7 +1129,7 @@ class MainPage(SAMOSFrame):
                 return
             ra_deg, dec_deg = image.pixtoradec(fits_x, fits_y)
             self.ra_center, self.dec_center = image.pixtoradec(528, 516, format='str', coords='fits')
-            text = f"(RA, DEC): ({ra_deg:9.4f}, {dec_deg:9.4f}). " + text
+            text = f"(RA, DEC): ({ra_deg:8.4f}, {dec_deg:8.4f}). " + text
         except Exception as e:
             self.logger.error("Error {} in printing co-ordinates".format(e))
             text = "No Valid WCS. " + text
