@@ -161,8 +161,8 @@ class ConfigPage(SAMOSFrame):
         frame.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
         # Flip the X axis when loading images
-        self.flip_x_on_open = tk.IntVar(self, self.PAR.flip_x_on_open)
-        b = ttk.Checkbutton(frame, command=self.set_image_flip, text="Flip Images on Open", variable=self.flip_x_on_open, onvalue=1, offvalue=0)
+        self.flip_x_on_open = tk.BooleanVar(self, self.PAR.flip_x_on_open)
+        b = ttk.Checkbutton(frame, command=self.set_image_flip, text="Flip Images on Open", variable=self.flip_x_on_open, onvalue=True, offvalue=False)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
 
@@ -188,12 +188,7 @@ class ConfigPage(SAMOSFrame):
 
 
     def set_image_flip(self):
-        if self.flip_x_on_open.get() == 0:
-            self.flip_x_on_open.set(1)
-            self.PAR.flip_x_on_open = True
-        else:
-            self.flip_x_on_open.set(0)
-            self.PAR.flip_x_on_open = False
+        self.PAR.flip_x_on_open = self.flip_x_on_open.get()
 
 
     def save_potn_changes(self):
