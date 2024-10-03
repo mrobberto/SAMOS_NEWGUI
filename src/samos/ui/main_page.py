@@ -187,8 +187,11 @@ class MainPage(SAMOSFrame):
         exp_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         exp_frame.columnconfigure(0, weight=1)
         exp_frame.columnconfigure(1, weight=1)
+        self.flip_x_on_open = tk.BooleanVar(self, self.PAR.flip_x_on_open)
+        b = ttk.Checkbutton(exp_frame, command=self.set_image_flip, text="Flip Images on Load", variable=self.flip_x_on_open, onvalue=True, offvalue=False)
+        b.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(exp_frame, text="START", command=self.start_an_exposure, bootstyle="success")
-        b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
+        b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
         # FITS manager
         frame = ttk.LabelFrame(fleft, text="FITS Manager")
@@ -806,6 +809,18 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def clear_canvas(self):
         self.canvas.delete_all_objects(redraw=True)
+
+
+    @check_enabled
+    def set_image_flip(self):
+        self.PAR.flip_x_on_open = self.flip_x_on_open.get()
+        if hasattr(self, "AstroImage"):
+            title = "Flip Current Image?"
+            message = "Flip the current image?"
+            if tk.messagebox.askyesno(title=title, message=message):
+                data = self.AstroImage.get_data()
+                transformed_data = np.fliplr(data)
+                self.AstroImage.set_data(transformed_data)
 
 
     @check_enabled
@@ -1716,3 +1731,15 @@ class MainPage(SAMOSFrame):
         else:
             self.status_box.itemconfig("tcs_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
         self.status_box.update()
+
+    def set_enabled(self, run_from_main=False):
+        super().set_enabled(run_from_main=run_from_main)
+        if self.PAR.flip_x_on_open != self.flip_x_on_open.set():
+            if hasattr(self, "AstroImage"):
+                title = "Flip Current Image?"
+                message = "Flip the current image?"
+                if tk.messagebox.askyesno(title=title, message=message):
+                    data = self.AstroImage.get_data()
+                    transformed_data = np.fliplr(data)
+                    self.AstroImage.set_data(transformed_data)
+        self.flip_x_on_open.set(self.PAR.flip_x_on_open)

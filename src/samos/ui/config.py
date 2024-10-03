@@ -187,6 +187,7 @@ class ConfigPage(SAMOSFrame):
         self.nightly_files_dir.set(get_fits_dir())
 
 
+    @check_enabled
     def set_image_flip(self):
         self.PAR.flip_x_on_open = self.flip_x_on_open.get()
 
@@ -324,6 +325,7 @@ class ConfigPage(SAMOSFrame):
 
     def set_enabled(self, run_from_main=False):
         super().set_enabled(run_from_main=run_from_main)
+        self.flip_x_on_open.set(self.PAR.flip_x_on_open)
         if self.PAR.logbook_exists:
             self.init_logbook_button.grid_forget()
             self.init_logbook_label.grid(row=0, column=0, sticky=TK_STICKY_ALL)
