@@ -1108,14 +1108,14 @@ class MainPage(SAMOSFrame):
 
         fits_x, fits_y = data_x + 1, data_y + 1
         if self.PAR.flip_x_on_open:
-            text = f"FITS: (x, y) = ({(1032 - fits_x):6.1f}, {fits_y:6.1f}). Value = {value}"
+            text = f"FITS: ({(1032 - fits_x):5d}, {fits_y:5d}). Value = {value}"
         else:
-            text = f"FITS: (x, y) = ({fits_x:6.1f}, {fits_y:6.1f}). Value = {value}"
+            text = f"FITS: ({fits_x:5d}, {fits_y:5d}). Value = {value}"
         dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
         if self.PAR.flip_x_on_open:
-            text = f"DMD: (x, y) = ({(1080 - dmd_x):9.4f}, {dmd_y:9.4f}). " + text
+            text = f"DMD: ({(1080 - dmd_x):9d}, {dmd_y:9d}). " + text
         else:
-            text = f"DMD: (x, y) = ({dmd_x:9.4f}, {dmd_y:9.4f}). " + text
+            text = f"DMD: ({dmd_x:9d}, {dmd_y:9d}). " + text
 
         # Calculate WCS RA
         try:
