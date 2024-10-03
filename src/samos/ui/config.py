@@ -160,11 +160,13 @@ class ConfigPage(SAMOSFrame):
         self.old_files_loc = os.environ.get("SAMOS_FILES_LOCATION", "unknown")
         os.environ["SAMOS_FILES_LOCATION"] = self.files_loc.get()
         self.prefs_dict["files_location"] = self.files_loc.get()
-        if (self.files_loc.get() == "custom") and (self.old_files_loc != "custom"):
-            initial_dir = Path.cwd()
-            if Path(self.custom_files_path.get()).is_dir():
-                initial_dir = Path(self.custom_files_path.get())
-            custom_loc = tk.filedialog.askdirectory(initialdir=initial_dir, title="Select a Location to store files")
+        if (self.files_loc.get() == "custom"):
+            custom_loc = self.prefs_dict["custom_files_location"]
+            if (self.old_files_loc != "custom"):
+                initial_dir = Path.cwd()
+                if Path(self.custom_files_path.get()).is_dir():
+                    initial_dir = Path(self.custom_files_path.get())
+                custom_loc = tk.filedialog.askdirectory(initialdir=initial_dir, title="Select a Location to store files")
             self.custom_files_path.set(custom_loc)
             os.environ["SAMOS_CUSTOM_FILES_LOCATION"] = custom_loc
             self.prefs_dict["custom_files_location"] = custom_loc
