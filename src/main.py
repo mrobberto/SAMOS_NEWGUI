@@ -89,7 +89,7 @@ class App(ttk.Window):
         self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
         self.lift()
-        self.log_window.withdraw()
+        self.after(1000, self.update_connections)
 
 
     def show_frame(self, frame):
@@ -159,6 +159,13 @@ class App(ttk.Window):
 
     def show_logging_window(self):
         self.log_window.deiconify()
+
+
+    def update_connections(self):
+        """Periodic check on connections and status values"""
+        # PCM
+        self.samos_classes["PCM"].check_if_power_is_on()
+        self.after(5000, self.update_connections())
 
 
     def create_menubar(self):

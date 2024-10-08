@@ -100,6 +100,8 @@ class PCM():
         self.filter_moving = False
         self.grism_moving = False
         self.have_initial_status = False
+        self._on = False
+        self._positions = {}
 
         # Configure socket wait
         socket.setdefaulttimeout(3)
@@ -133,7 +135,7 @@ class PCM():
     def is_on(self):
         if not self.initialized:
             return False
-        return self.check_if_power_is_on()
+        return self._on
 
 
     def initialize_indicator(self, indicator):
@@ -157,15 +159,15 @@ class PCM():
         if reply is not None:
             if "NO RESPONSE" in reply:
                 self.logger.info("Motor power is off")
-                return False
+                self._on = False
             if not self.have_initial_status:
                 self.have_initial_status = True
                 for wheel in ['FW1', 'FW2', 'GR_A', 'GR_B']:
-                    reply = self.current_filter_step(wheel)
+                    self._positions[wheel] = self.current_filter_step(wheel)
             self.logger.info("Motors replied {}".format(reply))
-            return True
+            self._on = True
         self.logger.warning("No reply from Motors")
-        return False
+        self._on = False
 
 
     def echo_client(self):
@@ -511,7 +513,7 @@ class PCM():
         defined positions (with a hit being defined as within the provided step 
         tolerance).
         """
-        current_step = self.extract_steps_from_return_string(self.current_filter_step(wheel))
+        current_step = self._positions[wheel]
         try:
             current_step = int(current_step)
         except Exception as e:
