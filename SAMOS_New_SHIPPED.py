@@ -5453,7 +5453,7 @@ class MainPage(tk.Frame):
         # , width=400, height=800)
         self.frame_SlitConf = tk.Frame(self, background="gray")
         self.frame_SlitConf.place(
-            x=460, y=610, anchor="nw", width=500, height=250)
+            x=460, y=610, anchor="nw", width=600, height=250)
         labelframe_SlitConf = tk.LabelFrame(self.frame_SlitConf, text="Slit Configuration",
                                             font=self.bigfont)
         labelframe_SlitConf.pack(fill="both", expand="yes")
@@ -5516,6 +5516,7 @@ class MainPage(tk.Frame):
         length_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
         self.length_adjust_btn = length_adjust_btn
 
+
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SLIT POINTER ENABLED
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
@@ -5524,6 +5525,85 @@ class MainPage(tk.Frame):
                                variable=self.CentroidPickup_ChkBox_Enabled, command=self.set_slit_drawtype)
         wslit.place(x=220, y=0)
 
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#  #    SHIFT SLITS WITH ARROWS
+    #   arrow buttons to move slits (in pixel coords), with box to edit size of shift
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+        """
+        self.shift_all_slits uses CM.CompoundMixin.move_delta_pt, which takes a single value or tuple argument
+        If single value is passed, the move occurs as if (VAL, VAL) was passed.
+        For here:
+            left arrow triggers shift of (-VAL, 0)
+            right arrow triggers shift of (+VAL, 0)
+            up arrow triggers shift of (0, +VAL)
+            down arrow triggers shift of (0, -VAL)
+        """
+
+        # create input textbox so user can decide how big of a shift to make
+        shift_size_input_label = tk.Label(labelframe_SlitConf, text="Shift Slits Size (pix)")
+        shift_size_input_label.place(x=415, y=0)
+
+        shift_size_pix_input_value = tk.StringVar() 
+        shift_size_pix_input_value.set("1") 
+        shift_size_pix_input = tk.Entry(labelframe_SlitConf, width=4, textvariable=shift_size_pix_input_value)
+        shift_size_pix_input.place(x=440, y=25)
+
+        leftstyle = ttk.Style()
+        leftstyle.layout(
+            'Left.TButton',[
+                ('Button.focus', {'children': [
+                    ('Button.leftarrow', None),
+                    ('Button.padding', {'sticky': 'nswe', 'children': [
+                        ('Button.label', {'sticky': 'nswe'}
+                         )]}
+                     )]}
+                 )])
+        leftstyle.configure('Left.TButton',font=('','20','bold'), width=2, arrowcolor='black', arrowsize=20)
+        move_slits_left_button = ttk.Button(labelframe_SlitConf, style="Left.TButton", command=lambda : self.shift_all_slits(shift_size_pix=(-float(shift_size_pix_input_value.get()), 0)))
+        move_slits_left_button.place(x=360, y=30)
+
+
+        rightstyle = ttk.Style()
+        rightstyle.layout(
+            'Right.TButton',[
+                ('Button.focus', {'children': [
+                    ('Button.rightarrow', None),
+                    ('Button.padding', {'sticky': 'nswe', 'children': [
+                        ('Button.label', {'sticky': 'nswe'}
+                         )]}
+                     )]}
+                 )])
+        rightstyle.configure('Right.TButton',font=('','20','bold'), width=2, arrowcolor='black', arrowsize=20)
+        move_slits_right_button = ttk.Button(labelframe_SlitConf, style="Right.TButton", command=lambda : self.shift_all_slits(shift_size_pix=(float(shift_size_pix_input_value.get()), 0)))
+        move_slits_right_button.place(x=410, y=30)
+
+        upstyle = ttk.Style()
+        upstyle.layout(
+            'Up.TButton',[
+                ('Button.focus', {'children': [
+                    ('Button.uparrow', None),
+                    ('Button.padding', {'sticky': 'nswe', 'children': [
+                        ('Button.label', {'sticky': 'nswe'}
+                         )]}
+                     )]}
+                 )])
+        upstyle.configure('Up.TButton',font=('','20','bold'), width=2, arrowcolor='black', arrowsize=20)
+        move_slits_up_button = ttk.Button(labelframe_SlitConf, style="Up.TButton", command=lambda : self.shift_all_slits(shift_size_pix=(0, float(shift_size_pix_input_value.get()))))
+        move_slits_up_button.place(x=385, y=5)
+
+        downstyle = ttk.Style()
+        downstyle.layout(
+            'Down.TButton',[
+                ('Button.focus', {'children': [
+                    ('Button.downarrow', None),
+                    ('Button.padding', {'sticky': 'nswe', 'children': [
+                        ('Button.label', {'sticky': 'nswe'}
+                         )]}
+                     )]}
+                 )])
+        downstyle.configure('Down.TButton',font=('','20','bold'), width=2, arrowcolor='black', arrowsize=20)
+        move_slits_down_button = ttk.Button(labelframe_SlitConf, style="Down.TButton", command=lambda : self.shift_all_slits(shift_size_pix=(0, -float(shift_size_pix_input_value.get()))))
+        move_slits_down_button.place(x=385, y=54)
 
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    SHOW TRACES ENABLED
@@ -5531,18 +5611,18 @@ class MainPage(tk.Frame):
         # self.traces = tk.IntVar()
         traces_button = tk.Button(
             labelframe_SlitConf, text="Show Traces", command=self.show_traces)
-        traces_button.place(x=330, y=-3)
+        traces_button.place(x=400, y=130)
 
         remove_traces_button = tk.Button(
             labelframe_SlitConf, text="Remove Traces", command=self.remove_traces, padx=0, pady=0)
-        remove_traces_button.place(x=330, y=24)
+        remove_traces_button.place(x=400, y=160)
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    View Slit Table
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         view_slit_tab_button = tk.Button(
             labelframe_SlitConf, text="View Slit Table", command=self.show_slit_table, padx=0, pady=0)
-        view_slit_tab_button.place(x=330, y=51)
+        view_slit_tab_button.place(x=400, y=190)
         
 # #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
 #  #    Find Stars
@@ -5550,10 +5630,12 @@ class MainPage(tk.Frame):
 
         button_find_stars = tk.Button(labelframe_SlitConf, text="Find stars", bd=3,
                                             command=self.find_stars, state='active', padx=0, pady=0)#'disabled')
-        button_find_stars.place(x=330, y=78)
+        button_find_stars.place(x=400, y=100)
         self.button_find_stars = button_find_stars
         
-
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
+#  #    Fix Overlapping Slits
+# #===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#===#=====
         #### check overlapping slits and create a series of new DMD patterns with slits that do not overlap #####
 
         labelframe_PatternSeries = tk.LabelFrame(labelframe_SlitConf, text="Create Pattern Series with No Overlapping Slits",
@@ -9401,6 +9483,22 @@ class MainPage(tk.Frame):
             self.canvas.redraw()
 
         print(current_pattern_tags)
+
+    def shift_all_slits(self, shift_size_pix = (1, 1)):
+
+        self.slits_only()
+        CM.CompoundMixin.move_delta_pt(self.canvas, off_pt=shift_size_pix)
+        
+        self.canvas.redraw()
+
+         # update slit table/df
+        updated_objs = CM.CompoundMixin.get_objects(self.canvas)
+
+        # way faster than looping
+        viewer_list = np.full(len(updated_objs), self.canvas.viewer)
+        np.array(
+            list(map(self.SlitTabView.update_table_from_obj, updated_objs, viewer_list)))
+
 
     def apply_to_all(self):
         """ apply the default slit width/length to all slits """
