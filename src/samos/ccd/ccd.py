@@ -124,7 +124,7 @@ class CCD():
                 out_f.write(buf)
 
 
-    def prep_exposure(self, file_name, start_fnumber):
+    def prep_exposure(self, file_name, start_fnumber, trigger_mode):
         self.set_ip()
         night_dir_basename = get_fits_dir() / file_name
         fnumber = start_fnumber
@@ -184,9 +184,9 @@ class CCD():
         with xml.dom.minidom.parseString(self.get_url(target_url + 'command.xml', as_string=True)) as dom:
             dom_list = dom.getElementsByTagName("list")[0]
             param_list = dom_list.getElementsByTagName("parameter")
-            acquire_cmd = self.xml_parameter_tag(param_list, "Acquire an image.", "post_name")
+            self.acquire_cmd = self.xml_parameter_tag(param_list, "Acquire an image.", "post_name")
             #this is the final command, and we distinguish Light vs Dark also here...
-            if self.TriggerMode == 4:
+            if trigger_mode == self.SHUTTER_OPEN:
                  xml_str = self.xml_parameter_pulldown_value(param_list, "Acquire an image.", "Light")
             else: 
                  xml_str = self.xml_parameter_pulldown_value(param_list, "Acquire an image.", "Dark")
@@ -196,7 +196,7 @@ class CCD():
         # Construct the commands needed to initialize the HTTP Camera Server
         serial_size = 528  # This is our desired serial size in pixels for this test
         binning = (ser_pix + serial_size - 1) // serial_size
-        cmd_str = f"{exposure_time_cmd}={self.ExpTime}&{test_img_cmd}={walking_1}&{trigger_mode_cmd}={self.TriggerMode}"
+        cmd_str = f"{exposure_time_cmd}={params['exptime']}&{test_img_cmd}={walking_1}&{trigger_mode_cmd}={trigger_mode}"
         cmd_str += f"&{serial_origin_cmd}=8&{serial_length_cmd}={serial_size}&{serial_post_scan_cmd}=0&{serial_binning_cmd}=1"
         cmd_str += f"&{serial_phasing_cmd}=2&{parallel_origin_cmd}=0&{parallel_length_cmd}=1032&{parallel_post_scan_cmd}=0"
         cmd_str += f"&{parallel_binning_cmd}=1&{parallel_phasing_cmd}=0&{port_select_cmd}=3&{source_cmd}={source_camera}"

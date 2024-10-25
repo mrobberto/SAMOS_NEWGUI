@@ -45,6 +45,7 @@ class MainPage(SAMOSFrame):
         super().__init__(parent, container, "Main Frame", **kwargs)
         self.previous_image_name = ""
         self.selected_object_tag = None
+        self.last_update_time = datetime.now()
         
         self.initialize_slit_table()
 
@@ -1710,6 +1711,9 @@ class MainPage(SAMOSFrame):
 
 
     def update_status_box(self):
+        if (datetime.now() - self.last_update_time).seconds > 5:
+            self.last_update_time = datetime.now()
+            self.PCM.update_status()
         if self.PCM.is_on:
             self.status_box.itemconfig("filter_ind", fill=INDICATOR_LIGHT_ON_COLOR)
             self.status_box.itemconfig("grism_ind", fill=INDICATOR_LIGHT_ON_COLOR)

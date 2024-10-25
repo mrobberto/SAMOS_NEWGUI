@@ -45,7 +45,7 @@ class App(ttk.Window):
         self.PAR = SAMOSConfig()
         self.main_fits_header = FITSHead(self.PAR, self.logger)
         self.simulator = None
-        self.protocol("WM_DELETE_WINDOW", self.destroy)
+        self.protocol("WM_DELETE_WINDOW", self.destroy_all)
         
         DMD = DigitalMicroMirrorDevice(self.logger, self.PAR)
         # Instantiate the classes that represent the SAMOS hardware
@@ -142,7 +142,7 @@ class App(ttk.Window):
         self.simulator = None
 
 
-    def destroy(self):
+    def destroy_all(self):
         """
         While closing, if running the simulator, close it.
         """
@@ -154,7 +154,7 @@ class App(ttk.Window):
             self.logger.info("Simulator has exited")
         self.logger.warning("Finished shutdown functions")
         super().destroy()
-
+        
 
     def show_logging_window(self):
         self.log_window.deiconify()
@@ -175,7 +175,7 @@ class App(ttk.Window):
         filemenu.add_command(label="ETC", command=lambda: self.show_frame("ETCPage"))
         filemenu.add_separator()
         filemenu.add_command(label="Logging", command=self.show_logging_window)
-        filemenu.add_command(label="Exit", command=self.quit)
+        filemenu.add_command(label="Exit", command=self.destroy)  #quit)
 
         # help menu
         help_menu = tk.Menu(menubar, tearoff=0)
