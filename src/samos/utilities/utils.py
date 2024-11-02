@@ -31,7 +31,7 @@ from regions import Regions
 from .constants import *
 
 
-def get_data_file(mod_path, filename=None):
+def get_data_file(mod_path, filename=None, must_exist=True):
     """
     Returns the path to a data file given the calling module and the name of the file. 
     Raises a FileNotFoundError if the data file requested is not actually present at the 
@@ -60,7 +60,7 @@ def get_data_file(mod_path, filename=None):
     if filename is not None:
         file_path = file_path / filename
     
-    if not file_path.exists():
+    if (not file_path.exists()) and (must_exist):
         raise FileNotFoundError("File {} does not exist".format(file_path))
     return file_path
 

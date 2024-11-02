@@ -20,8 +20,11 @@ from samos.sami import SAMI
 from samos.soar import SOAR
 from samos.system.fits_header import FITSHead
 from samos.system.config import SAMOSConfig
+from samos.system.database import StorageDatabase
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage
 from samos.ui.logging_window import LoggingWindow
+from samos.ui.widgets import VariableRegistry
+from samos.utilities import get_data_file
 from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
 from samos.utilities.tk import about_box
@@ -33,7 +36,7 @@ class App(ttk.Window):
         self.logger = logging.getLogger('samos')
         self.logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
@@ -43,6 +46,11 @@ class App(ttk.Window):
         self.logger.addHandler(self.log_window.text_handler)
         self.logger.info("Initializing App")
         self.PAR = SAMOSConfig()
+        self.DB = StorageDatabase(
+            db_file=get_data_file("system", filename="Settings.yaml", must_exist=False),
+            logger = self.logger
+        )
+        self.registry = VariableRegistry(self.DB, self, self.logger)
         self.main_fits_header = FITSHead(self.PAR, self.logger)
         self.simulator = None
         self.protocol("WM_DELETE_WINDOW", self.destroy_all)
@@ -56,7 +64,9 @@ class App(ttk.Window):
             "SOAR": SOAR(self.PAR),
             "SAMI": SAMI(self.PAR, self.logger),
             "main_fits_header": self.main_fits_header,
-            "PAR": self.PAR
+            "PAR": self.PAR,
+            "DB": self.DB,
+            "registry": self.registry
         }
         
         # Setting up Initial Things
@@ -86,7 +96,6 @@ class App(ttk.Window):
             self.container.add(frame, text=frame_class.__name__)
             current_index += 1
             self.logger.info(f"Finished creating frame {frame_class.__name__}")
-        self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
         self.lift()
 

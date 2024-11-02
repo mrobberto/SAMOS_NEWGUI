@@ -24,9 +24,12 @@ import shutil
 
 import tkinter as tk
 import ttkbootstrap as ttk
+from samos.system.database import StorageDatabase
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.constants import *
 from samos.utilities.tk import check_widgets
+
+from .widgets import *
 
 
 def check_enabled(func):
@@ -52,6 +55,8 @@ class SAMOSFrame(ttk.Frame):
         self.main_fits_header = kwargs["main_fits_header"]
         self.PAR = kwargs["PAR"]
         self.fits_dir = get_fits_dir()
+        self.db = kwargs["DB"]
+        self.registry = kwargs["registry"]
         self.check_widgets = {}
 
         self.main_frame = ttk.LabelFrame(self, text=name, borderwidth=5)
@@ -66,7 +71,16 @@ class SAMOSFrame(ttk.Frame):
 
     def create_custom_menus(self, parent, menubar):
         pass
-        
+
+
+    def make_db_var(self, var, name, default):
+        name_int = self.registry.check_name(name)
+        var_name = f"{name}_{name_int}"
+        value = self.db.get_value(name, default=default)
+        tkvar = var(name=var_name, value=value)
+        self.registry.register(name, tkvar)
+        tkvar.trace_add('write', functools.partial(self.registry.update, name, tkvar))
+        return tkvar
 
     def set_enabled(self, run_from_main=False):
         """

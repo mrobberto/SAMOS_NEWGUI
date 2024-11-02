@@ -25,9 +25,9 @@ class GSQueryFrame(ttk.LabelFrame):
 
         # UI
         ttk.Label(self, text="Survey").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.survey_selected = tk.StringVar(self, list(self.SURVEY_MAP.keys())[0])
-        ttk.OptionMenu(self, self.survey_selected, *list(self.SURVEY_MAP.keys())).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.survey_filter = tk.StringVar(self, "i")
+        self.survey_selected =  self.make_db_var(tk.StringVar, "gs_survey_selected", "SkyMapper")
+        ttk.OptionMenu(self, self.survey_selected, None, *list(self.SURVEY_MAP.keys())).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        self.survey_filter = self.make_db_var(tk.StringVar, "gs_survey_filter", "i")
         ttk.Label(self, text="Filter:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(self, textvariable=self.survey_filter).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         ttk.Button(self, text="Run Query", command=self.run_query).grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
