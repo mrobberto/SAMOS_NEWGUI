@@ -333,9 +333,8 @@ class DMDPage(SAMOSFrame):
     @check_enabled
     def dmd_initialize(self):
         """ dmd_initialize """
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.initialize()
-            self.DMD._open()
+        self.DMD.initialize()
+        self.DMD._open()
         self._set_slit_image("current_dmd_state.png", "initial state")
         self.initialized = True
 
@@ -346,8 +345,7 @@ class DMDPage(SAMOSFrame):
         sets all mirrors "ON" as seen by the imaging channel. From the point of view of 
         the DMD with its current orientation, all mirrors are "OFF"
         """
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_blackout()
+        self.DMD.apply_blackout()
         self._set_slit_image("current_dmd_state.png", "whiteout")
 
 
@@ -357,24 +355,21 @@ class DMDPage(SAMOSFrame):
         sets all mirrors "OFF" as seen by the imaging channel. From the point of view of 
         the DMD with its current orientation, all mirrors are "ON"
         """
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_whiteout()
+        self.DMD.apply_whiteout()
         self._set_slit_image("current_dmd_state.png", "blackout")
 
 
     @check_enabled
     def dmd_checkerboard(self):
         """ dmd_checkerboard """
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_checkerboard()
+        self.DMD.apply_checkerboard()
         self._set_slit_image("current_dmd_state.png", "checkerboard")
 
 
     @check_enabled
     def dmd_invert(self):
         """ dmd_invert """
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_invert()
+        self.DMD.apply_invert()
         if "inverted" in self.map_filename.get():
             state_name = self.map_filename.get().replace(" inverted", "")
         else:
@@ -385,8 +380,7 @@ class DMDPage(SAMOSFrame):
     @check_enabled
     def dmd_antinvert(self):
         """ dmd_antinvert """
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_antinvert()
+        self.DMD.apply_antinvert()
         if "inverted" in self.map_filename.get():
             state_name = self.map_filename.get().replace(" inverted", "")
         else:
@@ -430,8 +424,7 @@ class DMDPage(SAMOSFrame):
         self.main_fits_header.set_param("dmdmap", self.map_filename_path.name)
         map_list = self._load_map(self.map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_shape(dmd_shape)
+        self.DMD.apply_shape(dmd_shape)
 
         # Create astropy regions file
         self.logger.info("Creating Regions file")
@@ -547,8 +540,7 @@ class DMDPage(SAMOSFrame):
         self.map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
         map_list = self._load_map(self.map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_shape(dmd_shape)
+        self.DMD.apply_shape(dmd_shape)
         self._set_slit_image("current_dmd_state.png", "Current Map")
 
 

@@ -55,7 +55,7 @@ class App(ttk.Window):
         self.simulator = None
         self.protocol("WM_DELETE_WINDOW", self.destroy_all)
         
-        DMD = DigitalMicroMirrorDevice(self.logger, self.PAR)
+        DMD = DigitalMicroMirrorDevice(self.logger, self.PAR, self.DB)
         # Instantiate the classes that represent the SAMOS hardware
         self.samos_classes = {
             "CCD": CCD(self.PAR, DMD, self.logger),
