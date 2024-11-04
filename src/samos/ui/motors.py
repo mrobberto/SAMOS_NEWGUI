@@ -45,7 +45,7 @@ class MotorsPage(SAMOSFrame):
         b = ttk.Button(port_status_frame, text="Get Status", command=self.all_ports_status, bootstyle="info")
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        self.port_status_info = tk.StringVar(self, "")
+        self.port_status_info = self.make_db_var(tk.StringVar, "pcm_port_status", "")
         tk.Label(port_status_frame, textvariable=self.port_status_info).grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # Mechanism Selection
@@ -54,18 +54,18 @@ class MotorsPage(SAMOSFrame):
         sel_frame = ttk.Frame(frame)
         sel_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
         # Select Mechanism to Act On
-        self.active_wheel = tk.StringVar(self, 'FW1')
-        self.current_wheel = 'FW1'
-        b = tk.Radiobutton(sel_frame, text='FW1', value='FW1', variable=self.active_wheel, command=self.choose_wheel)
+        self.active_wheel = self.make_db_var(tk.StringVar, "pcm_active_element", "FW1", callback=self.choose_wheel)
+        active_wheel = self.active_wheel.get()
+        b = tk.Radiobutton(sel_frame, text='FW1', value='FW1', variable=self.active_wheel)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        b = tk.Radiobutton(sel_frame, text='FW2', value='FW2', variable=self.active_wheel, command=self.choose_wheel)
+        b = tk.Radiobutton(sel_frame, text='FW2', value='FW2', variable=self.active_wheel)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        b = tk.Radiobutton(sel_frame, text='GR_A', value='GR_A', variable=self.active_wheel, command=self.choose_wheel)
+        b = tk.Radiobutton(sel_frame, text='GR_A', value='GR_A', variable=self.active_wheel)
         b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        b = tk.Radiobutton(sel_frame, text='GR_B', value='GR_B', variable=self.active_wheel, command=self.choose_wheel)
+        b = tk.Radiobutton(sel_frame, text='GR_B', value='GR_B', variable=self.active_wheel)
         b.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Send home
@@ -76,10 +76,18 @@ class MotorsPage(SAMOSFrame):
         b = ttk.Button(frame, text="Get Current Steps:", command=self.current_step, bootstyle='info')
         b.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
-        self.step_position = tk.StringVar(self, "")
-        tk.Label(frame, textvariable=self.step_position).grid(row=0, column=2, sticky=TK_STICKY_ALL)
+
+        self.step_positions = {}
+        for element in PCM_ELEMENTS:
+            self.step_positions[element] = self.make_db_var(tk.IntVar, f"pcm_{element}_pos", 0)
+
+        self.step_labels = {}
+        for element in self.step_positions:
+            self.step_labels[element] = ttk.Label(frame, textvariable=self.step_positions[element])
+        self.step_labels[self.active_wheel.get()].grid(row=0, column=2, sticky=TK_STICKY_ALL)
+
         # Move to step
-        self.step_entry = tk.StringVar(self, "")
+        self.step_entry = tk.IntVar(self, 0)
         e = tk.Entry(frame, textvariable=self.step_entry)
         e.grid(row=1, column=2, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
@@ -91,26 +99,28 @@ class MotorsPage(SAMOSFrame):
         self.check_widgets[b] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
         # Move to Position
         ttk.Label(frame, text="Set Position").grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        self.pos_options = {"FW1": ["A1", "A2", "A3", "A4", "A5", "A6"],
-                            "FW2": ["B1", "B2", "B3", "B4", "B5", "B6"],
-                            "GR_A": ["GR_A1", "GR_A2"],
-                            "GR_B": ["GR_B1", "BR_B2"]}
-        self.selected_pos = tk.StringVar(self, self.pos_options[self.active_wheel.get()][0])
-        self.options = ttk.OptionMenu(frame, self.selected_pos, *self.pos_options[self.active_wheel.get()], command=self.move_to_pos, bootstyle="success")
+        self.pos_options = {
+            "FW1": ["A1", "A2", "A3", "A4", "A5", "A6"],
+            "FW2": ["B1", "B2", "B3", "B4", "B5", "B6"],
+            "GR_A": ["GR_A1", "GR_A2"],
+            "GR_B": ["GR_B1", "BR_B2"]
+        }
+        self.selected_pos = self.make_db_var(tk.StringVar, "pcm_selected_pos", self.pos_options[active_wheel][0])
+        self.options = ttk.OptionMenu(frame, self.selected_pos, None, *self.pos_options[active_wheel], command=self.move_to_pos, bootstyle="success")
         self.options.grid(row=2, column=2, sticky=TK_STICKY_ALL)
         self.check_widgets[self.options] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Move to Filter
         ttk.Label(self.main_frame, text="Set Filter").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.filter_options = ["open", "SLOAN-g", "SLOAN-r", "SLOAN-i", "SLOAN-z", "Ha", "O[III]", "S[II]"]
-        self.selected_filter = tk.StringVar(self, self.filter_options[0])
-        m = ttk.OptionMenu(self.main_frame, self.selected_filter, *self.filter_options, command=self.move_to_filter, bootstyle="success")
+        self.selected_filter = self.make_db_var(tk.StringVar, "pcm_selected_filter", self.filter_options[0])
+        m = ttk.OptionMenu(self.main_frame, self.selected_filter, None, *self.filter_options, command=self.move_to_filter, bootstyle="success")
         m.grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[m] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
 
         # Custom Command
         ttk.Label(self.main_frame, text="Enter Command:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        self.command = tk.StringVar(self, "")
+        self.command = self.make_db_var(tk.StringVar, "pcm_custom_command", "")
         e = tk.Entry(self.main_frame, textvariable=self.command)
         e.grid(row=4, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self.PCM, "is_on", True), ("condition", self.PCM, "initialized", True)]
@@ -155,15 +165,16 @@ class MotorsPage(SAMOSFrame):
 
     @check_enabled
     def choose_wheel(self):
-        """ Choose_FWorGR """
-        chosen_wheel = self.active_wheel.get()
-        if chosen_wheel != self.current_wheel:
-            # Empty out all status labels
-            self.step_position.set("")
-            self.step_entry.set("")
-            self.current_wheel = chosen_wheel
-            self.selected_pos.set(self.pos_options[chosen_wheel][0])
-            self.options.set_menu(self.selected_pos.get(), *self.pos_options[chosen_wheel])
+        """ Choose active wheel. On-change callback """
+        wheel = self.active_wheel.get()
+        for element in self.step_labels:
+            if wheel == element:
+                self.step_labels[element].grid(row=0, column=2, sticky=TK_STICKY_ALL)
+            else:
+                self.step_labels[element].grid_forget()
+        self.step_entry.set(self.step_positions[wheel].get())
+        self.selected_pos.set(self.pos_options[wheel][0])
+        self.options.set_menu(None, *self.pos_options[wheel])
 
 
     @check_enabled
@@ -202,7 +213,7 @@ class MotorsPage(SAMOSFrame):
         result = self.PCM.current_filter_step(self.active_wheel.get())
         self.logger.debug(f"Initial step result is {result}")
         result = self.PCM.extract_steps_from_return_string(result)
-        self.step_position.set("{}".format(result))
+        self.step_positions[self.active_wheel.get()].set(result)
 
 
     @check_enabled
@@ -228,21 +239,21 @@ class MotorsPage(SAMOSFrame):
         else:
             result = self.PCM.move_filter_wheel(new_pos)
             self.main_fits_header.set_param("filtpos", new_pos)
-        self.logger.info("Moved {} to {}. Result {}".format(current_wheel, new_pos, result))
+        self.logger.info(f"Moved {current_wheel} to {new_pos}. Result {result}")
 
 
     @check_enabled
     def move_to_filter(self, *args):
         result = self.PCM.move_filter_wheel(self.selected_filter.get())
         self.main_fits_header.set_param("filter", self.selected_filter.get())
-        self.logger.info("Moved filters to {}. Result {}".format(self.selected_filter.get(), result))
+        self.logger.info(f"Moved filters to {self.selected_filter.get()}. Result {result}")
 
 
     @check_enabled
     def enter_command(self):
-        self.logger.info("Commanding PCM {}".format(self.command.get()))
+        self.logger.info(f"Commanding PCM {self.command.get()}")
         result = self.PCM.send_command_string(self.command.get())
-        self.logger.info("PCM returned {}".format(result))
+        self.logger.info(f"PCM returned {result}")
 
 
     def set_enabled(self, run_from_main=False):

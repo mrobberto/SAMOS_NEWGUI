@@ -35,6 +35,9 @@ SAMOS_ARCS_MM_SCALE = 206265. * u.arcsec / (4100 * u.mm * 4)  # f/4  arcsec/mm
 DMD_MIRROR_SCALE = SAMOS_ARCS_MM_SCALE * 0.0137 * u.mm
 DMD_MIRROR_TO_PIXEL_SCALE = 0.892  # mirrors to pixel as per e-mail by RB  Jan 207, 2023
 
+# PCM Parameters
+PCM_ELEMENTS = ["FW1", "FW2", "GR_A", "GR_B"]
+
 # SOAR Parameters
 SOAR_EFL = 68176.3 * u.mm
 SOAR_ARCS_MM_SCALE = 206265. * u.arcsec / (4100 * u.mm * 16.6)  # f/4  arcsec/mm

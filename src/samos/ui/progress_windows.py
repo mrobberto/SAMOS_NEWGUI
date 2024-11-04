@@ -14,11 +14,14 @@ import ttkbootstrap as ttk
 from samos.utilities import get_fits_dir
 from samos.utilities.constants import *
 
+from .common_frame import SAMOSFrame
+
 class ExposureProgressWindow(tk.Toplevel):
-    def __init__(self, parent, ccd, par, mfh, dmd, logger, **kwargs):
+    def __init__(self, parent, ccd, par, db, mfh, dmd, logger, **kwargs):
         self.parent = parent
         self.CCD = ccd
         self.PAR = par
+        self.db = db
         self.main_fits_header = mfh
         self.DMD = dmd
         self.logger = logger

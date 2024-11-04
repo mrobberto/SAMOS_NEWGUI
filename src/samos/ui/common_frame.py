@@ -47,6 +47,7 @@ class SAMOSFrame(ttk.Frame):
         super().__init__(container)
         self.logger = logging.getLogger("samos")
         self.parent = parent
+        self.samos_classes = kwargs
         self.CCD = kwargs["CCD"]
         self.DMD = kwargs['DMD']
         self.PCM = kwargs["PCM"]
@@ -73,12 +74,12 @@ class SAMOSFrame(ttk.Frame):
         pass
 
 
-    def make_db_var(self, var, name, default):
+    def make_db_var(self, var, name, default, callback=None):
         name_int = self.registry.check_name(name)
         var_name = f"{name}_{name_int}"
         value = self.db.get_value(name, default=default)
         tkvar = var(name=var_name, value=value)
-        self.registry.register(name, tkvar)
+        self.registry.register(name, tkvar, callback=callback)
         tkvar.trace_add('write', functools.partial(self.registry.update, name, tkvar))
         return tkvar
 

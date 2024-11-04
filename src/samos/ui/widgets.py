@@ -23,11 +23,11 @@ class VariableRegistry:
         self.db = db
         self.store = {}
 
-    def register(self, db_name, var_object):
+    def register(self, db_name, var_object, callback=None):
         self.logger.debug(f"Registering {var_object} to {db_name}")
         if db_name not in self.store:
             self.store[db_name] = []
-        self.store[db_name].append(var_object)
+        self.store[db_name].append((var_object, callback))
         self.logger.debug(f"{len(self.store[db_name])} items registered to {db_name}")
 
     def check_name(self, db_name):
@@ -40,9 +40,11 @@ class VariableRegistry:
         self.logger.debug(f"Updating database {db_name} to {value} (from {var_object})")
         self.db.update_value(db_name, value)
         self.logger.debug(f"Database updated. Checking stored variables")
-        for var in self.store[db_name]:
+        for (var, callback) in self.store[db_name]:
             self.logger.debug(f"Checking {var}")
             if var != var_object:
                 self.logger.debug(f"Updating {var} with new value {value} ({type(value)})")
                 var.set(value)
+            if callback is not None:
+                callback()
         self.logger.debug("Finished update")

@@ -215,8 +215,10 @@ class MainPage(SAMOSFrame):
         b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
         b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # QUERY Server
-        self.gs_query_frame = GSQueryFrame(frame, self.fits_ra, self.fits_dec, self.Query_Survey, self.logger)
+        # ***** DEPENDENCY *****
+        self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "main_ra", "main_dec", **self.samos_classes)
         self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        # ***** DEPENDENCY *****
         # Chosen Star Frame
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
@@ -862,7 +864,7 @@ class MainPage(SAMOSFrame):
             # By default, subtract bias and dark
             self.ql_bias.set(1)
             self.ql_dark.set(1)
-        exp_window = ExposureProgressWindow(self, self.CCD, self.PAR, self.main_fits_header, self.DMD, self.logger)
+        exp_window = ExposureProgressWindow(self, self.CCD, self.PAR, self.db, self.main_fits_header, self.DMD, self.logger)
         exp_window.start_exposure(self.image_type.get(), **exposure_params)
 
 

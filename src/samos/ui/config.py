@@ -48,7 +48,7 @@ class ConfigPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="Servers", borderwidth=2)
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        self.ip_loc = self.make_db_var(tk.StringVar, "config_ip_location", "disconnected")
+        self.ip_loc = self.make_db_var(tk.StringVar, "config_ip_status", "disconnected")
         b = tk.Radiobutton(frame, text='Connected', variable=self.ip_loc, value='connected')
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         b = tk.Radiobutton(frame, text='Disconnected', variable=self.ip_loc, value='disconnected')

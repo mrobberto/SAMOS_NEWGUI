@@ -62,7 +62,7 @@ class DigitalMicroMirrorDevice():
         """
         self.logger.info("Opening a connection to DMD")
         dmd_ip, dmd_port = self._get_address()
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
+        if self.db.get_value("config_ip_status", default="disconnected") == "connected":
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
                 try:
                     instrument.connect((dmd_ip, dmd_port))
@@ -74,7 +74,7 @@ class DigitalMicroMirrorDevice():
             
         self.is_on = True
         self.logger.info("Sending test message")
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
+        if self.db.get_value("config_ip_status", default="disconnected") == "connected":
             instrument.sendall(b':TEST\n')
             response = instrument.recv(1024)
             self.logger.info("Received response '{}'".format(response.decode('ascii')))
@@ -94,7 +94,7 @@ class DigitalMicroMirrorDevice():
         """
         self.logger.info("Sending DMD the command '{}'".format(command))
         dmd_ip, dmd_port = self._get_address()
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
+        if self.db.get_value("config_ip_status", default="disconnected") == "connected":
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
                 try:
                     instrument.connect((dmd_ip, dmd_port))
@@ -561,7 +561,7 @@ class DigitalMicroMirrorDevice():
         Wraps sending a list of messages in a try/except block, and prints out a semi-
         custom error message, then returns false, on any failure.
         """
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
+        if self.db.get_value("config_ip_status", default="disconnected") == "connected":
             try:
                 for m in message:
                     self.send(m)

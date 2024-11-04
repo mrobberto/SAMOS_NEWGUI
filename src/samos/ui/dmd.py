@@ -484,8 +484,7 @@ class DMDPage(SAMOSFrame):
     @check_enabled
     def push_slits(self):
         dmd_shape = self._make_dmd_array(self.map)
-        if self.db.get_value("config_ip_location", default="disconnected") == "connected":
-            self.DMD.apply_shape(dmd_shape)
+        self.DMD.apply_shape(dmd_shape)
         self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
 
 

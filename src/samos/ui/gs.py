@@ -35,15 +35,17 @@ class GSPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="FITS Manager")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         # RA, DEC Entry box
-        self.ra =  self.make_db_var(tk.DoubleVar, "gs_centre_ra", 150.17110)
+        # ***** DEPENDENCY *****
+        self.ra = self.make_db_var(tk.DoubleVar, "gs_centre_ra", 150.17110)
         ttk.Label(frame, text="RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.ra).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.dec =  self.make_db_var(tk.DoubleVar, "gs_centre_dec", -54.79004)
+        self.dec = self.make_db_var(tk.DoubleVar, "gs_centre_dec", -54.79004)
+        # ***** DEPENDENCY *****
         ttk.Label(frame, text="Dec:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
         # QUERY Server
-        self.gs_query_frame = GSQueryFrame(self.main_frame, self.ra, self.dec, self.run_query, self.logger)
+        self.gs_query_frame = GSQueryFrame(self, self.main_frame, self.run_query, "gs_centre_ra", "gs_centre_dec", **self.samos_classes)
         self.gs_query_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # GINGA DISPLAY
@@ -97,25 +99,25 @@ class GSPage(SAMOSFrame):
         b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
         b.grid(row=2, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
         # Candidate Guide Star Co-ordinates
-        self.gs_ra =  self.make_db_var(tk.DoubleVar, "gs_star_ra", self.ra.get())
+        self.gs_ra =  self.make_db_var(tk.DoubleVar, "gs_guidestar_ra", self.ra.get())
         ttk.Label(frame, text="RA:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_ra).grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.gs_dec =  self.make_db_var(tk.DoubleVar, "gs_star_dec", self.dec.get())
+        self.gs_dec =  self.make_db_var(tk.DoubleVar, "gs_guidestar_dec", self.dec.get())
         ttk.Label(frame, text="Dec:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_dec).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         # X Shift
-        self.gs_xshift =  self.make_db_var(tk.DoubleVar, "gs_star_xshift", 0.)
+        self.gs_xshift =  self.make_db_var(tk.DoubleVar, "gs_guidestar_xshift", 0.)
         ttk.Label(frame, text="X Shift (mm)").grid(row=5, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_xshift).grid(row=5, column=1, sticky=TK_STICKY_ALL)
         # Y Shift
-        self.gs_yshift =  self.make_db_var(tk.DoubleVar, "gs_star_yshift", 0.)
+        self.gs_yshift =  self.make_db_var(tk.DoubleVar, "gs_guidestar_yshift", 0.)
         ttk.Label(frame, text="Y Shift (mm)").grid(row=6, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_yshift).grid(row=6, column=1, sticky=TK_STICKY_ALL)
         # Magnitude
-        self.gs_mag = self.make_db_var(tk.DoubleVar, "gs_star_mag", 0.0)
+        self.gs_mag = self.make_db_var(tk.DoubleVar, "gs_guidestar_mag", 0.0)
         ttk.Label(frame, text="Magnitude:").grid(row=7, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_mag).grid(row=7, column=1, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR, bootstyle="success")
+        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_to_telescope, bootstyle="success")
         b.grid(row=8, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
 
@@ -133,8 +135,8 @@ class GSPage(SAMOSFrame):
             r.write(get_fits_dir() / "current_regions.reg", format='ds9')
 
 
-    def send_RADEC_to_SOAR(self):
-        self.logger.warning("send_RADEC_to_SOAR has not been implemented!")
+    def send_to_telescope(self):
+        self.logger.warning("send_to_telescope has not been implemented!")
 
 
     def run_query(self, catalog):

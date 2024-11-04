@@ -60,7 +60,7 @@ class App(ttk.Window):
         self.samos_classes = {
             "CCD": CCD(self.PAR, DMD, self.logger),
             "DMD": DMD,
-            "PCM": PCM(self.PAR, self.logger, self.main_fits_header),
+            "PCM": PCM(self.PAR, self.DB, self.logger, self.main_fits_header),
             "SOAR": SOAR(self.PAR),
             "SAMI": SAMI(self.PAR, self.logger),
             "main_fits_header": self.main_fits_header,
