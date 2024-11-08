@@ -135,7 +135,6 @@ class ConfigPage(SAMOSFrame):
         self.logger.info("Finished initial widget check.")
 
 
-    @check_enabled
     def set_files_base(self):
         self.logger.info(f"Set files to be stored in {self.files_loc.get()}")
         if (self.files_loc.get() == "custom"):
@@ -151,7 +150,6 @@ class ConfigPage(SAMOSFrame):
                 self.custom_files_path.set(custom_loc)
 
 
-    @check_enabled
     def LogBookstartup(self):
         self.PAR.create_log_file()
 

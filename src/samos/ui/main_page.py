@@ -15,6 +15,7 @@ from astropy.coordinates import SkyCoord
 from astropy.io import fits, ascii
 from astropy import units as u
 from astropy import wcs
+from functools import partial
 from ginga.AstroImage import AstroImage
 from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
 from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
@@ -59,7 +60,7 @@ class MainPage(SAMOSFrame):
         self.sub_pattern_names = []
 
         # Early variable setting when variables must be valid for widgets to be enabled.
-        self.loaded_reg_file = tk.StringVar(self, "")
+        self.loaded_reg_file = self.make_db_var(tk.StringVar, "dmd_loaded_region_file", "none")
         self.loaded_reg_file_path = None
 
         # Create column frames to hopefully keep things as even as possible
@@ -196,39 +197,37 @@ class MainPage(SAMOSFrame):
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load Existing File", command=self.load_existing_file)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.fits_ra = tk.DoubleVar(self, 150.17110)
+        self.fits_ra = self.make_db_var(tk.DoubleVar, "target_ra", 150.17110)
         ttk.Label(frame, text="RA:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_ra).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.fits_dec = tk.DoubleVar(self, -54.79004)
+        self.fits_dec = self.make_db_var(tk.DoubleVar, "target_dec", -54.79004)
         ttk.Label(frame, text="DEC:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_ra).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        self.fits_nstars = tk.IntVar(self, 25)
-        ttk.Label(frame, text="Nr. of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_dec).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        self.fits_nstars = self.make_db_var(tk.IntVar, "twirl_n_stars", 25)
+        ttk.Label(frame, text="Number of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
-        b = ttk.Button(frame, text="Send to SOAR", command=self.send_RADEC_to_SOAR, bootstyle="success")
+        b = ttk.Button(frame, text="Send to SOAR", command=self.send_to_soar, bootstyle="success")
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
         b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
         b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # QUERY Server
-        # ***** DEPENDENCY *****
-        self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "main_ra", "main_dec", **self.samos_classes)
+        self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "target_ra", "target_dec", **self.samos_classes)
         self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        # ***** DEPENDENCY *****
         # Chosen Star Frame
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        self.ra_cntr = tk.DoubleVar(self, self.fits_ra.get())
+        self.ra_cntr = self.make_db_var(tk.DoubleVar, "centre_ra", self.fits_ra.get())
         ttk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.ra_cntr_mm = tk.DoubleVar(self, 0.)
+        self.ra_cntr_mm = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
         ttk.Label(cntr_frame, text="X (mm):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr_mm, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        self.dec_cntr = tk.DoubleVar(self, self.fits_dec.get())
+        self.dec_cntr = self.make_db_var(tk.DoubleVar, "centre_dec", self.fits_dec.get())
         ttk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.dec_cntr_mm = tk.DoubleVar(self, 0.)
+        self.dec_cntr_mm = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
         ttk.Label(cntr_frame, text="Y (mm):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr_mm, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
@@ -274,30 +273,37 @@ class MainPage(SAMOSFrame):
         frame = ttk.LabelFrame(fctr, text="Tools")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Early variable definition because it's needed to set an enable condition.
-        self.source_pickup_enabled = tk.IntVar(self, 0)
+        self.source_pickup_enabled = self.make_db_var(tk.BooleanVar, "source_pickup_enabled", False)
         # Shape
         ttk.Label(frame, text="Shape:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.draw_type = tk.StringVar(self, "box")
+        self.draw_type = self.make_db_var(tk.StringVar, "main_draw_type", "box")
         e = tk.Entry(frame, textvariable=self.draw_type)
         e.bind("<Return>", self.set_drawparams)
         e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = [("tkvar", self.source_pickup_enabled, 1)]
+        self.check_widgets[e] = [("tkvar", self.source_pickup_enabled, True)]
         # Colour
         self.draw_color = ttk.Combobox(frame, values=self.drawcolors, style="TCombobox")
         self.draw_color.current(self.drawcolors.index("red"))
         self.draw_color.bind("<<ComboboxSelected>>", self.set_drawparams)
         self.draw_color.grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        # Fille
-        self.draw_fill = tk.IntVar(self, 0)
+        # Fill
+        self.draw_fill = self.make_db_var(tk.BooleanVar, "main_draw_fill", False)
         c = tk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=True, offvalue=False)
         c.grid(row=0, column=3, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="Alpha:").grid(row=0, column=4, sticky=TK_STICKY_ALL)
-        self.draw_alpha = tk.DoubleVar(self, 1.0)
+        self.draw_alpha = self.make_db_var(tk.DoubleVar, "main_draw_alpha", 1.0)
         e = tk.Entry(frame, width=8, textvariable=self.draw_alpha)
         e.bind("<Return>", self.set_drawparams)
         e.grid(row=0, column=5, sticky=TK_STICKY_ALL)
         # Slit Configurations
-        b = tk.Checkbutton(frame, text="Source Pickup", variable=self.source_pickup_enabled, command=self.set_slit_drawtype)
+        b = tk.Checkbutton(
+            frame,
+            text="Source Pickup",
+            variable=self.source_pickup_enabled,
+            command=self.set_slit_drawtype,
+            onvalue=True,
+            offvalue=False
+        )
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Buttons
         b = ttk.Button(frame, text="Show Traces", command=self.show_traces)
@@ -317,29 +323,29 @@ class MainPage(SAMOSFrame):
         # Slit Size Controls
         slit_frame = ttk.LabelFrame(frame, text="Slit Size")
         slit_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.slit_w = tk.IntVar(self, 3)
+        self.slit_w = self.make_db_var(tk.IntVar, "dmd_hadamard_width", 3)
         ttk.Label(slit_frame, text="Slit Width (mirrors):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
+        b = ttk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
                         from_=0, to=1080)
         b.bind("<Return>", self.slit_width_length_adjust)
         b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("is_something", self.selected_object_tag)]
-        self.slit_l = tk.IntVar(self, 9)
+        self.slit_l = self.make_db_var(tk.IntVar, "dmd_hadamard_length", 9)
         ttk.Label(slit_frame, text="Slit Length (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         b = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
                         from_=0, to=1080)
         b.bind("<Return>", self.slit_width_length_adjust)
         b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("is_something", self.selected_object_tag)]
-        self.force_orthonormal = tk.IntVar(self, 0)
-        b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal)
+        self.force_orthonormal = self.make_db_var(tk.BooleanVar, "main_slit_force_orthonormal", False)
+        b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal, onvalue=True, offvalue=False)
         b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(slit_frame, text="Apply to All", command=self.apply_to_all, bootstyle="success")
         b.grid(row=3, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         # Slit Draw Controls
         draw_frame = ttk.LabelFrame(frame, text="Slit Mode")
         draw_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.slit_mode = tk.StringVar(self, "draw")
+        self.slit_mode = self.make_db_var(tk.StringVar, "main_draw_mode", "draw")
         self.draw_mode = tk.Radiobutton(draw_frame, text="Draw", variable=self.slit_mode, value="draw", command=self.set_mode_cb)
         self.draw_mode.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.draw_mode = tk.Radiobutton(draw_frame, text="Edit", variable=self.slit_mode, value="edit", command=self.set_mode_cb)
@@ -357,10 +363,10 @@ class MainPage(SAMOSFrame):
         b = ttk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
-        self.base_pattern_name = tk.StringVar(self, "Base Pattern Name")
+        self.base_pattern_name = self.make_db_var(tk.StringVar, "dmd_base_pattern", "none")
         e = tk.Entry(pattern_frame, width=15, textvariable=self.base_pattern_name)
         e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.selected_dmd_pattern = tk.StringVar(self)
+        self.selected_dmd_pattern = self.make_db_var(tk.StringVar, "dmd_selected_pattern", "none")
         self.pattern_group = ttk.Combobox(pattern_frame, width=25, textvariable=self.selected_dmd_pattern, style="TCombobox")
         self.pattern_group.bind("<<ComboboxSelected>>", self.selected_dmd_group_pattern)
         self.pattern_group.grid(row=1, column=0, sticky=TK_STICKY_ALL)
@@ -395,7 +401,7 @@ class MainPage(SAMOSFrame):
         b = ttk.Button(frame, text="Load (x, y) Regions from DS9 Region file", command=self.load_regions_pix)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR)]
-        self.loaded_ginga_file = tk.StringVar(self, "")
+        self.loaded_ginga_file = self.make_db_var(tk.StringVar, "dmd_loaded_ginga_file", "none")
         self.loaded_ginga_file_path = None
         ttk.Label(frame, text="Loaded File in CCD Units:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, textvariable=self.loaded_ginga_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
@@ -467,6 +473,20 @@ class MainPage(SAMOSFrame):
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
         self.set_enabled()
+
+
+    def send_to_soar(self):
+        """
+        Send the currently set target to SOAR with a move command.
+        """
+        target = {
+            "ra": self.db.get_value("target_ra"),
+            "dec": self.db.get_value("target_dec"),
+            "epoch": self.db_get_value("target_epoch"),
+            "ra_rate": 0.,
+            "dec_rate": 0.
+        }
+        self.SOAR.target_move(target)
 
 
     @check_enabled
@@ -693,7 +713,7 @@ class MainPage(SAMOSFrame):
                 x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 slit_shape[x1, y1] = 0
-            elif self.source_pickup_enabled.get() == 1 and obj.kind == 'point':
+            elif self.source_pickup_enabled.get() and obj.kind == 'point':
                 x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2, y2 = ccd_to_dmd(ccd_x1, ccd_y1, self.PAR.dmd_wcs)
@@ -921,11 +941,6 @@ class MainPage(SAMOSFrame):
 
 
     @check_enabled
-    def send_RADEC_to_SOAR(self):
-        pass
-
-
-    @check_enabled
     def Query_Survey(self, catalog):
         self.catalog = catalog
         self.clear_canvas()
@@ -1121,7 +1136,7 @@ class MainPage(SAMOSFrame):
     def set_slit_drawtype(self):
         self.slit_mode.set("draw")  # Possibly need to set self.draw_mode instead?
         self.set_mode_cb()
-        if self.source_pickup_enabled.get() == 1:
+        if self.source_pickup_enabled.get():
             self.draw_type.set("point")
         else:
             self.draw_type.set("box")
@@ -1132,7 +1147,7 @@ class MainPage(SAMOSFrame):
     def set_mode_cb(self):
         mode = self.slit_mode.get()
         if mode != "draw":
-            self.source_pickup_enabled.set(0)
+            self.source_pickup_enabled.set(False)
         self.canvas.set_draw_mode(mode)
 
 
@@ -1149,7 +1164,7 @@ class MainPage(SAMOSFrame):
         if self.slit_tab_view is None:
             self.initialize_slit_table()
         
-        if kind == "box" and self.source_pickup_enabled.get() == 1:
+        if kind == "box" and self.source_pickup_enabled.get():
             # User drew a box in source-pickup mode (should never happen)
             self.logger.error("User created a box in source pickup mode.")
             try:
@@ -1160,11 +1175,11 @@ class MainPage(SAMOSFrame):
 
             new_obj = self.slit_handler(obj)
             self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
-        elif self.source_pickup_enabled.get() == 1 and kind == 'point':
+        elif self.source_pickup_enabled.get() and kind == 'point':
             # User clicked on a point in source pick-up mode.
             new_obj = self.slit_handler(obj)
             self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
-        elif kind == "box" and self.source_pickup_enabled.get() == 0:
+        elif kind == "box" and not self.source_pickup_enabled.get():
             # a box is drawn but centroid is not searched, just drawn...
 
             # Declare the object as a slit by so tagging it

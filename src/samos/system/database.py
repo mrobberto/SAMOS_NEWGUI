@@ -55,6 +55,7 @@ class StorageDatabase:
         if not self.db_path.is_file():
             self.logger.info(f"Creating new database at {self.db_path}")
         self.db_dict = self._load_db()
+        self.callbacks = {}
     
     def get_all(self):
         self.logger.debug(f"SAMOS Database {self.db_path}")
@@ -77,14 +78,23 @@ class StorageDatabase:
 
     @with_db_update
     def update_value(self, parameter, value):
-        self.logger.info(f"Database: Setting {parameter} to {value}")
+        self.logger.debug(f"Database: Setting {parameter} to {value}")
         update_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        updated = False
         if parameter not in self.db_dict:
             self.logger.info(f"Database: {parameter} not in database. Inserting {value}.")
             self.db_dict[parameter] = [value, update_time, None]
+            updated = True
         else:
             previous_value = self.get_value(parameter)
-            self.db_dict[parameter] = [value, update_time, previous_value]
+            if value != previous_value:
+                self.logger.info(f"Database: doing update of {parameter} to {value}")
+                self.db_dict[parameter] = [value, update_time, previous_value]
+                updated = True
+        if updated and (parameter in self.callbacks):
+            for callback in self.callbacks[parameter]:
+                callback()
+        return updated
 
     @with_db_update
     def delete_parameter(self, parameter):
@@ -101,6 +111,11 @@ class StorageDatabase:
             self.logger.warning(f"Database: Parameter {parameter} has no previous value. Aborting.")
             return
         self.update_value(parameter, self.db_dict[parameter][2])
+
+    def register_callback(self, parameter, callback):
+        if parameter not in self.callbacks:
+            self.callbacks[parameter] = []
+        self.callbacks[parameter].append(callback)
 
     def _load_db(self):
         if not self.db_path.is_file():
