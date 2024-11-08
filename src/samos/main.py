@@ -61,7 +61,7 @@ class App(ttk.Window):
         DMD = DigitalMicroMirrorDevice(self.logger, self.PAR, self.DB)
         # Instantiate the classes that represent the SAMOS hardware
         self.samos_classes = {
-            "CCD": CCD(self.PAR, DMD, self.logger),
+            "CCD": CCD(self.PAR, self.DB, DMD, self.logger),
             "DMD": DMD,
             "PCM": PCM(self.PAR, self.DB, self.logger, self.main_fits_header),
             "SOAR": SOAR(self.DB, self.PAR, self.logger),

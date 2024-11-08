@@ -37,7 +37,9 @@ def get_config_dir(app_name="SAMOS"):
     Gets a (platform-correct) place to store preferences
     """
     pref_dir = user_config_dir(app_name)
-    return Path(pref_dir)
+    pref_path = Path(pref_dir)
+    pref_path.mkdir(parents=True, exist_ok=True)
+    return pref_path
 
 
 def get_data_file(mod_path, filename=None, must_exist=True):

@@ -13,18 +13,20 @@ import xml.dom.minidom
 
 
 class CCD():
-    def __init__(self, par, dmd, logger):
+    def __init__(self, par, db, dmd, logger):
         self.PAR = par
+        self.db = db
         self.DMD = dmd
         self.logger = logger
         self.initialized = False
         self.ccd_on = False
         self.cooler_on = False
+        self.set_ip()
 
 
     def initialize_ccd(self):
         self.set_ip()
-        reply = self.get_url(f"http://{self.target}", as_string=True)
+        reply = self.get_url(f"http://{self.ip_port}", as_string=True)
         if reply == "":
             self.ccd_on = False
         else:
@@ -33,7 +35,7 @@ class CCD():
 
 
     def set_ip(self):
-        self.target = self.PAR.IP_dict["IP_CCD"]
+        self.ip_port = self.db.get_value("config_ip_ccd", "127.0.0.1:40050")
 
 
     def get_url(self, url_name, post_data=None, as_string=False):
@@ -128,7 +130,7 @@ class CCD():
         fnumber = start_fnumber
         self.img_night_dir_list = []
 
-        target_url = 'http://' + self.target + '/'
+        target_url = 'http://' + self.ip_port + '/'
 
         # Combine the various XML parameter files
         xml_str = self.get_url(target_url + 'setup.xml', as_string=True)
@@ -209,7 +211,7 @@ class CCD():
 
     def start_exposure(self):
         self.set_ip()
-        target_url = 'http://' + self.target + '/'
+        target_url = 'http://' + self.ip_port + '/'
         reply = self.get_url(target_url + 'command.txt',f"{self.acquire_cmd}", as_string=True)
         if len(reply) < 9:
             self.logger.error("Reply '{}' too short: failed to expose camera.".format(reply))
@@ -219,7 +221,7 @@ class CCD():
 
     def read_exposure(self, parent, callback, params):
         self.set_ip()
-        target_url = 'http://' + self.target + '/'
+        target_url = 'http://' + self.ip_port + '/'
         data = self.get_url(target_url + 'acq.xml', as_string=True)
         x = data.split("</display><value>")
         if len(x) < 8:
@@ -251,7 +253,7 @@ class CCD():
 
     def store_exposure(self, file_name, fnumber):
         self.set_ip()
-        target_url = 'http://' + self.target + '/'
+        target_url = 'http://' + self.ip_port + '/'
         night_dir_basename = self.PAR.fits_dir / file_name
         timeRequested = time()
         data = self.get_url(target_url + "image.fit")  # Just the pixels (in network byte order)
