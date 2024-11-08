@@ -45,7 +45,7 @@ class GSQueryFrame(SAMOSFrame):
         # Create catalog interface, and query it.        
         try:
             self.logger.info("Creating Catalog Object")
-            self.catalog = self.catalogs[survey_key](ra, dec, band, self.logger)
+            self.catalog = self.catalogs[survey_key](ra, dec, band, self.PAR, self.logger)
             self.logger.info("Running Query")
             self.catalog.run_query()
             self.logger.info("Finished query")

@@ -24,7 +24,7 @@ from samos.system.database import StorageDatabase
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage
 from samos.ui.logging_window import LoggingWindow
 from samos.ui.widgets import VariableRegistry
-from samos.utilities import get_data_file
+from samos.utilities import get_data_file, get_config_dir
 from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
 from samos.utilities.tk import about_box
@@ -45,13 +45,16 @@ class App(ttk.Window):
         self.log_window.text_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_window.text_handler)
         self.logger.info("Initializing App")
-        self.PAR = SAMOSConfig()
+        database_path = get_config_dir()
+        database_filename = "Settings.yaml"
+        database_file = database_path / database_filename
         self.DB = StorageDatabase(
-            db_file=get_data_file("system", filename="Settings.yaml", must_exist=False),
-            logger = self.logger
+            db_file=database_file,
+            logger=self.logger
         )
+        self.PAR = SAMOSConfig(self.DB, self.logger)
         self.registry = VariableRegistry(self.DB, self, self.logger)
-        self.main_fits_header = FITSHead(self.PAR, self.logger)
+        self.main_fits_header = FITSHead(self.PAR, self.DB, self.logger)
         self.simulator = None
         self.protocol("WM_DELETE_WINDOW", self.destroy_all)
         
@@ -61,8 +64,8 @@ class App(ttk.Window):
             "CCD": CCD(self.PAR, DMD, self.logger),
             "DMD": DMD,
             "PCM": PCM(self.PAR, self.DB, self.logger, self.main_fits_header),
-            "SOAR": SOAR(self.PAR),
-            "SAMI": SAMI(self.PAR, self.logger),
+            "SOAR": SOAR(self.DB, self.PAR, self.logger),
+            "SAMI": SAMI(self.PAR, self.DB, self.logger),
             "main_fits_header": self.main_fits_header,
             "PAR": self.PAR,
             "DB": self.DB,

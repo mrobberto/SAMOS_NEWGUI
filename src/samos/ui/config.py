@@ -11,7 +11,7 @@ import yaml
 
 import tkinter as tk
 import ttkbootstrap as ttk
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame, check_enabled
@@ -27,7 +27,6 @@ class ConfigPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="Files", borderwidth=2)
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
-        custom_files_initial = self.db.get_value("custom_files_location")
         self.files_loc = self.make_db_var(tk.StringVar, "config_files_storage_location", "module")
         self.custom_files_path = self.make_db_var(tk.StringVar, "config_custom_files_location", "")
         ttk.Label(frame, text="Store files:", anchor=tk.W).grid(row=0, column=0, sticky=TK_STICKY_ALL)
@@ -111,7 +110,7 @@ class ConfigPage(SAMOSFrame):
         ttk.Entry(frame, width=20, textvariable=self.Observer).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         # TO
         ttk.Label(frame, text="Telescope Operator ").grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        self.Telescope_Operator = self.make_db_var(tk.StringVar, "POTN_TelescopeOperator", "")
+        self.Telescope_Operator = self.make_db_var(tk.StringVar, "POTN_Telescope_Operator", "")
         ttk.Entry(frame, width=20, textvariable=self.Telescope_Operator).grid(row=5, column=1, sticky=TK_STICKY_ALL)
 
         # Initialize
@@ -138,10 +137,17 @@ class ConfigPage(SAMOSFrame):
 
     @check_enabled
     def set_files_base(self):
+        self.logger.info(f"Set files to be stored in {self.files_loc.get()}")
         if (self.files_loc.get() == "custom"):
-            if not Path(self.custom_files_path.get()).is_dir():
+            custom_path = Path(self.custom_files_path.get())
+            self.logger.info(f"\tCustom files location is '{self.custom_files_path.get()}'")
+            self.logger.info(f"\tAs a path, this is '{custom_path}'")
+            self.logger.info(f"\tIs it a directory: {custom_path.is_dir()}")
+            self.logger.info(f"\tDoes it exist: {custom_path.exists()}")
+            if (not custom_path.is_dir()) or (not custom_path.exists()) or (self.custom_files_path.get() == ""):
                 initial_dir = Path.cwd()
-                custom_loc = tk.filedialog.askdirectory(initialdir=initial_dir, title="Select a Location to store files")
+                title = "Select a Location to store files"
+                custom_loc = tk.filedialog.askdirectory(initialdir=initial_dir, title=title)
                 self.custom_files_path.set(custom_loc)
 
 
@@ -168,38 +174,28 @@ class ConfigPage(SAMOSFrame):
 
     def update_status_box(self):
         if self.PCM.is_on:
-            self.PAR.IP_status_dict['IP_PCM'] = True
             self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_ON_COLOR)
             if self.PCM.filter_moving or self.PCM.grism_moving:
                 self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
         else:
             self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.PAR.IP_status_dict['IP_PCM'] = False
         if self.CCD.ccd_on:
-            self.PAR.IP_status_dict['IP_CCD'] = True
             self.status_box.itemconfig("ccd_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         else:
             self.status_box.itemconfig("ccd_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.PAR.IP_status_dict['IP_CCD'] = False
         if self.DMD.is_on:
-            self.PAR.IP_status_dict['IP_DMD'] = True
             self.status_box.itemconfig("dmd_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         else:
             self.status_box.itemconfig("dmd_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.PAR.IP_status_dict['IP_DMD'] = False
         if self.SOAR.is_on:
-            self.PAR.IP_status_dict['IP_SOAR'] = True
             self.status_box.itemconfig("soar_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         else:
             self.status_box.itemconfig("soar_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.PAR.IP_status_dict['IP_SOAR'] = False
         sami_status = False
         if sami_status:
-            self.PAR.IP_status_dict['IP_SAMI'] = True
             self.status_box.itemconfig("sami_ind", fill=INDICATOR_LIGHT_ON_COLOR)
         else:
             self.status_box.itemconfig("sami_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-            self.PAR.IP_status_dict['IP_SAMI'] = False
 
 
     def set_enabled(self, run_from_main=False):

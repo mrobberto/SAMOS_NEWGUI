@@ -22,6 +22,7 @@ from astropy import units as u
 from datetime import datetime
 import os
 from pathlib import Path
+from platformdirs import user_config_dir
 import sys
 
 from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
@@ -29,6 +30,14 @@ from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
 from regions import Regions
 
 from .constants import *
+
+
+def get_config_dir(app_name="SAMOS"):
+    """
+    Gets a (platform-correct) place to store preferences
+    """
+    pref_dir = user_config_dir(app_name)
+    return Path(pref_dir)
 
 
 def get_data_file(mod_path, filename=None, must_exist=True):
@@ -77,52 +86,6 @@ def get_temporary_dir():
     """
     dir_path = Path(__file__).parent.parent.absolute() / "data" / "tmp"
     return dir_path
-
-
-def get_fits_dir():
-    """
-    Returns a Path to a directory for storing FITS files (generally exposure outputs).
-    Operates by the following rules:
-    
-    - If there is a "SAMOS_OUTPUTS" environment variable, store files there.
-    - If there is a "SAMOS_STORE_TO_CWD" environment variable, store files in cwd
-    - Store files in the SAMOS data.temporary directory
-    
-    In addition, makes sure that the directory *exists*, creates a daily directory 
-    within the general FITS directory, and ensures that *that* directory exists.
-    
-    Returns
-    -------
-    fits_dir : pathlib.Path
-        Path to today's FITS file output directory
-    """
-    today = datetime.now()
-    
-    if "SAMOS_FILES_LOCATION" in os.environ:
-        if os.environ["SAMOS_FILES_LOCATION"] == "module":
-            base_dir = get_temporary_dir()
-        elif os.environ["SAMOS_FILES_LOCATION"] == "home":
-            base_dir = Path.home()
-        elif os.environ["SAMOS_FILES_LOCATION"] == "cwd":
-            base_dir = Path.cwd()
-        elif os.environ["SAMOS_FILES_LOCATION"] == "custom":
-            if "SAMOS_CUSTOM_FILES_LOCATION" in os.environ:
-                base_dir = Path(os.environ["SAMOS_CUSTOM_FILES_LOCATION"])
-            else:
-                base_dir = get_temporary_dir()
-        else:
-            base_dir = Path(os.environ["SAMOS_FILES_LOCATION"])
-    else:
-        base_dir = get_temporary_dir()
-    
-    fits_dir = base_dir / "SISI_images" / "SAMOS_{}".format(today.strftime('%Y%m%d'))
-    fits_dir.mkdir(parents=True, exist_ok=True)
-    
-    fits_directory_file = get_temporary_dir() / "fits_current_dir_name.txt"
-    with open(fits_directory_file, "w") as outf:
-        outf.write("{}".format(fits_dir))
-    
-    return fits_dir
 
 
 def ccd_to_dmd(ccd_x, ccd_y, wcs):

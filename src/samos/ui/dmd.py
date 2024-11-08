@@ -18,7 +18,7 @@ import ttkbootstrap as ttk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from samos.hadamard.patterns import make_S_matrix_masks, make_H_matrix_masks
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
 
@@ -453,7 +453,8 @@ class DMDPage(SAMOSFrame):
     def create_slits(self):
         self.map_filename.set("none")
         self.map_filename_path = None
-        self.slits_filename_path = Path(asksaveasfilename(initialdir=get_fits_dir(), title="Create a new Slits file"))
+        title = "Create a new Slits file"
+        self.slits_filename_path = Path(asksaveasfilename(initialdir=self.PAR.fits_dir, title=title))
         self.slits_filename.set(self.slits_filename_path.name)
         self.logger.info(f"Creating new slit map {self.slits_filename_path.name}")
         map_list = [[str(x) for x in [self.x0.get(), self.x1.get(), self.y0.get(), self.y1.get(), 0]]]

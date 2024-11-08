@@ -29,20 +29,22 @@ import sys
 
 
 class SAMI:
-    def __init__(self, par, logger):
+    def __init__(self, par, db, logger):
         self.PAR = par
+        self.db = db
         self.logger = logger
         self.connected = False
         self.default_timeout = 40000
 
 
     def set_ip(self):
+        ip_sami = self.db.get_value("config_ip_sami", default="0:0")
         try:
-            items = self.PAR.IP_dict['IP_SAMI'].split(":")
-            self.SAMI_IP = items[0]
-            self.SAMI_PORT = int(items[1])
+            ip_port = ip_sami.split(":")
+            self.SAMI_IP = ip_port[0]
+            self.SAMI_PORT = int(ip_port[1])
         except IndexError as e:
-            self.logger.error(f"Error {e} when trying to set IP to {self.PAR.IP_dict['IP_SAMI']}")
+            self.logger.error(f"Error {e} when trying to set IP to {ip_sami}")
             self.logger.error(f"Falling back to using localhost:8888")
             # Probably means this isn't a valid IP address. Set to loopback.
             self.SAMI_IP = "127.0.0.1"
@@ -74,6 +76,8 @@ class SAMI:
 
     def _send(self, message, timeout=None):
         self.set_ip()
+        if not self.PAR.is_connected:
+            return "DONE"
         reply = "CONNECTION FAILURE"
         sami_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if timeout is None:

@@ -11,8 +11,6 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import xml.dom.minidom
 
-from samos.utilities import get_fits_dir
-
 
 class CCD():
     def __init__(self, par, dmd, logger):
@@ -126,7 +124,7 @@ class CCD():
 
     def prep_exposure(self, file_name, start_fnumber, trigger_mode):
         self.set_ip()
-        night_dir_basename = get_fits_dir() / file_name
+        night_dir_basename = self.PAR.fits_dir / file_name
         fnumber = start_fnumber
         self.img_night_dir_list = []
 
@@ -254,7 +252,7 @@ class CCD():
     def store_exposure(self, file_name, fnumber):
         self.set_ip()
         target_url = 'http://' + self.target + '/'
-        night_dir_basename = get_fits_dir() / file_name
+        night_dir_basename = self.PAR.fits_dir / file_name
         timeRequested = time()
         data = self.get_url(target_url + "image.fit")  # Just the pixels (in network byte order)
         timeReceived = time()

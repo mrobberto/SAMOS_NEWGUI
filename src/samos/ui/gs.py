@@ -16,7 +16,7 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from tkinter.filedialog import askopenfilename
 
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame
@@ -29,7 +29,6 @@ class GSPage(SAMOSFrame):
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
         self.loaded_regfile = None
-        self.fits_dir = get_fits_dir()
 
         # FITS manager
         frame = ttk.LabelFrame(self.main_frame, text="FITS Manager")
@@ -132,7 +131,7 @@ class GSPage(SAMOSFrame):
         if hasattr(self, "catalog"):
             self.catalog.saved_regions = r
         else:
-            r.write(get_fits_dir() / "current_regions.reg", format='ds9')
+            r.write(self.PAR.fits_dir / "current_regions.reg", format='ds9')
 
 
     def send_to_telescope(self):
@@ -254,8 +253,10 @@ class GSPage(SAMOSFrame):
 
 
     def load_gs(self):
-        gs_file = askopenfilename(initialdir=get_fits_dir(), title="Select Guide Star FITS File", 
-                                  filetypes=(("FITS files", "*.fits"), ("all files", "*.*")))
+        title = "Select Guide Star FITS File"
+        filetypes = (("FITS files", "*.fits"), ("all files", "*.*"))
+        gs_file = askopenfilename(
+            initialdir=self.PAR.fits_dir, title=title, filetypes=filetypes)
         with fits.open(gs_file) as in_file:
             if "CAT_TYPE" not in in_file[0].header:
                 self.logger.error("Tried to open guide star file not created by SAMOS!")

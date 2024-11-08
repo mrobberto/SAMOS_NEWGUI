@@ -11,7 +11,6 @@ import time
 
 import tkinter as tk
 import ttkbootstrap as ttk
-from samos.utilities import get_fits_dir
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame
@@ -316,9 +315,9 @@ class ExposureProgressWindow(tk.Toplevel):
         hdul = fits.HDUList(hdus=[super_hdu])
         if image_type == "sci" and dmd_hdu is not None:
             hdul.append(dmd_hdu)
-        hdul.writeto(get_fits_dir() / superfile_numbered, overwrite=True)
+        hdul.writeto(self.PAR.fits_dir / superfile_numbered, overwrite=True)
 
-        return get_fits_dir() / superfile_numbered
+        return self.PAR.fits_dir / superfile_numbered
 
 
     def create_dmd_pattern_hdu(self, primary_header):

@@ -566,7 +566,7 @@ class PCM():
 
     def _send(self, message):
         self.set_ip()
-        if self.db.get_value("config_ip_status", default="disconnected") == "disconnected":
+        if not self.PAR.is_connected:
             return "OKAY"
         text = None
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

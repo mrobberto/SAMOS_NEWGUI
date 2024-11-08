@@ -31,7 +31,7 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from samos.dmd.utilities import DMDGroup
 from samos.ui.slit_table_view import SlitTableView as STView
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
 
@@ -81,13 +81,13 @@ class MainPage(SAMOSFrame):
         frame = ttk.LabelFrame(fleft, text="Observer Information")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         frame.columnconfigure(1, weight=1)
-        self.observer_names = tk.StringVar(self, self.PAR.PotN['Observer'])
+        self.observer_names = self.make_db_var(tk.StringVar, "POTN_Observer", "")
         ttk.Label(frame, text="Observer Name(s):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.observer_names).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.program_id = tk.StringVar(self, self.PAR.PotN['Program ID'])
+        self.program_id = self.make_db_var(tk.StringVar, "POTN_Program", "")
         ttk.Label(frame, text="Program ID:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.program_id).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.telescope_operator = tk.StringVar(self, self.PAR.PotN['Telescope Operator'])
+        self.telescope_operator = self.make_db_var(tk.StringVar, "POTN_Telescope_Operator", "")
         ttk.Label(frame, text="Telescope Operator:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.telescope_operator).grid(row=2, column=1, sticky=TK_STICKY_ALL)
 
@@ -99,11 +99,11 @@ class MainPage(SAMOSFrame):
         filter_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         self.filter_data = ascii.read(get_data_file("system", 'SAMOS_Filter_positions.txt'))
         filter_names = list(self.PCM.FILTER_WHEEL_MAPPINGS.keys())
-        self.current_filter = tk.StringVar(self, filter_names[2])
+        self.current_filter = self.make_db_var(tk.StringVar, "pcm_filter", filter_names[2])
         ttk.Label(filter_frame, text="Current Filter:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(filter_frame, textvariable=self.current_filter, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.current_filter, self.current_filter.get(), *filter_names)
+        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.current_filter, None, *filter_names)
         self.filter_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(filter_frame, text="Set Filter", command=self.set_filter, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -113,11 +113,11 @@ class MainPage(SAMOSFrame):
         grating_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         grating_names = list(self.PCM.GRISM_RAIL_MAPPINGS.keys())
         self.grating_positions = list(self.filter_data['Position'][12:18])
-        self.current_grating = tk.StringVar(self, grating_names[2])
+        self.current_grating = self.make_db_var(tk.StringVar, "pcm_grating", grating_names[2])
         ttk.Label(grating_frame, text="Current Grating:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(grating_frame, textvariable=self.current_grating, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.current_grating, self.current_grating.get(), *grating_names)
+        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.current_grating, None, *grating_names)
         self.grating_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(grating_frame, text="Set Grating", command=self.set_grating, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -132,38 +132,38 @@ class MainPage(SAMOSFrame):
         acquire_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         acquire_frame.columnconfigure(1, weight=1)
         self.image_type_options = ["Science", "Bias", "Dark", "Flat", "Buffer"]
-        self.image_type = tk.StringVar(self, self.image_type_options[0])
+        self.image_type = self.make_db_var(tk.StringVar, "image_type_set", self.image_type_options[0])
         ttk.Label(acquire_frame, text="Exposure Type:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        m = ttk.OptionMenu(acquire_frame, self.image_type, *self.image_type_options, command=self.change_acq_type)
+        m = ttk.OptionMenu(acquire_frame, self.image_type, None, *self.image_type_options, command=self.change_acq_type)
         m.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.image_base_name = tk.StringVar(self, self.PAR.PotN['Base Filename'])
+        self.image_base_name = self.make_db_var(tk.StringVar, "POTN_Base_Name", "")
         ttk.Label(acquire_frame, text="Base Filename:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(acquire_frame, textvariable=self.image_base_name).grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
-        self.image_exptime = tk.DoubleVar(self, 0.01)
+        self.image_exptime = self.make_db_var(tk.DoubleVar, "exptime_set", 0.01)
         ttk.Label(acquire_frame, text="Exposure Time (s):").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(acquire_frame, textvariable=self.image_exptime).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        self.image_expnum = tk.IntVar(self, 1)
+        self.image_expnum = self.make_db_var(tk.IntVar, f"{self.PAR.today_str}_expnum", 1)
         ttk.Label(acquire_frame, text="Exposure Nr:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        self.expnum = tk.Spinbox(acquire_frame, textvariable=self.image_expnum, increment=1, from_=1, to=1000, format="%04.0f")
+        self.expnum = ttk.Spinbox(acquire_frame, textvariable=self.image_expnum, increment=1, from_=1, to=1000)
         self.expnum.grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.image_log = tk.IntVar(self, 0)
-        c = tk.Checkbutton(acquire_frame, text="Save to Logbook", variable=self.image_log, onvalue=1, offvalue=0)
+        self.image_log = self.make_db_var(tk.BooleanVar, "save_exposures_to_log", True)
+        c = tk.Checkbutton(acquire_frame, text="Save to Logbook", variable=self.image_log, onvalue=True, offvalue=False)
         c.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         l = ttk.Label(acquire_frame, text="Correct Quicklook Image For:")
         l.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         cframe = ttk.Frame(acquire_frame)
         cframe.grid(row=6, column=0, columnspan=2)
-        self.ql_bias = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Bias', variable=self.ql_bias, onvalue=1, offvalue=0)
+        self.ql_bias = self.make_db_var(tk.BooleanVar, "correct_ql_for_bias", True)
+        b = tk.Checkbutton(cframe, text='Bias', variable=self.ql_bias, onvalue=True, offvalue=False)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.ql_dark = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Dark', variable=self.ql_dark, onvalue=1, offvalue=0)
+        self.ql_dark = self.make_db_var(tk.BooleanVar, "correct_ql_for_dark", True)
+        b = tk.Checkbutton(cframe, text='Dark', variable=self.ql_dark, onvalue=True, offvalue=False)
         b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.ql_flat = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Flat', variable=self.ql_flat, onvalue=1, offvalue=0)
+        self.ql_flat = self.make_db_var(tk.BooleanVar, "correct_ql_for_flat", True)
+        b = tk.Checkbutton(cframe, text='Flat', variable=self.ql_flat, onvalue=True, offvalue=False)
         b.grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        self.ql_buffer = tk.IntVar(self, 0)
-        b = tk.Checkbutton(cframe, text='Buffer', variable=self.ql_buffer, onvalue=1, offvalue=0)
+        self.ql_buffer = self.make_db_var(tk.BooleanVar, "correct_ql_for_buffer", True)
+        b = tk.Checkbutton(cframe, text='Buffer', variable=self.ql_buffer, onvalue=True, offvalue=False)
         b.grid(row=0, column=3, sticky=TK_STICKY_ALL)
         # Image Type Frame
         self.image_frame = ttk.LabelFrame(frame, text=self.image_type.get())
@@ -172,25 +172,22 @@ class MainPage(SAMOSFrame):
         self.image_type_label_options = ["Object Name:", "Master Bias:", "Master Dark:", "Master Flat File:", "Master Buffer File:"]
         self.image_label = tk.StringVar(self, self.image_type_label_options[0])
         tk.Label(self.image_frame, textvariable=self.image_label).grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.image_name = tk.StringVar(self, self.PAR.PotN['Object Name'])
+        self.image_name = self.make_db_var(tk.StringVar, "POTN_Target", "")
         tk.Entry(self.image_frame, textvariable=self.image_name).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         ttk.Label(self.image_frame, text="Nr. of Frames:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.image_frames = tk.IntVar(self, 1)
+        self.image_frames = self.make_db_var(tk.IntVar, "exposure_n_frames", 1)
         tk.Entry(self.image_frame, textvariable=self.image_frames).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         ttk.Label(self.image_frame, text="Comments:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        self.image_comments = tk.StringVar(self, "")
+        self.image_comments = self.make_db_var(tk.StringVar, "POTN_Comment", "")
         tk.Entry(self.image_frame, textvariable=self.image_comments).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        self.image_save_single = tk.IntVar(self, 0)
-        c = tk.Checkbutton(self.image_frame, text="Save Single Frames", variable=self.image_save_single, onvalue=1, offvalue=0)
+        self.image_save_single = self.make_db_var(tk.BooleanVar, "save_single_frames", False)
+        c = tk.Checkbutton(self.image_frame, text="Save Single Frames", variable=self.image_save_single, onvalue=True, offvalue=False)
         c.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         # Take Exposure Frame
         exp_frame = ttk.LabelFrame(frame, text="Take Exposure")
         exp_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         exp_frame.columnconfigure(0, weight=1)
         exp_frame.columnconfigure(1, weight=1)
-        self.flip_x_on_open = tk.BooleanVar(self, self.PAR.flip_x_on_open)
-        b = ttk.Checkbutton(exp_frame, command=self.set_image_flip, text="Flip Images on Load", variable=self.flip_x_on_open, onvalue=True, offvalue=False)
-        b.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(exp_frame, text="START", command=self.start_an_exposure, bootstyle="success")
         b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
@@ -292,7 +289,7 @@ class MainPage(SAMOSFrame):
         self.draw_color.grid(row=0, column=2, sticky=TK_STICKY_ALL)
         # Fille
         self.draw_fill = tk.IntVar(self, 0)
-        c = tk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=1, offvalue=0)
+        c = tk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=True, offvalue=False)
         c.grid(row=0, column=3, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="Alpha:").grid(row=0, column=4, sticky=TK_STICKY_ALL)
         self.draw_alpha = tk.DoubleVar(self, 1.0)
@@ -614,7 +611,7 @@ class MainPage(SAMOSFrame):
             if region not in astropy_regions_radec:
                 astropy_regions_radec.append(region)
         self.target_name = self.loaded_reg_file_path.name[:self.loaded_reg_file_path.name.find("_")]
-        self.PAR.PotN['Object Name'] = self.target_name
+        self.db.update_value("POTN_Target", self.target_name)
         if self.image_type.get() == "Science":
             self.image_name.set(self.target_name)
         if "RADEC=" in self.loaded_reg_file_path.name:
@@ -816,7 +813,6 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def set_image_flip(self):
-        self.PAR.flip_x_on_open = self.flip_x_on_open.get()
         if hasattr(self, "AstroImage"):
             title = "Flip Current Image?"
             message = "Flip the current image?"
@@ -877,29 +873,6 @@ class MainPage(SAMOSFrame):
 
 
     @check_enabled
-    def update_PotN(self):
-        """
-        Updates the parameters of the night variables and files for logging the observations
-        """
-        self.PAR.PotN['Program ID'] = self.program_id.get()
-        self.PAR.PotN['Observer'] = self.observer_names.get()
-        self.PAR.PotN['Telescope Operator'] = self.telescope_operator.get()
-        if self.image_type.get() == "Science":
-            self.PAR.PotN['Object Name'] = self.image_name.get()
-            self.PAR.PotN['Comments'] = self.image_comments.get()
-        elif self.image_type.get() == "Bias":
-            self.PAR.PotN['Bias Comments'] = self.image_comments.get()
-        elif self.image_type.get() == "Dark":
-            self.PAR.PotN['Dark Comments'] = self.image_comments.get()
-        elif self.image_type.get() == "Bias":
-            self.PAR.PotN['Flat Comments'] = self.image_comments.get()
-        elif self.image_type.get() == "Buffer":
-            self.PAR.PotN['Buffer Comments'] = self.image_comments.get()
-        self.PAR.PotN['Base Filename'] = self.image_base_name.get()
-        self.PAR.update_PotN()
-
-
-    @check_enabled
     def handle_log(self, newfiles):
         """ 
         handles the writeup of an entry line in the loogbook
@@ -918,7 +891,7 @@ class MainPage(SAMOSFrame):
             for file in newfiles:
                 file_name = Path(file).name
                 logbook.write(f"{today.strftime('%Y-%m-%d')},time.strftime('%H:%M:%S', self.start_time),")
-                logbook.write(f"{self.PAR.PotN['Object Name']},{self.current_filter.get()},{len(newfiles)},")
+                logbook.write(f"{self.db.get_value('POTN_Target')},{self.current_filter.get()},{len(newfiles)},")
                 logbook.write(f"{self.image_exptime.get()},{file_name}\n")
 
 
@@ -934,10 +907,6 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def Display(self, imagefile):
         self.AstroImage = load_data(imagefile, logger=self.logger)
-        if self.PAR.flip_x_on_open:
-            data = self.AstroImage.get_data()
-            transformed_data = np.fliplr(data)
-            self.AstroImage.set_data(transformed_data)
         self.fits_image.set_image(self.AstroImage)
         self.fits_image_ql = imagefile
 
@@ -1022,7 +991,7 @@ class MainPage(SAMOSFrame):
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)
 
         hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
+        self.wcs_filename = self.PAR.fits_dir / "WCS_{}_{}.fits".format(ra, dec)
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
         self.Display(self.wcs_filename)
@@ -1126,17 +1095,11 @@ class MainPage(SAMOSFrame):
 
         fits_x = int(np.floor(data_x) + 1)
         fits_y = int(np.floor(data_y) + 1)
-        if self.PAR.flip_x_on_open:
-            text = f"FITS: ({(1032 - fits_x):4d}, {fits_y:4d}). Value = {value}"
-        else:
-            text = f"FITS: ({fits_x:4d}, {fits_y:4d}). Value = {value}"
+        text = f"FITS: ({fits_x:4d}, {fits_y:4d}). Value = {value}"
         dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
         dmd_x = int(np.floor(dmd_x))
         dmd_y = int(np.floor(dmd_y))
-        if self.PAR.flip_x_on_open:
-            text = f"DMD: ({(1080 - dmd_x):7d}, {dmd_y:7d}). " + text
-        else:
-            text = f"DMD: ({dmd_x:7d}, {dmd_y:7d}). " + text
+        text = f"DMD: ({dmd_x:7d}, {dmd_y:7d}). " + text
 
         # Calculate WCS RA
         try:
@@ -1321,7 +1284,7 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def save_all_sub_patterns(self):
-        pattern_directory = get_fits_dir() / "SubPatterns"
+        pattern_directory = self.PAR.fits_dir / "SubPatterns"
         pattern.mkdir(parents=True, exist_ok=True)
         for i, pattern in enumerate(self.pattern_series):
             pattern_name = self.sub_pattern_names[i]
@@ -1334,7 +1297,7 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def save_selected_sub_pattern(self):
-        pattern_directory = get_fits_dir() / "SubPatterns"
+        pattern_directory = self.PAR.fits_dir / "SubPatterns"
         pattern_list_index = self.pattern_group.current()
         current_pattern = self.pattern_series[pattern_list_index]
         pattern_name = self.pattern_group.get()
@@ -1700,7 +1663,7 @@ class MainPage(SAMOSFrame):
     def _set_expnum(self):
         min_num = 0
         match_str = "*_" + "[0-9]" * 4 + ".fits"
-        current_files = get_fits_dir().glob(match_str)
+        current_files = self.PAR.fits_dir.glob(match_str)
         for file in current_files:
             num_results = list(map(int, re.findall(r"\d+", file.name)))
             for number in num_results:
@@ -1737,16 +1700,3 @@ class MainPage(SAMOSFrame):
         else:
             self.status_box.itemconfig("tcs_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
         self.status_box.update()
-
-    def set_enabled(self, run_from_main=False):
-        super().set_enabled(run_from_main=run_from_main)
-        if hasattr(self, "flip_x_on_open"):
-            if self.PAR.flip_x_on_open != self.flip_x_on_open.get():
-                if hasattr(self, "AstroImage"):
-                    title = "Flip Current Image?"
-                    message = "Flip the current image?"
-                    if tk.messagebox.askyesno(title=title, message=message):
-                        data = self.AstroImage.get_data()
-                        transformed_data = np.fliplr(data)
-                        self.AstroImage.set_data(transformed_data)
-            self.flip_x_on_open.set(self.PAR.flip_x_on_open)

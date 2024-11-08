@@ -25,7 +25,7 @@ import shutil
 import tkinter as tk
 import ttkbootstrap as ttk
 from samos.system.database import StorageDatabase
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 from samos.utilities.tk import check_widgets
 
@@ -55,7 +55,7 @@ class SAMOSFrame(ttk.Frame):
         self.SOAR = kwargs["SOAR"]
         self.main_fits_header = kwargs["main_fits_header"]
         self.PAR = kwargs["PAR"]
-        self.fits_dir = get_fits_dir()
+        self.fits_dir = self.PAR.fits_dir
         self.db = kwargs["DB"]
         self.registry = kwargs["registry"]
         self.check_widgets = {}
@@ -77,7 +77,7 @@ class SAMOSFrame(ttk.Frame):
     def make_db_var(self, var, name, default, callback=None):
         name_int = self.registry.check_name(name)
         var_name = f"{name}_{name_int}"
-        value = self.db.get_value(name, default=default)
+        value = self.db.get_value(name, default=default, add_missing=True)
         tkvar = var(name=var_name, value=value)
         self.registry.register(name, tkvar, callback=callback)
         tkvar.trace_add('write', functools.partial(self.registry.update, name, tkvar))

@@ -14,7 +14,6 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from tkinter.scrolledtext import ScrolledText
 
-from samos.utilities import get_fits_dir
 from samos.utilities.constants import *
 
 
