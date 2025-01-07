@@ -203,7 +203,7 @@ class MainPage(SAMOSFrame):
         tk.Entry(frame, textvariable=self.fits_ra).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.fits_dec = tk.DoubleVar(self, -54.79004)
         ttk.Label(frame, text="DEC:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_ra).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_dec).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.fits_nstars = tk.IntVar(self, 25)
         ttk.Label(frame, text="Nr. of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
@@ -616,7 +616,9 @@ class MainPage(SAMOSFrame):
             self.image_name.set(self.target_name)
         if "RADEC=" in self.loaded_reg_file_path.name:
             radec_str = self.loaded_reg_file_path.name
-            radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
+            # FIXED THIS LINE BECAUSE WAS NOT READING PROPERLY THE RADEC STRING [MR]
+            #radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
+            radec_str = radec_str[radec_str.find("RADEC=")+6:radec_str.find(".reg")]
             if "-" in radec_str:
                 str_items = radec_str.split("-")
                 dec_factor = -1.
@@ -972,12 +974,43 @@ class MainPage(SAMOSFrame):
         self.PAR.valid_wcs = False
         self.Display(self.fits_image_ql)
         
-        with open(self.fits_image_ql) as hdul:
+        #had to change open => fits.open [MR] to make this working
+        with fits.open(self.fits_image_ql) as hdul:
             header = hdul[0].header
             data = hdul[0].data
         
         img_wcs = wcs.WCS(header)
-        ra, dec = img_wcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
+        #ra, dec = img_wcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]   #this is a wrong instruction: ra,dec cannot be set in pixel units [MR]
+        
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # not all headers use ra,dec
+        try:  #good header...
+            ra, dec = header["RA"], header["DEC"]
+            print(ra,dec)
+            self.fits_ra.set(ra)
+            self.fits_dec.set(dec)
+        except:
+            print("no RA and  DEC in the FITS header")
+        if  self.fits_ra.get() !=  '' and self.fits_dec.get() != '':   
+            ra = self.fits_ra.get()
+            dec = self.fits_dec.get()
+            print("RA and DEC read from the text box")
+
+        #MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
+        elif self.SOAR.is_on == True:               #was self.PAR.inoutvar.get() == "inside": 
+            infoa_dict = self.SOAR_PAGE.Handle_Infox('INFOA')  # TO BE FIXED: we need to grab the INFOA message from the SOAR TCS
+            ra=infoa_dict['MOUNT_RA']                          # to extract the pointed RA,DEC coordinates 
+            dec=infoa_dict['MOUNT_DEC']
+            self.fits_ra.set(ra)
+            self.fits_dec.set(dec)
+            print("RADEC provided by the SOAR TCS")               
+        else:   
+            messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
+            return
+
+        print("Pointed coordinates: ",ra,dec)
+        #<<<<<<<<<<<<<<<<<<<<
+        # 
         center = SkyCoord(ra, dec, unit=[u.deg, u.deg])
         center = [center.ra.value, center.dec.value]
 
@@ -1019,7 +1052,8 @@ class MainPage(SAMOSFrame):
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)
 
         hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
+        #self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
+        self.wcs_filename = str( get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec) ) # I think it's better to just use the string
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
         self.Display(self.wcs_filename)
