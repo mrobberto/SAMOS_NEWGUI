@@ -1,76 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Mar 14 20:49:49 2023
+We have been given a pair of classes (SCL in scl.py, and SoarTCS in soar_tcs.py) that
+define the python method of talking to SOAR. The SCL class is a low-level connection
+interface that is used by SoarTCS. As far as I can tell from the code, you should use the
+SoarTCS class exclusively, and let it take care of the details in SCL.
 
-# According to SAMI User Manual:
+Note that the SoarTCS class assumes that SOAR is available to be connected to. As such,
+this class (which provides a wrapper to SoarTCS that understands SAMOS) will not create a
+SoarTCS object *unless* the internet status is set to connected.
 
-The SAMI data acquisition software runs on the soarhrc computer (IP 139.229.15.163). It is 
-accessed by VNC connection to soarhrc:9. To launch the SAMI GUI, use the icon in the 
-desktop menu in the lower-right corner.
-
-# INFOA
-
-(Taken from the SOAR_TCS_COMMANDS document.)
-TCS command 'INFOA' returns a string of variables with the current telescope settings, 
-which will go into the FITS header. The returned variables are:
-
-- Date, 
-- Universal Time, 
-- Right ascention, 
-- Declination, 
-- Hour Angle, 
-- Telescope Azimuth, 
-- Telescope Elevation, 
-- Sidereal Time, 
-- Parallactic Angle, 
-- MJD, 
-- Telescope Focus, 
-- Airmass, 
-- IPA, 
-- Rotator Position, 
-- IROT, 
-- M3 Position, 
-- Outside Temperature, 
-- Humidity, 
-- Pressure, 
-- Wind Direction, 
-- Wind Speed, 
-- Inside Temperature, 
-- ECS Time Stamp, 
-- Dimm Seeing
-- Dome, 
-- Azimuth, 
-- Shutter Elevation, 
-- Guider Star ID
-- Guider X Position, 
-- Guider Y Position, 
-- Comparison Lamp Mirror, 
-- Lamp 1 State (on/off), 
-- Lamp 1 Tag (Lamp name),
-- Lamp 2 State, 
-- Lamp 2 Tag, 
-- Lamp 3 State, 
-- Lamp 3 Tag,
-- Lamp 4 State, 
-- Lamp 4 Tag, 
-- Lamp 5 State, 
-- Lamp 5 Tag,
-- Lamp 6 State, 
-- Lamp 6 Tag, 
-- Lamp 7 State, 
-- Lamp 7 Tag,
-- Lamp 8 State, 
-- Lamp 8 Tag, 
-- Lamp 9 State, 
-- Lamp 9 Tag,
-- Lamp 10 State, 
-- Lamp 10 Tag
-
-The ouput is formatted as a string of whitespace-separated variables, e.g., 
-'DONE TCS_DATE=2019-06-26 LAMP_1=OFF TAG_1=Hg(Ar)...'
-
-@author: robberto
+The SOAR class provides an `update_connection()` function that will add a SoarTCS object,
+if none has been defined, if the current SAMOS status is connected. If you set the SAMOS
+software to "connected" when you know you're not *actually* connected, that's on you.
 """
 import numpy as np
 import os
@@ -78,157 +20,121 @@ from pathlib import Path
 import socket
 import sys
 
+from .soar_tcs import SoarTCS
+
 
 class SOAR:
-    def __init__(self, par):
-        socket.setdefaulttimeout(3)
+    def __init__(self, db, par, logger):
+        self.db = db
         self.PAR = par
+        self.logger = logger
         self.is_on = False
+        self._soar = None
+        self.update_connection()
+
+
+    def update_connection(self):
+        self.set_ip()
+        if self.PAR.is_connected:
+            if self._soar is None:
+                try:
+                    self._soar = SoarTCS(self.SOAR_IP, self.SOAR_PORT, self.logger)
+                except Exception as e:
+                    self.logger.error(f"Status is connected but unable to create SOAR interface")
+                    self.logger.exception(e)
 
 
     def set_ip(self):
+        ip_soar = self.db.get_value("config_ip_soar", default="127.0.0.1:9898")
         try:
-            items = self.PAR.IP_dict['IP_SOAR'].split(":")
-            self.SOAR_TCS_IP = items[0]
-            self.SOAR_TCS_PORT = int(items[1])
+            ip_port = ip_soar.split(":")
+            self.SOAR_IP = ip_port[0]
+            self.SOAR_PORT = int(ip_port[1])
         except IndexError as e:
             # Probably means this isn't a valid IP address. Set to loopback.
-            self.SOAR_TCS_IP = "127.0.0.1"
-            self.SOAR_TCS_PORT = 9898
+            self.SOAR_IP = "127.0.0.1"
+            self.SOAR_PORT = 9898
 
 
     def echo_client(self):
-        self.set_ip()
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.connect((self.SOAR_TCS_IP, self.SOAR_TCS_PORT))
-                s.sendall(b"INFOA\n")
-                data = s.recv(1024)
-                self.is_on = True
-                return(data)
-            except socket.error:
-                self.is_on = False
-                return("no connection")
-            finally:
-                s.close()    
+        return self._soar_command("infoa")
 
 
     def send_to_tcs(self, command):
-        self.set_ip()
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            try:
-                s.connect((self.SOAR_TCS_IP, self.SOAR_TCS_PORT))
-                s.sendall(f"{command}\n".encode("ascii"))
-                response = s.recv(1024)
-                text = response.decode("utf-8").strip()
-                return text
-            except socket.error:
-                return("no connection")
-            finally:
-                s.close()
+        return self._soar_command(command)
 
 
     def way(self):
-        return self.send_to_tcs("WAY")
+        return self._soar_command("way")
 
 
-    def offset(self, param, offset="E 0.0 N 0.0"):
-        if param == "MOVE":
-            command = "OFFSET MOVE {}".format(offset)
-        if param == "STATUS":
-            command = "OFFSET STATUS"
-        return self.send_to_tcs(command)  
+    def offset(self, ra=0., dec=0.):
+        return self._soar_command("offset", {"offset_ra": ra, "offset_dec": dec})
 
 
-    def focus(self, param, offset="E 0.0 N  0.0"):
-        if param == "MOVEABS":
-            command = "FOCUS MOVEABS {}".format(offset)
-        if param == "MOVEREL":
-            command = "FOCUS MOVEREL {}".format(offset)
-        if param == "STATUS":
-            command = "FOCUS STATUS"
-        return self.send_to_tcs(command)
+    def focus(self, param, value):
+        return self._soar_command("focus", value, move_type=param)
 
 
     def clm(self, param):
-        if param == "IN":
-            command = "CLM IN"
-        if param == "OUT":
-            command = "CLM OUT"
-        if param == "STATUS":
-            command = "CLM STATUS"
-        return self.send_to_tcs(command)  
+        return self._soar_command("clm", param)
 
 
     def guider(self, param):
-        if param == "DISABLE":
-            command = "GUIDER DISABLE "
-        if param == "ENABLE":
-            command = "GUIDER ENABLE "
-        if param == "STATUS":
-            command = "GUIDER STATUS"
-        return self.send_to_tcs(command)  
+        return self._soar_command("guider", param)
 
 
     def whitespot(self, param, percentage):
-        if param == "ON":
-            command = "WHITESPOT ON {}".format(percentage)
-        if param == "OFF":
-            command = "WHITESPOT OFF"
-        if param == "STATUS":
-            command = "WHITESPOT STATUS"
-        return self.send_to_tcs(command)  
+        return self._soar_command("whitespot", percentage, turn_on=(param == "ON"))
 
 
-    def lamp_id(self, param, location):
-        if param == "ON":
-            command = "LAMP ON {}".format(location)
-        if param == "OFF":
-            command = "LAMP OFF"
-        if param == "STATUS":
-            command = "LAMP STATUS"
-        return self.send_to_tcs(command)  
+    def lamp_id(self, param, location, percentage):
+        return self._soar_command("lamp", location, state=param, percentage=percentage)
 
 
     def adc(self, param, percent):
-        if param == "MOVE":
-            command = "ADC MOVE {}".format(percent)
-        if param == "IN":
-            command = "ADC IN"
-        if param == "PARK":
-            command = "ADC PARK"
-        if param == "TRACK":
-            command = "ADC TRACK"
-        if param == "STATUS":
-            command = "ADC STATUS"
-        return self.send_to_tcs(command)  
+        return self._soar_command("adc", percent, park=(param == "PARK"))
 
 
-    def info_whatever(self, message):
-        return self.send_to_tcs(message)
+    def target(self, ra=0., dec=0., epoch=2000., ra_rate=0., dec_rate=0.):
+        target_dict = {
+            "ra": ra,
+            "dec": dec,
+            "epoch": epoch,
+            "ra_rate": ra_rate,
+            "dec_rate": dec_rate
+        }
+        return self._soar_command("target_move", target_dict)
 
 
-    def target(self, param, radec="RA=00:00:00.00 DEC=00:00:00:00 EPOCH=2000.0"):
-        if param == "MOVE":
-            command = "TARGET MOVE {}".format(radec)
-        if param == "MOUNT":
-            command = "TARGET MOUNT"
-        if param == "STOP":
-            command = "TARGET STOP"
-        if param == "STATUS":
-            command = "TARGET STATUS"
-        return self.send_to_tcs(command)  
-        
-    def ipa(self, param, angle="00.0"):
-        if param == "MOVE":
-            command = "IPA MOVE {}".format(angle)
-        if param == "STATUS":
-            command = "IPA STATUS"
-        return self.send_to_tcs(command)   
+    def ipa(self, angle=0.):
+        return self._soar_command("ipa", angle)
 
-    def instrument(self, param, instrument="GOODMAN"):
-        if param == "MOVE":
-            command = "INSTRUMENT MOVE {}".format(instrument)
-        if param == "STATUS":
-            command = "INSTRUMENT STATUS"
-        return self.send_to_tcs(command)   
+
+    def instrument(self, instrument="GOODMAN"):
+        return self._soar_command("instrument", instrument)
+
+
+    def get_soar_status(self, key):
+        if self._soar is None:
+            return "DISCONNECTED"
+        info_dict = self._soar.info
+        if key in self._soar.info:
+            return self._soar.info[key]
+        return f"UNKNOWN INFO VALUE {key}"
+
+
+    def _soar_command(self, message, *args, **kwargs):
+        if not self.PAR.is_connected:
+            return ["DISCONNECTED"]
+        if self._soar is None:
+            return ["NO SOAR OBJECT"]
+        if hasattr(self._soar, message):
+            result = getattr(self._soar, message)(*args, **kwargs)
+            output = [f"Output from {message}"]
+            if isinstance(result, dict):
+                for item in result:
+                    output.append(f"{item} = {result[item]}")
+            else:
+                output.append(result)
+        return [f"UNKNOWN MESSAGE {message}"]

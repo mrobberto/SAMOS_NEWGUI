@@ -19,9 +19,10 @@ class DigitalMicroMirrorDevice():
     a DLP7000, which is a 768x1024 pixel device, but should be generalizable to
     other sizes, etc. 
     """
-    def __init__(self, logger, par):
+    def __init__(self, logger, par, db):
         self.logger = logger
         self.PAR = par
+        self.db = db
         self.is_on = False
         # Set invert to false
         self.invert = False
@@ -61,6 +62,9 @@ class DigitalMicroMirrorDevice():
         """
         self.logger.info("Opening a connection to DMD")
         dmd_ip, dmd_port = self._get_address()
+        if not self.PAR.is_connected:
+            self.is_on = True
+            return "OKAY"
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
             try:
                 instrument.connect((dmd_ip, dmd_port))
@@ -69,13 +73,13 @@ class DigitalMicroMirrorDevice():
                 self.logger.error("DMD did not respond!")
                 self.logger.error("Error was {}".format(e))
                 return("no DMD")
-            
-            self.is_on = True
-            self.logger.info("Sending test message")
-            instrument.sendall(b':TEST\n')
-            response = instrument.recv(1024)
-            self.logger.info("Received response '{}'".format(response.decode('ascii')))
-            instrument.close()
+        
+        self.is_on = True
+        self.logger.info("Sending test message")
+        instrument.sendall(b':TEST\n')
+        response = instrument.recv(1024)
+        self.logger.info("Received response '{}'".format(response.decode('ascii')))
+        instrument.close()
         return response
 
 
@@ -91,35 +95,38 @@ class DigitalMicroMirrorDevice():
         """
         self.logger.info("Sending DMD the command '{}'".format(command))
         dmd_ip, dmd_port = self._get_address()
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
-            try:
-                instrument.connect((dmd_ip, dmd_port))
-            except Exception as e:
-                self.is_on = False
-                self.logger.error("DMD did not respond!")
-                self.logger.error("Error was {}".format(e))
-                raise RuntimeError("Unable to contact DMD controller")
+        if self.PAR.is_connected:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
+                try:
+                    instrument.connect((dmd_ip, dmd_port))
+                except Exception as e:
+                    self.is_on = False
+                    self.logger.error("DMD did not respond!")
+                    self.logger.error("Error was {}".format(e))
+                    raise RuntimeError("Unable to contact DMD controller")
 
-            if isinstance(command, list):
-                message_type = command[-1][4]
-                command = ''.join(command)
-            else:
-                message_type = command[4]
+                if isinstance(command, list):
+                    message_type = command[-1][4]
+                    command = ''.join(command)
+                else:
+                    message_type = command[4]
 
-            instrument.sendall(codecs.encode(command,'utf-8'))
-            reply = instrument.recv(1024)
-            response = reply.decode('ascii')
-            self.logger.info("Received response {}".format(response))
+                instrument.sendall(codecs.encode(command,'utf-8'))
+                reply = instrument.recv(1024)
+                response = reply.decode('ascii')
+                self.logger.info("Received response {}".format(response))
 
-            if 'invalid ~ command' in response and message_type in response:
-                self.logger.error("Invalid command sent to DMD controller")
-                raise ValueError("An invalid command was sent to the controller.")
-            elif response == b'':
-                self.is_on = False
-                self.logger.error("Controller not responding as if a message was sent")
-                raise RuntimeError("The controller is not responding as if a message was sent.")
-            else:
-                self.logger.info("Command {} successfully written.".format(command[:-1]))
+                if 'invalid ~ command' in response and message_type in response:
+                    self.logger.error("Invalid command sent to DMD controller")
+                    raise ValueError("An invalid command was sent to the controller.")
+                elif response == b'':
+                    self.is_on = False
+                    self.logger.error("Controller not responding as if a message was sent")
+                    raise RuntimeError("The controller is not responding as if a message was sent.")
+                else:
+                    self.logger.info("Command {} successfully written.".format(command[:-1]))
+        else:
+            self.logger.info("General status is disconnected")
 
 
     def apply_checkerboard(self):
@@ -555,12 +562,13 @@ class DigitalMicroMirrorDevice():
         Wraps sending a list of messages in a try/except block, and prints out a semi-
         custom error message, then returns false, on any failure.
         """
-        try:
-            for m in message:
-                self.send(m)
-        except Exception as e:
-            self.logger.error("Failed to apply {}".format(note))
-            return False
+        if self.PAR.is_connected:
+            try:
+                for m in message:
+                    self.send(m)
+            except Exception as e:
+                self.logger.error("Failed to apply {}".format(note))
+                return False
         return True
 
 
@@ -568,8 +576,7 @@ class DigitalMicroMirrorDevice():
         """
         Get the current IP address and port from the parameters class
         """
-        # Get IP addresses
-        ip_port = self.PAR.IP_dict['IP_DMD'].split(":")
+        ip_port = self.db.get_value("config_ip_dmd", default="none").split(":")
         dmd_ip = ip_port[0]
         dmd_port = int(ip_port[1])
         return dmd_ip, dmd_port

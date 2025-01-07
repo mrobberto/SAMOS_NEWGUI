@@ -24,9 +24,12 @@ import shutil
 
 import tkinter as tk
 import ttkbootstrap as ttk
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.system.database import StorageDatabase
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 from samos.utilities.tk import check_widgets
+
+from .widgets import *
 
 
 def check_enabled(func):
@@ -44,6 +47,7 @@ class SAMOSFrame(ttk.Frame):
         super().__init__(container)
         self.logger = logging.getLogger("samos")
         self.parent = parent
+        self.samos_classes = kwargs
         self.CCD = kwargs["CCD"]
         self.DMD = kwargs['DMD']
         self.PCM = kwargs["PCM"]
@@ -51,7 +55,9 @@ class SAMOSFrame(ttk.Frame):
         self.SOAR = kwargs["SOAR"]
         self.main_fits_header = kwargs["main_fits_header"]
         self.PAR = kwargs["PAR"]
-        self.fits_dir = get_fits_dir()
+        self.fits_dir = self.PAR.fits_dir
+        self.db = kwargs["DB"]
+        self.registry = kwargs["registry"]
         self.check_widgets = {}
 
         self.main_frame = ttk.LabelFrame(self, text=name, borderwidth=5)
@@ -66,7 +72,14 @@ class SAMOSFrame(ttk.Frame):
 
     def create_custom_menus(self, parent, menubar):
         pass
-        
+
+
+    def make_db_var(self, var, name, default, callback=None):
+        value = self.db.get_value(name, default=default, add_missing=True)
+        tkvar = var(value=value)
+        self.registry.register(name, tkvar, callback=callback)
+        tkvar.trace_add('write', functools.partial(self.registry.update, name, tkvar))
+        return tkvar
 
     def set_enabled(self, run_from_main=False):
         """
