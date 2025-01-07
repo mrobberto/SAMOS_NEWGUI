@@ -5,7 +5,6 @@ Created on Wed Feb 22 11:34:16 2023
 
 @author: danakoeppe
 """
-from samos.utilities import get_fits_dir
 
 
 class FITSHead(object):
@@ -18,8 +17,9 @@ class FITSHead(object):
 
     Each attribute can the be combined into a main param dict, which will get written to header.
     """
-    def __init__(self, par, logger):
+    def __init__(self, par, db, logger):
         self.PAR = par
+        self.db = db
         self.logger = logger
 
         self.filename = None  # base filename e.g. 'NGC1976_83.819696	-5.390333'
@@ -103,14 +103,14 @@ class FITSHead(object):
             'FILENAME' : self.filename,
             'FILEDIR' : self.filedir,
             'EXTEND' : self.extensions,
-            'OBSERVER' : (self.PAR.PotN["Observer"], 'Observer Name(s)'),
-            'PROGID' : (self.PAR.PotN["Program ID"], 'Program ID'),
-            'TONAMES' : (self.PAR.PotN["Telescope Operator"], 'Telescope Operator(s)'),
+            'OBSERVER' : (self.db.get_value("POTN_Observer"), 'Observer Name(s)'),
+            'PROGID' : (self.db.get_value("POTN_Program"), 'Program ID'),
+            'TONAMES' : (self.db.get_value("POTN_Telescope_Operator"), 'Telescope Operator(s)'),
             'GRIDFNAM' : (self.gridfnam, 'Grid pattern filename'),
             'EXPTIME': (self.expTime, 'Exposure time (s)'),
             'COMBO' : (self.combined, 'Is combined image (T/F)'),
             'NCOMBO': (self.ncombined, 'Number of combined images'),
-            'TARGET': (self.PAR.PotN["Object Name"], 'User-defined name of object'),
+            'TARGET': (self.db.get_value("POTN_Target"), 'User-defined name of object'),
             'OBJNAME': (self.objname, "User-defined object name"),
             'OBSTYPE': (self.obstype, 'Type of observation'),
             'FILTER': (self.filter, 'Name of filter'),

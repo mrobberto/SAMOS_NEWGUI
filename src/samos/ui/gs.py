@@ -3,6 +3,7 @@ SAMOS Guide Star tk Frame Class
 """
 from astropy.io import fits
 from astropy import units as u
+from functools import partial
 from ginga.AstroImage import AstroImage
 from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
 from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
@@ -16,7 +17,7 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from tkinter.filedialog import askopenfilename
 
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame
@@ -29,21 +30,20 @@ class GSPage(SAMOSFrame):
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
         self.loaded_regfile = None
-        self.fits_dir = get_fits_dir()
 
         # FITS manager
         frame = ttk.LabelFrame(self.main_frame, text="FITS Manager")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         # RA, DEC Entry box
-        self.ra = tk.DoubleVar(self, 150.17110)
+        self.ra = self.make_db_var(tk.DoubleVar, "gs_centre_ra", 150.17110)
         ttk.Label(frame, text="RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.ra).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.dec = tk.DoubleVar(self, -54.79004)
+        self.dec = self.make_db_var(tk.DoubleVar, "gs_centre_dec", -54.79004)
         ttk.Label(frame, text="Dec:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
         # QUERY Server
-        self.gs_query_frame = GSQueryFrame(self.main_frame, self.ra, self.dec, self.run_query, self.logger)
+        self.gs_query_frame = GSQueryFrame(self, self.main_frame, self.run_query, "gs_centre_ra", "gs_centre_dec", **self.samos_classes)
         self.gs_query_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
         # GINGA DISPLAY
@@ -83,39 +83,39 @@ class GSPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="Guide Star Pickup")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         # Low Mag (bright end)
-        self.low_mag = tk.IntVar(self, 11)
+        self.low_mag =  self.make_db_var(tk.IntVar, "gs_low_mag", 11)
         ttk.Label(frame, text="Low Mag:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         s = tk.Spinbox(frame, increment=1, textvariable=self.low_mag, from_=0, to=25)
         s.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         # High mag (faint end)
         ttk.Label(frame, text="High Mag:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.high_mag = tk.IntVar(self, 13)
+        self.high_mag =  self.make_db_var(tk.IntVar, "gs_high_mag", 13)
         s = tk.Spinbox(frame, increment=1, textvariable=self.high_mag, from_=0, to=25)
         s.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # SLIT POINTER ENABLED
-        self.guide_star_pickup_enabled = tk.IntVar(self, 1)
+        self.guide_star_pickup_enabled = self.make_db_var(tk.IntVar, "gs_pickup_enabled", 1)
         b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
         b.grid(row=2, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
         # Candidate Guide Star Co-ordinates
-        self.gs_ra = tk.DoubleVar(self, self.ra.get())
+        self.gs_ra =  self.make_db_var(tk.DoubleVar, "gs_guidestar_ra", self.ra.get())
         ttk.Label(frame, text="RA:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_ra).grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.gs_dec = tk.DoubleVar(self, self.dec.get())
+        self.gs_dec =  self.make_db_var(tk.DoubleVar, "gs_guidestar_dec", self.dec.get())
         ttk.Label(frame, text="Dec:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_dec).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         # X Shift
-        self.gs_xshift = tk.DoubleVar(self, 0.)
+        self.gs_xshift =  self.make_db_var(tk.DoubleVar, "gs_guidestar_xshift", 0.)
         ttk.Label(frame, text="X Shift (mm)").grid(row=5, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_xshift).grid(row=5, column=1, sticky=TK_STICKY_ALL)
         # Y Shift
-        self.gs_yshift = tk.DoubleVar(self, -0.)
+        self.gs_yshift =  self.make_db_var(tk.DoubleVar, "gs_guidestar_yshift", 0.)
         ttk.Label(frame, text="Y Shift (mm)").grid(row=6, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_yshift).grid(row=6, column=1, sticky=TK_STICKY_ALL)
         # Magnitude
-        self.gs_mag = tk.DoubleVar(self, 0.0)
+        self.gs_mag = self.make_db_var(tk.DoubleVar, "gs_guidestar_mag", 0.0)
         ttk.Label(frame, text="Magnitude:").grid(row=7, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_mag).grid(row=7, column=1, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_RADEC_to_SOAR, bootstyle="success")
+        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_to_telescope, bootstyle="success")
         b.grid(row=8, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
 
@@ -130,11 +130,20 @@ class GSPage(SAMOSFrame):
         if hasattr(self, "catalog"):
             self.catalog.saved_regions = r
         else:
-            r.write(get_fits_dir() / "current_regions.reg", format='ds9')
+            r.write(self.PAR.fits_dir / "current_regions.reg", format='ds9')
 
 
-    def send_RADEC_to_SOAR(self):
-        self.logger.warning("send_RADEC_to_SOAR has not been implemented!")
+    def send_to_telescope(self):
+        self.db.update_value("target_ra", self.gs_ra.get())
+        self.db.update_value("target_dec", self.gs_dec.get())
+        target = {
+            "ra": self.db.get_value("target_ra"),
+            "dec": self.db.get_value("target_dec"),
+            "epoch": self.db_get_value("target_epoch"),
+            "ra_rate": 0.,
+            "dec_rate": 0.
+        }
+        self.SOAR.target_move(target)
 
 
     def run_query(self, catalog):
@@ -252,8 +261,10 @@ class GSPage(SAMOSFrame):
 
 
     def load_gs(self):
-        gs_file = askopenfilename(initialdir=get_fits_dir(), title="Select Guide Star FITS File", 
-                                  filetypes=(("FITS files", "*.fits"), ("all files", "*.*")))
+        title = "Select Guide Star FITS File"
+        filetypes = (("FITS files", "*.fits"), ("all files", "*.*"))
+        gs_file = askopenfilename(
+            initialdir=self.PAR.fits_dir, title=title, filetypes=filetypes)
         with fits.open(gs_file) as in_file:
             if "CAT_TYPE" not in in_file[0].header:
                 self.logger.error("Tried to open guide star file not created by SAMOS!")

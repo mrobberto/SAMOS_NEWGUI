@@ -2,6 +2,7 @@
 """
 Main entrypoint to SAMOS GUI
 """
+from datetime import datetime
 import logging
 import multiprocessing as mp
 import socket
@@ -20,8 +21,11 @@ from samos.sami import SAMI
 from samos.soar import SOAR
 from samos.system.fits_header import FITSHead
 from samos.system.config import SAMOSConfig
+from samos.system.database import StorageDatabase
 from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage
 from samos.ui.logging_window import LoggingWindow
+from samos.ui.widgets import VariableRegistry
+from samos.utilities import get_data_file, get_config_dir
 from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
 from samos.utilities.tk import about_box
@@ -30,10 +34,11 @@ from samos.utilities.tk import about_box
 class App(ttk.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.last_update_time = datetime.now()
         self.logger = logging.getLogger('samos')
         self.logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
+        handler.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
@@ -42,23 +47,39 @@ class App(ttk.Window):
         self.log_window.text_handler.setFormatter(formatter)
         self.logger.addHandler(self.log_window.text_handler)
         self.logger.info("Initializing App")
-        self.PAR = SAMOSConfig()
-        self.main_fits_header = FITSHead(self.PAR, self.logger)
+        database_path = get_config_dir()
+        database_filename = "Settings.yaml"
+        database_file = database_path / database_filename
+        self.DB = StorageDatabase(
+            db_file=database_file,
+            logger=self.logger
+        )
+        self.PAR = SAMOSConfig(self.DB, self.logger)
+        self.registry = VariableRegistry(self.DB, self, self.logger)
+        self.main_fits_header = FITSHead(self.PAR, self.DB, self.logger)
         self.simulator = None
-        self.protocol("WM_DELETE_WINDOW", self.destroy)
+        self.protocol("WM_DELETE_WINDOW", self.destroy_all)
         
-        DMD = DigitalMicroMirrorDevice(self.logger, self.PAR)
+        self.hardware_modules = {}
+        self.hardware_modules["DMD"] = DigitalMicroMirrorDevice(self.logger, self.PAR, self.DB)
+        self.hardware_modules["CCD"] = CCD(self.PAR, self.DB, self.hardware_modules["DMD"], self.logger)
+        self.hardware_modules["PCM"] = PCM(self.PAR, self.DB, self.logger, self.main_fits_header)
+        self.hardware_modules["SOAR"] = SOAR(self.DB, self.PAR, self.logger)
+        self.hardware_modules["SAMI"] = SAMI(self.PAR, self.DB, self.logger)
+        
         # Instantiate the classes that represent the SAMOS hardware
         self.samos_classes = {
-            "CCD": CCD(self.PAR, DMD, self.logger),
-            "DMD": DMD,
-            "PCM": PCM(self.PAR, self.logger, self.main_fits_header),
-            "SOAR": SOAR(self.PAR),
-            "SAMI": SAMI(self.PAR, self.logger),
+            "CCD": self.hardware_modules["CCD"],
+            "DMD": self.hardware_modules["DMD"],
+            "PCM": self.hardware_modules["PCM"],
+            "SOAR": self.hardware_modules["SOAR"],
+            "SAMI": self.hardware_modules["SAMI"],
             "main_fits_header": self.main_fits_header,
-            "PAR": self.PAR
+            "PAR": self.PAR,
+            "DB": self.DB,
+            "registry": self.registry
         }
-        
+
         # Setting up Initial Things
         self.title("SAMOS Control System")
         self.resizable(True, True)
@@ -86,7 +107,6 @@ class App(ttk.Window):
             self.container.add(frame, text=frame_class.__name__)
             current_index += 1
             self.logger.info(f"Finished creating frame {frame_class.__name__}")
-        self.frames["ConfigPage"].load_IP_default()
         self.show_frame("ConfigPage")
         self.lift()
 
@@ -100,6 +120,12 @@ class App(ttk.Window):
 
 
     def do_updates(self):
+        current_time = datetime.now()
+        if (current_time - self.last_update_time).seconds > 5:
+            self.last_update_time = current_time
+            for hw_element in self.hardware_modules:
+                module = self.hardware_modules[hw_element]
+                # Run an update function
         for key in self.frames:
             self.frames[key].set_enabled(run_from_main=True)
             self.frames[key].update()
@@ -142,7 +168,7 @@ class App(ttk.Window):
         self.simulator = None
 
 
-    def destroy(self):
+    def destroy_all(self):
         """
         While closing, if running the simulator, close it.
         """
@@ -154,7 +180,7 @@ class App(ttk.Window):
             self.logger.info("Simulator has exited")
         self.logger.warning("Finished shutdown functions")
         super().destroy()
-
+        
 
     def show_logging_window(self):
         self.log_window.deiconify()
@@ -175,7 +201,7 @@ class App(ttk.Window):
         filemenu.add_command(label="ETC", command=lambda: self.show_frame("ETCPage"))
         filemenu.add_separator()
         filemenu.add_command(label="Logging", command=self.show_logging_window)
-        filemenu.add_command(label="Exit", command=self.quit)
+        filemenu.add_command(label="Exit", command=self.destroy)  #quit)
 
         # help menu
         help_menu = tk.Menu(menubar, tearoff=0)

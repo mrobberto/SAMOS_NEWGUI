@@ -18,7 +18,7 @@ import ttkbootstrap as ttk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from samos.hadamard.patterns import make_S_matrix_masks, make_H_matrix_masks
-from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
+from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
 
@@ -74,7 +74,7 @@ class DMDPage(SAMOSFrame):
         w.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         ttk.Label(frame, text="Current DMD Map:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.map_filename = tk.StringVar(self, "none")
+        self.map_filename = self.make_db_var(tk.StringVar, "dmd_current_map_filename", "none")
         self.map_filename_path = None
         ttk.Label(frame, textvariable=self.map_filename).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
@@ -84,19 +84,19 @@ class DMDPage(SAMOSFrame):
         custom_frame = ttk.Frame(frame, borderwidth=0)
         custom_frame.grid(row=0, column=0, rowspan=1, columnspan=3, sticky=TK_STICKY_ALL)
         ttk.Label(custom_frame, text="x0").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.x0 = tk.IntVar(self, 540)
+        self.x0 = self.make_db_var(tk.IntVar, "dmd_custom_x0", 540)
         tk.Entry(custom_frame, textvariable=self.x0, width=5).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         ttk.Label(custom_frame, text="y0").grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        self.y0 = tk.IntVar(self, 1024)
+        self.y0 = self.make_db_var(tk.IntVar, "dmd_custom_y0", 1024)
         tk.Entry(custom_frame, textvariable=self.y0, width=5).grid(row=0, column=3, sticky=TK_STICKY_ALL)
         ttk.Label(custom_frame, text="x1").grid(row=0, column=4, sticky=TK_STICKY_ALL)
-        self.x1 = tk.IntVar(self, 540)
+        self.x1 = self.make_db_var(tk.IntVar, "dmd_custom_x1", 540)
         tk.Entry(custom_frame, textvariable=self.x1, width=5).grid(row=0, column=5, sticky=TK_STICKY_ALL)
         ttk.Label(custom_frame, text="y1").grid(row=0, column=6, sticky=TK_STICKY_ALL)
-        self.y1 = tk.IntVar(self, 1024)
+        self.y1 = self.make_db_var(tk.IntVar, "dmd_custom_y1", 1024)
         tk.Entry(custom_frame, textvariable=self.y1, width=5).grid(row=0, column=7, sticky=TK_STICKY_ALL)
         # Slit Buttons
-        self.slits_filename = tk.StringVar(self, "none")
+        self.slits_filename = self.make_db_var(tk.StringVar, "dmd_custom_filename", "none")
         self.slits_filename_path = None
         w = ttk.Button(frame, text="Add", command=self.add_slit)
         w.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -126,30 +126,32 @@ class DMDPage(SAMOSFrame):
         hadamard_conf_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
 
         # Matrix Type and order
-        self.SHMatrix_Checked = tk.StringVar(self, "S")
-        w = ttk.Radiobutton(hadamard_conf_frame, text="S Matrix", variable=self.SHMatrix_Checked, value="S", command=self.set_SH_matrix)
+        self.sh_select = self.make_db_var(tk.StringVar, "dmd_hadamard_matrix_type", "S")
+        w = ttk.Radiobutton(hadamard_conf_frame, text="S Matrix", variable=self.sh_select, value="S", command=self.set_SH_matrix)
         w.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Radiobutton(hadamard_conf_frame, text="H Matrix", variable=self.SHMatrix_Checked, value="H", command=self.set_SH_matrix)
+        w = ttk.Radiobutton(hadamard_conf_frame, text="H Matrix", variable=self.sh_select, value="H", command=self.set_SH_matrix)
         w.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
         ttk.Label(hadamard_conf_frame, text="Order: ").grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
-        self.Sorders = (3, 7, 11, 15, 19, 23, 31, 35, 43, 47, 63, 71, 79, 83, 103, 127, 255)
-        self.Horders = (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)
-        self.order = tk.IntVar(self, self.Sorders[1])
-        self.order_menu = ttk.OptionMenu(hadamard_conf_frame, self.order, *self.Sorders, command=self.set_SH_matrix)
+        self.orders = {
+            "S": (3, 7, 11, 15, 19, 23, 31, 35, 43, 47, 63, 71, 79, 83, 103, 127, 255),
+            "H": (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)
+        }
+        self.order = self.make_db_var(tk.IntVar, "dmd_hadamard_order", self.orders[self.sh_select.get()][1])
+        self.order_menu = ttk.OptionMenu(hadamard_conf_frame, self.order, None, *self.orders[self.sh_select.get()], command=self.set_SH_matrix)
         self.order_menu.grid(row=0, column=3, rowspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[self.order_menu] = [("condition", self, "initialized", True)]
 
         # Slit Dimensions
         ttk.Label(hadamard_conf_frame, text="Slit Width:", anchor="w").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        self.slit_width = tk.IntVar(self, 3)
+        self.slit_width = self.make_db_var(tk.IntVar, "dmd_hadamard_width", 3)
         box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_width, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=1, sticky=TK_STICKY_ALL)
         self.check_widgets[box] = [("condition", self, "initialized", True)]
         ttk.Label(hadamard_conf_frame, text="Length:", anchor="w").grid(row=3, column=3, sticky=TK_STICKY_ALL)
-        self.slit_length = tk.IntVar(self, 256)
+        self.slit_length = self.make_db_var(tk.IntVar, "dmd_hadamard_length", 256)
         box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_length, width=5)
         box.bind("<Return>", self.calculate_field_width)
         box.grid(row=3, column=4, sticky=TK_STICKY_ALL)
@@ -158,15 +160,15 @@ class DMDPage(SAMOSFrame):
         # Field Centre
         ttk.Label(hadamard_conf_frame, text="Field Centre:", anchor="w").grid(row=4, column=0, sticky=TK_STICKY_ALL)
         ttk.Label(hadamard_conf_frame, text="Xo", anchor="w").grid(row=4, column=1, sticky=TK_STICKY_ALL)
-        self.slit_xc = tk.IntVar(self, 540)
+        self.slit_xc = self.make_db_var(tk.IntVar, "dmd_hadamard_xc", 540)
         tk.Entry(hadamard_conf_frame, textvariable=self.slit_xc, width=5).grid(row=4, column=2, sticky=TK_STICKY_ALL)
         ttk.Label(hadamard_conf_frame, text="Yo", anchor="w").grid(row=4, column=3, sticky=TK_STICKY_ALL)
-        self.slit_yc = tk.IntVar(self, 1045)
+        self.slit_yc = self.make_db_var(tk.IntVar, "dmd_hadamard_yc", 1045)
         tk.Entry(hadamard_conf_frame, textvariable=self.slit_yc, width=5).grid(row=4, column=4, sticky=TK_STICKY_ALL)
 
         # Field Width
         ttk.Label(hadamard_conf_frame, text="Width:", anchor="w").grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        self.field_width = tk.IntVar(self, 21)
+        self.field_width = self.make_db_var(tk.IntVar, "dmd_hadamard_field_width", 21)
         txt = tk.Entry(hadamard_conf_frame,  textvariable=self.field_width, bg="red", fg="white", font=BIGFONT_15)
         txt.grid(row=5, column=1, columnspan=4, sticky=TK_STICKY_ALL)
         
@@ -177,13 +179,13 @@ class DMDPage(SAMOSFrame):
 
         # Name / Rename
         ttk.Label(hadamard_conf_frame, text="Name:").grid(row=8, column=0, sticky=TK_STICKY_ALL)
-        self.mask_name = tk.StringVar(self, "")
+        self.mask_name = self.make_db_var(tk.StringVar, "dmd_hadamard_mask_name", "")
         tk.Label(hadamard_conf_frame, textvariable=self.mask_name).grid(row=8, column=1, columnspan=4, sticky=TK_STICKY_ALL)
         rename_button_text = "Rename '{}' to:".format(self.mask_name.get())
         self.rename_button = ttk.Button(hadamard_conf_frame, text=rename_button_text, command=self.rename_masks_file)
         self.rename_button.grid(row=9, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[self.rename_button] = [("condition", self, "initialized", True), ("tknot", self.mask_name, "")]
-        self.rename_value = tk.StringVar(self, "")
+        self.rename_value = self.make_db_var(tk.StringVar, "dmd_hadamard_mask_rename_value", "")
         e = tk.Entry(hadamard_conf_frame, textvariable=self.rename_value)
         e.grid(row=9, column=2, columnspan=3, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self, "initialized", True)]
@@ -195,13 +197,13 @@ class DMDPage(SAMOSFrame):
         b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("condition", self, "initialized", True), ("condition", self.PAR, "valid_wcs", True)]
         ttk.Label(radec_frame, text="Target RA:", anchor="w").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.target_ra = tk.DoubleVar(self, 1.234567)
+        self.target_ra = self.make_db_var(tk.DoubleVar, "dmd_coord_ra", 1.234567)
         e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
         e.grid(row=1, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self, "initialized", True)]
         ttk.Label(radec_frame, text="(decimal degrees)").grid(row=1, column=3, sticky=TK_STICKY_ALL)
         ttk.Label(radec_frame, text="Target DEC:", anchor="w").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        self.target_dec = tk.DoubleVar(self, 1.234567)
+        self.target_dec = self.make_db_var(tk.DoubleVar, "dmd_coord_dec", 1.234567)
         e = tk.Entry(radec_frame, textvariable=self.target_ra, width=10)
         e.grid(row=2, column=1, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[e] = [("condition", self, "initialized", True)]
@@ -214,15 +216,11 @@ class DMDPage(SAMOSFrame):
         self.logger.info("Finished initial widget status.")
 
 
-    @check_enabled
     def load_ra_dec(self):
-        header = self.PAR.wcs.to_header()
-        sky = self.PAR.wcs.pixel_to_world(header["CRPIX1"], header["CRPIX2"])
-        self.target_ra.set(sky.ra)
-        self.target_dec.set(sky.dec)
+        self.target_ra.set(self.db.get_value("target_ra", default=self.target_ra.get()))
+        self.target_dec.set(self.db.get_value("target_dec", default=self.target_dec.get()))
 
 
-    @check_enabled
     def generate_hts_from_radec(self):
         """ 
         Generates HTS mask centered on RADEC coordinates
@@ -255,7 +253,6 @@ class DMDPage(SAMOSFrame):
         self.generate_hts()
 
 
-    @check_enabled
     def rename_masks_file(self, event=None):
         """ rename the mask file, only the part starting with 'mask' """
         old_mask_name = self.mask_name.get()
@@ -271,26 +268,31 @@ class DMDPage(SAMOSFrame):
         self.rename_value.set("")
 
 
-    @check_enabled
     def calculate_field_width(self, event=None):
         """ calculate_field_width """
-        self.field_width.set(self.slit_width.get() * self.order)
+        self.field_width.set(self.slit_width.get() * self.order.get())
 
 
-    @check_enabled
     def set_SH_matrix(self, event=None):
         """ set_SH_matrix """
-        if self.SHMatrix_Checked.get() == "S":
-            self.order = self.Sorders[1]
-            self.order_menu.set_menu(self.order, *self.Sorders)
-            self.mask_arrays = np.arange(0, self.order)
-        else:
-            self.order = self.Horders[1]
-            self.order_menu.set_menu(self.order, self.Horders)
+        self.logger.info("Started S/H Matrix Check")
+        matrix_type = self.sh_select.get()
+        self.logger.info(f"Matrix type {matrix_type}")
+        matrix_orders = self.orders[matrix_type]
+        self.logger.info(f"Matrix orders {matrix_orders}")
+        current_order = self.order.get()
+        self.logger.info(f"Current order {current_order}")
+        if current_order not in matrix_orders:
+            self.logger.info("Matrix type changed. Setting order to first value.")
+            self.order_menu.set_menu(default=None, *matrix_orders)
+            self.order.set(matrix_orders[0])
+        self.logger.info("Updated Menu")
+        if self.sh_select.get() == "H":
             a = tuple(['a'+str(i), 'b'+str(i)] for i in range(1, 4))
             self.mask_arrays = [inner for outer in zip(*a) for inner in outer]
+        else:
+            self.mask_arrays = np.arange(0, self.order.get())
         self.calculate_field_width()
-        self._set_buttons()
         self.logger.debug("Selected Order is {}".format(self.order))
         self.logger.debug("Mask Arrays are: {}".format(self.mask_arrays))
 
@@ -299,9 +301,9 @@ class DMDPage(SAMOSFrame):
     def generate_hts(self):
         """ HTS_generate """
         DMD_size = self.DMD.dmd_size
-        matrix_type = self.SHMatrix_Checked.get()  # Two options, H or S
+        matrix_type = self.sh_select.get()  # Two options, H or S
         # e.g. 15 Order of the hadamard matrix (or S matrix)
-        order = self.order
+        order = self.order.get()
         # NOTE that X and Y are transposed when talking to the DMD
         Xo, Yo = self.slit_yc.get(), self.slit_xc.get()
 
@@ -379,13 +381,15 @@ class DMDPage(SAMOSFrame):
         self._set_slit_image("current_dmd_state.png", state_name)
 
 
-    @check_enabled
     def browse_map(self):
         """ BrowseMapFiles """
         self.map_filename.set("none")
         self.map_filename_path = None
-        filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
-                                   filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
+        filename = askopenfilename(
+            initialdir=get_data_file("dmd.csv.maps"),
+            title="Select a File",
+            filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
+        )
         try:
             os.startfile(filename)
         except AttributeError:
@@ -401,8 +405,11 @@ class DMDPage(SAMOSFrame):
         self.map_filename_path = None
         self.slits_filename.set("")
         self.slits_filename_path = None
-        filename = askopenfilename(initialdir=get_data_file("dmd.csv.maps"), title="Select a File",
-                                   filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
+        filename = askopenfilename(
+            initialdir=get_data_file("dmd.csv.maps"),
+            title="Select a File",
+            filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
+        )
         self.map_filename_path = Path(filename)
         self.logger.info("Loading Map {}".format(self.map_filename_path))
         self.map_filename.set(self.map_filename_path.name)
@@ -422,13 +429,15 @@ class DMDPage(SAMOSFrame):
                 x1, y1 = dmd_to_ccd(row[1], row[3], self.PAR.dmd_wcs)
                 xc, yc = (x0 + x1)/2., (y0 + y1)/2.
                 dx, dy = x1 - x0, y1 - y0
-                output = "box({},{},{},{},0)".format(xc, yc, dx, dy)
+                output = f"box({xc},{yc},{dx},{dy},0)"
                 self.logger.debug(output)
-                f.write("{}\n".format(output))
+                f.write(f"{output}\n")
 
         self.map_filename.set(self.map_filename_path.name[:-3]+"reg")
+        # ***** DEPENDENCY *****
         main_page = self.parent.frames['MainPage']
         main_page.str_filename_regfile_xyAP.set(file_path.name[:-3]+"reg")
+        # ***** DEPENDENCY *****
         self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
 
 
@@ -436,15 +445,15 @@ class DMDPage(SAMOSFrame):
     def create_slits(self):
         self.map_filename.set("none")
         self.map_filename_path = None
-        self.slits_filename_path = Path(asksaveasfilename(initialdir=get_fits_dir(), title="Create a new Slits file"))
+        title = "Create a new Slits file"
+        self.slits_filename_path = Path(asksaveasfilename(initialdir=self.PAR.fits_dir, title=title))
         self.slits_filename.set(self.slits_filename_path.name)
-        self.logger.info(f"Creating new slit map {self.map_filename.get()}")
+        self.logger.info(f"Creating new slit map {self.slits_filename_path.name}")
         map_list = [[str(x) for x in [self.x0.get(), self.x1.get(), self.y0.get(), self.y1.get(), 0]]]
         self.map = map_list
         self.save_slits()
 
 
-    @check_enabled
     def load_slits(self):
         """ LoadSlits """
         self.slits_filename_path = Path(askopenfilename(initialdir=get_data_file("dmd.csv.slits"), title="Select a File"))
