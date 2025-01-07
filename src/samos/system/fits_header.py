@@ -132,7 +132,8 @@ class FITSHead(object):
         Combine all the attributes into a single dictionary that will be passed to the write_fits_header method.
         """
         main_astrometric_dict = {  
-            'RADECSYS': (self.radecSys, 'Default coordinate system'),
+            #'RADECSYS': (self.radecSys, 'Default coordinate system'),
+            'RADESYSa.': (self.radecSys, 'Default coordinate system'),
             'RADECEQ': (self.radecEq, 'Default equinox'),
             'RA': (self.ra,'RA of object (hr)'), 
             'DEC': (self.dec,'DEC of object (deg)'),
