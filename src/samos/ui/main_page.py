@@ -10,6 +10,7 @@ import random
 import re
 import time
 import twirl
+import math
 
 from astropy.coordinates import SkyCoord
 from astropy.io import fits, ascii
@@ -207,30 +208,44 @@ class MainPage(SAMOSFrame):
         ttk.Label(frame, text="Number of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
-        b = ttk.Button(frame, text="Send to SOAR", command=self.send_to_soar, bootstyle="success")
-        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
         b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
         b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Send to SOAR", command=self.send_offset_to_soar, bootstyle="success")
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
+        """
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "target_ra", "target_dec", **self.samos_classes)
         self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        """
         # Chosen Star Frame
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         self.ra_cntr = self.make_db_var(tk.DoubleVar, "centre_ra", self.fits_ra.get())
         ttk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.ra_cntr_mm = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
-        ttk.Label(cntr_frame, text="X (mm):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.ra_cntr_mm, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        self.x_offset = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
+        ttk.Label(cntr_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(cntr_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
         self.dec_cntr = self.make_db_var(tk.DoubleVar, "centre_dec", self.fits_dec.get())
         ttk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.dec_cntr_mm = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
-        ttk.Label(cntr_frame, text="Y (mm):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.dec_cntr_mm, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
+        ttk.Label(cntr_frame, text="Y offset (arsec):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(cntr_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
+        # Guide Star Probe Frame
+        frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup")
+        frame.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        # X_GSP00
+        self.gs_x0 = tk.DoubleVar(self, 0.)
+        ttk.Label(frame, text="X GSP00 (pix)").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_x0).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        # Y GSP00
+        self.gs_y0 = tk.DoubleVar(self, -0.)
+        ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+       
         # CENTRE COLUMN
 
         # GINGA Display
@@ -474,11 +489,11 @@ class MainPage(SAMOSFrame):
         self.PCM.initialize_indicator(self.status_box)
         self.set_enabled()
 
-
+    """
     def send_to_soar(self):
-        """
-        Send the currently set target to SOAR with a move command.
-        """
+        
+        # Send the currently set target to SOAR with a move command.
+        
         target = {
             "ra": self.db.get_value("target_ra"),
             "dec": self.db.get_value("target_dec"),
@@ -487,6 +502,16 @@ class MainPage(SAMOSFrame):
             "dec_rate": 0.
         }
         self.SOAR.target_move(target)
+    """
+    @check_enabled
+    def send_offset_to_soar(self):
+        #push the calculated offsets in to the TCS page
+        #THIS HAS TO BE FIXED: we need to send the RA,DEC to the SOAR TCS only if TCS is active
+        d_ra = self.x_offset.get()
+        d_dec = self.y_offset.get()
+        message = { "offset_ra": float(d_ra), "offset_dec": float(d_dec) }
+        return_meesage_from_TCS =  self.SOAR_PAGE.Offset_option_TCS(message)
+        print(return_meesage_from_TCS)
 
 
     @check_enabled
@@ -636,7 +661,9 @@ class MainPage(SAMOSFrame):
             self.image_name.set(self.target_name)
         if "RADEC=" in self.loaded_reg_file_path.name:
             radec_str = self.loaded_reg_file_path.name
-            radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
+             # FIXED THIS LINE BECAUSE WAS NOT READING PROPERLY THE RADEC STRING [MR]
+            #radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
+            radec_str = radec_str[radec_str.find("RADEC=")+6:radec_str.find(".reg")]
             if "-" in radec_str:
                 str_items = radec_str.split("-")
                 dec_factor = -1.
@@ -830,7 +857,7 @@ class MainPage(SAMOSFrame):
     def clear_canvas(self):
         self.canvas.delete_all_objects(redraw=True)
 
-
+    """ NO FLIP IMAGE
     @check_enabled
     def set_image_flip(self):
         if hasattr(self, "AstroImage"):
@@ -840,14 +867,15 @@ class MainPage(SAMOSFrame):
                 data = self.AstroImage.get_data()
                 transformed_data = np.fliplr(data)
                 self.AstroImage.set_data(transformed_data)
+    """
 
-
+    
     @check_enabled
     def start_an_exposure(self):
         """ 
         This is the landing procedure after the START button has been pressed
         """
-        self.update_PotN()
+        self.update_PotN()   #The Function update_PotN() is no more present...
         if (not self.CCD.initialized) or (not self.CCD.ccd_on):
             # Open a test image
             image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
@@ -915,6 +943,29 @@ class MainPage(SAMOSFrame):
                 logbook.write(f"{self.image_exptime.get()},{file_name}\n")
 
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     @check_enabled
     def change_acq_type(self, event):
         """
@@ -931,6 +982,10 @@ class MainPage(SAMOSFrame):
         self.fits_image_ql = imagefile
 
 
+    
+    
+    
+    
     @check_enabled
     def load_existing_file(self):
 #        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
@@ -959,12 +1014,43 @@ class MainPage(SAMOSFrame):
         self.PAR.valid_wcs = False
         self.Display(self.fits_image_ql)
         
-        with open(self.fits_image_ql) as hdul:
+        #had to change open => fits.open [MR] to make this working
+        with fits.open(self.fits_image_ql) as hdul:
             header = hdul[0].header
             data = hdul[0].data
         
         img_wcs = wcs.WCS(header)
         ra, dec = img_wcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
+
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # not all headers use ra,dec
+        try:  #good header...
+            ra, dec = header["RA"], header["DEC"]
+            print(ra,dec)
+            self.fits_ra.set(ra)
+            self.fits_dec.set(dec)
+        except:
+            print("no RA and  DEC in the FITS header")
+        if  self.fits_ra.get() !=  '' and self.fits_dec.get() != '':   
+            ra = self.fits_ra.get()
+            dec = self.fits_dec.get()
+            print("RA and DEC read from the text box")
+
+        #MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
+        elif self.SOAR.is_on == True:               #was self.PAR.inoutvar.get() == "inside": 
+            infoa_dict = self.SOAR_PAGE.Handle_Infox('INFOA')  # TO BE FIXED: we need to grab the INFOA message from the SOAR TCS
+            ra=infoa_dict['MOUNT_RA']                          # to extract the pointed RA,DEC coordinates 
+            dec=infoa_dict['MOUNT_DEC']
+            self.fits_ra.set(ra)
+            self.fits_dec.set(dec)
+            print("RADEC provided by the SOAR TCS")               
+        else:   
+            messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
+            return
+
+        print("Pointed coordinates: ",ra,dec)
+        #<<<<<<<<<<<<<<<<<<<<
+
         center = SkyCoord(ra, dec, unit=[u.deg, u.deg])
         center = [center.ra.value, center.dec.value]
 
@@ -1004,14 +1090,39 @@ class MainPage(SAMOSFrame):
         hdu_wcs = self.PAR.wcs.to_fits()
         if self.loaded_reg_file_path is not None:
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)
-
+        print(self.PAR.wcs)
         hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = self.PAR.fits_dir / "WCS_{}_{}.fits".format(ra, dec)
+        #self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
+        self.wcs_filename = str( get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec) ) # I think it's better to just use the string
         hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
 
         self.Display(self.wcs_filename)
         self.fits_image.rotate(self.PAR.Ginga_PA)  
         
+         #calculate the offset in mm between pointed and actual position for the GS
+        #mywcs = wcs.WCS(header)
+        # take the xy coordinates of the GS probe home, entered in the GSPage...
+        x_GSP00 = self.gs_x0.get()
+        y_GSP00 = self.gs_y0.get() 
+        # determine the RA,DEC coordinates actually pointed by the telescope
+        ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00,y_GSP00,0)
+        x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra,dec,0)
+        print(x_pointed,y_pointed,ra,dec)
+        print(x_GSP00,y_GSP00,ra_tel,dec_tel)
+        # calculate the offset in RADEC between the telescope and commanded positions
+        Delta_ra = float(ra_tel) - float(ra)
+        Delta_dec = float(dec_tel) - float(dec)
+        #convert to arcseconds, taking into account that we want to account for the cos(dec) factor
+        Delta_RA_arcsec = Delta_ra*3600.*np.cos(dec*math.pi/180.)
+        Delta_DEC_arcsec = Delta_dec*3600.
+        #display
+        self.x_offset.set(Delta_RA_arcsec)
+        self.y_offset.set(Delta_DEC_arcsec)
+        print(Delta_RA_arcsec,Delta_DEC_arcsec)
+        print('done')
+        # ready to offset the telescope to the commanded position
+
+        """ => SUPERSEDED BY THE ABOVE CODE
         #calculate the offset in mm between pointed and actual position for the GS
         mywcs = wcs.WCS(header)
         ra_cntr, dec_cntr = mywcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
@@ -1022,8 +1133,13 @@ class MainPage(SAMOSFrame):
         Delta_DEC = dec - self.fits_dec.get()
         Delta_RA_mm = round(Delta_RA * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
         Delta_DEC_mm = round(Delta_DEC * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
-        self.ra_cntr_mm.set(Delta_RA_mm)
-        self.dec_cntr_mm.set(Delta_DEC_mm)
+        self.x_offset.set(Delta_RA_mm)
+        self.y_offset.set(Delta_DEC_mm)
+        """
+        
+
+
+
 
 
     @check_enabled
@@ -1111,11 +1227,17 @@ class MainPage(SAMOSFrame):
         fits_x = int(np.floor(data_x) + 1)
         fits_y = int(np.floor(data_y) + 1)
         text = f"FITS: ({fits_x:4d}, {fits_y:4d}). Value = {value}"
+        
+        
+        
         dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
         dmd_x = int(np.floor(dmd_x))
         dmd_y = int(np.floor(dmd_y))
         text = f"DMD: ({dmd_x:7d}, {dmd_y:7d}). " + text
 
+        
+        
+        
         # Calculate WCS RA
         try:
             # Image function operates on DATA space coords
