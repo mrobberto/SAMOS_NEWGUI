@@ -10,6 +10,7 @@ import random
 import re
 import time
 import twirl
+import math
 
 from astropy.coordinates import SkyCoord
 from astropy.io import fits, ascii
@@ -31,6 +32,7 @@ import tkinter as tk
 import ttkbootstrap as ttk
 from samos.dmd.utilities import DMDGroup
 from samos.ui.slit_table_view import SlitTableView as STView
+from samos.ui.gs import GSPage as GS
 from samos.utilities import get_data_file, get_temporary_dir, get_fits_dir
 from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
@@ -208,30 +210,42 @@ class MainPage(SAMOSFrame):
         ttk.Label(frame, text="Nr. of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
-        b = ttk.Button(frame, text="Send to SOAR", command=self.send_RADEC_to_SOAR, bootstyle="success")
-        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
         b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Offset SOAR", command=self.send_RADEC_to_SOAR, bootstyle="success")
         b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
+       
         # QUERY Server
-        self.gs_query_frame = GSQueryFrame(frame, self.fits_ra, self.fits_dec, self.Query_Survey, self.logger)
-        self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        # self.gs_query_frame = GSQueryFrame(frame, self.fits_ra, self.fits_dec, self.Query_Survey, self.logger)
+        # self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         # Chosen Star Frame
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         self.ra_cntr = tk.DoubleVar(self, self.fits_ra.get())
         ttk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.ra_cntr_mm = tk.DoubleVar(self, 0.)
-        ttk.Label(cntr_frame, text="X (mm):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.ra_cntr_mm, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        self.x_offset = tk.DoubleVar(self, 0.)
+        ttk.Label(cntr_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(cntr_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
         self.dec_cntr = tk.DoubleVar(self, self.fits_dec.get())
         ttk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.dec_cntr_mm = tk.DoubleVar(self, 0.)
-        ttk.Label(cntr_frame, text="Y (mm):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.dec_cntr_mm, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        self.y_offset = tk.DoubleVar(self, 0.)
+        ttk.Label(cntr_frame, text="Y offset (arcsec):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(cntr_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
+        # Guide Star Probe Frame
+        frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup")
+        frame.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        # X_GSP00
+        self.gs_x0 = tk.DoubleVar(self, 0.)
+        ttk.Label(frame, text="X GSP00 (pix)").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_x0).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        # Y GSP00
+        self.gs_y0 = tk.DoubleVar(self, -0.)
+        ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # CENTRE COLUMN
 
         # GINGA Display
@@ -952,7 +966,14 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def send_RADEC_to_SOAR(self):
-        pass
+        #push the calculated offsets in to the TCS page
+        #THIS HAS TO BE FIXED: we need to send the RA,DEC to the SOAR TCS only if TCS is active
+        d_ra = self.x_offset.get()
+        d_dec = self.y_offset.get()
+        message = { "offset_ra": float(d_ra), "offset_dec": float(d_dec) }
+        return_meesage_from_TCS =  self.SOAR_PAGE.Offset_option_TCS(message)
+        print(return_meesage_from_TCS)
+
 
 
     @check_enabled
@@ -1046,6 +1067,7 @@ class MainPage(SAMOSFrame):
         else:
             self.PAR.valid_wcs = True
             self.logger.info("Found WCS solution")
+            print(self.PAR.wcs)
             
         hdu_wcs = self.PAR.wcs.to_fits()
         if self.loaded_reg_file_path is not None:
@@ -1060,17 +1082,46 @@ class MainPage(SAMOSFrame):
         self.fits_image.rotate(self.PAR.Ginga_PA)  
         
         #calculate the offset in mm between pointed and actual position for the GS
-        mywcs = wcs.WCS(header)
-        ra_cntr, dec_cntr = mywcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
+        #mywcs = wcs.WCS(header)
+        # take the xy coordinates of the GS probe home, entered in the GSPage...
+        x_GSP00 = self.gs_x0.get()
+        y_GSP00 = self.gs_y0.get() 
+        # determine the RA,DEC coordinates actually pointed by the telescope
+        ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00,y_GSP00,0)
+        x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra,dec,0)
+        print(x_pointed,y_pointed,ra,dec)
+        print(x_GSP00,y_GSP00,ra_tel,dec_tel)
+        # calculate the offset in RADEC between the telescope and commanded positions
+        Delta_ra = float(ra_tel) - float(ra)
+        Delta_dec = float(dec_tel) - float(dec)
+        #convert to arcseconds, taking into account that we want to account for the cos(dec) factor
+        Delta_RA_arcsec = Delta_ra*3600.*np.cos(dec*math.pi/180.)
+        Delta_DEC_arcsec = Delta_dec*3600.
+        #display
+        self.x_offset.set(Delta_RA_arcsec)
+        self.y_offset.set(Delta_DEC_arcsec)
+        print(Delta_RA_arcsec,Delta_DEC_arcsec)
+        print('done')
+        # ready to offset the telescope
 
-        self.ra_cntr.set(ra)
-        self.dec_cntr.set(dec)
-        Delta_RA = ra - self.fits_ra.get()
-        Delta_DEC = dec - self.fits_dec.get()
-        Delta_RA_mm = round(Delta_RA * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
-        Delta_DEC_mm = round(Delta_DEC * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
-        self.ra_cntr_mm.set(Delta_RA_mm)
-        self.dec_cntr_mm.set(Delta_DEC_mm)
+
+        #x_tel, y_tel = self.PAR.wcs.wcs_world2pix(ra,dec,0)[0]
+        #print(x_tel[0],y_tel[0])
+        # display these coordinates in the text boxes
+        #self.x_offset.set(x_tel[0])
+        #self.y_offset.set(y_tel[0])
+        # look at the xy coordinates of the GS probe home, entered in the GSPage...
+        #x_GS0 = self.gs_x0.get()
+        #y_GS0 =s elf.gs_y0.get() 
+
+        #self.ra_cntr.set(ra)
+        #self.dec_cntr.set(dec)
+        #Delta_RA = ra - self.fits_ra.get()
+        #Delta_DEC = dec - self.fits_dec.get()
+        #Delta_RA_mm = round(Delta_RA * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
+        #Delta_DEC_mm = round(Delta_DEC * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
+        #self.x_offset.set(Delta_RA_mm)
+        #self.y_offset.set(Delta_DEC_mm)
 
 
     @check_enabled
