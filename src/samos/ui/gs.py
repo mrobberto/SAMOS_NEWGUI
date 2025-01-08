@@ -118,7 +118,6 @@ class GSPage(SAMOSFrame):
         b = ttk.Button(frame, text="Accept Guide Star", command=self.send_to_telescope, bootstyle="success")
         b.grid(row=8, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
 
-        
 
     def save_canvas(self):
         """
