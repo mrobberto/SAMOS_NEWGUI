@@ -3,7 +3,6 @@ SAMOS Guide Star tk Frame Class
 """
 from astropy.io import fits
 from astropy import units as u
-from functools import partial
 from ginga.AstroImage import AstroImage
 from ginga.util.ap_region import ginga_canvas_object_to_astropy_region as g2r
 from ginga.util.ap_region import astropy_region_to_ginga_canvas_object as r2g
@@ -35,10 +34,12 @@ class GSPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="FITS Manager")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         # RA, DEC Entry box
+        # ***** DEPENDENCY *****
         self.ra = self.make_db_var(tk.DoubleVar, "gs_centre_ra", 150.17110)
         ttk.Label(frame, text="RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.ra).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.dec = self.make_db_var(tk.DoubleVar, "gs_centre_dec", -54.79004)
+        # ***** DEPENDENCY *****
         ttk.Label(frame, text="Dec:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
 
@@ -135,16 +136,7 @@ class GSPage(SAMOSFrame):
 
 
     def send_to_telescope(self):
-        self.db.update_value("target_ra", self.gs_ra.get())
-        self.db.update_value("target_dec", self.gs_dec.get())
-        target = {
-            "ra": self.db.get_value("target_ra"),
-            "dec": self.db.get_value("target_dec"),
-            "epoch": self.db_get_value("target_epoch"),
-            "ra_rate": 0.,
-            "dec_rate": 0.
-        }
-        self.SOAR.target_move(target)
+        self.logger.warning("send_to_telescope has not been implemented!")
 
 
     def run_query(self, catalog):

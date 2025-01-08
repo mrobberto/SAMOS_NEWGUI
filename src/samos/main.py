@@ -2,7 +2,6 @@
 """
 Main entrypoint to SAMOS GUI
 """
-from datetime import datetime
 import logging
 import multiprocessing as mp
 import socket
@@ -34,7 +33,6 @@ from samos.utilities.tk import about_box
 class App(ttk.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.last_update_time = datetime.now()
         self.logger = logging.getLogger('samos')
         self.logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler(sys.stdout)
@@ -60,26 +58,20 @@ class App(ttk.Window):
         self.simulator = None
         self.protocol("WM_DELETE_WINDOW", self.destroy_all)
         
-        self.hardware_modules = {}
-        self.hardware_modules["DMD"] = DigitalMicroMirrorDevice(self.logger, self.PAR, self.DB)
-        self.hardware_modules["CCD"] = CCD(self.PAR, self.DB, self.hardware_modules["DMD"], self.logger)
-        self.hardware_modules["PCM"] = PCM(self.PAR, self.DB, self.logger, self.main_fits_header)
-        self.hardware_modules["SOAR"] = SOAR(self.DB, self.PAR, self.logger)
-        self.hardware_modules["SAMI"] = SAMI(self.PAR, self.DB, self.logger)
-        
+        DMD = DigitalMicroMirrorDevice(self.logger, self.PAR, self.DB)
         # Instantiate the classes that represent the SAMOS hardware
         self.samos_classes = {
-            "CCD": self.hardware_modules["CCD"],
-            "DMD": self.hardware_modules["DMD"],
-            "PCM": self.hardware_modules["PCM"],
-            "SOAR": self.hardware_modules["SOAR"],
-            "SAMI": self.hardware_modules["SAMI"],
+            "CCD": CCD(self.PAR, self.DB, DMD, self.logger),
+            "DMD": DMD,
+            "PCM": PCM(self.PAR, self.DB, self.logger, self.main_fits_header),
+            "SOAR": SOAR(self.DB, self.PAR, self.logger),
+            "SAMI": SAMI(self.PAR, self.DB, self.logger),
             "main_fits_header": self.main_fits_header,
             "PAR": self.PAR,
             "DB": self.DB,
             "registry": self.registry
         }
-
+        
         # Setting up Initial Things
         self.title("SAMOS Control System")
         self.resizable(True, True)
@@ -120,12 +112,6 @@ class App(ttk.Window):
 
 
     def do_updates(self):
-        current_time = datetime.now()
-        if (current_time - self.last_update_time).seconds > 5:
-            self.last_update_time = current_time
-            for hw_element in self.hardware_modules:
-                module = self.hardware_modules[hw_element]
-                # Run an update function
         for key in self.frames:
             self.frames[key].set_enabled(run_from_main=True)
             self.frames[key].update()

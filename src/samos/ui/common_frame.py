@@ -75,8 +75,10 @@ class SAMOSFrame(ttk.Frame):
 
 
     def make_db_var(self, var, name, default, callback=None):
+        name_int = self.registry.check_name(name)
+        var_name = f"{name}_{name_int}"
         value = self.db.get_value(name, default=default, add_missing=True)
-        tkvar = var(value=value)
+        tkvar = var(name=var_name, value=value)
         self.registry.register(name, tkvar, callback=callback)
         tkvar.trace_add('write', functools.partial(self.registry.update, name, tkvar))
         return tkvar

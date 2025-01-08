@@ -127,6 +127,7 @@ class DMDPage(SAMOSFrame):
 
         # Matrix Type and order
         self.sh_select = self.make_db_var(tk.StringVar, "dmd_hadamard_matrix_type", "S")
+        self.logger.info(f"sh_select has value {self.sh_select.get()}")
         w = ttk.Radiobutton(hadamard_conf_frame, text="S Matrix", variable=self.sh_select, value="S", command=self.set_SH_matrix)
         w.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
@@ -139,6 +140,7 @@ class DMDPage(SAMOSFrame):
             "H": (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)
         }
         self.order = self.make_db_var(tk.IntVar, "dmd_hadamard_order", self.orders[self.sh_select.get()][1])
+        self.logger.info(f"order has value {self.order.get()}")
         self.order_menu = ttk.OptionMenu(hadamard_conf_frame, self.order, None, *self.orders[self.sh_select.get()], command=self.set_SH_matrix)
         self.order_menu.grid(row=0, column=3, rowspan=2, sticky=TK_STICKY_ALL)
         self.check_widgets[self.order_menu] = [("condition", self, "initialized", True)]
@@ -216,11 +218,13 @@ class DMDPage(SAMOSFrame):
         self.logger.info("Finished initial widget status.")
 
 
+    @check_enabled
     def load_ra_dec(self):
-        self.target_ra.set(self.db.get_value("target_ra", default=self.target_ra.get()))
-        self.target_dec.set(self.db.get_value("target_dec", default=self.target_dec.get()))
+        self.target_ra.set(self.db.get_value("main_ra", default=self.target_ra.get()))
+        self.target_dec.set(self.db.get_value("main_dec", default=self.target_dec.get()))
 
 
+    @check_enabled
     def generate_hts_from_radec(self):
         """ 
         Generates HTS mask centered on RADEC coordinates
@@ -253,6 +257,7 @@ class DMDPage(SAMOSFrame):
         self.generate_hts()
 
 
+    @check_enabled
     def rename_masks_file(self, event=None):
         """ rename the mask file, only the part starting with 'mask' """
         old_mask_name = self.mask_name.get()
@@ -268,11 +273,13 @@ class DMDPage(SAMOSFrame):
         self.rename_value.set("")
 
 
+    @check_enabled
     def calculate_field_width(self, event=None):
         """ calculate_field_width """
         self.field_width.set(self.slit_width.get() * self.order.get())
 
 
+    @check_enabled
     def set_SH_matrix(self, event=None):
         """ set_SH_matrix """
         self.logger.info("Started S/H Matrix Check")
@@ -381,6 +388,7 @@ class DMDPage(SAMOSFrame):
         self._set_slit_image("current_dmd_state.png", state_name)
 
 
+    @check_enabled
     def browse_map(self):
         """ BrowseMapFiles """
         self.map_filename.set("none")
@@ -454,6 +462,7 @@ class DMDPage(SAMOSFrame):
         self.save_slits()
 
 
+    @check_enabled
     def load_slits(self):
         """ LoadSlits """
         self.slits_filename_path = Path(askopenfilename(initialdir=get_data_file("dmd.csv.slits"), title="Select a File"))

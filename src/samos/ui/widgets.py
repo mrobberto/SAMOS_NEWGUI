@@ -36,27 +36,15 @@ class VariableRegistry:
         return 0
 
     def update(self, db_name, var_object, *args):
-        try:
-            value = var_object.get()
-        except tk.TclError as e:
-            self.logger.warning(f"Got exception {e}")
-            if isinstance(var_object, tk.IntVar):
-                value = 0
-            elif isinstance(var_object, tk.DoubleVar):
-                value = 0.
-            else:
-                raise e
-        self.logger.info(f"Registry: Updating {db_name} to {value} (from {var_object})")
-        if self.db.update_value(db_name, value):
-            self.logger.info(f"\tDatabase updated. Checking stored variables")
-            for (var, callback) in self.store[db_name]:
-                self.logger.info(f"\t\tChecking {var}")
-                if var != var_object:
-                    self.logger.info(f"\t\t\tUpdating {var} with new value {value}")
-                    var.set(value)
-                if callback is not None:
-                    self.logger.info(f"\t\t\tActivating callback function {callback}")
-                    callback()
-            self.logger.info("Registry: finished update")
-        else:
-            self.logger.info("Registry: redundant update")
+        value = var_object.get()
+        self.logger.debug(f"Updating database {db_name} to {value} (from {var_object})")
+        self.db.update_value(db_name, value)
+        self.logger.debug(f"Database updated. Checking stored variables")
+        for (var, callback) in self.store[db_name]:
+            self.logger.debug(f"Checking {var}")
+            if var != var_object:
+                self.logger.debug(f"Updating {var} with new value {value} ({type(value)})")
+                var.set(value)
+            if callback is not None:
+                callback()
+        self.logger.debug("Finished update")
