@@ -12,7 +12,7 @@ import shutil
 from tempfile import NamedTemporaryFile
 import urllib.request
 
-from samos.utilities import get_fits_dir, get_temporary_dir
+from samos.utilities import get_temporary_dir
 from samos.utilities.constants import *
 
 from .base import GuideStar
@@ -35,9 +35,9 @@ class SkyMapperGuideStar(GuideStar):
         url = "https://skymapper.anu.edu.au/sm-cone/public/query?RA={}&DEC={}&SR=0.06&RESPONSEFORMAT=CSV"
         query_url = url.format(self.ra, self.dec)
         with urllib.request.urlopen(query_url, timeout=30) as response:
-            with open(get_fits_dir() / "skymapper_table.csv", "wb") as csv_file:
+            with open(self.PAR.fits_dir / "skymapper_table.csv", "wb") as csv_file:
                 shutil.copyfileobj(response, csv_file)
-        self.star_table = ascii.read(get_fits_dir() / "skymapper_table.csv", format="csv")
+        self.star_table = ascii.read(self.PAR.fits_dir / "skymapper_table.csv", format="csv")
         self.star_table["{}_psf".format(self.band)].name = "star_mag"
         self.star_table["raj2000"].name = "ra"
         self.star_table["dej2000"].name = "dec"

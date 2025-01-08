@@ -8,14 +8,14 @@ from copy import deepcopy
 import numpy as np
 from regions import Regions
 
-from samos.utilities import get_fits_dir
 from samos.utilities.constants import *
 
 
 class GuideStar():
-    def __init__(self, ra, dec, band, catalog, logger):
+    def __init__(self, ra, dec, band, catalog, par, logger):
         self.logger = logger
         self.catalog = catalog
+        self.PAR = par
         self.ra = ra
         self.dec = dec
         if band not in self.VALID_BANDS:
@@ -71,7 +71,7 @@ class GuideStar():
         catalog table as the second extension
         """
         hdul = self._to_hdu()
-        hdul.writeto(get_fits_dir() / out_file)
+        hdul.writeto(self.PAR.fits_dir / out_file)
 
 
     def load(self, fits_file):

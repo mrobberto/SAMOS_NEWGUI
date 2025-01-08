@@ -11,7 +11,6 @@ from copy import deepcopy
 import numpy as np
 from regions import Regions
 
-from samos.utilities import get_fits_dir
 from samos.utilities.constants import *
 
 from .base import GuideStar

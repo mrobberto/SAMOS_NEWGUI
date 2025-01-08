@@ -88,14 +88,16 @@ from samos.utilities.constants import *
 
 
 class PCM():
-    def __init__(self, par, logger, fits_head, canvas_Indicator=None):
+    def __init__(self, par, db, logger, fits_head, canvas_Indicator=None):
         self.PAR = par
+        self.db = db
         self.logger = logger
         self.main_fits_head = fits_head
-        self.set_ip()
         self.initialized = False
-        self.positions = {"FW1": {}, "FW2": {}, "GR_A": {}, "GR_B": {}}
+        self.positions = {}
         self.home = {}
+        for element in PCM_ELEMENTS:
+            self.positions[element] = {}
         self.got_stop = False
         self.filter_moving = False
         self.grism_moving = False
@@ -127,8 +129,8 @@ class PCM():
 
 
     def initialize_motors(self):
-        self.set_ip()
         self.initialized = True
+        self.update_status()
 
 
     @property
@@ -148,24 +150,31 @@ class PCM():
         """
         Called when the configured IP addresses change
         """
-        self.IP_Host = self.PAR.IP_dict['IP_PCM'].split(":")[0]
-        self.IP_Port = int(self.PAR.IP_dict['IP_PCM'].split(":")[1])
+        ip_addr = self.db.get_value("config_ip_pcm")
+        host_port = ip_addr.split(":")
+        self.IP_Host = host_port[0]
+        self.IP_Port = int(host_port[1])
 
 
-    def check_if_power_is_on(self):
-        self.logger.info("Checking Power Status")
+    def update_status(self):
+        self.logger.info("Checking PCM Status")
         reply = self._send(self.PCM_COMMANDS["power_status"])
+        self.logger.info(f"PCM Replied {reply}")
         self.reset_indicator(["filter", "grism"])
         if reply is not None:
             if "NO RESPONSE" in reply:
                 self.logger.info("Motor power is off")
                 self._on = False
+                return
             if not self.have_initial_status:
                 self.have_initial_status = True
                 for wheel in ['FW1', 'FW2', 'GR_A', 'GR_B']:
-                    self._positions[wheel] = self.current_filter_step(wheel)
-            self.logger.info("Motors replied {}".format(reply))
+                    self.logger.info(f"Updating PCM {wheel}")
+                    current_step = self.current_filter_step(wheel)
+                    self.logger.info(f"PCM {wheel} replied {current_step}")
+                    self._positions[wheel] = current_step
             self._on = True
+            return
         self.logger.warning("No reply from Motors")
         self._on = False
 
@@ -205,7 +214,7 @@ class PCM():
 
 
     def initialize_filter_wheel(self, FW):
-        self.logger.warning("Initializing PCM Filter Wheel {}".format(FW))
+        self.logger.warning(f"Initializing PCM Filter Wheel {FW}")
         self.logger.warning("This should only need to be done before first use or after replacing a drive.")
         #   Here are filter wheel commands to send to the PCM. The stored procedures only 
         # need to be sent once in the lifetime of the drive. You should have the ability
@@ -460,7 +469,7 @@ class PCM():
                 results = self.move_grism_rails(pos_b)
             else:
                 # Both home. Treat as grism A
-                results = seulf.move_grism_rails(pos_a)
+                results = self.move_grism_rails(pos_a)
         if self.got_stop:
             results.append("GOT STOP COMMAND")
             self.got_stop = False
@@ -473,23 +482,20 @@ class PCM():
 
 
     def write_status(self):
-        wheels = ['FW1', 'FW2', 'GR_A', 'GR_B']
-        counts = []
-        for wheel in wheels:
-            counts.append(self.extract_steps_from_return_string(self.current_filter_step(wheel)))
-        data = Table()
-        data['wheel']= wheels
-        data['counts']= counts
-        ascii.write(data, get_data_file("motors", 'FW_GR_status.dat'), overwrite=True)
+        for wheel in PCM_ELEMENTS:
+            counts = self.extract_steps_from_return_string(self.current_filter_step(wheel))
+            self.db.update_value(f"pcm_{wheel}_status", counts)
 
 
     def extract_sensorcode_from_return_string(self, bstring):
+        self.logger.info(f"Raw return string is '{bstring}'")
         decoded_string = str(bstring.decode())[3:]
         bits = bin(int(decoded_string)).lstrip('0b')
         return bits
 
 
     def extract_steps_from_return_string(self, bstring):
+        self.logger.info(f"Raw return string is '{bstring}'")
         return bstring[5:-1]
 
 
@@ -560,6 +566,8 @@ class PCM():
 
     def _send(self, message):
         self.set_ip()
+        if not self.PAR.is_connected:
+            return "OKAY"
         text = None
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:

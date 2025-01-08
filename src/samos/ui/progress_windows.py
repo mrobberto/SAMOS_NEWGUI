@@ -11,14 +11,16 @@ import time
 
 import tkinter as tk
 import ttkbootstrap as ttk
-from samos.utilities import get_fits_dir
 from samos.utilities.constants import *
 
+from .common_frame import SAMOSFrame
+
 class ExposureProgressWindow(tk.Toplevel):
-    def __init__(self, parent, ccd, par, mfh, dmd, logger, **kwargs):
+    def __init__(self, parent, ccd, par, db, mfh, dmd, logger, **kwargs):
         self.parent = parent
         self.CCD = ccd
         self.PAR = par
+        self.db = db
         self.main_fits_header = mfh
         self.DMD = dmd
         self.logger = logger
@@ -62,20 +64,22 @@ class ExposureProgressWindow(tk.Toplevel):
         """ handle the file acquired by the SISI camera"""
         self.current_night_dir_filenames = []
 
-        if self.image_type == "sci":
-            imtype = "sci_{}".format(params["filter"])
+        self.logger.info(f"Image Type is {self.image_type}")
+        imtype = "default"
+        if self.image_type in ["sci", "light"]:
+            imtype = "sci_{}".format(self.params["filter"])
         elif self.image_type == "bias":
             imtype = "bias"
         elif self.image_type == "buff":
             imtype = "Buff"
         elif self.image_type == "flat":
-            imtype = "flat_{}".format(params["filter"])
+            imtype = "flat_{}".format(self.params["filter"])
         elif self.image_type == "dark":
-            imtype = "dark_{}s".format(params["exptime"])  # e.g. 'dark_0.01s'
+            imtype = "dark_{}s".format(self.params["exptime"])  # e.g. 'dark_0.01s'
         
-        self.expname = "{}_{}".format(imtype, params['image_name'])
-        self.CCD.prep_exposure(self.exptime, params["file_number"])
-        self.expnum = params["file_number"]
+        self.expname = "{}_{}".format(imtype, self.params['image_name'])
+        self.CCD.prep_exposure(expname, self.params["file_number"], self.params["trigger_mode"])
+        self.expnum = self.params["file_number"]
         self.collected_images = 0
         self.read_time = 0.0
         self.read_bytes = 0
@@ -311,9 +315,9 @@ class ExposureProgressWindow(tk.Toplevel):
         hdul = fits.HDUList(hdus=[super_hdu])
         if image_type == "sci" and dmd_hdu is not None:
             hdul.append(dmd_hdu)
-        hdul.writeto(get_fits_dir() / superfile_numbered, overwrite=True)
+        hdul.writeto(self.PAR.fits_dir / superfile_numbered, overwrite=True)
 
-        return get_fits_dir() / superfile_numbered
+        return self.PAR.fits_dir / superfile_numbered
 
 
     def create_dmd_pattern_hdu(self, primary_header):

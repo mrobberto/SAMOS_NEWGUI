@@ -37,7 +37,7 @@ class CCDPage(SAMOSFrame):
         self.button_cooler = w
 
         # COOLER TEMPERATURE SETUP AND VALUE
-        self.Tset = tk.DoubleVar(self, -90)
+        self.Tset = self.make_db_var(tk.DoubleVar, "ccd_temperature_set", -90.)
         self.Tdet = tk.DoubleVar(self, 273)
         self.Tdet_c = tk.DoubleVar(self, 0)
         ttk.Label(self.main_frame, text="CCD Temperature Setpoint (C)").grid(row=3, column=0, sticky=TK_STICKY_ALL)
