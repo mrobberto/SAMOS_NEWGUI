@@ -159,24 +159,28 @@ class PCM():
     def update_status(self):
         self.logger.info("Checking PCM Status")
         reply = self._send(self.PCM_COMMANDS["power_status"])
-        self.logger.info(f"PCM Replied {reply}")
-        self.reset_indicator(["filter", "grism"])
-        if reply is not None:
-            if "NO RESPONSE" in reply:
-                self.logger.info("Motor power is off")
-                self._on = False
-                return
-            if not self.have_initial_status:
-                self.have_initial_status = True
-                for wheel in ['FW1', 'FW2', 'GR_A', 'GR_B']:
-                    self.logger.info(f"Updating PCM {wheel}")
-                    current_step = self.current_filter_step(wheel)
-                    self.logger.info(f"PCM {wheel} replied {current_step}")
-                    self._positions[wheel] = current_step
-            self._on = True
-            return
-        self.logger.warning("No reply from Motors")
-        self._on = False
+        try:
+            reply
+        except NameError:    
+            self.logger.warning("No reply from Motors")
+            self._on = False
+        else:
+            self.logger.info(f"PCM Replied {reply}")
+            self.reset_indicator(["filter", "grism"])
+            if reply is not None:
+                if "NO RESPONSE" in reply:
+                    self.logger.info("Motor power is off")
+                    self._on = False
+                    return
+                if not self.have_initial_status:
+                    self.have_initial_status = True
+                    for wheel in ['FW1', 'FW2', 'GR_A', 'GR_B']:
+                        self.logger.info(f"Updating PCM {wheel}")
+                        current_step = self.current_filter_step(wheel)
+                        self.logger.info(f"PCM {wheel} replied {current_step}")
+                        self._positions[wheel] = current_step
+                self._on = True
+                return    
 
 
     def echo_client(self):

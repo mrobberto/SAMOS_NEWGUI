@@ -71,15 +71,15 @@ class ConfigPage(SAMOSFrame):
         # Register the frame with PAR
         self.PAR.add_status_indicator(self.status_box, self.update_status_box)
 
-        self.IP_PCM = self.make_db_var(tk.StringVar, "config_ip_pcm", "N/A")
+        self.IP_PCM = self.make_db_var(tk.StringVar, "config_ip_pcm", "172.16.0.128:1000")
         tk.Entry(frame, width=20, textvariable=self.IP_PCM).grid(row=1, column=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_CCD = self.make_db_var(tk.StringVar, "config_ip_ccd", "N/A")
+        self.IP_CCD = self.make_db_var(tk.StringVar, "config_ip_ccd", "172.16.0.245:80")
         tk.Entry(frame, width=20, textvariable=self.IP_CCD).grid(row=2, column=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_DMD = self.make_db_var(tk.StringVar, "config_ip_dmd", "N/A")
+        self.IP_DMD = self.make_db_var(tk.StringVar, "config_ip_dmd", "172.16.0.141:8888")
         tk.Entry(frame, width=20, textvariable=self.IP_DMD).grid(row=3, column=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_SOAR = self.make_db_var(tk.StringVar, "config_ip_soar", "N/A")
+        self.IP_SOAR = self.make_db_var(tk.StringVar, "config_ip_soar", "139.220.15.2:40050")
         tk.Entry(frame, width=20, textvariable=self.IP_SOAR).grid(row=4, column=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.IP_SAMI = self.make_db_var(tk.StringVar, "config_ip_sami", "N/A")
+        self.IP_SAMI = self.make_db_var(tk.StringVar, "config_ip_sami", "139.229.15:63")
         tk.Entry(frame, width=20, textvariable=self.IP_SAMI).grid(row=5, column=2, columnspan=2, sticky=TK_STICKY_ALL)
 
         b = ttk.Button(frame, text="Initialize Components", command=self.startup, bootstyle="success")

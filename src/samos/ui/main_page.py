@@ -10,6 +10,7 @@ import random
 import re
 import time
 import twirl
+import math
 
 from astropy.coordinates import SkyCoord
 from astropy.io import fits, ascii
@@ -39,6 +40,9 @@ from samos.utilities.constants import *
 from .common_frame import SAMOSFrame, check_enabled
 from .progress_windows import ExposureProgressWindow
 from .gs_query_frame import GSQueryFrame
+
+from scipy.interpolate import UnivariateSpline # for PSF calculation
+
 
 
 class MainPage(SAMOSFrame):
@@ -207,30 +211,44 @@ class MainPage(SAMOSFrame):
         ttk.Label(frame, text="Number of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
-        b = ttk.Button(frame, text="Send to SOAR", command=self.send_to_soar, bootstyle="success")
-        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
         b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Send to SOAR", command=self.send_offset_to_soar, bootstyle="success")
         b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
+        """
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "target_ra", "target_dec", **self.samos_classes)
         self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        """
         # Chosen Star Frame
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         self.ra_cntr = self.make_db_var(tk.DoubleVar, "centre_ra", self.fits_ra.get())
         ttk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.ra_cntr_mm = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
-        ttk.Label(cntr_frame, text="X (mm):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.ra_cntr_mm, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        self.x_offset = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
+        ttk.Label(cntr_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(cntr_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
         self.dec_cntr = self.make_db_var(tk.DoubleVar, "centre_dec", self.fits_dec.get())
         ttk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.dec_cntr_mm = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
-        ttk.Label(cntr_frame, text="Y (mm):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.dec_cntr_mm, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
+        ttk.Label(cntr_frame, text="Y offset (arsec):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(cntr_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
+        # Guide Star Probe Frame
+        frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup")
+        frame.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        # X_GSP00
+        self.gs_x0 = tk.DoubleVar(self, 0.)
+        ttk.Label(frame, text="X GSP00 (pix)").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_x0).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        # Y GSP00
+        self.gs_y0 = tk.DoubleVar(self, -0.)
+        ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+       
         # CENTRE COLUMN
 
         # GINGA Display
@@ -314,6 +332,8 @@ class MainPage(SAMOSFrame):
         b.grid(row=2, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas)
         b.grid(row=2, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Get <PSF>", command=self.get_PSF)
+        b.grid(row=2, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Open File", command=self.open_quicklook_file)
         b.grid(row=2, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
@@ -390,9 +410,9 @@ class MainPage(SAMOSFrame):
         l.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file)
         b.grid(row=5, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_wcs", self.PAR), ("valid_file", self.loaded_reg_file_path)]
+        #self.check_widgets[b] = [("valid_wcs", self.PAR), ("valid_file", self.loaded_reg_file_path)]
         b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs)
-        b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        #b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_wcs", self.PAR)]
 
         # CCD Module
@@ -469,16 +489,15 @@ class MainPage(SAMOSFrame):
         self.status_box.create_oval(240, 20, 280, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["tcs_ind"], outline=None)
         self.status_box.create_text(260, 70, text="TCS")
         # Register the frame with PAR
-        self.PAR.add_status_indicator(self.status_box, self.update_status_box)
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
         self.set_enabled()
 
-
+    """
     def send_to_soar(self):
-        """
-        Send the currently set target to SOAR with a move command.
-        """
+        
+        # Send the currently set target to SOAR with a move command.
+        
         target = {
             "ra": self.db.get_value("target_ra"),
             "dec": self.db.get_value("target_dec"),
@@ -487,6 +506,22 @@ class MainPage(SAMOSFrame):
             "dec_rate": 0.
         }
         self.SOAR.target_move(target)
+    """
+    @check_enabled
+    def send_offset_to_soar(self):
+        #push the calculated offsets in to the TCS page
+        #FIX SYNTAX!
+        if self.SOAR.is_on == True:
+            d_ra = self.x_offset.get()
+            d_dec = self.y_offset.get()
+            message = { "offset_ra": float(d_ra), "offset_dec": float(d_dec) }
+            return_message_from_TCS =  self.SOAR.offset(message)
+            print(return_message_from_TCS)
+        else:
+            print("TCS is not active")
+            return
+        
+
 
 
     @check_enabled
@@ -521,7 +556,7 @@ class MainPage(SAMOSFrame):
                                                 initialdir=get_data_file("regions.radec"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
-        astropy_regions_wcs = Regions([r.to_sky(self.PAR.WCS) for r in astropy_regions_pix])
+        astropy_regions_wcs = Regions([r.to_sky(self.PAR.wcs) for r in astropy_regions_pix])
         astropy_regions_wcs.write(save_file.name, overwrite=True)
         self.logger.info("Saved regions to {}".format(save_file.name))
 
@@ -541,13 +576,13 @@ class MainPage(SAMOSFrame):
         """
         self.logger.info("Displaying DS9 Region File on canvas")
         astropy_regions_wcs = Regions.read(self.loaded_reg_file_path, format='ds9')
-        astropy_regions_pix = Regions([r.to_pixel(self.PAR.WCS) for r in astropy_regions_wcs])
+        astropy_regions_pix = Regions([r.to_pixel(self.PAR.wcs) for r in astropy_regions_wcs])
         self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
         self.logger.info("Converted Astropy pixel regions to Ginga")
         if self.slit_tab_view is None:
             self.initialize_slit_table()
-        self.slit_tab_view.load_table_from_regfile_RADEC(regs_RADEC=astropy_regions_wcs, img_wcs=self.PAR.wcs)
+        #self.slit_tab_view.load_table_from_regfile_RADEC(regs_RADEC=astropy_regions_wcs, img_wcs=self.PAR.wcs)
         self.logger.info("Finished displaying regions and loading slit tab view")
 
 
@@ -636,7 +671,9 @@ class MainPage(SAMOSFrame):
             self.image_name.set(self.target_name)
         if "RADEC=" in self.loaded_reg_file_path.name:
             radec_str = self.loaded_reg_file_path.name
-            radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
+             # FIXED THIS LINE BECAUSE WAS NOT READING PROPERLY THE RADEC STRING [MR]
+            #radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
+            radec_str = radec_str[radec_str.find("RADEC=")+6:radec_str.find(".reg")]
             if "-" in radec_str:
                 str_items = radec_str.split("-")
                 dec_factor = -1.
@@ -830,7 +867,7 @@ class MainPage(SAMOSFrame):
     def clear_canvas(self):
         self.canvas.delete_all_objects(redraw=True)
 
-
+    """ NO FLIP IMAGE
     @check_enabled
     def set_image_flip(self):
         if hasattr(self, "AstroImage"):
@@ -840,14 +877,109 @@ class MainPage(SAMOSFrame):
                 data = self.AstroImage.get_data()
                 transformed_data = np.fliplr(data)
                 self.AstroImage.set_data(transformed_data)
+    """
+    @check_enabled
+    def get_PSF(self):
+        """ ta routine to analyze the current image and extract average
+            photometric information, in particular the PSF
+            Created October 14, 2024
+        """
+        
+        """command to rotate the image, not sure why we have it. Still needed?"""
+        #self.fitsimage.rotate(self.PAR.Ginga_PA)  
+        
+        "display the current image again"
+        self.Display(self.fits_image_ql)
+        # self.load_file()   #for ging
+    
+        "extract header and data plane"
+        hdu_Main = fits.open(self.fits_image_ql)  # for this function to work
+        hdu = hdu_Main[0]
+        #header = hdu.header
+        data = hdu.data
+        hdu_Main.close()
+            
+        # Let's find some stars and display the image
+        self.canvas.delete_all_objects(redraw=True)
+        
+        "why do we care about SDSS_stars?"
+        #check first if it exist, as we may have not yet queried SDSS   
+        try:  
+            if self.SDSS_stars is None:  #if it exist but is none, we just check the current image
+                stars = twirl.find_peaks(data)[0:self.fits_nstars.get()]
+            else: #if it exist, we are coming from SDSS and therefore we use the SDSS stars
+                import copy
+                stars = copy.deepcopy(self.SDSS_stars)
+                #SDSS_stars = None  #and immediately delete them so we are free for the next searh
+        except:  #if self.SDSS has never been created, we go to the basic search
+             stars = twirl.find_peaks(data)[0:self.fits_nstars.get()]
+    
+        "display"
+        xs=stars[:,0]
+        ys=stars[:,1]
+        radius_pix = 7
+    
+        regions = [CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix)
+                   for x, y in stars]  # [(1, 2), (3, 4)]]
+        regs = Regions(regions)
+        for reg in regs:
+            obj = r2g(reg)
+            obj.color="red"
+            self.canvas.add(obj)
+        fwhm_x=[]
+        fwhm_y=[]
+        for i in range(len(xs)):
+            #print(xs[i],ys[i])
+            horizontal, vertical = self.profiles(data, xs[i], ys[i])
+            fwhm_xi = self.interpolate_width(horizontal)
+            fwhm_yi = self.interpolate_width(vertical)
+            if fwhm_xi <1  or fwhm_yi<1:
+                continue
+            #print([i,fwhm_xi,fwhm_yi])
+            fwhm_x.append(fwhm_xi)
+            fwhm_y.append(fwhm_yi)    
+            region = CirclePixelRegion(center=PixCoord(xs[i], ys[i]), radius=radius_pix)
+            obj = r2g(region)
+            obj.color="blue"
+            self.canvas.add(obj)
+        #print(fwhm_x,'n',fwhm_y,'\n')    
+        print("           Mean      Median     std")
+        print("FWHM_x:   %6.3f,   %6.3f,   %6.3f" % (np.mean(fwhm_x),np.median(fwhm_x),np.std(fwhm_x)))
+        print("FWHM_y:   %6.3f,   %6.3f,   %6.3f" % (np.mean(fwhm_y),np.median(fwhm_y),np.std(fwhm_y)))
+        print("FWHM values calculated using ",len(fwhm_x),"stars")
+        return(np.mean(fwhm_x),np.mean(fwhm_y))
 
+    def profiles(self,image,xpix, ypix):
+        """ancillary function called by get_PSF to extract the horizontal and vertical profiles of a star"""
+        xpix = round(xpix)
+        ypix = round(ypix)
+        #print(image[ypix,xpix])
+        x = np.take(image, ypix, axis=0)[xpix-16:xpix+15]
+        y = np.take(image, xpix, axis=1)[ypix-16:ypix+15]
+        #print(len(x))
+        x=x/max(x)
+        y=y/max(y)
+        #print(x)
+        return x, y #these are the horizontal and vertical profiles through the star's centroid
+
+    def interpolate_width(self,axis):
+        """ second ancillary function called by get_PSF to interpolate the FWHM of a star"""
+        half_max = 1/2
+        # Do the interpolation
+        spline = UnivariateSpline(np.arange(0,31),axis-half_max, s=0)
+        r = spline.roots()
+        if len(r) != 2:
+            return 0
+        else: 
+            r1, r2 = r#spline.roots()
+            return r2-r1 #this is the FWHM along the specified axis
 
     @check_enabled
     def start_an_exposure(self):
         """ 
         This is the landing procedure after the START button has been pressed
         """
-        self.update_PotN()
+        self.update_PotN()   #The Function update_PotN() is no more present...
         if (not self.CCD.initialized) or (not self.CCD.ccd_on):
             # Open a test image
             image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
@@ -915,6 +1047,29 @@ class MainPage(SAMOSFrame):
                 logbook.write(f"{self.image_exptime.get()},{file_name}\n")
 
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     @check_enabled
     def change_acq_type(self, event):
         """
@@ -931,6 +1086,10 @@ class MainPage(SAMOSFrame):
         self.fits_image_ql = imagefile
 
 
+    
+    
+    
+    
     @check_enabled
     def load_existing_file(self):
 #        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
@@ -959,12 +1118,43 @@ class MainPage(SAMOSFrame):
         self.PAR.valid_wcs = False
         self.Display(self.fits_image_ql)
         
-        with open(self.fits_image_ql) as hdul:
+        #had to change open => fits.open [MR] to make this working
+        with fits.open(self.fits_image_ql) as hdul:
             header = hdul[0].header
             data = hdul[0].data
         
         img_wcs = wcs.WCS(header)
-        ra, dec = img_wcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
+        #ra, dec = img_wcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
+
+        #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # not all headers use ra,dec
+        try:  #good header...
+            ra, dec = header["RA"], header["DEC"]
+            print(ra,dec)
+            self.fits_ra.set(ra)
+            self.fits_dec.set(dec)
+        except:
+            print("no RA and  DEC in the FITS header")
+        if  self.fits_ra.get() !=  '' and self.fits_dec.get() != '':   
+            ra = self.fits_ra.get()
+            dec = self.fits_dec.get()
+            print("RA and DEC read from the text box")
+
+        #MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
+        elif self.SOAR.is_on == True:               #was self.PAR.inoutvar.get() == "inside": 
+            infoa_dict = self.SOAR_PAGE.Handle_Infox('INFOA')  # TO BE FIXED: we need to grab the INFOA message from the SOAR TCS
+            ra=infoa_dict['MOUNT_RA']                          # to extract the pointed RA,DEC coordinates 
+            dec=infoa_dict['MOUNT_DEC']
+            self.fits_ra.set(ra)
+            self.fits_dec.set(dec)
+            print("RADEC provided by the SOAR TCS")               
+        else:   
+            messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
+            return
+
+        print("Pointed coordinates: ",ra,dec)
+        #<<<<<<<<<<<<<<<<<<<<
+
         center = SkyCoord(ra, dec, unit=[u.deg, u.deg])
         center = [center.ra.value, center.dec.value]
 
@@ -1000,18 +1190,50 @@ class MainPage(SAMOSFrame):
         else:
             self.PAR.valid_wcs = True
             self.logger.info("Found WCS solution")
-            
-        hdu_wcs = self.PAR.wcs.to_fits()
+
+        print(self.PAR.wcs)               # print the WCS solution
+        hdu_wcs = self.PAR.wcs.to_fits()  # creates a primaryHDU object 
         if self.loaded_reg_file_path is not None:
-            hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)
+            hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)   #write in the fits header the name of the DMD map used
+        hdu_wcs[0].data = data            # add data to fits file
 
-        hdu_wcs[0].data = data  # add data to fits file
-        self.wcs_filename = self.PAR.fits_dir / "WCS_{}_{}.fits".format(ra, dec)
-        hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
+        # I THINK THAT ONCE WE GET THE WCS SOLUTION WE JUST UPODATE THE FILE SUFFIX ADDING 
+        #self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
+        #self.wcs_filename = str( get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec) ) # I think it's better to just use the string
+        #hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
+        #ADD '_QL' SUFFIX IF NOT ALREADY PRESENT
+        if self.fits_image_ql[-8:-5] != '_QL':
+            self.fits_image_ql = self.fits_image_ql[:-5] + '_QL.fits'
+        hdu_wcs[0].writeto(self.fits_image_ql, overwrite=True)
 
-        self.Display(self.wcs_filename)
-        self.fits_image.rotate(self.PAR.Ginga_PA)  
+        #self.Display(self.wcs_filename)
+        #self.fits_image.rotate(self.PAR.Ginga_PA)  
+        self.Display(self.fits_image_ql)
         
+         #calculate the offset in mm between pointed and actual position for the GS
+        #mywcs = wcs.WCS(header)
+        # take the xy coordinates of the GS probe home, entered in the GSPage...
+        x_GSP00 = self.gs_x0.get()
+        y_GSP00 = self.gs_y0.get() 
+        # determine the RA,DEC coordinates actually pof_inted by the telescope
+        ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00,y_GSP00,0)
+        x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra,dec,0)
+        print(x_pointed,y_pointed,ra,dec)
+        print(x_GSP00,y_GSP00,ra_tel,dec_tel)
+        # calculate the offset in RADEC between the telescope and commanded positions
+        Delta_ra = float(ra_tel) - float(ra)
+        Delta_dec = float(dec_tel) - float(dec)
+        #convert to arcseconds, taking into account that we want to account for the cos(dec) factor
+        Delta_RA_arcsec = Delta_ra*3600.*np.cos(dec*math.pi/180.)
+        Delta_DEC_arcsec = Delta_dec*3600.
+        #display
+        self.x_offset.set(Delta_RA_arcsec)
+        self.y_offset.set(Delta_DEC_arcsec)
+        print(Delta_RA_arcsec,Delta_DEC_arcsec)
+        print('done')
+        # ready to offset the telescope to the commanded position
+
+        """ => SUPERSEDED BY THE ABOVE CODE
         #calculate the offset in mm between pointed and actual position for the GS
         mywcs = wcs.WCS(header)
         ra_cntr, dec_cntr = mywcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
@@ -1022,8 +1244,13 @@ class MainPage(SAMOSFrame):
         Delta_DEC = dec - self.fits_dec.get()
         Delta_RA_mm = round(Delta_RA * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
         Delta_DEC_mm = round(Delta_DEC * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
-        self.ra_cntr_mm.set(Delta_RA_mm)
-        self.dec_cntr_mm.set(Delta_DEC_mm)
+        self.x_offset.set(Delta_RA_mm)
+        self.y_offset.set(Delta_DEC_mm)
+        """
+        
+
+
+
 
 
     @check_enabled
@@ -1111,11 +1338,17 @@ class MainPage(SAMOSFrame):
         fits_x = int(np.floor(data_x) + 1)
         fits_y = int(np.floor(data_y) + 1)
         text = f"FITS: ({fits_x:4d}, {fits_y:4d}). Value = {value}"
+        
+        
+        
         dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
         dmd_x = int(np.floor(dmd_x))
         dmd_y = int(np.floor(dmd_y))
         text = f"DMD: ({dmd_x:7d}, {dmd_y:7d}). " + text
 
+        
+        
+        
         # Calculate WCS RA
         try:
             # Image function operates on DATA space coords
@@ -1275,15 +1508,38 @@ class MainPage(SAMOSFrame):
         Rectangle = self.canvas.get_draw_class('rectangle')
 
         # we should hanve only boxes/slits
+        self.trace_boxes_objlist = []  # create container of the list traces
         for i, obj in enumerate(CM.CompoundMixin.get_objects(self.canvas)):
             if obj.alpha == 0:
                 # ***** WHY?
                 continue
-            x1, x2 = round(obj.x) - 1024, round(obj.x) + 1024
-            y1, y2 = round(obj.y) - obj.yradius, round(obj.y) + obj.yradius
-            r = Rectangle(x1=x1, y1=y1, y2=y2, angle=0*u.deg, color='yellow', fill=1, fillalpha=0.5)
-            self.canvas.add(r, tag=f'@trace_{i}')
+            if hasattr(obj, 'x'):
+                x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
+                y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
+                print(i, x1, x2, y1, y2)
+                r = Rectangle(x1=x1, y1=y1, x2=x2, y2=y2, angle=0*u.deg, color='yellow', fill=1, fillalpha=0.5)
+                self.canvas.add(r, tag=f'@trace_{i}')
+                self.trace_boxes_objlist.append(r)  # add the rectangle to the list of traces
+            else:
+                continue    
         CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
+
+
+    @check_enabled
+    def remove_traces(self):
+        """ 
+        Use "try:/except:"
+        We may call this function just to make sure that the field is clean, so
+        we do not need to assume that the traces have been created
+        """
+        try: 
+            self.trace_boxes_objlist
+            if len(self.trace_boxes_objlist) > 0:
+                CM.CompoundMixin.delete_objects(
+                    self.canvas, self.trace_boxes_objlist)
+                self.trace_boxes_objlist = []
+        except:
+            return
 
 
     @check_enabled
