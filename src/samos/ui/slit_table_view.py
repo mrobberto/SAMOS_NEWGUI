@@ -222,8 +222,11 @@ class SlitTableView(tk.Frame):
                            np.round(pix_x0, 2), np.round(pix_y0, 2), np.round(pix_x1, 2), np.round(pix_y1, 2),
                            int(dmd_xc), int(dmd_yc), int(dmd_x0), int(dmd_y0), int(dmd_x1), int(dmd_y1)]
             
+            #[mr]: apparently the insert_row method does not accept "values" as a parameter
             self.stab.insert_row(values=new_slitrow, redraw=True)
             self.stab.row_index(0)
+            
+
             series_row = pd.Series(new_slitrow, index=self.df_cols)
             self.slitDF = pd.concat([self.slitDF, new_row.to_frame().T], ignore_index=True)
             obj_num += 1
