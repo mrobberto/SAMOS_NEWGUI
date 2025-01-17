@@ -194,6 +194,7 @@ class App(ttk.Window):
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=about_box)
         help_menu.add_command(label="Guide Star", command=lambda: self.show_frame("GSPage"))        
+        help_menu.add_command(label="GingaHelp", command=self.GingaHelp)
 
         return menubar
 
@@ -211,6 +212,20 @@ class App(ttk.Window):
         GSPage
     ]
 
+    def GingaHelp(self):
+        """
+        Open a browser to the Ginga help page
+        """
+        import webbrowser
+        import os
+        #check if the there is an internet connection
+        try:
+            webbrowser.open("https://ginga.readthedocs.io/en/v5.0.1/quickref.html")
+        except: #if there is no internet connection, open the local help file
+            helpfile = os.path.join(os.getcwd(),"src","samos","utilities","Quick Reference — ginga v5.0.1_rev.html")
+            webbrowser.open("file://" + helpfile)
+
+        return
 
 def run_samos():
     app = App(themename="cosmo")
