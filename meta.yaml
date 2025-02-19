@@ -1,0 +1,9 @@
+{% set version = "1.0.0" %}
+
+package:
+  name: SAMOS
+  version: {{ version }}
+
+build:
+  script_env:
+    - CFLAGS=-Wno-int-conversion

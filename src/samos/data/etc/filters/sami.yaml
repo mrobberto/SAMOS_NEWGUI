@@ -1,0 +1,53 @@
+# SAMI throughputs
+# From SAMOS_throughput_20210608.xlsx
+# Note: Production mimimums used for grating efficiencies, dewar windows and detector 
+#       efficiency excluded, 92% DMD fill factor, and 80% DMD diffraction efficiency 
+#       applied to FRED data to get throughput
+
+ccd:
+    wave:
+        - 400
+        - 450
+        - 500
+        - 550
+        - 600
+        - 700
+        - 770
+        - 850
+        - 950
+    waveunit: "nm"
+    throughput:
+        - 0.810
+        - 0.850
+        - 0.840
+        - 0.820
+        - 0.780
+        - 0.710
+        - 0.600
+        - 0.400
+        - 0.140
+    throughput_scale: 1.0
+
+window:
+    wave:
+        - 400
+        - 450
+        - 500
+        - 550
+        - 600
+        - 700
+        - 770
+        - 850
+        - 950
+    waveunit: "nm"
+    throughput:
+        - 0.980
+        - 0.990
+        - 0.990
+        - 0.990
+        - 0.990
+        - 0.990
+        - 0.990
+        - 0.990
+        - 0.980
+    throughput_scale: 1.0
