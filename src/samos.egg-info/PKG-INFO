@@ -1,0 +1,14 @@
+Metadata-Version: 2.2
+Name: samos
+Version: 0.0.1
+Summary: Control Software for the SAMOS astronomical instrument
+Author-email: Brian York <york@stsci.edu>, Massimo Robberto <robberto@stsci.edu>, Jonathan Hoover <unknown@example.com>, Dana Koeppe <dkoeppe1@jhu.edu>, Kathleen Lorraine Oram <kxo3594@g.rit.edu>
+Maintainer-email: Brian York <york@stsci.edu>, Massimo Robberto <robberto@stsci.edu>, Dana Koeppe <dkoeppe1@jhu.edu>
+Project-URL: Homepage, https://github.com/mrobberto/SAMOS_NEWGUI
+Project-URL: Issues, https://github.com/mrobberto/SAMOS_NEWGUI/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: <3.11,>=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE

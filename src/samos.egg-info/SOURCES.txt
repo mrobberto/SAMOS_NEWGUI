@@ -1,0 +1,304 @@
+LICENSE
+MANIFEST.in
+README.rst
+pyproject.toml
+src/samos/__init__.py
+src/samos/main.py
+src/samos.egg-info/PKG-INFO
+src/samos.egg-info/SOURCES.txt
+src/samos.egg-info/dependency_links.txt
+src/samos.egg-info/entry_points.txt
+src/samos.egg-info/top_level.txt
+src/samos/astrometry/__init__.py
+src/samos/astrometry/guide_stars/__init__.py
+src/samos/astrometry/guide_stars/base.py
+src/samos/astrometry/guide_stars/generic.py
+src/samos/astrometry/guide_stars/panstarrs.py
+src/samos/astrometry/guide_stars/sdss.py
+src/samos/astrometry/guide_stars/sky_mapper.py
+src/samos/batchmode/__init__.py
+src/samos/batchmode/commands.py
+src/samos/batchmode/go.py
+src/samos/batchmode/header.py
+src/samos/batchmode/test_BATCHMODE.py
+src/samos/batchmode/test_go.py
+src/samos/ccd/__init__.py
+src/samos/ccd/ccd.py
+src/samos/data/dmd/Grid 11x11.txt
+src/samos/data/dmd/Grid 11x11x1.csv
+src/samos/data/dmd/Strasbourg_CCDscale_92.0349159909736_24.349414139771.fits
+src/samos/data/dmd/blackout_dmd_state.png
+src/samos/data/dmd/checkerboard.png
+src/samos/data/dmd/cross.csv
+src/samos/data/dmd/current_dm_state.png
+src/samos/data/dmd/current_dmd_state.png
+src/samos/data/dmd/whiteout_dmd_state.png
+src/samos/data/dmd/convert/DMD_Mapping_WCS.fits
+src/samos/data/dmd/convert/DMD_Mapping_WCS_last_working.fits
+src/samos/data/dmd/convert/DMD_Mapping_WCS_prev.fits
+src/samos/data/dmd/convert/dmd_ccd_wcs_test.fits
+src/samos/data/dmd/convert/flipped_DMD_Mapping_WCS.fits
+src/samos/data/dmd/convert/sci_SLOAN-i_Grid11x11_20230906.fits
+src/samos/data/dmd/csv/maps/.csv
+src/samos/data/dmd/csv/maps/Map_5slits at the center.csv
+src/samos/data/dmd/csv/maps/Map_CentralCross.csv
+src/samos/data/dmd/csv/maps/Map_demo_spot1.csv
+src/samos/data/dmd/csv/maps/Map_demo_spotright.csv
+src/samos/data/dmd/csv/maps/Map_grid_54x54.csv
+src/samos/data/dmd/csv/maps/Map_longslit_1010_1012.csv
+src/samos/data/dmd/csv/maps/Map_longslit_10_12.csv
+src/samos/data/dmd/csv/maps/Map_longslit_110_112.csv
+src/samos/data/dmd/csv/maps/Map_longslit_210_212.csv
+src/samos/data/dmd/csv/maps/Map_longslit_310_312.csv
+src/samos/data/dmd/csv/maps/Map_longslit_410_412.csv
+src/samos/data/dmd/csv/maps/Map_longslit_510_512.csv
+src/samos/data/dmd/csv/maps/Map_longslit_510_514.csv
+src/samos/data/dmd/csv/maps/Map_longslit_610_612.csv
+src/samos/data/dmd/csv/maps/Map_longslit_710_712.csv
+src/samos/data/dmd/csv/maps/Map_longslit_810_812.csv
+src/samos/data/dmd/csv/maps/Map_longslit_910_912.csv
+src/samos/data/dmd/csv/maps/ThinCentralSlit.csv
+src/samos/data/dmd/csv/maps/ThinCentralSlit1.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x10.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x1010.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x110.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x210.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x310.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x410.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x510.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x610.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x710.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x810.csv
+src/samos/data/dmd/csv/maps/For_WLCal/Map_len50_width2_x910.csv
+src/samos/data/dmd/csv/slits/.DS_Store
+src/samos/data/dmd/csv/slits/Slit_Grid 11x11.csv
+src/samos/data/dmd/csv/slits/Slit_Grid 11x11x3.csv
+src/samos/data/dmd/csv/slits/Slit_Grid_54x54_dmd.csv
+src/samos/data/dmd/pattern/DMD_Mapping_WCS.fits
+src/samos/data/dmd/pattern/fdt_grid_54x54_inv_img_with_dmd_wcs.fits
+src/samos/data/dmd/pattern/pattern.png
+src/samos/data/dmd/pattern/pattern_try_again.png
+src/samos/data/dmd/pattern/tab_pix_to_dmd_coords.csv
+src/samos/data/dmd/pattern/test_regions.reg
+src/samos/data/dmd/pattern/Saved_DMD_Patterns/test_pattern.png
+src/samos/data/dmd/pattern/basic_patterns/checkerboard.npy
+src/samos/data/dmd/pixel_mapping/DMD_Mapping_WCS.fits
+src/samos/data/dmd/pixel_mapping/DMD_gui_loaded_grid.png
+src/samos/data/dmd/pixel_mapping/dmd_grid_sextract.png
+src/samos/data/dmd/pixel_mapping/dmd_gui_startup.png
+src/samos/data/dmd/pixel_mapping/flipped_DMD_Mapping_WCS.fits
+src/samos/data/dmd/pixel_mapping/tab_pix_to_dmd_coords.csv
+src/samos/data/dmd/pixel_mapping/MapResults/ccd2dmd_wcs_conversion_df.csv
+src/samos/data/dmd/pixel_mapping/MapResults/dmd2ccd_wcs_conversion_df.csv
+src/samos/data/dmd/pixel_mapping/MapResults/fdt_grid_54x54_inv_img_with_dmd_wcs.fits
+src/samos/data/documentation/SAMOS_PreShip_Review_21Sep23_1150.pdf
+src/samos/data/documentation/SAMOS_PreShip_Review_21Sep23_1150.pptx
+src/samos/data/documentation/ccd/! SI Image SGL E User Manual 2523.pdf
+src/samos/data/documentation/ccd/6762_manual.pdf
+src/samos/data/documentation/ccd/9596A_Manual CCD Camera HTTP Server User's.pdf
+src/samos/data/documentation/ccd/Commands.rtf
+src/samos/data/documentation/ccd/ParameterList.pdf
+src/samos/data/documentation/images/ccd.png
+src/samos/data/documentation/images/ccd2dmd.png
+src/samos/data/documentation/images/config.png
+src/samos/data/documentation/images/dmd.png
+src/samos/data/documentation/images/etc.png
+src/samos/data/documentation/images/gs.png
+src/samos/data/documentation/images/pcm.png
+src/samos/data/documentation/images/soar.png
+src/samos/data/documentation/soar/Goodman Slitmask_Guide.pdf
+src/samos/data/documentation/soar/Remote Use of the SOAR 4.25m Telescope with LabVIEW.pdf
+src/samos/data/documentation/soar/SAM USER GUIDE  - scidoc1583.pdf
+src/samos/data/documentation/soar/SAMI_SW Manual.pdf
+src/samos/data/documentation/soar/SAMInterfaceVisitorInstrumentSW.pdf
+src/samos/data/documentation/soar/SAMOS_GUI_Image.pdf
+src/samos/data/documentation/soar/SAMOS_GUI_Image.png
+src/samos/data/documentation/soar/SAMOpticalDesign.pdf
+src/samos/data/documentation/soar/SAMmechanicaldesign.pdf
+src/samos/data/documentation/soar/SAMoverview.pdf
+src/samos/data/documentation/soar/SOAR_TCS_COMMANDS.pdf
+src/samos/data/documentation/soar/SantoroModulesDoc.pdf
+src/samos/data/documentation/soar/Tokovinin et al. - 2016 - SOAR Adaptive Module (SAM) Seeing Improvement with a UV Laser.pdf
+src/samos/data/documentation/soar/mos_observing_with_goodman_Sep2015.pdf
+src/samos/data/documentation/soar/sami-manual.pdf
+src/samos/data/etc/Paranal_sky_VIS/GenericTransmission_Vis.txt
+src/samos/data/etc/Paranal_sky_VIS/README.txt
+src/samos/data/etc/Paranal_sky_VIS/UVES_Fluxed_SkyALL.txt
+src/samos/data/etc/Paranal_sky_VIS/sky_ground.pro
+src/samos/data/etc/coating_throughput/Al_Reflecance_NBS SP260-75.PDF
+src/samos/data/etc/coating_throughput/Al_reflectance_NBS.txt
+src/samos/data/etc/coating_throughput/Gemini Coating 990632.pdf
+src/samos/data/etc/coating_throughput/SilverCoating_ALL.README.txt
+src/samos/data/etc/coating_throughput/SilverCoating_ALL.txt
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS.html
+src/samos/data/etc/filters/H_2mass.res
+src/samos/data/etc/filters/H_uv.res
+src/samos/data/etc/filters/J_2mass.res
+src/samos/data/etc/filters/J_uv.res
+src/samos/data/etc/filters/K_uv.res
+src/samos/data/etc/filters/Ks_2mass.res
+src/samos/data/etc/filters/Y_uv.res
+src/samos/data/etc/filters/g_SDSS.res
+src/samos/data/etc/filters/i_SDSS.res
+src/samos/data/etc/filters/r_SDSS.res
+src/samos/data/etc/filters/sami.yaml
+src/samos/data/etc/filters/samos.yaml
+src/samos/data/etc/filters/u_SDSS.res
+src/samos/data/etc/filters/z_SDSS.res
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/FB-f-Logo__blue_29.png
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/TwitterLogo.png
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/analytics.js
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/api.js
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/application-6a21dd0784087f3d14309ce885762d9f.js
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/application-fd1b2131c41163a01b598c9e12760ab9.css
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/banner1-dc9588a53b8dae369eac5b9d03512c96.jpg
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/banner2-d7694f57c668a5b686d66d3b4ebe9b39.jpg
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/banner3-77e289c47825c68ec48bf6bcb247f058.jpg
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/banner4-fba74fc12c3332c7edc0bb89afb2c36e.jpg
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/banner5-f5da088e769069d1fc592b1c13e1f843.jpg
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/banner6-fcf6f1e35ddfe1854d628ca5b57353b1.jpg
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/cosmos-logo.png
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/css
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/jsapi
+src/samos/data/etc/filters/COSMOS filter set _ COSMOS_files/recaptcha__en.js
+src/samos/data/hadamard/mask_sets/S7_NGC310_3w_001.bmp
+src/samos/data/hadamard/mask_sets/S7_NGC310_3w_002.bmp
+src/samos/data/hadamard/mask_sets/S7_NGC310_3w_003.bmp
+src/samos/data/hadamard/mask_sets/S7_NGC310_3w_004.bmp
+src/samos/data/hadamard/mask_sets/S7_NGC310_3w_005.bmp
+src/samos/data/hadamard/mask_sets/S7_NGC310_3w_006.bmp
+src/samos/data/hadamard/mask_sets/S7_NGC310_3w_007.bmp
+src/samos/data/motors/FW_GR_status.dat
+src/samos/data/motors/IDG_Filter_positions.txt
+src/samos/data/motors/docs/Hope1.pdf
+src/samos/data/motors/docs/Hope2.pdf
+src/samos/data/motors/docs/Hope3.pdf
+src/samos/data/motors/docs/PCM Communication.pdf
+src/samos/data/motors/docs/ezhr Command_Set.pdf
+src/samos/data/regions/.DS_Store
+src/samos/data/regions/reg_examples.zip
+src/samos/data/regions/pixels/Map_5slits at the center.reg
+src/samos/data/regions/pixels/Map_CentralCross.reg
+src/samos/data/regions/pixels/Map_demo_spot1.reg
+src/samos/data/regions/pixels/Map_demo_spotright.reg
+src/samos/data/regions/pixels/Map_grid_54x54.reg
+src/samos/data/regions/pixels/Map_len50_width2_x10.reg
+src/samos/data/regions/pixels/Map_len50_width2_x1010.reg
+src/samos/data/regions/pixels/Map_len50_width2_x110.reg
+src/samos/data/regions/pixels/Map_len50_width2_x210.reg
+src/samos/data/regions/pixels/Map_len50_width2_x310.reg
+src/samos/data/regions/pixels/Map_len50_width2_x410.reg
+src/samos/data/regions/pixels/Map_len50_width2_x510.reg
+src/samos/data/regions/pixels/Map_len50_width2_x610.reg
+src/samos/data/regions/pixels/Map_len50_width2_x710.reg
+src/samos/data/regions/pixels/Map_len50_width2_x810.reg
+src/samos/data/regions/pixels/Map_len50_width2_x910.reg
+src/samos/data/regions/pixels/Map_longslit_1010_1012.reg
+src/samos/data/regions/pixels/Map_longslit_10_12.reg
+src/samos/data/regions/pixels/Map_longslit_110_112.reg
+src/samos/data/regions/pixels/Map_longslit_210_212.reg
+src/samos/data/regions/pixels/Map_longslit_410_412.reg
+src/samos/data/regions/pixels/Map_longslit_510_512.reg
+src/samos/data/regions/pixels/Map_longslit_510_514.reg
+src/samos/data/regions/pixels/Map_longslit_610_612.reg
+src/samos/data/regions/pixels/Map_longslit_710_712.reg
+src/samos/data/regions/pixels/Map_longslit_910_912.reg
+src/samos/data/regions/pixels/NGC3105_V1.pixels=150.1679077-54.7886346.reg
+src/samos/data/regions/pixels/NGC3105_V2.pixels=150.1679077-54.7886346.reg
+src/samos/data/regions/pixels/NGC3105_pixels=150.1674444-54.788541.reg
+src/samos/data/regions/pixels/NGC3105_pixels=150.1679077-54.7886346.reg
+src/samos/data/regions/pixels/NGC3105_pixels_V1=150.1679077-54.7886346.reg
+src/samos/data/regions/pixels/NGC3105_pixels_V2=150.1679077-54.7886346.reg
+src/samos/data/regions/pixels/ThinCentralSlit.reg
+src/samos/data/regions/pixels/new slit regions_pixels=0.0-0.0.reg
+src/samos/data/regions/pixels/new test_pixels=0.0-0.0.reg
+src/samos/data/regions/pixels/pattern_reg3_pixels=0.0-0.0.reg
+src/samos/data/regions/pixels/test of the day.reg
+src/samos/data/regions/pixels/test2.reg
+src/samos/data/regions/pixels/test_pixels=0.0-0.0.reg
+src/samos/data/regions/pixels/whiteout.reg
+src/samos/data/regions/radec/.DS_Store
+src/samos/data/regions/radec/NGC2024_RADEC=85.4771291-1.8414469.reg
+src/samos/data/regions/radec/NGC3105_RADEC=150.1674444-54.788541 copy.reg
+src/samos/data/regions/radec/NGC3105_RADEC=150.1674444-54.788541.reg
+src/samos/data/regions/radec/NGC3105_lean1.reg
+src/samos/data/regions/radec/test.reg
+src/samos/data/regions/reg_examples/NGC3105_RADEC=150.1674444-54.788541.reg
+src/samos/data/regions/reg_examples/NGC3105_pixels_V1=150.1679077-54.7886346.reg
+src/samos/data/soar/E-mail.pdf
+src/samos/data/soar/SOAR_TCS_COMMANDS.pdf
+src/samos/data/system/IP_addresses_SIMULATED.csv
+src/samos/data/system/IP_addresses_default.csv
+src/samos/data/system/IP_addresses_default_inside.csv
+src/samos/data/system/IP_addresses_default_outside.csv
+src/samos/data/system/IP_addresses_user.csv
+src/samos/data/system/IP_addresses_user_inside.csv
+src/samos/data/system/IP_addresses_user_outside.csv
+src/samos/data/system/IP_initial_status_dict.csv
+src/samos/data/system/IP_status_dict.csv
+src/samos/data/system/Parameters_of_the_night.txt
+src/samos/data/system/SAMOS_Filter_positions.txt
+src/samos/data/system/default_parameters_of_the_night.yaml
+src/samos/data/system/default_preferences.yaml
+src/samos/data/system/fits_current_dir_name.txt
+src/samos/data/system/preferences.yaml
+src/samos/data/tk/audio/welcome.mp3
+src/samos/data/tk/icons/off_big.png
+src/samos/data/tk/icons/off_small.png
+src/samos/data/tk/icons/on_big.png
+src/samos/data/tk/icons/on_small.png
+src/samos/data/tmp/README.md
+src/samos/dmd/__init__.py
+src/samos/dmd/dmd.py
+src/samos/dmd/utilities.py
+src/samos/etc/__init__.py
+src/samos/etc/etc.py
+src/samos/hadamard/__init__.py
+src/samos/hadamard/patterns.py
+src/samos/motors/__init__.py
+src/samos/motors/pcm.py
+src/samos/notebooks/Get_CCD2DMD_wcs.ipynb
+src/samos/notebooks/SAMOS_DMD_dev.ipynb
+src/samos/notebooks/Simple DMD Control Example.ipynb
+src/samos/notebooks/create_dmd_pattern_for_testing.ipynb
+src/samos/notebooks/get_flipped_CCD2DMD_wcs.ipynb
+src/samos/sami/__init__.py
+src/samos/sami/sami.py
+src/samos/soar/__init__.py
+src/samos/soar/scl.py
+src/samos/soar/soar.py
+src/samos/soar/soar_tcs.py
+src/samos/soar/Examples/Python Client to Unflatten Received String from TCP Labview.py
+src/samos/soar/archive/Class_SOAR_local.py
+src/samos/system/__init__.py
+src/samos/system/config.py
+src/samos/system/database.py
+src/samos/system/fits_header.py
+src/samos/ui/__init__.py
+src/samos/ui/ccd.py
+src/samos/ui/ccd2dmd.py
+src/samos/ui/common_frame.py
+src/samos/ui/config.py
+src/samos/ui/dmd.py
+src/samos/ui/etc.py
+src/samos/ui/gs.py
+src/samos/ui/gs_query_frame.py
+src/samos/ui/logging_window.py
+src/samos/ui/main_page.py
+src/samos/ui/motors.py
+src/samos/ui/progress_windows.py
+src/samos/ui/sami.py
+src/samos/ui/slit_table_view.py
+src/samos/ui/soar.py
+src/samos/ui/widgets.py
+src/samos/utilities/__init__.py
+src/samos/utilities/constants.py
+src/samos/utilities/simulator.py
+src/samos/utilities/tk.py
+src/samos/utilities/utils.py
+tests/test_class_CCD.py
+tests/test_class_DMD_module.py
+tests/test_class_PCM.py
+tests/test_hadamard.py
+tests/test_panstarrs.py
+tests/test_panstarrs_image.py
