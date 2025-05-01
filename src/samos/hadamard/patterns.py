@@ -67,7 +67,7 @@ def S_matrix(order):
     s_mat[0, :] = s_matrices[order]
 
     # Now go through and populate the matrix
-    for i in range(n - 1):
+    for i in range(order - 1):
         row = np.roll(s_mat[i, :], -1, axis=0)
         s_mat[i + 1, :] = row
 
@@ -96,7 +96,7 @@ def make_S_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
 
         # For  vertical slits, spectra across the DMD
         for j in range(x1, x2):    
-            DMD_mask[y1:y2, j]= row_expanded
+            DMD_mask[y1:y2 + 1, j]= row_expanded
         mask_set[:, :, i]= DMD_mask 
         mask = DMD_mask.astype(np.uint8)
         name = f"{matrix_type}{order}_mask_{slit_width}w_{i:03d}.bmp"

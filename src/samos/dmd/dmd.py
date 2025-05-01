@@ -23,6 +23,7 @@ class DigitalMicroMirrorDevice():
         self.logger = logger
         self.PAR = par
         self.db = db
+        self.dmd_size = (1080, 2048)
         self.is_on = False
         # Set invert to false
         self.invert = False
@@ -39,7 +40,7 @@ class DigitalMicroMirrorDevice():
         self.logger.debug("DMD IP:Port: {}:{}".format(dmd_ip, dmd_port))
         
         self.start_on_whiteout = kwargs.get("start_on_whiteout", False)
-        self.dmd_size = kwargs.get("dmd_size", (1080, 2048))
+        self.dmd_size = kwargs.get("dmd_size", self.dmd_size)
         self.max_diff = kwargs.get("max_diff", self.dmd_size[0] * self.dmd_size[1])
         self.display_type = kwargs.get("display_type", 32)
         self.dmd_data_path = get_data_file("dmd")

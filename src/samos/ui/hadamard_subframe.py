@@ -135,7 +135,8 @@ class HadamardGenerator(SAMOSFrame):
         self.rename_value = self.make_db_var(
             tk.StringVar,
             "dmd_hadamard_mask_rename_value",
-            ""
+            "",
+            callback=self.update_hadamard_mask_name
         )
         e = tk.Entry(self.main_frame, textvariable=self.rename_value)
         e.grid(row=9, column=2, columnspan=3, sticky=TK_STICKY_ALL)
@@ -154,6 +155,12 @@ class HadamardGenerator(SAMOSFrame):
             file.rename(parent_path / new_name)
         self.mask_name.set(new_mask_name)
         self.rename_value.set("")
+
+
+    def update_hadamard_mask_name(self):
+        """ Rename mask renaming button when mask name is updated """
+        mask_name = self.rename_value.get()
+        self.rename_button.configure(text=f"Rename '{mask_name}' to:")
 
 
     def calculate_field_width(self, event=None):
