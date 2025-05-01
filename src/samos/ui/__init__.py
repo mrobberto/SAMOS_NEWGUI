@@ -4,6 +4,7 @@ from .config import ConfigPage
 from .dmd import DMDPage
 from .etc import ETCPage
 from .gs import GSPage
+from .hadamard import HadamardPage
 from .main_page import MainPage
 from .motors import MotorsPage
 from .sami import SAMIPage
