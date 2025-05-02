@@ -117,12 +117,9 @@ class ConfigPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="Logbook", borderwidth=2)
         frame.grid(row=1, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
         self.init_logbook_button = ttk.Button(frame, text="Initialize Logbook", command=self.LogBookstartup)
-        self.init_logbook_label = ttk.Label(frame, text="Logbook File:")
-        self.logbook_location = self.make_db_var(tk.StringVar, "config_logbook_path", "")
-        self.logbook_location_label = ttk.Label(frame, textvariable=self.logbook_location)
-        if Path(self.logbook_location.get()).is_file():
+        self.init_logbook_label = ttk.Label(frame, text=f"Logbook File: {self.PAR.logfile_name}")
+        if self.PAR.logfile_name.is_file():
             self.init_logbook_label.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-            self.logbook_location_label.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         else:
             self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
@@ -154,6 +151,12 @@ class ConfigPage(SAMOSFrame):
     @check_enabled
     def LogBookstartup(self):
         self.PAR.create_log_file()
+        if self.PAR.logfile_name.is_file():
+            self.init_logbook_button.grid_forget()
+            self.init_logbook_label.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        else:
+            self.init_logbook_label.grid_forget()
+            self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
 
     @check_enabled
@@ -200,11 +203,9 @@ class ConfigPage(SAMOSFrame):
 
     def set_enabled(self, run_from_main=False):
         super().set_enabled(run_from_main=run_from_main)
-        if Path(self.logbook_location.get()).is_file():
+        if self.PAR.logfile_name.is_file():
             self.init_logbook_button.grid_forget()
             self.init_logbook_label.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-            self.logbook_location_label.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         else:
             self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
             self.init_logbook_label.grid_forget()
-            self.logbook_location_label.grid_forget()            

@@ -62,6 +62,8 @@ class SAMOSFrame(ttk.Frame):
 
         self.main_frame = ttk.LabelFrame(self, text=name, borderwidth=5)
         self.main_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
         # Define Our Images
         self.on_big = tk.PhotoImage(file=get_data_file("tk.icons", "on_big.png"))

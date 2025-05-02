@@ -379,7 +379,7 @@ class MainPage(SAMOSFrame):
         b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # Pattern Series
         pattern_frame = ttk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
-        pattern_frame.grid(row=0, column=1, rowspan=2, sticky=TK_STICKY_ALL)
+        pattern_frame.grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
@@ -979,7 +979,6 @@ class MainPage(SAMOSFrame):
         """ 
         This is the landing procedure after the START button has been pressed
         """
-        self.update_PotN()   #The Function update_PotN() is no more present...
         if (not self.CCD.initialized) or (not self.CCD.ccd_on):
             # Open a test image
             image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
@@ -1503,6 +1502,12 @@ class MainPage(SAMOSFrame):
         """ Show Traces """
         # keep only the slits/boxes
         self.slits_only()
+        
+        bbox = self.canvas.get_bbox()
+        bbox_x = [p[0] for p in bbox]
+        bbox_y = [p[1] for p in bbox]
+        min_x, max_x = min(bbox_x), max(bbox_x)
+        min_y, max_y = min(bbox_y), max(bbox_y)
 
         # We want to create rectangles
         Rectangle = self.canvas.get_draw_class('rectangle')
@@ -1514,8 +1519,11 @@ class MainPage(SAMOSFrame):
                 # ***** WHY?
                 continue
             if hasattr(obj, 'x'):
-                x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
-                y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
+                ox, oy = round(obj.x), round(obj.y)
+                x1, x2 = max(ox - obj.xradius, 0), min(ox + obj.xradius, max_x)
+                y1, y2 = max(oy - 1024, 0), min(oy + 1024, max_y)
+#                 x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
+#                 y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
                 print(i, x1, x2, y1, y2)
                 r = Rectangle(x1=x1, y1=y1, x2=x2, y2=y2, angle=0*u.deg, color='yellow', fill=1, fillalpha=0.5)
                 self.canvas.add(r, tag=f'@trace_{i}')
