@@ -41,14 +41,15 @@ class SAMOSConfig():
     def create_log_file(self):       
         """ Invoked to create log file"""
         today = datetime.now()
-        pn = self.PotN
         if not self.logbook_exists:
             with open(self.logfile_name, 'w+') as logfile:
                 logfile.write(f"SAMOS LOGBOOK for {today.strftime('%Y%m%d')}\n")
-                logfile.write(f"Telescope,{pn['Telescope']}\n")
-                logfile.write(f"Program ID,{pn['Program ID']},Proposal Title,{pn['Proposal Title']},PI,")
-                logfile.write(f"{pn['Principal Investigator']}\n")
-                logfile.write(f"Observer,{pn['Observer']},Telescope Operator,{pn['Telescope Operator']}\n")
+                logfile.write(f"Telescope,{self.db.get_value('POTN_TELESCOPE')}\n")
+                logfile.write(f"Program ID,{self.db.get_value('POTN_PROGRAM)},")
+                logfile.write(f"Proposal Title,{self.db.get_value('POTN_Title')},")
+                logfile.write(f"PI,{self.db.get_value('POTN_PI')}\n")
+                logfile.write(f"Observer,{self.db.get_value('POTN_Observer')},")
+                logfile.write(f"Telescope Operator,{self.db.get_value('POTN_Telescope_Operator')}\n")
                 logfile.write("Date,Local Time,Target,Filter,Repeats,Exposure Time,Filename,Mask Name,")
                 logfile.write("Grating,Sp. Exp.T,Sp. Filename,Comment\n")
         return self.logfile_name

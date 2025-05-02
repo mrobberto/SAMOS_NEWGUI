@@ -30,12 +30,16 @@ class HadamardPage(SAMOSFrame):
         self.canvas_types = get_canvas_types()
         self.drawcolors = colors.get_colors()
         self.loaded_regfile = None
+        self.select_mode = False
 
         left_frame = ttk.Frame(self.main_frame)
         left_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        left_frame.grid_columnconfigure(0, weight=1)
 
         main_frame = ttk.Frame(self.main_frame)
         main_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        main_frame.grid_rowconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(0, weight=1)
 
         # FITS manager
         frame = ttk.LabelFrame(left_frame, text="Coordinates")
@@ -49,6 +53,8 @@ class HadamardPage(SAMOSFrame):
         tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         w = ttk.Button(frame, text="Load from Current Image", command=self.load_ra_dec)
         w.grid(row=2, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_columnconfigure(1, weight=1)
 
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(
@@ -60,13 +66,18 @@ class HadamardPage(SAMOSFrame):
             **self.samos_classes
         )
         self.gs_query_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.gs_query_frame.grid_rowconfigure(0, weight=0)
+        self.gs_query_frame.grid_columnconfigure(0, weight=1)
 
         # Hadamard Sub-frame
         self.hadamard_conf_frame = HadamardGenerator(self, left_frame, **kwargs)
         self.hadamard_conf_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.hadamard_conf_frame.grid_rowconfigure(0, weight=0)
+        self.hadamard_conf_frame.grid_columnconfigure(0, weight=1)
 
         frame = ttk.LabelFrame(left_frame, text="Image Controls")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        frame.grid_columnconfigure(0, weight=1)
         w = ttk.Button(frame, text="Select Hadamard Centre", command=self.set_hadamard)
         w.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         w = ttk.Button(frame, text="Clear Display", command=self.clear_all)
@@ -97,17 +108,23 @@ class HadamardPage(SAMOSFrame):
         self.drawing_canvas = self.canvas_types.DrawingCanvas()
         self.drawing_canvas.enable_draw(True)
         self.drawing_canvas.enable_edit(True)
-        self.drawing_canvas.set_drawtype('box', color='red')
+        self.drawing_canvas.set_drawtype('crosshair', color='red')
         self.drawing_canvas.register_for_cursor_drawing(self.fits_image)
-        self.drawing_canvas.add_callback('pick-up', self.pick_cb, 'up')
+        self.drawing_canvas.add_callback('draw-event', self.draw_cb)
         self.drawing_canvas.set_draw_mode('pick')
         self.drawing_canvas.ui_set_active(True)
         self.fits_image.get_canvas().add(self.drawing_canvas)
         self.drawtypes = self.drawing_canvas.get_drawtypes()
         self.drawtypes.sort()
+        self.current_object = None
         self.fits_image.set_window_size(1028, 1044)
         self.readout = ttk.Label(frame, text='')
         self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        frame.grid_rowconfigure(1, weight=0)
+
+        self.main_frame.grid_rowconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(0, weight=0)
+        self.main_frame.grid_columnconfigure(1, weight=1)
 
 
     def load_ra_dec(self):
@@ -121,7 +138,8 @@ class HadamardPage(SAMOSFrame):
         """
         Set Hadamard X/Y by clicking on the canvas
         """
-        pass
+        self.logger.info("Selecting Hadamard Centre")
+        self.select_mode = True
 
 
     def clear_all(self):
@@ -129,6 +147,7 @@ class HadamardPage(SAMOSFrame):
         Clear the frame image and any slits
         """
         self.drawing_canvas.delete_all_objects(redraw=True)
+        self.ginga_canvas.delete_all_objects(redraw=True)
 
 
     def draw_hadamard(self):
@@ -142,7 +161,13 @@ class HadamardPage(SAMOSFrame):
         """
         Load a FITS file into the display
         """
-        pass
+        fits_path = askopenfilename(
+            initialdir=self.CONFIG.output_dir,
+            title="Select a File",
+            filetypes=(("FITS files", "*.fits"), ("all files", "*.*"))
+        )
+        with fits.open(fits_path) as in_file:
+            self._display_image(in_file[0])
 
 
     def save_canvas(self):
@@ -172,102 +197,28 @@ class HadamardPage(SAMOSFrame):
         self.table_full.pprint_include_names = ('id', 'ra', 'dec', 'star_mag')
 
 
-    def pick_guide_star(self):
-        self.logger.info("Selecting Guide Star")
-        self.clear_all()
-
-        # Filter table by low and high magnitudes
-        low_mag = self.low_mag.get()
-        high_mag = self.high_mag.get()
-        self.logger.info("Looking for stars with {} < mag < {}".format(low_mag, high_mag))
-        self.logger.info("Initial table has {} sources".format(len(self.table_full)))
-        self.table = self.table_full[(self.table_full['star_mag'] > low_mag) & (self.table_full['star_mag'] < high_mag)]
-        self.logger.info("Final table has {} sources".format(len(self.table)))
-
-        # For each remaining source, either reject it (for wrong location) or label it for potential selection
-        image = self.fits_image.get_image()
-        rows_to_drop = []
-        gs_regions = Regions()
-        Text = self.drawing_canvas.get_draw_class('Text')
-        x_low, x_high = self.data_GS.shape[0]//4, 3*self.data_GS.shape[0]//4
-        y_low, y_high = self.data_GS.shape[1]//4, 3*self.data_GS.shape[1]//4
-        for row in self.table:
-            x, y = image.radectopix(row['ra'], row['dec'], format='str', coords='fits')
-            if ((x > x_low) and (x < x_high) and (y > y_low) and (y < y_high)):
-                self.logger.info("Dropping source {} because too close to centre".format(row['id']))
-                # Can't use a star in the very central region
-                rows_to_drop.append(row['id'])
-            elif ((x < 0) or (x > self.data_GS.shape[0]) or (y < 0) or (y > self.data_GS.shape[1])):
-                self.logger.info("Dropping source {} because out of frame".format(row['id']))
-                # Can't use a star that's outside the frame
-                rows_to_drop.append(row['id'])
-            else:
-                self.logger.info("Adding source {} to potential guide star list".format(row['id']))
-                region = CirclePixelRegion(center=PixCoord(x, y), radius=10)
-                gs_regions.append(region)
-                obj = r2g(region)
-                obj.color = "red"
-                obj.pickable = True
-                obj.add_callback('pick-up', self.pick_cb, 'down')
-                self.logger.info("Adding source with ID {}".format(row["id"]))
-                self.drawing_canvas.add(obj, tag=f'@{row["id"]}')
-                star_label = Text(x=x+5, y=y+5, text=f'{row["id"]}', color="red")
-                star_label.fontsize = 25
-                self.drawing_canvas.add(star_label)
-        for object_id in rows_to_drop:
-            self.table = self.table[self.table['id'] != object_id]
-        self.logger.info("{} candidate guide stars".format(len(self.table)))
-        self.logger.info("{}".format(self.table))
-
-        #DRAW  THE YELLOW AREA OF SISI
-        width, height = self.data_GS.shape[0]//2, self.data_GS.shape[1]//2
-        box_region = RectanglePixelRegion(center=PixCoord(x=width, y=height), width=width, height=height, angle=0*u.deg)  
-        obj = r2g(box_region)
-        obj.color = "green"
-        self.drawing_canvas.add(obj)
-
-
-    def open_canvas(self):
-        if hasattr(self, 'catalog') and (self.catalog.saved_regions is not None):
-            self.clear_all()
-            for region in enumerate(self.catalog.saved_regions):
-                self.drawing_canvas.add(r2g(region))
-
-
-    def pick_cb(self, obj, canvas, event, pt, ptype):
-        self.logger.info(f"User picked {ptype} with {obj.kind} at ({pt[0]:.2f}, {pt[1]:.2f})")
+    def draw_cb(self, canvas, tag):
+        self.logger.info(f"User drew {tag} on {canvas}")
+        obj = canvas.get_object_by_tag(tag)
+        if not self.select_mode:
+            canvas.delete_object(obj)
+            return
 
         try:
-            self.logger.info("Clearing existing selection (if there is one)")
-            canvas.get_object_by_tag(self.selected_obj_tag).color = 'red'
-            canvas.clear_selected()
-            print('unselect previous obj tag')
+            image = self.fits_image.get_image()
+            x, y = obj.get_center_pt()
+            self.logger.info(f"User selected {x}, {y}")
+            self.hadamard_conf_frame.slit_xc.set(x)
+            self.hadamard_conf_frame.slit_yc.set(y)
+#             ra, dec = image.pixtoradec(x, y)
+#             self.logger.info(f"User selected {ra}, {dec}")
+            if self.current_object is not None:
+                canvas.delete_object(self.current_object)
+            self.current_object = obj
         except Exception as e:
-            self.logger.info("No existing selection found")
-
-        # Add selection
-        canvas.select_add(obj.tag)
-        self.selected_obj_tag = obj.tag
-        obj.color = 'green'
-        canvas.set_draw_mode('draw')
-        canvas.set_draw_mode('pick')
-        self.object_id = obj.tag.strip('@')
-        self.logger.info("Selected source has ID {}".format(self.object_id))
-
-        if ptype == 'up' or ptype == 'down':
-            self.logger.info("Searching for object {} in table".format(self.object_id))
-            row = self.table[self.table['id'] == self.object_id]
-            self.logger.info("{}".format(row))
-            self.gs_ra.set(row['ra'].value[0])
-            self.gs_dec.set(row['dec'].value[0])
-            delta_ra = (row['ra'].value[0] - self.ra.get()) * u.deg
-            delta_ra_mm = delta_ra.to(u.arcsec) / SOAR_ARCS_MM_SCALE
-            self.gs_xshift.set(delta_ra_mm.value)
-            delta_dec = (row['dec'].value[0] - self.dec.get()) * u.deg
-            delta_dec_mm = delta_dec.to(u.arcsec) / SOAR_ARCS_MM_SCALE
-            self.gs_yshift.set(delta_dec_mm.value)
-            self.gs_mag.set(row['star_mag'].value[0])
-        return True
+            self.logger.error(f"Unable to select point because {e}")
+            self.logger.exception(e)
+            return
 
 
     def load_gs(self):
