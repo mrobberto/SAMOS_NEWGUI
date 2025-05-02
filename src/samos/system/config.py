@@ -42,10 +42,11 @@ class SAMOSConfig():
         """ Invoked to create log file"""
         today = datetime.now()
         if not self.logbook_exists:
+            self.logfile_name.parent.mkdir(parents=True, exist_ok=True)
             with open(self.logfile_name, 'w+') as logfile:
                 logfile.write(f"SAMOS LOGBOOK for {today.strftime('%Y%m%d')}\n")
-                logfile.write(f"Telescope,{self.db.get_value('POTN_TELESCOPE')}\n")
-                logfile.write(f"Program ID,{self.db.get_value('POTN_PROGRAM)},")
+                logfile.write(f"Telescope,{self.db.get_value('POTN_Telescope')}\n")
+                logfile.write(f"Program ID,{self.db.get_value('POTN_Program')},")
                 logfile.write(f"Proposal Title,{self.db.get_value('POTN_Title')},")
                 logfile.write(f"PI,{self.db.get_value('POTN_PI')}\n")
                 logfile.write(f"Observer,{self.db.get_value('POTN_Observer')},")
@@ -81,6 +82,11 @@ class SAMOSConfig():
         elif storage_location == "custom":
             return Path(self.db.get_value("config_custom_files_location"))
         raise ValueError(f"{storage_location} is not a valid storage location!")
+
+
+    @property
+    def logfile_name(self):
+        return self.fits_dir / "logfile.csv"
 
 
     @property

@@ -162,7 +162,7 @@ class HadamardPage(SAMOSFrame):
         Load a FITS file into the display
         """
         fits_path = askopenfilename(
-            initialdir=self.CONFIG.output_dir,
+            initialdir=self.PAR.output_dir,
             title="Select a File",
             filetypes=(("FITS files", "*.fits"), ("all files", "*.*"))
         )
