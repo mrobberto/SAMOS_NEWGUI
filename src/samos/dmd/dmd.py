@@ -75,12 +75,11 @@ class DigitalMicroMirrorDevice():
                 self.logger.error("Error was {}".format(e))
                 return("no DMD")
         
-        self.is_on = True
-        self.logger.info("Sending test message")
-        instrument.sendall(b':TEST\n')
-        response = instrument.recv(1024)
-        self.logger.info("Received response '{}'".format(response.decode('ascii')))
-        instrument.close()
+            self.is_on = True
+            self.logger.info("Sending test message")
+            instrument.sendall(b':TEST\n')
+            response = instrument.recv(1024)
+            self.logger.info("Received response '{}'".format(response.decode('ascii')))
         return response
 
 
