@@ -30,7 +30,7 @@ class FITSHead(object):
         self.combined = "F"
         self.ncombined = 0
         
-        self.expTime = None
+        self.exptime = None
         self.objname = None
         self.obstype = None  # 'OBSTYPE' type of observation e.g. BIAS, FLAT, OBJ...
         self.radecSys = 'FK5'  # prob won't change
@@ -87,6 +87,7 @@ class FITSHead(object):
         """
         Set/change parameter value 
         """
+        param = param.lower()
         self.logger.info(f"Changing {param} from {getattr(self, param)} to {val}")
         if not hasattr(self, param.lower()):
             self.logger.error(f"NO PARAMETER {param}!")
@@ -107,7 +108,7 @@ class FITSHead(object):
             'PROGID' : (self.db.get_value("POTN_Program"), 'Program ID'),
             'TONAMES' : (self.db.get_value("POTN_Telescope_Operator"), 'Telescope Operator(s)'),
             'GRIDFNAM' : (self.gridfnam, 'Grid pattern filename'),
-            'EXPTIME': (self.expTime, 'Exposure time (s)'),
+            'EXPTIME': (self.exptime, 'Exposure time (s)'),
             'COMBO' : (self.combined, 'Is combined image (T/F)'),
             'NCOMBO': (self.ncombined, 'Number of combined images'),
             'TARGET': (self.db.get_value("POTN_Target"), 'User-defined name of object'),

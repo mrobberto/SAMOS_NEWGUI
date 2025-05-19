@@ -157,63 +157,63 @@ class PCM():
 
 
     def update_status(self):
-        self.logger.info("Checking PCM Status")
+        self.logger.info("\tChecking PCM Status")
         reply = self._send(self.PCM_COMMANDS["power_status"])
         try:
             reply
         except NameError:    
-            self.logger.warning("No reply from Motors")
+            self.logger.warning("\t\tNo reply from Motors")
             self._on = False
         else:
-            self.logger.info(f"PCM Replied {reply}")
+            self.logger.info(f"\t\tPCM Replied {reply}")
             self.reset_indicator(["filter", "grism"])
             if reply is not None:
                 if "NO RESPONSE" in reply:
-                    self.logger.info("Motor power is off")
+                    self.logger.info("\t\tMotor power is off")
                     self._on = False
                     return
                 if not self.have_initial_status:
                     self.have_initial_status = True
                     for wheel in ['FW1', 'FW2', 'GR_A', 'GR_B']:
-                        self.logger.info(f"Updating PCM {wheel}")
+                        self.logger.info(f"\t\tUpdating PCM {wheel}")
                         current_step = self.current_filter_step(wheel)
-                        self.logger.info(f"PCM {wheel} replied {current_step}")
+                        self.logger.info(f"\t\tPCM {wheel} replied {current_step}")
                         self._positions[wheel] = current_step
                 self._on = True
                 return    
 
 
     def echo_client(self):
-        self.logger.info("Sending PCM echo")
+        self.logger.info("\tSending PCM echo")
         return self._send(self.PCM_COMMANDS["on"])
 
 
     def power_on(self):
-        self.logger.info("Sending PCM power on signal")
+        self.logger.info("\tSending PCM power on signal")
         result = self._send(self.PCM_COMMANDS["on"])
         self.reset_indicator(["filter", "grism"])
         return result
 
 
     def power_off(self):
-        self.logger.info("Sending PCM power off signal")
+        self.logger.info("\tSending PCM power off signal")
         result = self._send(self.PCM_COMMANDS["off"])
         self.reset_indicator(["filter", "grism"])
         return result
 
 
     def send_command_string(self, string):
-        self.logger.info("Sending PCM command string {}".format(string))
+        self.logger.info("\tSending PCM command string {}".format(string))
         return self._send(f"{self.PCM_COMMANDS['preamble']}{string}")
 
 
     def filter_sensor_status(self, FW):
-        self.logger.info("Getting status from {}".format(FW))
+        self.logger.info("\tGetting status from {}".format(FW))
         return self.send_command_string[self.PCM_COMMANDS["current_step"][FW]]
 
 
     def all_ports_status(self):
-        self.logger.info("Getting status of all power ports")
+        self.logger.info("\tGetting status of all power ports")
         return self._send(self.PCM_COMMANDS["power_status"])
 
 
@@ -313,7 +313,7 @@ class PCM():
         """
         Homing is automatic on power-up, or can be forced with the following commands.
         """
-        self.logger.info("Returning {} to home position".format(wheel))
+        self.logger.info("\tReturning {} to home position".format(wheel))
         motor_window = MotorMoveProgressWindow(self, self.logger, wheel, self.home[wheel])
         result = self.send_command_string(self.PCM_COMMANDS["home"][wheel])
         motor_window.wait_window()
@@ -322,7 +322,7 @@ class PCM():
 
 
     def go_to_step(self, wheel, step):
-        self.logger.info("Commanding {} to {}".format(wheel, step))
+        self.logger.info("\tCommanding {} to {}".format(wheel, step))
         motor_window = MotorMoveProgressWindow(self, self.logger, wheel, step)
         result = self.send_command_string(self.PCM_COMMANDS["go_step"][wheel].format(step))
         motor_window.wait_window()
@@ -331,7 +331,7 @@ class PCM():
 
 
     def current_filter_step(self, wheel):
-        self.logger.info("Getting step counts for {}".format(wheel))
+        self.logger.info("\tGetting step counts for {}".format(wheel))
         result = self.send_command_string(self.PCM_COMMANDS["current_step"][wheel])
         param_name = f"{wheel.replace('_','').lower()}step"
         try:
@@ -344,14 +344,14 @@ class PCM():
 
 
     def motors_stop(self, wheel):
-        self.logger.info("Commanding motor stop for {}".format(wheel))
+        self.logger.info("\tCommanding motor stop for {}".format(wheel))
         self.got_stop = True
         self.reset_indicator(["filter", "grism"])
         return self.send_command_string(self.PCM_COMMANDS["stop"][wheel])
 
 
     def move_filter_wheel(self, position):
-        self.logger.info("Commanding filter wheel move {}".format(position))
+        self.logger.info("\tCommanding filter wheel move {}".format(position))
         results = []
         if position in ["A1", "A2", "A3", "A4", "A5", "A6"]:
             results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "FW1", position))
@@ -412,12 +412,12 @@ class PCM():
 
 
     def grism_sensor_status(self, grism):
-        self.logger.info("Getting sensor status for {}".format(grism))
+        self.logger.info("\tGetting sensor status for {}".format(grism))
         return self.send_command_string(self.PCM_COMMANDS["status"][grism])
 
 
     def home_grism_rails(self, grism):
-        self.logger.info("Returning grism {} to home".format(grism))
+        self.logger.info("\tReturning grism {} to home".format(grism))
         motor_window = MotorMoveProgressWindow(self, self.logger, wheel, self.home[wheel])
         result = self.send_command_string(self.PCM_COMMANDS["home"][grism])
         motor_window.wait_window()
@@ -426,7 +426,7 @@ class PCM():
 
 
     def fast_home_grism_rails(self, grism):
-        self.logger.info("Returning grism {} to home".format(grism))
+        self.logger.info("\tReturning grism {} to home".format(grism))
         motor_window = MotorMoveProgressWindow(self, self.logger, wheel, self.home[wheel])
         result = self.send_command_string(self.PCM_COMMANDS["fast_home"][grism])
         motor_window.wait_window()
@@ -441,27 +441,27 @@ class PCM():
         Sled A must be home before sled B can move away from home.
         Sled B must be home before sled A can move away from home.
         """
-        self.logger.info("Moving grism to {}".format(position))
+        self.logger.info("\tMoving grism to {}".format(position))
         results = []
         if position in ["GR_H1", "GR_A1", "GR_A2"]:
             # Moving grism A away from home. Must home grism B
             if self.get_wheel_position("GR_B") != self.home["GR_B"]:
                 if not self.got_stop:
-                    self.logger.info("Moving grism B home.")
+                    self.logger.info("\tMoving grism B home.")
                     results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", "GR_H2"))
             # Move Grism A to position
             if not self.got_stop:
-                self.logger.info(f"Moving grism A to {position}")
+                self.logger.info(f"\tMoving grism A to {position}")
                 results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", position))
         elif position in ["GR_H2", "GR_B1", "GR_B2"]:
             # Moving grism B away from home. Must home grism A
             if self.get_wheel_position("GR_A") != self.home["GR_A"]:
                 if not self.got_stop:
-                    self.logger.info("Moving grism A home.")
+                    self.logger.info("\tMoving grism A home.")
                     results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", "GR_H1"))
             # Move Grism B to position
             if not self.got_stop:
-                self.logger.info(f"Moving grism B to {position}")
+                self.logger.info(f"\tMoving grism B to {position}")
                 results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", position))
         elif position.lower() in self.GRISM_RAIL_MAPPINGS:
             pos_a, pos_b = self.GRISM_RAIL_MAPPINGS[position.lower()]
@@ -481,7 +481,7 @@ class PCM():
 
 
     def current_grism_step(self, grism):
-        self.logger.info("Getting step counts for {}".format(wheel))
+        self.logger.info("\tGetting step counts for {}".format(wheel))
         return self.send_command_string(self.PCM_COMMANDS["current_step"][grism])
 
 
@@ -492,15 +492,15 @@ class PCM():
 
 
     def extract_sensorcode_from_return_string(self, bstring):
-        self.logger.info(f"Raw return string is '{bstring}'")
+        self.logger.info(f"\tRaw return string is '{bstring}'")
         decoded_string = str(bstring.decode())[3:]
         bits = bin(int(decoded_string)).lstrip('0b')
         return bits
 
 
     def extract_steps_from_return_string(self, bstring):
-        self.logger.info(f"Raw return string is '{bstring}'")
-        return bstring[5:-1]
+        self.logger.info(f"\tRaw return string is '{bstring}'")
+        return bstring[3:]
 
 
     def start_move(self, wheel_types):
@@ -527,14 +527,14 @@ class PCM():
         try:
             current_step = int(current_step)
         except Exception as e:
-            self.logger.error(f"Invalid {wheel} step value {current_step}")
+            self.logger.error(f"\tInvalid {wheel} step value {current_step}")
             return "INVALID"
 
         for position in self.positions[wheel]:
             if abs(current_step - self.positions[wheel][position]) <= tolerance:
-                self.logger.info(f"{wheel} step {current_step} corresponds to {position} ({self.positions[wheel][position]})")
+                self.logger.info(f"\t{wheel} step {current_step} corresponds to {position} ({self.positions[wheel][position]})")
                 return position
-        self.logger.warning(f"Current {wheel} position {current_step} has no known mapping.")
+        self.logger.warning(f"\tCurrent {wheel} position {current_step} has no known mapping.")
         return "UNKNOWN"
 
 
@@ -545,10 +545,10 @@ class PCM():
         f1_pos = self.get_wheel_position("FW1", tolerance)
         f2_pos = self.get_wheel_position("FW2", tolerance)
         combined_pos = (f1_pos, f2_pos)
-        self.logger.info(f"FW1 reports {f1_pos}, FW2 reports {f2_pos}")
+        self.logger.info(f"\tFW1 reports {f1_pos}, FW2 reports {f2_pos}")
         for mapping in self.FILTER_WHEEL_MAPPINGS:
             if combined_pos == self.FILTER_WHEEL_MAPPINGS[mapping]:
-                self.logger.info(f"{f1_pos},{f2_pos} corresponds to {mapping}")
+                self.logger.info(f"\t{f1_pos},{f2_pos} corresponds to {mapping}")
                 return mapping
         return "UNKNOWN"
 
@@ -560,10 +560,10 @@ class PCM():
         ga_pos = self.get_wheel_position("GR_A", tolerance)
         gb_pos = self.get_wheel_position("GR_B", tolerance)
         combined_pos = (ga_pos, gb_pos)
-        self.logger.info(f"GR_A reports {ga_pos}, GR_B reports {gb_pos}")
+        self.logger.info(f"\tGR_A reports {ga_pos}, GR_B reports {gb_pos}")
         for mapping in self.GRISM_RAIL_MAPPINGS:
             if combined_pos == self.GRISM_RAIL_MAPPINGS[mapping]:
-                self.logger.info(f"{ga_pos},{gb_pos} corresponds to {mapping}")
+                self.logger.info(f"\t{ga_pos},{gb_pos} corresponds to {mapping}")
                 return mapping
         return "UNKNOWN"
 
@@ -588,14 +588,18 @@ class PCM():
 
     def _move_wheel(self, positions, commands, wheel, position):
         current_steps = self.extract_steps_from_return_string(self.current_filter_step(wheel))
-        self.logger.info("Current {} position is {}".format(wheel, current_steps))
-        if current_steps != positions[wheel][position]:
-            motor_window = MotorMoveProgressWindow(self, self.logger, wheel, positions[wheel][position])
+        destination_steps = positions[wheel][position]
+        self.logger.info(f"\tMoving {wheel} from {current_steps} to {destination_steps}")
+        if current_steps != destination_steps:
+            motor_window = MotorMoveProgressWindow(self, self.logger, wheel, destination_steps)
+            response = self.send_command_string(
+                self.PCM_COMMANDS["go_step"][wheel].format(destination_steps)
+            )
             response = self.send_command_string(commands[position])
-            self.logger.info("PCM responded {} to move command".format(response))
+            self.logger.info(f"\tPCM responded {response} to move command")
             motor_window.wait_window()
         else:
-            self.logger.info(f"{wheel} already at {position}")
+            self.logger.info(f"\t{wheel} already at {position}")
         self.write_status()
         return position, current_steps
 

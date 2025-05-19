@@ -293,7 +293,10 @@ class DMDPage(SAMOSFrame):
 
         # Create astropy regions file
         self.logger.info("Creating Regions file")
-        with open(get_data_file("regions.pixels", "{}.reg".format(file_path.name[:-3])), 'w') as f:
+        region_path = get_data_file("regions.pixels")
+        new_region_file = region_path / self.map_filename_path.name.replace(".csv", ".reg")
+        self.logger.info(f"Writing DMD map to {new_region_file}")
+        with open(new_region_file, 'w') as f:
             f.write("# Region file format: DS9 astropy/regions\n")
             f.write("global edit=1 width=1 font=Sans Serif fill=0 color=red\n")
             f.write("image\n")
@@ -306,12 +309,12 @@ class DMDPage(SAMOSFrame):
                 self.logger.debug(output)
                 f.write(f"{output}\n")
 
-        self.map_filename.set(self.map_filename_path.name[:-3]+"reg")
+        self.map_filename.set(new_region_file.name)
         # ***** DEPENDENCY *****
-        main_page = self.parent.frames['MainPage']
-        main_page.str_filename_regfile_xyAP.set(file_path.name[:-3]+"reg")
+        # main_page = self.parent.frames['MainPage']
+        # main_page.str_filename_regfile_xyAP.set(new_region_file.name)
         # ***** DEPENDENCY *****
-        self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
+        self._set_slit_image("current_dmd_state.png", new_region_file.name[:-4])
 
 
     @check_enabled

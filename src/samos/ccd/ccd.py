@@ -124,7 +124,7 @@ class CCD():
                 out_f.write(buf)
 
 
-    def prep_exposure(self, file_name, start_fnumber, trigger_mode):
+    def prep_exposure(self, file_name, start_fnumber, trigger_mode, exptime):
         self.set_ip()
         night_dir_basename = self.PAR.fits_dir / file_name
         fnumber = start_fnumber
@@ -196,7 +196,7 @@ class CCD():
         # Construct the commands needed to initialize the HTTP Camera Server
         serial_size = 528  # This is our desired serial size in pixels for this test
         binning = (ser_pix + serial_size - 1) // serial_size
-        cmd_str = f"{exposure_time_cmd}={params['exptime']}&{test_img_cmd}={walking_1}&{trigger_mode_cmd}={trigger_mode}"
+        cmd_str = f"{exposure_time_cmd}={exptime}&{test_img_cmd}={walking_1}&{trigger_mode_cmd}={trigger_mode}"
         cmd_str += f"&{serial_origin_cmd}=8&{serial_length_cmd}={serial_size}&{serial_post_scan_cmd}=0&{serial_binning_cmd}=1"
         cmd_str += f"&{serial_phasing_cmd}=2&{parallel_origin_cmd}=0&{parallel_length_cmd}=1032&{parallel_post_scan_cmd}=0"
         cmd_str += f"&{parallel_binning_cmd}=1&{parallel_phasing_cmd}=0&{port_select_cmd}=3&{source_cmd}={source_camera}"
@@ -206,7 +206,6 @@ class CCD():
         
         reply = self.get_url(target_url + 'command.txt', "COOLER 1", as_string=True)
         self.logger.info("Reply to cooler start command: {}".format(reply))
-        return startTime
 
 
     def start_exposure(self):
@@ -259,26 +258,25 @@ class CCD():
         data = self.get_url(target_url + "image.fit")  # Just the pixels (in network byte order)
         timeReceived = time()
         self.logger.info("Read {} bytes in {:.3f} seconds".format(len(data), timeReceived - timeRequested))
-        cycle_time = timeReceived - timeCollected
-        read_time = (timeReceived - timeRequested)
-        read_bytes += len(data)
+        read_bytes = len(data)
         
         # write to file
         # 1) the last file is always saved as newimage.fit, and handled by ginga
         self.write_exposure(self.PAR.QL_images / "newimage.fits", data)
         self.write_exposure("{}_{:04n}.fits".format(night_dir_basename, fnumber), data)
-        return "{}_{:04n}.fits".format(night_dir_basename, fnumber), cycle_time, read_time, read_bytes
+        return "{}_{:04n}.fits".format(night_dir_basename, fnumber), read_bytes
 
 
-    def finish_exposure(self, collected_images, startTime, longest_cycle, total_read_bytes, total_read_time):
-        self.logger.info("Collected {} images in {:.3f} seconds.".format(len(collected_images), time() - startTime))
+    def finish_exposure(self, collected_images, startTime, total_read_bytes):
+        self.logger.info("Collected {} images.".format(len(collected_images)))
         for file_name in collected_images:
             self.logger.debug("\t{}".format(file_name))
-        self.logger.info("Longest image collection cycle was {:.3f} seconds.".format(longest_cycle))
-        self.logger.info(f"Read {total_read_bytes} bytes in {total_read_time:.3f} seconds.")        
+        self.logger.info(f"Read {total_read_bytes} bytes.")        
     
     
     def write_exposure(self, file_name, data):
+        file_dir = Path(file_name).parent
+        file_dir.mkdir(parents=True, exist_ok=True)
         with open(file_name, "wb") as out_file:
             out_file.write(data)
         self.convertSIlly(file_name, file_name)

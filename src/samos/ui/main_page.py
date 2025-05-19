@@ -830,7 +830,13 @@ class MainPage(SAMOSFrame):
         command_status = self.PCM.move_filter_wheel(new_filter)
         self.logger.info("Motors returned {}".format(command_status))
         self.extra_header_params += 1
-        entry_string = PARAM_ENTRY_FORMAT.format(self.extra_header_params, 'String', 'FILTER', new_filter, 'Selected filter')
+        entry_string = PARAM_ENTRY_FORMAT.format(
+            self.extra_header_params,
+            'String',
+            'FILTER',
+            new_filter,
+            'Selected filter'
+        )
         self.header_entry_string += entry_string
 
 
@@ -1018,7 +1024,7 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def display_exposure(self, results):
         self.handle_log(results["images"])
-        self.Display(self.fits_image_ql)
+        self.Display(results["superfile"].as_posix())
         self.fits_image.rotate(self.PAR.Ginga_PA)
         self._set_expnum()
 
@@ -1037,7 +1043,7 @@ class MainPage(SAMOSFrame):
             self.PAR.create_log_file()
 
         # now open logfile to write the writeup
-        with open(self.PAR.logbook_name, 'a') as logbook:
+        with open(self.PAR.logfile_name, 'a') as logbook:
             today = datetime.now()
             for file in newfiles:
                 file_name = Path(file).name
