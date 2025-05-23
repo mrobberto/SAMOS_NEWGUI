@@ -38,7 +38,12 @@ class SOAR:
         if self.PAR.is_connected:
             if self._soar is None:
                 try:
-                    self._soar = SoarTCS(self.SOAR_IP, self.SOAR_PORT, self.logger)
+                    self._soar = SoarTCS(
+                        self.SOAR_IP,
+                        self.SOAR_PORT,
+                        logger=self.logger,
+                        retries=2
+                    )
                 except Exception as e:
                     self.logger.error(f"Status is connected but unable to create SOAR interface")
                     self.logger.exception(e)
@@ -64,8 +69,8 @@ class SOAR:
         return self._soar_command(command)
 
 
-    def way(self):
-        return self._soar_command("way")
+    def infoa(self):
+        return self._soar_command("infoa")
 
 
     def offset(self, ra=0., dec=0.):
@@ -130,11 +135,20 @@ class SOAR:
         if self._soar is None:
             return ["NO SOAR OBJECT"]
         if hasattr(self._soar, message):
+            self.logger.info(f"Calling SOAR {message}")
             result = getattr(self._soar, message)(*args, **kwargs)
+            self.logger.info(f"Received {result}")
             output = [f"Output from {message}"]
             if isinstance(result, dict):
                 for item in result:
                     output.append(f"{item} = {result[item]}")
             else:
                 output.append(result)
+            return output
+        else:
+            output = [f"Attempted to send command {message}"]
+            output.append(f"\tARGS were {args}")
+            output.append(f"\tKWARGS were {kwargs}")
+            output.append(f"\tSOAR has no attribute.")
+            return output
         return [f"UNKNOWN MESSAGE {message}"]
