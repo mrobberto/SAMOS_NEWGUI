@@ -12,6 +12,7 @@ import logging
 from .scl import SCL, SCLError
 from astropy.coordinates import Angle
 from astropy import units as u
+from copy import deepcopy
 
 def angle(angle, f="deg", t="deg"):
     if f == "deg" or f == "dms":
@@ -38,7 +39,7 @@ class SoarTCS:
     The SoarTCS object to carry out functions executions and translations
     """
 
-    def __init__(self, host, port, logger=None, websocket=None):
+    def __init__(self, host, port, logger=None, websocket=None, retries=20):
         """
         __init__
         Create a SoarTCS object to carry out functions executions and translations
@@ -48,6 +49,8 @@ class SoarTCS:
             Logger object to log all the operations
         websocket : Websocket object
             Websocket to communicate with website
+        retries : int
+            Number of times to retry connecting during command send.
         """
 
         # External Inputs
@@ -55,6 +58,7 @@ class SoarTCS:
         self._websocket = websocket # Websocket to communicate with website
         self._host = host # TCS host
         self._port = port # TCS port
+        self._retries = retries
 
         # Variables
         if self._logger is None:
@@ -109,7 +113,7 @@ class SoarTCS:
             - response: A list of the response elements that are not key=value pairs
             - The rest of the keys are the response split by "=" and stripped
         """
-        res = self._SCL.send_command(command, timeout=timeout)
+        res = self._SCL.send_command(command, timeout=timeout, retries=self._retries)
         self._logger.debug("Tx Command: %s" % (command))
         self._logger.debug("Rx Command: %s" % (res))
         response_dict = {"raw_response": res, "response": []}
@@ -621,11 +625,13 @@ class SoarTCS:
             If the INFOA command fails.
         """
         try:
+            self._logger.info("Sending INFOA")
             res = self.send_command("INFOA")
+            self._logger.info(f"Got response {res}")
             del res["raw_response"]
             del res["response"]
             self.info = dict(res)
-            info_out = dict(res)
+            info_out = deepcopy(self.info)
            
             """
             if "TCS_INSTRUMENT" in self.info:
@@ -654,8 +660,10 @@ class SoarTCS:
                     "number": int(tag[len("TAG_") :]),
                     "state": self.info["LAMP_%i" % (int(tag[len("TAG_") :]))],
                 }
+            self._logger.info(f"Returning {info_out}")
             return info_out
         except SCLError as e:
+            self._logger.exception(e)
             raise SoarTCSError("INFOA command error - " + str(e))
 
     def rotator(self, state):

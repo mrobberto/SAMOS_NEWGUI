@@ -24,12 +24,14 @@ class SOARPage(SAMOSFrame):
         self.initialized = False
 
         # Initialization Button
-        w = ttk.Button(self.main_frame, text="Initialize", command=self.way)
+        w = ttk.Button(self.main_frame, text="Initialize", command=self.infoa)
         w.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        w = ttk.Button(self.main_frame, text="Refresh Status", command=self.infoa, bootstyle="info")
+        w.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # Top Frame
         frame = ttk.LabelFrame(self.main_frame, text="Legend")
-        frame.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        frame.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         w = ttk.Label(frame, anchor="w", text="Value has not been sent to SAMI", bootstyle="warning", width=40)
         w.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         w = ttk.Label(frame, anchor="e", text="Value has successfully been sent to SAMI", bootstyle="success", width=40)
@@ -294,12 +296,12 @@ class SOARPage(SAMOSFrame):
     @check_enabled
     def tcs_custom(self):
         self._log(f"Sending {self.custom_command.get()}")
-        reply = self.SOAR.send_to_tcs(self.custom_command.get())
-        self._log(f"Received {reply}")
+        reply = self.SOAR.send_to_tcs(self.custom_command.get().strip().lower())
+        self._log_message(reply)
 
 
     @check_enabled
-    def way(self):
+    def infoa(self):
         """ 
         (Who are you?) This command returns an identification string
 
@@ -307,10 +309,10 @@ class SOARPage(SAMOSFrame):
             WAY
             DONE SOAR 4.2m
         """
-        self._log("Sent WAY")
-        reply = self.SOAR.send_to_tcs("WAY")
+        self._log("Sent INFOA")
+        reply = self.SOAR.infoa()
         self.initialized = True
-        self._log(f"Received {reply}")
+        self._log_message(reply)
 
 
     @check_enabled
@@ -320,12 +322,12 @@ class SOARPage(SAMOSFrame):
         The offset is given in units of arcseconds, and must be preceded by one of the direction characters N, S, E and W.
         """
         if event == "STATUS":
-            offset_ra = self.SOAR.get_soar_status("offset_ra")
+            offset_ra = self.SOAR.get_soar_status("MOUNT_RA")
             self._log(f"Received {offset_ra} as RA offset status")
             if isinstance(offset_ra, float):
                 self.offset_ra.set(offset_ra)
                 self.labels["offset_ra"].configure(bootstyle="success")
-            offset_dec = self.SOAR.get_soar_status("offset_dec")
+            offset_dec = self.SOAR.get_soar_status("MOUNT_DEC")
             if isinstance(offset_dec, float):
                 self.offset_dec.set(offset_dec)
                 self.labels["offset_dec"].configure(bootstyle="success")
@@ -335,7 +337,7 @@ class SOARPage(SAMOSFrame):
             if "DONE" in reply:
                 self.labels["offset_ra"].configure(bootstyle="success")
                 self.labels["offset_dec"].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
@@ -354,7 +356,7 @@ class SOARPage(SAMOSFrame):
 
         """
         if event == "STATUS":
-            focus = self.SOAR.get_soar_status("focus")
+            focus = self.SOAR.get_soar_status("TCS_FOCUS")
             self._log(f"Received {focus} as focus value")
             if isinstance(focus, int):
                 self.focus.set(focus)
@@ -366,14 +368,14 @@ class SOARPage(SAMOSFrame):
             reply = self.SOAR.focus(event, offset)
             if "successfully" in reply:
                 self.labels["focus"].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
     def tcs_clm(self, event):
         """ This command requests actions to the comparison lamps mirror mechanism. """
         if event == "STATUS":
-            clm_state = self.SOAR.get_soar_status("clm")
+            clm_state = self.SOAR.get_soar_status("ISBOP_CLM")
             self._log(f"Received {clm_state} as clm value")
             if isinstance(clm_state, str) and clm_state.upper() in ["IN", "OUT"]:
                 self.clm.set(clm_state.upper())
@@ -383,14 +385,14 @@ class SOARPage(SAMOSFrame):
             reply = self.SOAR.clm(event)
             if "successfully" in reply:
                 self.labels["clm"].configure(bootstyle="round-toggle-success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
     def tcs_guider(self, event):
         """ This command enable or disable the guider device. """
         if event == "STATUS":
-            guider_state = self.SOAR.get_soar_status("guider")
+            guider_state = self.SOAR.get_soar_status("GUIDER_STARID")
             self._log(f"Received {guider_state} as guider value")
             if isinstance(guider_state, str) and guider_state.upper() in ["ENABLED", "DISABLED"]:
                 self.guider.set(guider_state.upper())
@@ -400,7 +402,7 @@ class SOARPage(SAMOSFrame):
             reply = self.SOAR.guider(event)
             if "successfully" in reply:
                 self.labels["guider"].configure(bootstyle="round-toggle-success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
@@ -426,7 +428,7 @@ class SOARPage(SAMOSFrame):
             if "successfully" in reply:
                 self.labels["whitespot"].configure(bootstyle="round-toggle-success")
                 self.labels["whitespot_pct"].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
@@ -436,13 +438,13 @@ class SOARPage(SAMOSFrame):
         There are two position that have dimmers, position L9 and L12, therefore, a percentage must be added.
         """
         if event == "STATUS":
-            lamp_state = self.SOAR.get_soar_status(f"lamp_{lamp_number}")
+            lamp_state = self.SOAR.get_soar_status(f"LAMP_{lamp_number}")
             self._log(f"Received {lamp_state} for lamp {lamp_number}")
             if isinstance(lamp_state, str) and lamp_state in ["ON", "OFF"]:
                 self.lamp_vars[lamp_number].set(lamp_state)
                 self.labels[f"lamp_{lamp_number}"].configure(bootstyle="round-toggle-success")
             if lamp_number in self.lamp_dimmer_vars:
-                lamp_dimmer_state = self.SOAR.get_soar_status(f"lamp_dimmer_{lamp_number}")
+                lamp_dimmer_state = self.SOAR.get_soar_status(f"LAMP_DIMMER_{lamp_number}")
                 self._log(f"Received {lamp_dimmer_state} for lamp {lamp_number}")
                 if isinstance(lamp_dimmer_state, float):
                     self.lamp_dimmer_vars[lamp_number].set(lamp_dimmer_state)
@@ -458,7 +460,7 @@ class SOARPage(SAMOSFrame):
                 self.labels[f"lamp_{lamp_number}"].configure(bootstyle="round-toggle-success")
                 if lamp_number in lamp_dimmer_vars:
                     self.lamp_dimmer_vars[lamp_number].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
@@ -482,7 +484,7 @@ class SOARPage(SAMOSFrame):
             if "successfully" in reply:
                 self.labels["adc"].configure(bootstyle="success")
                 self.labels["adc_pct"].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
@@ -492,7 +494,7 @@ class SOARPage(SAMOSFrame):
         The IPA is given in units of degrees.
         """
         if event == "STATUS":
-            ipa_state = self.SOAR.get_soar_status("ipa")
+            ipa_state = self.SOAR.get_soar_status("TCS_IPA")
             self._log(f"Received {ipa_state} as ipa value")
             if isinstance(ipa_state, float):
                 self.ipa.set(ipa_state)
@@ -502,7 +504,7 @@ class SOARPage(SAMOSFrame):
             reply = self.SOAR.ipa(self.ipa.get())
             if "successfully" in reply:
                 self.labels["ipa"].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
@@ -511,7 +513,7 @@ class SOARPage(SAMOSFrame):
         This command selects the instrument in use
         """
         if event == "STATUS":
-            instrument_state = self.SOAR.get_soar_status("instrument")
+            instrument_state = self.SOAR.get_soar_status("TCS_INSTRUMENT")
             self._log(f"Received {instrument_state} as instrument value")
             self.instrument.set(instrument_state)
             self.labels["instrument"].configure(bootstyle="success")
@@ -521,7 +523,7 @@ class SOARPage(SAMOSFrame):
             reply = self.SOAR.instrument(instrument_state)
             if "successfully" in reply:
                 self.labels["instrument"].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
 
 
     @check_enabled
@@ -534,7 +536,7 @@ class SOARPage(SAMOSFrame):
         """
         if event == "STATUS":
             for item in ["ra", "dec", "epoch"]:
-                name = f"target_{item}"
+                name = f"TARGET_{item}"
                 value = self.SOAR.get_soar_status(name)
                 self._log(f"Received {value} as Target {item.upper()} value")
                 if isinstance(value, float):
@@ -550,7 +552,21 @@ class SOARPage(SAMOSFrame):
                 for item in ["ra", "dec", "epoch"]:
                     name = f"target_{item}"
                     self.labels[name].configure(bootstyle="success")
-            self._log(f"Received {reply}")
+            self._log_message(reply)
+
+
+    def _log_message(self, message):
+        if isinstance(message, str):
+            self._log(message)
+        elif isinstance(message, list):
+            for item in message:
+                self._log(item)
+        elif isinstance(message, dict):
+            self._log("Dictionary response:")
+            for item in message:
+                self._log(f"{item}: {message[item]}")
+        else:
+            self._log(f"{message}")
 
 
     def _log(self, message):

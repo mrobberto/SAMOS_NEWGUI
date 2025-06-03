@@ -21,7 +21,7 @@ from samos.soar import SOAR
 from samos.system.fits_header import FITSHead
 from samos.system.config import SAMOSConfig
 from samos.system.database import StorageDatabase
-from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage
+from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage, HadamardPage
 from samos.ui.logging_window import LoggingWindow
 from samos.ui.widgets import VariableRegistry
 from samos.utilities import get_data_file, get_config_dir
@@ -208,7 +208,8 @@ class App(ttk.Window):
         SOARPage, 
         SAMIPage,
         ETCPage, 
-        GSPage
+        GSPage,
+        HadamardPage
     ]
 
 

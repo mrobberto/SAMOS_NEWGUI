@@ -6,7 +6,10 @@ Author:
     - Brian York
 """
 from astropy.io import fits
+from copy import deepcopy
 import numpy as np
+import os
+from pathlib import Path
 import time
 
 import tkinter as tk
@@ -78,13 +81,18 @@ class ExposureProgressWindow(tk.Toplevel):
             imtype = "dark_{}s".format(self.params["exptime"])  # e.g. 'dark_0.01s'
         
         self.expname = "{}_{}".format(imtype, self.params['image_name'])
-        self.CCD.prep_exposure(expname, self.params["file_number"], self.params["trigger_mode"])
+        self.CCD.prep_exposure(
+            self.expname,
+            self.params["file_number"],
+            self.params["trigger_mode"],
+            self.params["exptime"]
+        )
         self.expnum = self.params["file_number"]
         self.collected_images = 0
         self.read_time = 0.0
         self.read_bytes = 0
         self.longest_cycle = 0
-        self.start_time = time()
+        self.start_time = time.localtime()
         self.image_number = -1
         self.collected_files = []
         self.next_exposure()
@@ -93,37 +101,34 @@ class ExposureProgressWindow(tk.Toplevel):
     def next_exposure(self):
         self.image_number += 1
         if self.image_number == self.params["exp_frames"]:
-            self.CCD.finish_exposure(self.collected_files, self.start_time, self.longest_cycle, self.read_time, self.read_bytes)
+            self.CCD.finish_exposure(self.collected_files, self.start_time, self.read_bytes)
             self.handle_exposure()
             superfile = self.combine_files()
             results = {
                 'images': self.collected_files,
                 'superfile': superfile,
             }
-            if exptype == "Bias":
+            if self.image_type == "Bias":
                 shutil.copy(superfile, self.PAR.QL_images / "superbias.fits")
                 results["superbias"] = self.PAR.QL_images / "superbias.fits"
-            elif exptype == "Buffer":
+            elif self.image_type == "Buffer":
                 shutil.copy(superfile, self.PAR.QL_images / "superbuffer.fits")
                 results["superbuffer"] = self.PAR.QL_images / "superbuffer.fits"
             self.parent.display_exposure(results)
             self.destroy()
-        self.exp_start_time = time.time()
-        self.exposure_number.set(f"Exposing {image_number+1} of {params['exp_frames']}")
-        self.exposure_status.set(f"Exposing for {params['exptime']/1000} seconds")
-        self.logger.info("Collecting image {} of {}".format(image_number+1, params['exp_frames']))
+        self.exp_start_time = time.localtime()
+        self.exposure_number.set(f"Exposing {self.image_number+1} of {self.params['exp_frames']}")
+        self.exposure_status.set(f"Exposing for {self.params['exptime']/1000} seconds")
+        self.logger.info(f"Collecting image {self.image_number+1} of {self.params['exp_frames']}")
         self.progress_status.set(0.)
-        self.ccd.start_exposure()
+        self.CCD.start_exposure()
         self.run_exposure()
 
 
     def run_exposure(self):
         if self.CCD.read_exposure(self, self.run_exposure, self.params):
-            outfile, cycle_time, read_time, read_bytes = self.CCD.store_exposure(self.expname, self.expnum)
+            outfile, read_bytes = self.CCD.store_exposure(self.expname, self.expnum)
             self.collected_files.append(outfile)
-            if cycle_time > self.longest_cycle:
-                self.longest_cycle = cycle_time
-            self.read_time += read_time
             self.read_bytes += read_bytes
             self.expnum += 1
             self.collected_images += 1
@@ -131,12 +136,12 @@ class ExposureProgressWindow(tk.Toplevel):
 
 
     def handle_header(self, file_name, image_type, params):
-        with fits.open(file_name) in hdul:
+        with fits.open(file_name) as hdul:
             original_header = hdul[0].header
         # Observation Parameters
         self.main_fits_header.set_param("EXPTIME", params["exptime"]/1000)
-        self.main_fits_header.set_param("FILENAME", f'{file_name.name}')
-        self.main_fits_header.set_param("FILEDIR", f'{file_name.parent}')
+        self.main_fits_header.set_param("FILENAME", f'{Path(file_name).name}')
+        self.main_fits_header.set_param("FILEDIR", f'{Path(file_name).parent}')
         # Nightly Parameters
         self.main_fits_header.set_param("OBJNAME", params["image_name"])
         self.main_fits_header.set_param("OBSTYPE", image_type)
@@ -159,11 +164,11 @@ class ExposureProgressWindow(tk.Toplevel):
                 if exptype in ["sci", "flat", "buffer"]:
                     self.main_fits_header.set_param("FILTER", params["filter"])
                     self.main_fits_header.set_param("GRATING", params["grating"])
-                if exptype == "sci":
+                if self.image_type == "sci":
                     if self.PAR.valid_wcs:
                         self.main_fits_header.add_astrometric_fits_keywords(original_header)
                 
-                if exptype == "sci":
+                if self.image_type == "sci":
                     if not hasattr(self.main_fits_header, "dmdmap"):
                         try:
                             dmd_hdu = self.create_dmd_pattern_hdu(original_header)
@@ -189,7 +194,7 @@ class ExposureProgressWindow(tk.Toplevel):
         superfile_cube = np.zeros((1032, 1056, len(files)))  # note y,x,z
 
         dmd_hdu = None
-        if exptype == "sci":
+        if image_type == "sci":
             if not hasattr(self.main_fits_header, "dmdmap"):
                 try:
                     dmd_hdu = self.create_dmd_pattern_hdu(self.main_fits_header.output_header)
@@ -198,7 +203,7 @@ class ExposureProgressWindow(tk.Toplevel):
                     self.logger.error("Error was {}".format(e))
 
         # Loop through files
-        for i, file_name in files:
+        for i, file_name in enumerate(files):
             with fits.open(file_name, mode="update") as hdul:
                 data = hdul[0].data
                 if image_type in ["flat", "dark"] and params["sub_bias"]:
@@ -227,8 +232,8 @@ class ExposureProgressWindow(tk.Toplevel):
                 superfile_header = deepcopy(hdul[0].header)
                 
             # If not saving individual files
-            if not params["save_individual"]:
-                os.remove(file_name)
+            # if not params["save_individual"]:
+            #     os.remove(file_name)
 
         if image_type == "flat":
             running_flat = superfile_cube.sum(axis=2)
@@ -298,18 +303,18 @@ class ExposureProgressWindow(tk.Toplevel):
         
         self.main_fits_header.set_param("filename", superfile_name)
         self.main_fits_header.set_param("combined", "T")
-        self.mail_fits_header.set_param("ncombined", len(files))
+        self.main_fits_header.set_param("ncombined", len(files))
         self.main_fits_header.set_param("obstype", image_type.upper())
-        super_hdu = fits.PrimaryHDU(header=elf.main_fits_header.create_fits_header(superfile_header), data=superfile_data)
+        super_hdu = fits.PrimaryHDU(header=self.main_fits_header.create_fits_header(superfile_header), data=superfile_data)
         hdul = fits.HDUList(hdus=[super_hdu])
         if image_type == "sci" and dmd_hdu is not None:
             hdul.append(dmd_hdu)
         hdul.writeto(self.PAR.QL_images / superfile_name, overwrite=True)
 
         self.main_fits_header.set_param("filename", superfile_numbered)
-        self.main_fits_header.set_param("filedir", self.fits_dir)
+        self.main_fits_header.set_param("filedir", self.PAR.fits_dir.as_posix())
         self.main_fits_header.set_param("combined", "T")
-        self.mail_fits_header.set_param("ncombined", len(files))
+        self.main_fits_header.set_param("ncombined", len(files))
         self.main_fits_header.set_param("obstype", image_type.upper())
         super_hdu = fits.PrimaryHDU(header=self.main_fits_header.create_fits_header(superfile_header), data=superfile_data)
         hdul = fits.HDUList(hdus=[super_hdu])
@@ -345,28 +350,48 @@ class MotorMoveProgressWindow(tk.Toplevel):
         super().__init__(**kwargs)
 
         self.wheel = wheel
+        self.positions = {
+            "FW1": tk.DoubleVar(self, 0.),
+            "FW2": tk.DoubleVar(self, 0.),
+            "GR_A": tk.DoubleVar(self, 0.),
+            "GR_B": tk.DoubleVar(self, 0.)
+        }
+        self.get_positions()
         if "GR" in wheel:
             self.wheel_type = "grism"
         else:
             self.wheel_type = "filter"
-        current_pos = float(self.PCM.extract_steps_from_return_string(self.PCM.current_filter_step(self.wheel)))
-        self.current_pos = tk.StringVar(self, f"{current_pos:10.1f}")
-        self.destination_pos = tk.StringVar(self, f"{destination:10.1f}")
-        ttk.Label(self, text=f"Moving {self.wheel}", font=BIGFONT).grid(row=0, column=0, columnspan=4, sticky=TK_STICKY_ALL)
-        ttk.Label(self, text="Current Step:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        ttk.Label(self, textvariable=self.current_pos).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        ttk.Label(self, text="Destination:").grid(row=1, column=2, sticky=TK_STICKY_ALL)
-        ttk.Label(self, textvariable=self.destination_pos).grid(row=1, column=3, sticky=TK_STICKY_ALL)
-        ttk.Button(self, text="Stop", command=self.send_stop, bootstyle="warning").grid(row=2, column=3, sticky=TK_STICKY_ALL)
+        self.destination_pos = tk.DoubleVar(self, destination)
+        w = ttk.Label(self, text=f"Moving {self.wheel}", font=BIGFONT)
+        w.grid(row=0, column=0, columnspan=4, sticky=TK_STICKY_ALL)
+        current_row = 1
+        for wheel in self.positions:
+            w = ttk.Label(self, text=f"{wheel} Position:")
+            w.grid(row=current_row, column=0, sticky=TK_STICKY_ALL)
+            w = ttk.Label(self, textvariable=self.positions[wheel])
+            w.grid(row=current_row, column=1, sticky=TK_STICKY_ALL)
+            if wheel == self.wheel:
+                w = ttk.Label(self, text="Destination:")
+                w.grid(row=current_row, column=2, sticky=TK_STICKY_ALL)
+                w = ttk.Label(self, textvariable=self.destination_pos)
+                w.grid(row=current_row, column=3, sticky=TK_STICKY_ALL)
+            current_row += 1
+        b = ttk.Button(self, text="Stop", command=self.send_stop, bootstyle="warning")
+        b.grid(row=current_row, column=3, sticky=TK_STICKY_ALL)
         self.PCM.start_move(self.wheel_type)
         self.after(2000, self.check_move)
 
 
+    def get_positions(self):
+        for position in self.positions:
+            current_pos = self.PCM.current_filter_step(position)
+            extracted_pos = self.PCM.extract_steps_from_return_string(current_pos)
+            self.positions[position].set(float(extracted_pos))
+
     def check_move(self):
-        """ handle the file acquired by the SISI camera"""
-        current_pos = float(self.PCM.extract_steps_from_return_string(self.PCM.current_filter_step(self.wheel)))
-        self.current_pos.set(f"{current_pos:10.1f}")
-        if current_pos == float(self.destination_pos.get().strip()):
+        """Check the current wheel position"""
+        self.get_positions()
+        if self.positions[self.wheel].get() == self.destination_pos.get():
             self.PCM.reset_indicator(self.wheel_type)
             self.destroy()
         self.after(2000, self.check_move)

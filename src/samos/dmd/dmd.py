@@ -23,6 +23,7 @@ class DigitalMicroMirrorDevice():
         self.logger = logger
         self.PAR = par
         self.db = db
+        self.dmd_size = (1080, 2048)
         self.is_on = False
         # Set invert to false
         self.invert = False
@@ -39,7 +40,7 @@ class DigitalMicroMirrorDevice():
         self.logger.debug("DMD IP:Port: {}:{}".format(dmd_ip, dmd_port))
         
         self.start_on_whiteout = kwargs.get("start_on_whiteout", False)
-        self.dmd_size = kwargs.get("dmd_size", (1080, 2048))
+        self.dmd_size = kwargs.get("dmd_size", self.dmd_size)
         self.max_diff = kwargs.get("max_diff", self.dmd_size[0] * self.dmd_size[1])
         self.display_type = kwargs.get("display_type", 32)
         self.dmd_data_path = get_data_file("dmd")
@@ -74,12 +75,11 @@ class DigitalMicroMirrorDevice():
                 self.logger.error("Error was {}".format(e))
                 return("no DMD")
         
-        self.is_on = True
-        self.logger.info("Sending test message")
-        instrument.sendall(b':TEST\n')
-        response = instrument.recv(1024)
-        self.logger.info("Received response '{}'".format(response.decode('ascii')))
-        instrument.close()
+            self.is_on = True
+            self.logger.info("Sending test message")
+            instrument.sendall(b':TEST\n')
+            response = instrument.recv(1024)
+            self.logger.info("Received response '{}'".format(response.decode('ascii')))
         return response
 
 
@@ -93,7 +93,12 @@ class DigitalMicroMirrorDevice():
         """
         Send a message to the controller and check the controller sucessfully received it.
         """
-        self.logger.info("Sending DMD the command '{}'".format(command))
+        if isinstance(command, list):
+            self.logger.info("Sending DMD a command list:")
+            for message in command:
+                self.logger.info(f"\t'{message.strip()}'")
+        else:
+            self.logger.info(f"Sending DMD the command '{command.strip()}'")
         dmd_ip, dmd_port = self._get_address()
         if self.PAR.is_connected:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as instrument:
@@ -106,9 +111,11 @@ class DigitalMicroMirrorDevice():
                     raise RuntimeError("Unable to contact DMD controller")
 
                 if isinstance(command, list):
+                    self.logger.info("Sending Command List")
                     message_type = command[-1][4]
                     command = ''.join(command)
                 else:
+                    self.logger.info("Sending Single Command")
                     message_type = command[4]
 
                 instrument.sendall(codecs.encode(command,'utf-8'))
@@ -244,8 +251,11 @@ class DigitalMicroMirrorDevice():
             self.logger.error(msg)
             raise IndexError(msg)
 
+        if self.current_dmd_shape is None:
+            self.current_dmd_shape = np.zeros_like(dm_shape)
+
         # Apply starting shape
-        pre_shape, rows, columns = find_closest_match(dm_shape)
+        pre_shape, rows, columns = self.find_closest_match(dm_shape)
         pre_shape()
         rows = rows[0]
 
@@ -288,9 +298,10 @@ class DigitalMicroMirrorDevice():
                     n += 1
 
             # End / refresh message
-            messages.append(self._build_message(data_length=0, command_type=7))            
-            if not self._send_command_set(messages, "custom shape"):
-                return
+            messages.append(self._build_message(data_length=0, command_type=7))
+            self.send(messages)
+#             if not self._send_command_set(messages, "custom shape"):
+#                 return
             # Update internal track of the DMD shape
             for row in rows:
                 row_content = dm_shape[row]
@@ -331,6 +342,8 @@ class DigitalMicroMirrorDevice():
         self.logger.info("Updating current DMD plot")
         if shape is None:
             shape = self.current_dmd_shape
+            if shape is None:
+                shape = np.zeros(self.dmd_size)
         shape[np.where(shape>0)] = 1
         if self.invert:
             shape = abs(shape-1)
@@ -383,13 +396,13 @@ class DigitalMicroMirrorDevice():
         # Start character
         message = ':'
         # Data length
-        message += convert_int_to_n_hex(data_length, 3)
+        message += self.convert_int_to_n_hex(data_length, 3)
         # Message type
-        message += convert_int_to_n_hex(command_type, 1)
+        message += self.convert_int_to_n_hex(command_type, 1)
         # Row address 
-        message += convert_int_to_n_hex(row, 4)
+        message += self.convert_int_to_n_hex(row, 4)
         # Column address
-        message += convert_int_to_n_hex(column, 2)
+        message += self.convert_int_to_n_hex(column, 2)
         # Add 00 data for defaults or calculate row hex
         
         # No data for update display command
@@ -398,7 +411,7 @@ class DigitalMicroMirrorDevice():
 
         # Single int data for default set or set n rows command
         elif type(data) == int:
-            data_hex = convert_int_to_n_hex(data, data_length*2)
+            data_hex = self.convert_int_to_n_hex(data, data_length*2)
         
         # Otherwise we'll have an array of of bits to convert to bytes to send
         # to the controller to set a single row
@@ -414,7 +427,7 @@ class DigitalMicroMirrorDevice():
         
         # Checksum 
         checksum_int = self._calculate_checksum(message)[0]
-        message += convert_int_to_n_hex(checksum_int, 2)
+        message += self.convert_int_to_n_hex(checksum_int, 2)
         
         # Add end character
         message = message.upper() + '\n' 
@@ -568,6 +581,7 @@ class DigitalMicroMirrorDevice():
                     self.send(m)
             except Exception as e:
                 self.logger.error("Failed to apply {}".format(note))
+                self.logger.exception(e)
                 return False
         return True
 

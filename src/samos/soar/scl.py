@@ -161,7 +161,7 @@ class SCL:
         return data
 
 
-    def send_command(self, cmd, timeout=1.5):
+    def send_command(self, cmd, timeout=1.5, retries=20):
         """
         Send a command to the server.
 
@@ -206,7 +206,7 @@ class SCL:
             except SCLError as e:
                 self._on_change(False)
                 self._connected = False
-                self._connected = self.reconnect(attempts=20)
+                self._connected = self.reconnect(attempts=retries)
                 if not self._connected:
                     max_reconnect = True
                     break

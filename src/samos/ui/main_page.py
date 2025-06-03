@@ -379,7 +379,7 @@ class MainPage(SAMOSFrame):
         b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # Pattern Series
         pattern_frame = ttk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
-        pattern_frame.grid(row=0, column=1, rowspan=2, sticky=TK_STICKY_ALL)
+        pattern_frame.grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
@@ -578,7 +578,7 @@ class MainPage(SAMOSFrame):
         astropy_regions_wcs = Regions.read(self.loaded_reg_file_path, format='ds9')
         astropy_regions_pix = Regions([r.to_pixel(self.PAR.wcs) for r in astropy_regions_wcs])
         self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
-        ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
+        ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix, tag="slit")
         self.logger.info("Converted Astropy pixel regions to Ginga")
         if self.slit_tab_view is None:
             self.initialize_slit_table()
@@ -830,7 +830,13 @@ class MainPage(SAMOSFrame):
         command_status = self.PCM.move_filter_wheel(new_filter)
         self.logger.info("Motors returned {}".format(command_status))
         self.extra_header_params += 1
-        entry_string = PARAM_ENTRY_FORMAT.format(self.extra_header_params, 'String', 'FILTER', new_filter, 'Selected filter')
+        entry_string = PARAM_ENTRY_FORMAT.format(
+            self.extra_header_params,
+            'String',
+            'FILTER',
+            new_filter,
+            'Selected filter'
+        )
         self.header_entry_string += entry_string
 
 
@@ -979,7 +985,6 @@ class MainPage(SAMOSFrame):
         """ 
         This is the landing procedure after the START button has been pressed
         """
-        self.update_PotN()   #The Function update_PotN() is no more present...
         if (not self.CCD.initialized) or (not self.CCD.ccd_on):
             # Open a test image
             image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
@@ -1019,7 +1024,7 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def display_exposure(self, results):
         self.handle_log(results["images"])
-        self.Display(self.fits_image_ql)
+        self.Display(results["superfile"].as_posix())
         self.fits_image.rotate(self.PAR.Ginga_PA)
         self._set_expnum()
 
@@ -1038,7 +1043,7 @@ class MainPage(SAMOSFrame):
             self.PAR.create_log_file()
 
         # now open logfile to write the writeup
-        with open(self.PAR.logbook_name, 'a') as logbook:
+        with open(self.PAR.logfile_name, 'a') as logbook:
             today = datetime.now()
             for file in newfiles:
                 file_name = Path(file).name
@@ -1308,14 +1313,13 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def slits_only(self):
         """ erase all objects in the canvas except slits (boxes) """
-        # Get all slit objects
-        slit_objects = self.canvas.get_objects_by_tag_pfx("slit")
-        self.logger.info("Slit objects: {}".format(slit_objects))
-        for canvas_object in self.canvas.objects:
-            self.logger.info("Object is {} with tag {}".format(canvas_object, canvas_object.tag))
-            if canvas_object not in slit_objects:
-                self.logger.info("Not a slit object, deleting.")
-                self.canvas.delete_object(canvas_object, redraw=True)
+        objects_to_remove = []
+        for obj in CM.CompoundMixin.get_objects(self.canvas):
+            if "slit" not in obj.tag:
+                self.logger.info(f"Removing {obj} {obj.tag}")
+                objects_to_remove.append(obj)
+        CM.CompoundMixin.delete_objects(self.canvas, objects_to_remove)
+        CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
 
 
     def cursor_cb(self, viewer, button, data_x, data_y):
@@ -1503,6 +1507,14 @@ class MainPage(SAMOSFrame):
         """ Show Traces """
         # keep only the slits/boxes
         self.slits_only()
+        
+        bbox = self.canvas.get_bbox()
+        bbox_x = [p[0] for p in bbox]
+        bbox_y = [p[1] for p in bbox]
+        min_x, max_x = min(bbox_x), max(bbox_x)
+        min_y, max_y = min(bbox_y), max(bbox_y)
+        self.logger.info(f"Window X is {min_x} {max_x}")
+        self.logger.info(f"Window Y is {min_y} {max_y}")
 
         # We want to create rectangles
         Rectangle = self.canvas.get_draw_class('rectangle')
@@ -1510,13 +1522,21 @@ class MainPage(SAMOSFrame):
         # we should hanve only boxes/slits
         self.trace_boxes_objlist = []  # create container of the list traces
         for i, obj in enumerate(CM.CompoundMixin.get_objects(self.canvas)):
+            self.logger.info(f"Checking object {obj} with tag {obj.tag}")
             if obj.alpha == 0:
                 # ***** WHY?
                 continue
+            if "slit" not in obj.tag:
+                continue
             if hasattr(obj, 'x'):
-                x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
-                y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
-                print(i, x1, x2, y1, y2)
+                ox, oy = round(obj.x), round(obj.y)
+                x1, x2 = max(ox - obj.xradius, 0), min(ox + obj.xradius, max_x)
+                y1, y2 = max(oy - 1024, 0), min(oy + 1024, max_y)
+                if (x1 < 0) or (x2 < 0) or (y1 < 0) or (y2 < 0):
+                    continue
+#                 x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
+#                 y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
+                self.logger.info(f"Slit {i}: Trace ({x1} -> {x2}, {y1} -> {y2})")
                 r = Rectangle(x1=x1, y1=y1, x2=x2, y2=y2, angle=0*u.deg, color='yellow', fill=1, fillalpha=0.5)
                 self.canvas.add(r, tag=f'@trace_{i}')
                 self.trace_boxes_objlist.append(r)  # add the rectangle to the list of traces
@@ -1532,25 +1552,13 @@ class MainPage(SAMOSFrame):
         We may call this function just to make sure that the field is clean, so
         we do not need to assume that the traces have been created
         """
-        try: 
-            self.trace_boxes_objlist
-            if len(self.trace_boxes_objlist) > 0:
-                CM.CompoundMixin.delete_objects(
-                    self.canvas, self.trace_boxes_objlist)
-                self.trace_boxes_objlist = []
-        except:
-            return
-
-
-    @check_enabled
-    def remove_traces(self):
-        """ 
-        Use "try:/except:"
-        We may call this function just to make sure that the field is clean, so
-        we do not need to assume that the traces have been created
-        """
-        trace_objects = self.canvas.get_objects_by_tag_pfx("trace")
-        CM.CompoundMixin.delete_objects(self.canvas, trace_objects)
+        objects_to_remove = []
+        for obj in CM.CompoundMixin.get_objects(self.canvas):
+            if "trace" in obj.tag:
+                self.logger.info(f"Removing {obj} {obj.tag}")
+                objects_to_remove.append(obj)
+        CM.CompoundMixin.delete_objects(self.canvas, objects_to_remove)
+        CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
 
 
     @check_enabled

@@ -15,6 +15,7 @@ from PIL import Image, ImageTk, ImageOps
 
 import tkinter as tk
 import ttkbootstrap as ttk
+from ttkbootstrap.dialogs.dialogs import Messagebox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from samos.hadamard.patterns import make_S_matrix_masks, make_H_matrix_masks
@@ -23,6 +24,7 @@ from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
 from samos.utilities.constants import *
 
 from .common_frame import SAMOSFrame, check_enabled
+from .hadamard_subframe import HadamardGenerator
 
 
 class DMDPage(SAMOSFrame):
@@ -122,75 +124,9 @@ class DMDPage(SAMOSFrame):
         self.canvas = tk.Canvas(display_frame, width=300, height=270, bg="dark gray")
         self.canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
-        hadamard_conf_frame = ttk.LabelFrame(hadamard_frame, text="Hadamard Configuration")
-        hadamard_conf_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
-
-        # Matrix Type and order
-        self.sh_select = self.make_db_var(tk.StringVar, "dmd_hadamard_matrix_type", "S")
-        self.logger.info(f"sh_select has value {self.sh_select.get()}")
-        w = ttk.Radiobutton(hadamard_conf_frame, text="S Matrix", variable=self.sh_select, value="S", command=self.set_SH_matrix)
-        w.grid(row=0, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True)]
-        w = ttk.Radiobutton(hadamard_conf_frame, text="H Matrix", variable=self.sh_select, value="H", command=self.set_SH_matrix)
-        w.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True)]
-        ttk.Label(hadamard_conf_frame, text="Order: ").grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
-        self.orders = {
-            "S": (3, 7, 11, 15, 19, 23, 31, 35, 43, 47, 63, 71, 79, 83, 103, 127, 255),
-            "H": (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)
-        }
-        self.order = self.make_db_var(tk.IntVar, "dmd_hadamard_order", self.orders[self.sh_select.get()][1])
-        self.logger.info(f"order has value {self.order.get()}")
-        self.order_menu = ttk.OptionMenu(hadamard_conf_frame, self.order, None, *self.orders[self.sh_select.get()], command=self.set_SH_matrix)
-        self.order_menu.grid(row=0, column=3, rowspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[self.order_menu] = [("condition", self, "initialized", True)]
-
-        # Slit Dimensions
-        ttk.Label(hadamard_conf_frame, text="Slit Width:", anchor="w").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        self.slit_width = self.make_db_var(tk.IntVar, "dmd_hadamard_width", 3)
-        box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_width, width=5)
-        box.bind("<Return>", self.calculate_field_width)
-        box.grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[box] = [("condition", self, "initialized", True)]
-        ttk.Label(hadamard_conf_frame, text="Length:", anchor="w").grid(row=3, column=3, sticky=TK_STICKY_ALL)
-        self.slit_length = self.make_db_var(tk.IntVar, "dmd_hadamard_length", 256)
-        box = tk.Entry(hadamard_conf_frame, textvariable=self.slit_length, width=5)
-        box.bind("<Return>", self.calculate_field_width)
-        box.grid(row=3, column=4, sticky=TK_STICKY_ALL)
-        self.check_widgets[box] = [("condition", self, "initialized", True)]
-
-        # Field Centre
-        ttk.Label(hadamard_conf_frame, text="Field Centre:", anchor="w").grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        ttk.Label(hadamard_conf_frame, text="Xo", anchor="w").grid(row=4, column=1, sticky=TK_STICKY_ALL)
-        self.slit_xc = self.make_db_var(tk.IntVar, "dmd_hadamard_xc", 540)
-        tk.Entry(hadamard_conf_frame, textvariable=self.slit_xc, width=5).grid(row=4, column=2, sticky=TK_STICKY_ALL)
-        ttk.Label(hadamard_conf_frame, text="Yo", anchor="w").grid(row=4, column=3, sticky=TK_STICKY_ALL)
-        self.slit_yc = self.make_db_var(tk.IntVar, "dmd_hadamard_yc", 1045)
-        tk.Entry(hadamard_conf_frame, textvariable=self.slit_yc, width=5).grid(row=4, column=4, sticky=TK_STICKY_ALL)
-
-        # Field Width
-        ttk.Label(hadamard_conf_frame, text="Width:", anchor="w").grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        self.field_width = self.make_db_var(tk.IntVar, "dmd_hadamard_field_width", 21)
-        txt = tk.Entry(hadamard_conf_frame,  textvariable=self.field_width, bg="red", fg="white", font=BIGFONT_15)
-        txt.grid(row=5, column=1, columnspan=4, sticky=TK_STICKY_ALL)
-        
-        # Generate
-        w = ttk.Button(hadamard_conf_frame, text="GENERATE", command=self.generate_hts)
-        w.grid(row=6, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True)]
-
-        # Name / Rename
-        ttk.Label(hadamard_conf_frame, text="Name:").grid(row=8, column=0, sticky=TK_STICKY_ALL)
-        self.mask_name = self.make_db_var(tk.StringVar, "dmd_hadamard_mask_name", "")
-        tk.Label(hadamard_conf_frame, textvariable=self.mask_name).grid(row=8, column=1, columnspan=4, sticky=TK_STICKY_ALL)
-        rename_button_text = "Rename '{}' to:".format(self.mask_name.get())
-        self.rename_button = ttk.Button(hadamard_conf_frame, text=rename_button_text, command=self.rename_masks_file)
-        self.rename_button.grid(row=9, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[self.rename_button] = [("condition", self, "initialized", True), ("tknot", self.mask_name, "")]
-        self.rename_value = self.make_db_var(tk.StringVar, "dmd_hadamard_mask_rename_value", "")
-        e = tk.Entry(hadamard_conf_frame, textvariable=self.rename_value)
-        e.grid(row=9, column=2, columnspan=3, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = [("condition", self, "initialized", True)]
+        # Hadamard Sub-frame
+        self.hadamard_conf_frame = HadamardGenerator(self, hadamard_frame, **kwargs)
+        self.hadamard_conf_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
 
         # Ra/Dec
         radec_frame = ttk.LabelFrame(hadamard_frame, text="Generate from RA/DEC")
@@ -242,7 +178,9 @@ class DMDPage(SAMOSFrame):
         ad = np.array([[ra_HTS_center, dec_HTS_center]]).astype(float)
         if not self.PAR.valid_wcs:
             self.logger.error("Attempting to generate map from RA/DEC with no valid WCS")
-            ttk.messagebox.showerror(title="No valid WCS!", message="SAMOS has no valid WCS.\nUnable to set mask from RA/DEC.")
+            title = "ERROR: No valid WCS!"
+            message = "ERROR: SAMOS has no valid WCS.\nUnable to set mask from RA/DEC."
+            Messagebox.ok(message, title=title)
             return
         x_CCD_HTS_center, y_CCD_HTS_center = self.PAR.wcs.all_world2pix(ad, 0)[0]
 
@@ -250,84 +188,11 @@ class DMDPage(SAMOSFrame):
         x_DMD_HTS_center, y_DMD_HTS_center = ccd_to_dmd(x_CCD_HTS_center, y_CCD_HTS_center, self.PAR.dmd_wcs)
 
         # refresh entrybox field
-        self.slit_xc.set(int(x_DMD_HTS_center))
-        self.slit_yc.set(int(y_DMD_HTS_center))
+        self.hadamard_conf_frame.slit_xc.set(int(x_DMD_HTS_center))
+        self.hadamard_conf_frame.slit_yc.set(int(y_DMD_HTS_center))
 
         # generate mask
-        self.generate_hts()
-
-
-    @check_enabled
-    def rename_masks_file(self, event=None):
-        """ rename the mask file, only the part starting with 'mask' """
-        old_mask_name = self.mask_name.get()
-        replacement_part = old_mask_name.strip().split("_")[1]
-        new_mask_name = self.rename_value.get()
-        mask_set_dir = get_data_file('hadamard.mask_sets')
-        file_names = mask_set_dir.glob('*{}*.bmp'.format(replacement_part))
-        for file in file_names:
-            parent_path = file.parent
-            new_name = file.name.replace(replacement_part, new_mask_name)
-            file.rename(parent_path / new_name)
-        self.mask_name.set(new_mask_name)
-        self.rename_value.set("")
-
-
-    @check_enabled
-    def calculate_field_width(self, event=None):
-        """ calculate_field_width """
-        self.field_width.set(self.slit_width.get() * self.order.get())
-
-
-    @check_enabled
-    def set_SH_matrix(self, event=None):
-        """ set_SH_matrix """
-        self.logger.info("Started S/H Matrix Check")
-        matrix_type = self.sh_select.get()
-        self.logger.info(f"Matrix type {matrix_type}")
-        matrix_orders = self.orders[matrix_type]
-        self.logger.info(f"Matrix orders {matrix_orders}")
-        current_order = self.order.get()
-        self.logger.info(f"Current order {current_order}")
-        if current_order not in matrix_orders:
-            self.logger.info("Matrix type changed. Setting order to first value.")
-            self.order_menu.set_menu(default=None, *matrix_orders)
-            self.order.set(matrix_orders[0])
-        self.logger.info("Updated Menu")
-        if self.sh_select.get() == "H":
-            a = tuple(['a'+str(i), 'b'+str(i)] for i in range(1, 4))
-            self.mask_arrays = [inner for outer in zip(*a) for inner in outer]
-        else:
-            self.mask_arrays = np.arange(0, self.order.get())
-        self.calculate_field_width()
-        self.logger.debug("Selected Order is {}".format(self.order))
-        self.logger.debug("Mask Arrays are: {}".format(self.mask_arrays))
-
-
-    @check_enabled
-    def generate_hts(self):
-        """ HTS_generate """
-        DMD_size = self.DMD.dmd_size
-        matrix_type = self.sh_select.get()  # Two options, H or S
-        # e.g. 15 Order of the hadamard matrix (or S matrix)
-        order = self.order.get()
-        # NOTE that X and Y are transposed when talking to the DMD
-        Xo, Yo = self.slit_yc.get(), self.slit_xc.get()
-
-        # Slit width in number of micromirrors
-        slit_width = self.slit_width.get()
-        # Slit length in number of micromirrors
-        slit_length = self.slit_length.get()
-
-        folder = get_data_file('hadamard.mask_sets')
-        if matrix_type == 'S':
-            mask_set, matrix = make_S_matrix_masks(order, DMD_size, slit_width, slit_length, Xo, Yo, folder)
-            name = f'S{order}_mask_{slit_width}w_{order:03d}.bmp'
-        if matrix_type == 'H':
-            mask_set_a, mask_set_b, matrix = make_H_matrix_masks(order, DMD_size, slit_width, slit_length, Xo, Yo, folder)
-            name = f"H{order}_mask_{slit_width}w_ab_{order:03d}.bmp"
-        self.mask_name.set(name)
-        self.rename_value.set("")
+        self.hadamard_conf_frame.generate_hts()
 
 
     @check_enabled
@@ -428,7 +293,10 @@ class DMDPage(SAMOSFrame):
 
         # Create astropy regions file
         self.logger.info("Creating Regions file")
-        with open(get_data_file("regions.pixels", "{}.reg".format(file_path.name[:-3])), 'w') as f:
+        region_path = get_data_file("regions.pixels")
+        new_region_file = region_path / self.map_filename_path.name.replace(".csv", ".reg")
+        self.logger.info(f"Writing DMD map to {new_region_file}")
+        with open(new_region_file, 'w') as f:
             f.write("# Region file format: DS9 astropy/regions\n")
             f.write("global edit=1 width=1 font=Sans Serif fill=0 color=red\n")
             f.write("image\n")
@@ -441,12 +309,12 @@ class DMDPage(SAMOSFrame):
                 self.logger.debug(output)
                 f.write(f"{output}\n")
 
-        self.map_filename.set(self.map_filename_path.name[:-3]+"reg")
+        self.map_filename.set(new_region_file.name)
         # ***** DEPENDENCY *****
-        main_page = self.parent.frames['MainPage']
-        main_page.str_filename_regfile_xyAP.set(file_path.name[:-3]+"reg")
+        # main_page = self.parent.frames['MainPage']
+        # main_page.str_filename_regfile_xyAP.set(new_region_file.name)
         # ***** DEPENDENCY *****
-        self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
+        self._set_slit_image("current_dmd_state.png", new_region_file.name[:-4])
 
 
     @check_enabled
@@ -585,8 +453,3 @@ class DMDPage(SAMOSFrame):
         pandas_map = pd.DataFrame(map_to_save)
         pandas_map.to_csv(map_file, index=False, header=None)
         self.logger.info(f"Map saved to {map_file}")
-
-
-    def set_enabled(self, run_from_main=False):
-        super().set_enabled(run_from_main=run_from_main)
-        self.rename_button.config(text=f"Rename '{self.mask_name.get()}' to:")
