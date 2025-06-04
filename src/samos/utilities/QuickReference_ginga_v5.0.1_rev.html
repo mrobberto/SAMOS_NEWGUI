@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Reference &mdash; ginga v5.0.1</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css" />
+      <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User’s Manual" href="manual/index.html" />
+    <link rel="prev" title="What’s New" href="WhatsNew.html" /> 
+
+<!-- RTD Extra Head -->
+
+
+
+<script type="application/json" id="READTHEDOCS_DATA">{"ad_free": false, "api_host": "https://readthedocs.org", "builder": "sphinx", "canonical_url": null, "docroot": "/doc/", "features": {"docsearch_disabled": false}, "global_analytics_code": "UA-17997319-1", "language": "en", "page": "quickref", "programming_language": "py", "project": "ginga", "proxied_api_host": "/_", "source_suffix": ".rst", "subprojects": {}, "theme": "sphinx_rtd_theme", "user_analytics_code": "", "version": "v5.0.1"}</script>
+
+<!--
+Using this variable directly instead of using `JSON.parse` is deprecated.
+The READTHEDOCS_DATA global variable will be removed in the future.
+-->
+<script type="text/javascript">
+READTHEDOCS_DATA = JSON.parse(document.getElementById('READTHEDOCS_DATA').innerHTML);
+</script>
+
+
+
+<!-- end RTD <extrahead> -->
+<script async type="text/javascript" src="/_/static/javascript/readthedocs-addons.js"></script><meta name="readthedocs-project-slug" content="ginga" /><meta name="readthedocs-version-slug" content="v5.0.1" /><meta name="readthedocs-resolver-filename" content="/quickref.html" /><meta name="readthedocs-http-status" content="200" /></head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+        </div>
+      </div>
+    </nav>
+
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="quick-reference">
+<span id="ginga-quick-reference"></span><h1>Quick Reference<a class="headerlink" href="#quick-reference" title="Permalink to this heading"></a></h1>
+<section id="main-image-window">
+<h2>Main image window<a class="headerlink" href="#main-image-window" title="Permalink to this heading"></a></h2>
+<p>These keyboard and mouse operations are available when the main image
+window has the focus.</p>
+<section id="mode-control-commands">
+<span id="id1"></span><h3>Mode control commands<a class="headerlink" href="#mode-control-commands" title="Permalink to this heading"></a></h3>
+<section id="about-modes">
+<h4>About modes<a class="headerlink" href="#about-modes" title="Permalink to this heading"></a></h4>
+<p>Certain keystrokes invoke a <em>mode</em>—modes are usually indicated by the
+<em>mode indicator</em>: a small black rectangle with the mode name in one corner
+of the view.  In a mode, there are usually some special key, cursor, and
+scroll bindings that override <em>some</em> of the default ones.</p>
+<p>Modes additionally have a <em>mode type</em> which can be set to one of the following:</p>
+<ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">held</span></code>: mode is active while the activating key is held down</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">oneshot</span></code>: mode is released by initiating and finishing a cursor drag
+or when <code class="xref py py-obj docutils literal notranslate"><span class="pre">Esc</span></code> is pressed, if no cursor drag is performed</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">locked</span></code>: mode is locked until the mode key is pressed again (or <code class="xref py py-obj docutils literal notranslate"><span class="pre">Esc</span></code>)</p></li>
+</ul>
+<p>By default, most modes are activated in “locked” type.  The mode type is
+indicated in the brackets after the mode name in the mode indicator.
+The following keys are important for initiating a mode:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Space</p></td>
+<td><p>Enter “meta” mode. Next keystroke will trigger
+a particular mode.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Esc</p></td>
+<td><p>Exit any mode.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="meta-mode">
+<span id="id2"></span><h4>“meta” mode<a class="headerlink" href="#meta-mode" title="Permalink to this heading"></a></h4>
+<p>Most modes are defined so that they are invoked from a special intermediate
+mode called “meta”.  In that case a two-key sequence is required to enter
+the mode: pressing the key that invokes “meta” and then pressing the key that
+invokes the desired mode.  The following table shows the modes that can be
+triggered from meta mode.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Space</p></td>
+<td><p>Exit/Enter “meta” mode.</p></td>
+</tr>
+<tr class="row-odd"><td><p>b</p></td>
+<td><p>Enter draw mode (canvas must be enabled to draw).</p></td>
+</tr>
+<tr class="row-even"><td><p>q</p></td>
+<td><p>Enter <a class="reference internal" href="#pan-mode"><span class="std std-ref">Pan mode</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>w</p></td>
+<td><p>Enter <a class="reference internal" href="#zoom-mode"><span class="std std-ref">Zoom mode</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p>r</p></td>
+<td><p>Enter <a class="reference internal" href="#rotate-mode"><span class="std std-ref">Rotate mode</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>t</p></td>
+<td><p>Enter <a class="reference internal" href="#contrast-mode"><span class="std std-ref">Contrast mode</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p>y</p></td>
+<td><p>Enter <a class="reference internal" href="#cmap-mode"><span class="std std-ref">CMap (color map) mode</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>s</p></td>
+<td><p>Enter <a class="reference internal" href="#cuts-mode"><span class="std std-ref">Cuts mode</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p>d</p></td>
+<td><p>Enter Color Distribution (“dist”) mode.
+See <a class="reference internal" href="#dist-mode"><span class="std std-ref">Dist mode</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>n</p></td>
+<td><p>Enter naxis (cube axis navigation) mode.
+See <a class="reference internal" href="#naxis-mode"><span class="std std-ref">Naxis mode</span></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p>L</p></td>
+<td><p>Toggle the normal lock to the current mode or
+any future modes.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="panning-and-zooming-commands">
+<span id="panning-zooming-commands"></span><h3>Panning and zooming commands<a class="headerlink" href="#panning-and-zooming-commands" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>scroll-wheel</p></td>
+<td><p>Zoom in or out.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Shift + scroll-wheel</p></td>
+<td><p>Zoom while keeping location under the cursor.</p></td>
+</tr>
+<tr class="row-even"><td><p>Ctrl + scroll-wheel</p></td>
+<td><p>Pan in direction of scroll.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Digit
+(1234567890)</p></td>
+<td><p>Zoom image to zoom steps 1, 2, …, 9, 10.</p></td>
+</tr>
+<tr class="row-even"><td><p>Shift + Digit</p></td>
+<td><p>Zoom image to zoom steps -1, -2, …, -9, -10.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Backquote (`)</p></td>
+<td><p>Zoom image to fit window and center it.</p></td>
+</tr>
+<tr class="row-even"><td><p>Minus, Underscore
+(-, _)</p></td>
+<td><p>Zoom out.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Equals, Plus
+(=, +)</p></td>
+<td><p>Zoom in.</p></td>
+</tr>
+<tr class="row-even"><td><p>Middle (scroll)
+button click</p></td>
+<td><p>Set pan position (under cursor).</p></td>
+</tr>
+<tr class="row-odd"><td><p>p</p></td>
+<td><p>Set pan position (under cursor) for zooming.</p></td>
+</tr>
+<tr class="row-even"><td><p>Shift + left-click</p></td>
+<td><p>Set pan position for zooming.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Shift + arrow key</p></td>
+<td><p>Move pan position 1 pixel in that direction.</p></td>
+</tr>
+<tr class="row-even"><td><p>c</p></td>
+<td><p>Set pan position to the center of the image.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ctrl + left-drag</p></td>
+<td><p>Proportional pan (press and drag left mouse
+button.</p></td>
+</tr>
+<tr class="row-even"><td><p>slash (/)</p></td>
+<td><p>Set autocenter for new images to <em>override</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>question (?)</p></td>
+<td><p>Toggle autocenter for images to <em>on</em> or <em>off</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>apostrophe (‘)</p></td>
+<td><p>Set autozoom for new images to <em>override</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>double quote (“)</p></td>
+<td><p>Toggle autozoom for new images to <em>on</em> or <em>off</em>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cut-levels-and-colormap-commands">
+<span id="cut-levels-colormap-commands"></span><h3>Cut levels and colormap commands<a class="headerlink" href="#cut-levels-and-colormap-commands" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>a</p></td>
+<td><p>Auto cut levels.</p></td>
+</tr>
+<tr class="row-odd"><td><p>D</p></td>
+<td><p>Reset color distribution algorithm to “linear”.</p></td>
+</tr>
+<tr class="row-even"><td><p>T</p></td>
+<td><p>Restore the contrast (via colormap) to its
+original (unstretched, unshifted) state.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Y</p></td>
+<td><p>Restore the color map to default (gray).</p></td>
+</tr>
+<tr class="row-even"><td><p>I</p></td>
+<td><p>Invert the color map.</p></td>
+</tr>
+<tr class="row-odd"><td><p>semicolon (;)</p></td>
+<td><p>Set autocuts for new images to <em>override</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>colon (:)</p></td>
+<td><p>Toggle autocuts for new images to <em>on</em> or <em>off</em>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="transform-commands">
+<span id="id3"></span><h3>Transform commands<a class="headerlink" href="#transform-commands" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Left bracket ([)</p></td>
+<td><p>Toggle flip image in X.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Left brace ({)</p></td>
+<td><p>Reset to no flip of image in X.</p></td>
+</tr>
+<tr class="row-even"><td><p>Right bracket (])</p></td>
+<td><p>Toggle flip image in Y.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Right brace (})</p></td>
+<td><p>Reset to no flip image in Y.</p></td>
+</tr>
+<tr class="row-even"><td><p>Backslash (\)</p></td>
+<td><p>Swap X and Y axes.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Vertical bar (|)</p></td>
+<td><p>Reset to no swap of X and Y axes.</p></td>
+</tr>
+<tr class="row-even"><td><p>R</p></td>
+<td><p>Restore rotation to 0 degrees and additionally
+undo any flip/swap transformations.</p></td>
+</tr>
+<tr class="row-odd"><td><p>period (.)</p></td>
+<td><p>Increment current rotation by 90 degrees.</p></td>
+</tr>
+<tr class="row-even"><td><p>comma (,)</p></td>
+<td><p>Decrement current rotation by 90 degrees.</p></td>
+</tr>
+<tr class="row-odd"><td><p>o</p></td>
+<td><p>Orient image by transforms and rotation so that
+WCS indicates North=Up and East=Left.</p></td>
+</tr>
+<tr class="row-even"><td><p>O</p></td>
+<td><p>Orient image by transforms and rotation so that
+WCS indicates North=Up and East=Right.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="pan-mode">
+<span id="id4"></span><h3>Pan mode<a class="headerlink" href="#pan-mode" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>left-drag</p></td>
+<td><p>Pan proportionally to drag.</p></td>
+</tr>
+<tr class="row-odd"><td><p>pan-gesture</p></td>
+<td><p>Pan proportionally to gesture.</p></td>
+</tr>
+<tr class="row-even"><td><p>middle-click</p></td>
+<td><p>Set pan position.</p></td>
+</tr>
+<tr class="row-odd"><td><p>right-drag</p></td>
+<td><p>Zoom in/out proportionally to L/R drag.</p></td>
+</tr>
+<tr class="row-even"><td><p>scroll-wheel</p></td>
+<td><p>Zoom in or out.</p></td>
+</tr>
+<tr class="row-odd"><td><p>pinch-gesture</p></td>
+<td><p>Zoom in/out porportionally to gesture.</p></td>
+</tr>
+<tr class="row-even"><td><p>&lt;Modifier&gt; +
+arrow key</p></td>
+<td><p>Pan in direction of arrow key. Adding Ctrl
+reduces amount, adding Shift reduces more.</p></td>
+</tr>
+<tr class="row-odd"><td><p>p</p></td>
+<td><p>Pan to position under cursor.</p></td>
+</tr>
+<tr class="row-even"><td><p>z</p></td>
+<td><p>Save current scale (see below for use).</p></td>
+</tr>
+<tr class="row-odd"><td><p>backquote (`)</p></td>
+<td><p>Zoom to fit window and center.</p></td>
+</tr>
+<tr class="row-even"><td><p>r</p></td>
+<td><p>Pan to cursor and zoom to saved scale level
+(or 1:1 if no scale level saved).</p></td>
+</tr>
+<tr class="row-odd"><td><p>c</p></td>
+<td><p>Set pan position to the center of the image.</p></td>
+</tr>
+<tr class="row-even"><td><p>slash (/)</p></td>
+<td><p>Set autocenter for new images to <em>override</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>question (?)</p></td>
+<td><p>Toggle autocenter for images to <em>on</em> or <em>off</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>apostrophe (‘)</p></td>
+<td><p>Set autozoom for new images to <em>override</em>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>double quote (“)</p></td>
+<td><p>Toggle autozoom for new images to <em>on</em> or <em>off</em>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="zoom-mode">
+<span id="id5"></span><h3>Zoom mode<a class="headerlink" href="#zoom-mode" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>scroll-wheel</p></td>
+<td><p>Zoom in or out.</p></td>
+</tr>
+<tr class="row-odd"><td><p>left-click</p></td>
+<td><p>Set pan position, zoom in a step and warp cursor
+to pan position (if supported on backend).</p></td>
+</tr>
+<tr class="row-even"><td><p>right-click</p></td>
+<td><p>Set pan position, zoom out a step and warp
+cursor to pan position (if supported on backend).</p></td>
+</tr>
+<tr class="row-odd"><td><p>middle-drag</p></td>
+<td><p>Pans freely over entire image in proportion
+to cursor position versus window.</p></td>
+</tr>
+<tr class="row-even"><td><p>p, z, backquote, r,
+c, arrow keys, pan
+and pinch gestures</p></td>
+<td><p>(Same as for <a class="reference internal" href="#pan-mode"><span class="std std-ref">Pan mode</span></a>.)</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="dist-mode">
+<span id="id6"></span><h3>Dist mode<a class="headerlink" href="#dist-mode" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>scroll-wheel</p></td>
+<td><p>Select distribution from linear, log, etc.</p></td>
+</tr>
+<tr class="row-odd"><td><p>b, up-arrow</p></td>
+<td><p>Select prev distribution in list.</p></td>
+</tr>
+<tr class="row-even"><td><p>n, down-arrow</p></td>
+<td><p>Select next distribution in list.</p></td>
+</tr>
+<tr class="row-odd"><td><p>D</p></td>
+<td><p>Reset color distribution algorithm to “linear”.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cuts-mode">
+<span id="id7"></span><h3>Cuts mode<a class="headerlink" href="#cuts-mode" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>left-drag</p></td>
+<td><p>Interactive cut <em>both</em> low and high levels
+(vertical cuts low, horizontal cuts high).</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ctrl + left-drag</p></td>
+<td><p>Interactive cut low level only
+(horizontal drag).</p></td>
+</tr>
+<tr class="row-even"><td><p>Ctrl + pan gesture</p></td>
+<td><p>Change cut high level up/down.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Shift + left-drag</p></td>
+<td><p>Interactive cut high level only
+(horizontal drag).</p></td>
+</tr>
+<tr class="row-even"><td><p>Shift + pan gesture</p></td>
+<td><p>Change cut low level up/down.</p></td>
+</tr>
+<tr class="row-odd"><td><p>scroll-wheel</p></td>
+<td><p>Squeeze or stretch gap between cuts.
+Coarse (10%) adjustment in/out.</p></td>
+</tr>
+<tr class="row-even"><td><p>Ctrl + scroll-wheel</p></td>
+<td><p>Squeeze or stretch gap between cuts.
+Fine (1%) adjustment in/out.</p></td>
+</tr>
+<tr class="row-odd"><td><p>pinch gesture</p></td>
+<td><p>Squeeze or stretch gap between cuts.</p></td>
+</tr>
+<tr class="row-even"><td><p>a, right-click</p></td>
+<td><p>Do an auto level to restore cuts.</p></td>
+</tr>
+<tr class="row-odd"><td><p>k</p></td>
+<td><p>Set the high cut to the value under the cursor.</p></td>
+</tr>
+<tr class="row-even"><td><p>l</p></td>
+<td><p>Set the low cut to the value under the cursor.</p></td>
+</tr>
+<tr class="row-odd"><td><p>S</p></td>
+<td><p>Set cuts to min/max values.</p></td>
+</tr>
+<tr class="row-even"><td><p>A</p></td>
+<td><p>Set cuts to 0/255 values (for 8bpp RGB images).</p></td>
+</tr>
+<tr class="row-odd"><td><p>b, up-arrow</p></td>
+<td><p>Select prev auto cuts algorithm in list.</p></td>
+</tr>
+<tr class="row-even"><td><p>n, down-arrow</p></td>
+<td><p>Select next auto cuts algorithm in list.</p></td>
+</tr>
+<tr class="row-odd"><td><p>semicolon (;)</p></td>
+<td><p>Set autocuts for new images to <em>override</em>.</p></td>
+</tr>
+<tr class="row-even"><td><p>colon (:)</p></td>
+<td><p>Toggle autocuts for new images to <em>on</em> or <em>off</em>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="contrast-mode">
+<span id="id8"></span><h3>Contrast mode<a class="headerlink" href="#contrast-mode" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>left-drag</p></td>
+<td><p>Interactive shift/stretch colormap (AKA contrast
+and bias). Left/Right controls shift, Up/Down
+controls stretch.</p></td>
+</tr>
+<tr class="row-odd"><td><p>right-click</p></td>
+<td><p>Restore the contrast (via colormap) to its
+original (unstretched, unshifted) state.</p></td>
+</tr>
+<tr class="row-even"><td><p>scroll-wheel</p></td>
+<td><p>Increase/decrease contrast.
+(add Ctrl to adjust it more finely).</p></td>
+</tr>
+<tr class="row-odd"><td><p>Shift + scroll-wheel</p></td>
+<td><p>Increase/decrease brightness (bias).
+(add Ctrl to adjust it more finely).</p></td>
+</tr>
+<tr class="row-even"><td><p>Ctrl + pan gesture</p></td>
+<td><p>Increase/decrease contrast.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Shift + pan gesture</p></td>
+<td><p>Increase/decrease brightness (bias).</p></td>
+</tr>
+<tr class="row-even"><td><p>T</p></td>
+<td><p>Restore the contrast (via colormap) to its
+original (unstretched, unshifted) state.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rotate-mode">
+<span id="id9"></span><h3>Rotate mode<a class="headerlink" href="#rotate-mode" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>left-drag</p></td>
+<td><p>Drag around center of window to rotate image.</p></td>
+</tr>
+<tr class="row-odd"><td><p>right-click</p></td>
+<td><p>Restore rotation to 0 degrees (does not reset
+any flip/swap transformations).</p></td>
+</tr>
+<tr class="row-even"><td><p>R</p></td>
+<td><p>Restore rotation to 0 degrees and additionally
+undo any flip/swap transformations.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Left bracket ([)</p></td>
+<td><p>Toggle flip image in X.</p></td>
+</tr>
+<tr class="row-even"><td><p>Left brace ({)</p></td>
+<td><p>Reset to no flip of image in X.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Right bracket (])</p></td>
+<td><p>Toggle flip image in Y.</p></td>
+</tr>
+<tr class="row-even"><td><p>Right brace (})</p></td>
+<td><p>Reset to no flip image in Y.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Backslash (\)</p></td>
+<td><p>Swap X and Y axes.</p></td>
+</tr>
+<tr class="row-even"><td><p>Vertical bar (|)</p></td>
+<td><p>Reset to no swap of X and Y axes.</p></td>
+</tr>
+<tr class="row-odd"><td><p>period (.)</p></td>
+<td><p>Increment current rotation by 90 degrees.</p></td>
+</tr>
+<tr class="row-even"><td><p>comma (,)</p></td>
+<td><p>Decrement current rotation by 90 degrees.</p></td>
+</tr>
+<tr class="row-odd"><td><p>o</p></td>
+<td><p>Orient image by transforms and rotation so that
+WCS indicates North=Up and East=Left.</p></td>
+</tr>
+<tr class="row-even"><td><p>O</p></td>
+<td><p>Orient image by transforms and rotation so that
+WCS indicates North=Up and East=Right.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cmap-mode">
+<span id="id10"></span><h3>Cmap mode<a class="headerlink" href="#cmap-mode" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>scroll</p></td>
+<td><p>Select color map.</p></td>
+</tr>
+<tr class="row-odd"><td><p>left-drag</p></td>
+<td><p>Rotate color map.</p></td>
+</tr>
+<tr class="row-even"><td><p>right-click</p></td>
+<td><p>Unrotate color map.</p></td>
+</tr>
+<tr class="row-odd"><td><p>b, up-arrow</p></td>
+<td><p>Select prev color map in list.</p></td>
+</tr>
+<tr class="row-even"><td><p>n, down-arrow</p></td>
+<td><p>Select next color map in list.</p></td>
+</tr>
+<tr class="row-odd"><td><p>I</p></td>
+<td><p>Toggle invert color map.</p></td>
+</tr>
+<tr class="row-even"><td><p>r</p></td>
+<td><p>Restore color map to unrotated, uninverted state.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ctrl + scroll</p></td>
+<td><p>Select intensity map.</p></td>
+</tr>
+<tr class="row-even"><td><p>j, left-arrow</p></td>
+<td><p>Select prev intensity map in list.</p></td>
+</tr>
+<tr class="row-odd"><td><p>k, right-arrow</p></td>
+<td><p>Select next intensity map in list.</p></td>
+</tr>
+<tr class="row-even"><td><p>i</p></td>
+<td><p>Restore intensity map to “ramp”.</p></td>
+</tr>
+<tr class="row-odd"><td><p>c</p></td>
+<td><p>Toggle a color bar overlay on the image.</p></td>
+</tr>
+<tr class="row-even"><td><p>Y</p></td>
+<td><p>Restore the color map to default (‘gray’).</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="naxis-mode">
+<span id="id11"></span><h3>Naxis mode<a class="headerlink" href="#naxis-mode" title="Permalink to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Naxis mode can be used when viewing data that has more than 2
+dimensions (e.g., data cubes).</p>
+</div>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>scroll</p></td>
+<td><p>Select previous or next slice of current axis.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ctrl + scroll</p></td>
+<td><p>Select previous or next axis as current axis.</p></td>
+</tr>
+<tr class="row-even"><td><p>left drag</p></td>
+<td><p>select slice as a function of percentage of
+cursor/window width.</p></td>
+</tr>
+<tr class="row-odd"><td><p>up-arrow</p></td>
+<td><p>Select prev axis as current axis.</p></td>
+</tr>
+<tr class="row-even"><td><p>down-arrow</p></td>
+<td><p>Select next axis as current axis.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="plot-mode">
+<span id="id12"></span><h3>Plot mode<a class="headerlink" href="#plot-mode" title="Permalink to this heading"></a></h3>
+<p>Plot mode is only valid when the viewer is used with a <code class="docutils literal notranslate"><span class="pre">PlotAide</span></code>
+object to display a graph.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>scroll</p></td>
+<td><p>Zoom the X axis.
+(Sets <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_x</span></code> to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>, if it was <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ctrl + scroll</p></td>
+<td><p>Zoom the Y axis. (Sets <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_y</span></code> to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p>x</p></td>
+<td><p>Toggle <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_x</span></code> between <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>p</p></td>
+<td><p>Toggle <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_x</span></code> between <code class="xref py py-obj docutils literal notranslate"><span class="pre">pan</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p>y</p></td>
+<td><p>Toggle <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_y</span></code> between <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>v</p></td>
+<td><p>Toggle <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_y</span></code> between <code class="xref py py-obj docutils literal notranslate"><span class="pre">vis</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<p>The graph can be flipped in X or Y and the axes swapped, using the keystroke
+commands found in the transform section above (<a class="reference internal" href="#transform-commands"><span class="std std-ref">Transform commands</span></a>).</p>
+<p>To understand the role of the <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_x</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">autoaxis_y</span></code> settings, please
+see the chapter on plots (<a class="reference internal" href="dev_manual/plots.html#ch-plots"><span class="std std-ref">Plots</span></a>).</p>
+</section>
+<section id="autozoom-setting">
+<span id="id13"></span><h3>Autozoom setting<a class="headerlink" href="#autozoom-setting" title="Permalink to this heading"></a></h3>
+<p>The “autozoom” setting can be set to one of the following: “on”, “override”,
+“once” or “off”.  This affects the behavior of the viewer when changing to a
+new image (when done in the typical way) as follows:</p>
+<ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>: the image will be scaled to fit the window</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">override</span></code>: like <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>, except that once the zoom/scale is changed by the
+user manually it turns the setting to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code></p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">once</span></code>: like <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>, except that the setting is turned to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code> after the
+first image</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>: an image scaled to the current viewer setting</p></li>
+</ul>
+<p>(In the <a class="reference internal" href="#reference-viewer"><span class="std std-ref">Reference Viewer</span></a>, this is set under the
+“Zoom New” setting in the channel preferences.)</p>
+</section>
+<section id="autocenter-setting">
+<span id="id14"></span><h3>Autocenter setting<a class="headerlink" href="#autocenter-setting" title="Permalink to this heading"></a></h3>
+<p>The “autocenter” setting can be set to one of the following: “on”, “override”,
+“once” or “off”.  This affects the behavior of the viewer when changing to a
+new image (when done in the typical way) as follows:</p>
+<ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>: the pan position will be set to the center of the image</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">override</span></code>: like <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>, except that once the pan position is changed by the
+user manually it turns the setting to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code></p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">once</span></code>: like <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>, except that the setting is turned to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code> after the
+first image</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>: the pan position is taken from the current viewer setting</p></li>
+</ul>
+<p>(In the <a class="reference internal" href="#reference-viewer"><span class="std std-ref">Reference Viewer</span></a>, this is set under the
+“Center New” setting in the channel preferences.)</p>
+</section>
+<section id="autocuts-setting">
+<span id="id15"></span><h3>Autocuts setting<a class="headerlink" href="#autocuts-setting" title="Permalink to this heading"></a></h3>
+<p>The “autocuts” setting can be set to one of following: “on”, “override”,
+“once” or “off”. This affects the behavior of the viewer when changing to a
+new image (when done in the typical way) as follows:</p>
+<ul class="simple">
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>: the cut levels for the image will be calculated and set according
+to the autocuts algorithm setting</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">override</span></code>: like <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>, except that once the cut levels are changed by the
+user manually it turns the setting to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code></p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">once</span></code>: like <code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code>, except that the setting is turned to <code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code> after the
+first image</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code>: the cut levels are applied from the current viewer setting</p></li>
+</ul>
+<p>(In the ref:<code class="xref py py-obj docutils literal notranslate"><span class="pre">Reference</span> <span class="pre">Viewer</span></code>, this is set under the
+“Cut New” setting in the channel preferences.)</p>
+</section>
+<section id="reference-viewer-only">
+<span id="reference-viewer"></span><h3>Reference Viewer Only<a class="headerlink" href="#reference-viewer-only" title="Permalink to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Commmand</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>H</p></td>
+<td><p>Raise <strong>Header</strong> tab (if Header plugin has been
+started).</p></td>
+</tr>
+<tr class="row-odd"><td><p>Z</p></td>
+<td><p>Raise <strong>Zoom</strong> tab (if Zoom plugin has been
+started).</p></td>
+</tr>
+<tr class="row-even"><td><p>D</p></td>
+<td><p>Raise <strong>Dialogs</strong> tab.</p></td>
+</tr>
+<tr class="row-odd"><td><p>C</p></td>
+<td><p>Raise <strong>Contents</strong> tab.</p></td>
+</tr>
+<tr class="row-even"><td><p>less than (&lt;)</p></td>
+<td><p>Toggle collapse left pane.</p></td>
+</tr>
+<tr class="row-odd"><td><p>greater than (&gt;)</p></td>
+<td><p>Toggle collapse right pane.</p></td>
+</tr>
+<tr class="row-even"><td><p>f</p></td>
+<td><p>Toggle full screen.</p></td>
+</tr>
+<tr class="row-odd"><td><p>F</p></td>
+<td><p>Panoramic full screen.</p></td>
+</tr>
+<tr class="row-even"><td><p>h</p></td>
+<td><p>Pop up a quick help tab for the current mode.</p></td>
+</tr>
+<tr class="row-odd"><td><p>m</p></td>
+<td><p>Maximize window.</p></td>
+</tr>
+<tr class="row-even"><td><p>J</p></td>
+<td><p>Cycle workspace type (tabs/mdi/stack/grid).
+Note that “mdi” type is not supported on all
+platforms.</p></td>
+</tr>
+<tr class="row-odd"><td><p>k</p></td>
+<td><p>Add a channel with a generic name.</p></td>
+</tr>
+<tr class="row-even"><td><p>Left, Right
+(arrow keys)</p></td>
+<td><p>Previous/Next channel.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Up, Down
+(arrow keys)</p></td>
+<td><p>Previous/Next image in channel.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If there are one or more plugins active, additional mouse
+or keyboard bindings may be present. In general, the left
+mouse button is used to select, pick or move, and the right
+mouse button is used to draw a shape for the operation.</p>
+<p>On the Mac, Ctrl + mouse button can also be used to draw
+or right-click. You can also invoke draw mode as described
+above in the section on modes.</p>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="WhatsNew.html" class="btn btn-neutral float-left" title="What’s New" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="manual/index.html" class="btn btn-neutral float-right" title="User’s Manual" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Ginga Maintainers.
+      <span class="commit">Revision <code>06d8d83a</code>.
+      </span>
+      <span class="lastupdated">Last updated on 01 Apr 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+
+  
+<script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

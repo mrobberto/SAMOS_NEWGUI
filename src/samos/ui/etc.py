@@ -348,8 +348,8 @@ class ETCPage(SAMOSFrame):
             wl_min = self.lambda_min.get() * u.angstrom
             wl_max = self.lambda_max.get() * u.angstrom
         else:
-            wl_min = self.lambda_min.get() * u.um
-            wl_max = self.lambda_max.get() * u.um
+            wl_min = self.lambda_min.get() #* u.um
+            wl_max = self.lambda_max.get() #* u.um
 
         all_parameters = {
             "bandpass": self.bandpass.get(),

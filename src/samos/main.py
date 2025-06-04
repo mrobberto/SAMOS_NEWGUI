@@ -29,7 +29,6 @@ from samos.utilities.constants import *
 from samos.utilities.simulator import start_simulator
 from samos.utilities.tk import about_box
 
-
 class App(ttk.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -170,7 +169,19 @@ class App(ttk.Window):
 
     def show_logging_window(self):
         self.log_window.deiconify()
-
+ 
+    def show_Ginga_keystrokes(self):
+        import webbrowser
+        
+        # define an instance of tkinter
+        # Open website
+        try:
+            webbrowser.open('https://ginga.readthedocs.io/en/v5.0.1/quickref.html#ginga-quick-reference')
+        except:
+            url = 'file://./utilities/QuickReference_ginga_v5.0.1_rev.html'
+            webbrowser.open(url)
+            
+        
 
     def create_menubar(self):
         menubar = tk.Menu(self, bd=3, relief=tk.RAISED, activebackground="#80B9DC")
@@ -194,7 +205,7 @@ class App(ttk.Window):
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=about_box)
         help_menu.add_command(label="Guide Star", command=lambda: self.show_frame("GSPage"))        
-
+        help_menu.add_command(label="Ginga Keystrokes", command=self.show_Ginga_keystrokes)        
         return menubar
 
 

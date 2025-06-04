@@ -25,6 +25,11 @@ from ginga.util.loader import load_data
 from ginga.canvas import CompoundMixin as CM
 from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
+
+from ginga.util import iqcalc
+iq = iqcalc.IQCalc()
+
+
 import pandas as pd
 from PIL import Image, ImageTk
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
@@ -238,7 +243,7 @@ class MainPage(SAMOSFrame):
         tk.Entry(cntr_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
         # Guide Star Probe Frame
-        frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup")
+        frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup!")
         frame.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         # X_GSP00
         self.gs_x0 = tk.DoubleVar(self, 0.)
@@ -248,6 +253,12 @@ class MainPage(SAMOSFrame):
         self.gs_y0 = tk.DoubleVar(self, -0.)
         ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        # Command Show Buttons
+        b_show = ttk.Button(frame, text="Show GSP00", command=self.show_GSP00)
+        b_show.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b_hide = ttk.Button(frame, text="Hide GSP00", command=self.hide_GSP00)
+        b_hide.grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+
        
         # CENTRE COLUMN
 
@@ -322,6 +333,7 @@ class MainPage(SAMOSFrame):
             onvalue=True,
             offvalue=False
         )
+        self.source_pickup_enabled.set(False)
         b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Buttons
         b = ttk.Button(frame, text="Show Traces", command=self.show_traces)
@@ -340,28 +352,35 @@ class MainPage(SAMOSFrame):
         # Slit Configuration Frame
         frame = ttk.LabelFrame(fctr, text="Slit Configuration:")
         frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        
         # Slit Size Controls
         slit_frame = ttk.LabelFrame(frame, text="Slit Size")
         slit_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        
         self.slit_w = self.make_db_var(tk.IntVar, "dmd_hadamard_width", 3)
         ttk.Label(slit_frame, text="Slit Width (mirrors):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        b = ttk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
+        length_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
                         from_=0, to=1080)
-        b.bind("<Return>", self.slit_width_length_adjust)
-        b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("is_something", self.selected_object_tag)]
+        length_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
+        length_adjust_btn.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        
+        self.check_widgets[length_adjust_btn] = [("is_something", self.selected_object_tag)]
+        
         self.slit_l = self.make_db_var(tk.IntVar, "dmd_hadamard_length", 9)
         ttk.Label(slit_frame, text="Slit Length (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
+        width_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_l, width=5, 
                         from_=0, to=1080)
-        b.bind("<Return>", self.slit_width_length_adjust)
-        b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("is_something", self.selected_object_tag)]
+        width_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
+        
+        width_adjust_btn.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        self.check_widgets[width_adjust_btn] = [("is_something", self.selected_object_tag)]
+        
         self.force_orthonormal = self.make_db_var(tk.BooleanVar, "main_slit_force_orthonormal", False)
         b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal, onvalue=True, offvalue=False)
         b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(slit_frame, text="Apply to All", command=self.apply_to_all, bootstyle="success")
         b.grid(row=3, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
+        
         # Slit Draw Controls
         draw_frame = ttk.LabelFrame(frame, text="Slit Mode")
         draw_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -1175,8 +1194,20 @@ class MainPage(SAMOSFrame):
             obj = r2g(reg)
             obj.color="red"
             self.canvas.add(obj, tag='@twirl_{}'.format(i))
+        #Now the GAIA stars
+        #If we are online, twirl will find the GAIA stars on the internet
+        try:
+            gaias = twirl.gaia_radecs(center, fov, limit=self.fits_nstars.get())
+        except:
+            print("We are not online, need to look for the Gaia stars on local disk")    
+            self.logger.info("Loading GAIA File")
+            GAIA_file = tk.filedialog.askopenfilename(title="Select a Gaia File",
+                                                     filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
+            csvFile = pd.read_csv(GAIA_file)
+            g=np.transpose(np.array([csvFile['ra_now'].values,csvFile['dec_now'].values])) #extract RADEC
+            gaias = g[:self.fits_nstars.get(),:]   #select the first Nstars
+            
         # we can now compute the WCS
-        gaias = twirl.gaia_radecs(center, fov, limit=self.fits_nstars.get())
         self.PAR.wcs = twirl.compute_wcs(stars, gaias)
 
         # Lets check the WCS solution
@@ -1286,7 +1317,7 @@ class MainPage(SAMOSFrame):
         med = np.median(data)
         radius_pix = 20
         slit_width = self.slit_w.get()
-        slit_height = self.slt_h.get()
+        slit_height = self.slit_l.get()
         coords = [PixCoord(x, y) for x, y in stars]
         regions = Regions([RectanglePixelRegion(center=c, width=slit_width, height=slit_height, angle=0*u.deg) for c in coords])
         for i,region in enumerate(regions):
@@ -1298,6 +1329,32 @@ class MainPage(SAMOSFrame):
             obj.add_callback('edited', self.edit_cb)
             self.slit_tab_view.add_slit_obj(region, obj.tag, self.fits_image)
 
+    @check_enabled
+    def show_GSP00(self):
+        # Show the position of the GSP00 on the image
+        radius_pix = 15
+        reg_GSP00 = CirclePixelRegion(center=PixCoord(self.gs_x0.get(), self.gs_y0.get()), radius=radius_pix)
+        obj = r2g(reg_GSP00)
+        obj.color = "blue"
+        obj.linewidth = 3
+        self.tag_GSP00 = '@check_GSP00_'+str(time.time())  #change the tag each time the circle is created
+        self.canvas.add(obj, tag=self.tag_GSP00)
+        self.logger.info(f"Showing {obj} {obj.tag}")
+        
+    @check_enabled
+    def hide_GSP00(self):
+        # Hide the position of the GSP00 on the image
+        
+        #looking at https://ginga.readthedocs.io/en/stable/_modules/ginga/canvas/CanvasMixin.html
+        #it should be possible to simply run
+        #CM.CompoundMixin.delete_objects_by_tag(self.canvas,'@check_GSP00')  
+        #but it does not work. Needs newer Ginga version?
+        
+        object_to_remove = self.canvas.get_object_by_tag(self.tag_GSP00)
+        self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
+        CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
+        self.canvas.redraw()
+        
 
     @check_enabled
     def open_quicklook_file(self):
@@ -1461,7 +1518,7 @@ class MainPage(SAMOSFrame):
         x1 = obj.x - obj.xradius
         y1 = obj.y - obj.yradius
         px, py = round(peaks[0][0]+x1), round(peaks[0][1]+y1)
-        self.logger.info("Peak found at ({}, {}) with counts {}".format(px, py, img_data[px, py]))
+        self.logger.info("Peak found at ({}, {}) with counts {}".format(px, py, img_data[py, px]))  #order array is [py,px]!
         
         # evaluate peaks to get FWHM, center of each peak, etc.
         # from ginga.readthedocs.io
@@ -1483,10 +1540,11 @@ class MainPage(SAMOSFrame):
         #    * ``encircled_energy_fn``: Function of encircled energy for different pixel radii.
         results = iq.evaluate_peaks(peaks, data_box)
         self.logger.debug("Full Evaluation: {}".format(results))
-        self.logger.info("Peak Centroid: ({}, {})".format(results[0].objx, results[0].objy))
+        #self.logger.info("Peak Centroid: ({}, {})".format(results[0].objx, results[0].objy))
+        self.logger.info("Peak Centroid (x,y): ({}, {})".format(results[0].objx+x1, results[0].objy+y1))
         self.logger.info("FWHM: {}, Peak Value: {}".format(results[0].fwhm, results[0].brightness))
         self.logger.info("Sky: {}, Background (median of region): {}".format(results[0].skylevel, results[0].background))
-        self.logger.info("(RA, DEC) of fitted centroid: ({}, {})".format(self.AstroImage.pixtoradec(results[0].objx, results[0].objy)))
+        self.logger.info("(RA, DEC) of fitted centroid: {}".format(self.AstroImage.pixtoradec(results[0].objx+x1, results[0].objy+y1)))
 
         # having found the centroid, we need to draw the slit
         slit_box = self.canvas.get_draw_class('box')
@@ -1494,7 +1552,7 @@ class MainPage(SAMOSFrame):
         yradius = self.slit_l.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
         new_obj = slit_box(x=results[0].objx + x1, y=results[0].objy + y1, xradius=xradius, yradius=yradius, color='red',
                            alpha=0.8, fill=False, angle=5*u.deg, pickable=True)
-        self.canvas_add(new_obj, tag='@slit_{}-{}'.format(results[0].objx + x1, results[0].objy + y1))
+        self.canvas.add(new_obj, tag='@slit_{}-{}'.format(results[0].objx + x1, results[0].objy + y1))
         new_obj.add_callback('pick-up', self.pick_cb, 'up')
         new_obj.add_callback('pick-move', self.pick_cb, 'move')
         new_obj.add_callback('pick-key', self.pick_cb, 'key')
