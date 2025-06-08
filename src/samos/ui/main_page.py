@@ -263,6 +263,7 @@ class MainPage(SAMOSFrame):
             offvalue=False
         )
         c.grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        self.tag_gsp00 = None
 
        
         # CENTRE COLUMN
@@ -512,6 +513,8 @@ class MainPage(SAMOSFrame):
         # Register the frame with PAR
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
+        self.toggle_gsp00()
+        self.set_mode_cb()
         self.set_enabled()
 
     """
@@ -1251,10 +1254,10 @@ class MainPage(SAMOSFrame):
         x_GSP00 = self.gs_x0.get()
         y_GSP00 = self.gs_y0.get() 
         # determine the RA,DEC coordinates actually pof_inted by the telescope
-        ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00,y_GSP00,0)
-        x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra,dec,0)
-        print(x_pointed,y_pointed,ra,dec)
-        print(x_GSP00,y_GSP00,ra_tel,dec_tel)
+        ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00, y_GSP00, 0)
+        x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra, dec, 0)
+        print(x_pointed, y_pointed, ra, dec)
+        print(x_GSP00, y_GSP00, ra_tel, dec_tel)
         # calculate the offset in RADEC between the telescope and commanded positions
         Delta_ra = float(ra_tel) - float(ra)
         Delta_dec = float(dec_tel) - float(dec)
@@ -1330,7 +1333,7 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def toggle_gsp00(self):
-        if (self.show_gsp00.get()) and (self.tag_gsp00) is None:
+        if (self.show_gsp00.get()) and (self.tag_gsp00 is None):
             # Show the position of the GSP00 on the image
             radius_pix = 15
             reg_GSP00 = CirclePixelRegion(
@@ -1340,7 +1343,7 @@ class MainPage(SAMOSFrame):
             obj.color = "blue"
             obj.linewidth = 3
             self.tag_gsp00 = '@check_GSP00_'+str(time.time())  #change the tag each time the circle is created
-            self.canvas.add(obj, tag=self.tag_GSP00)
+            self.canvas.add(obj, tag=self.tag_gsp00)
             self.logger.info(f"Showing {obj} {obj.tag}")
         elif (not self.show_gsp00.get()) and (self.tag_gsp00 is not None):
             # Hide the position of the GSP00 on the image
@@ -1352,6 +1355,7 @@ class MainPage(SAMOSFrame):
             if object_to_remove is not None:
                 self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
                 CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
+            self.tag_gsp00 = None
         self.canvas.redraw()
         
 
