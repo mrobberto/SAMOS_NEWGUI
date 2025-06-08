@@ -254,10 +254,16 @@ class MainPage(SAMOSFrame):
         ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # Command Show Buttons
-        b_show = ttk.Button(frame, text="Show GSP00", command=self.show_GSP00)
-        b_show.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b_hide = ttk.Button(frame, text="Hide GSP00", command=self.hide_GSP00)
-        b_hide.grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.show_gsp00 = self.make_db_var(tk.BooleanVar, "show_gsp00", True)
+        c = ttk.Checkbutton(
+            frame,
+            text="Show GSP00",
+            variable=self.show_gsp00,
+            command=self.toggle_gsp00,
+            onvalue=True,
+            offvalue=False
+        )
+        c.grid(row=0, column=2, sticky=TK_STICKY_ALL)
 
        
         # CENTRE COLUMN
@@ -317,7 +323,7 @@ class MainPage(SAMOSFrame):
         self.draw_color.grid(row=0, column=2, sticky=TK_STICKY_ALL)
         # Fill
         self.draw_fill = self.make_db_var(tk.BooleanVar, "main_draw_fill", False)
-        c = tk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=True, offvalue=False)
+        c = ttk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=True, offvalue=False)
         c.grid(row=0, column=3, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="Alpha:").grid(row=0, column=4, sticky=TK_STICKY_ALL)
         self.draw_alpha = self.make_db_var(tk.DoubleVar, "main_draw_alpha", 1.0)
@@ -364,8 +370,6 @@ class MainPage(SAMOSFrame):
         length_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
         length_adjust_btn.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         
-        self.check_widgets[length_adjust_btn] = [("is_something", self.selected_object_tag)]
-        
         self.slit_l = self.make_db_var(tk.IntVar, "dmd_hadamard_length", 9)
         ttk.Label(slit_frame, text="Slit Length (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         width_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_l, width=5, 
@@ -373,7 +377,6 @@ class MainPage(SAMOSFrame):
         width_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
         
         width_adjust_btn.grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[width_adjust_btn] = [("is_something", self.selected_object_tag)]
         
         self.force_orthonormal = self.make_db_var(tk.BooleanVar, "main_slit_force_orthonormal", False)
         b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal, onvalue=True, offvalue=False)
@@ -528,19 +531,14 @@ class MainPage(SAMOSFrame):
     """
     @check_enabled
     def send_offset_to_soar(self):
-        #push the calculated offsets in to the TCS page
-        #FIX SYNTAX!
         if self.SOAR.is_on == True:
             d_ra = self.x_offset.get()
             d_dec = self.y_offset.get()
             message = { "offset_ra": float(d_ra), "offset_dec": float(d_dec) }
             return_message_from_TCS =  self.SOAR.offset(message)
-            print(return_message_from_TCS)
+            self.logger.info(return_message_from_TCS)
         else:
-            print("TCS is not active")
-            return
-        
-
+            self.logger.warning("TCS is not active")
 
 
     @check_enabled
@@ -649,6 +647,8 @@ class MainPage(SAMOSFrame):
             ginga_object.add_callback('pick-down', self.pick_cb, 'down')
             ginga_object.add_callback('pick-up', self.pick_cb, 'up')
             ginga_object.add_callback('pick-key', self.pick_cb, 'key')
+            ginga_object.add_callback('pick-move', self.pick_cb, 'move')
+            ginga_object.add_callback('edited', self.edit_cb)
             ginga_objects.append(ginga_object)
             self.canvas.add(ginga_object, tag='@{}_{}'.format(tag, i))
         return ginga_objects
@@ -1330,29 +1330,29 @@ class MainPage(SAMOSFrame):
             self.slit_tab_view.add_slit_obj(region, obj.tag, self.fits_image)
 
     @check_enabled
-    def show_GSP00(self):
-        # Show the position of the GSP00 on the image
-        radius_pix = 15
-        reg_GSP00 = CirclePixelRegion(center=PixCoord(self.gs_x0.get(), self.gs_y0.get()), radius=radius_pix)
-        obj = r2g(reg_GSP00)
-        obj.color = "blue"
-        obj.linewidth = 3
-        self.tag_GSP00 = '@check_GSP00_'+str(time.time())  #change the tag each time the circle is created
-        self.canvas.add(obj, tag=self.tag_GSP00)
-        self.logger.info(f"Showing {obj} {obj.tag}")
-        
-    @check_enabled
-    def hide_GSP00(self):
-        # Hide the position of the GSP00 on the image
-        
-        #looking at https://ginga.readthedocs.io/en/stable/_modules/ginga/canvas/CanvasMixin.html
-        #it should be possible to simply run
-        #CM.CompoundMixin.delete_objects_by_tag(self.canvas,'@check_GSP00')  
-        #but it does not work. Needs newer Ginga version?
-        
-        object_to_remove = self.canvas.get_object_by_tag(self.tag_GSP00)
-        self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
-        CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
+    def toggle_gsp00(self):
+        if (self.show_gsp00.get()) and (self.tag_gsp00) is None:
+            # Show the position of the GSP00 on the image
+            radius_pix = 15
+            reg_GSP00 = CirclePixelRegion(
+                center=PixCoord(self.gs_x0.get(), self.gs_y0.get()), radius=radius_pix
+            )
+            obj = r2g(reg_GSP00)
+            obj.color = "blue"
+            obj.linewidth = 3
+            self.tag_gsp00 = '@check_GSP00_'+str(time.time())  #change the tag each time the circle is created
+            self.canvas.add(obj, tag=self.tag_GSP00)
+            self.logger.info(f"Showing {obj} {obj.tag}")
+        elif (not self.show_gsp00.get()) and (self.tag_gsp00 is not None):
+            # Hide the position of the GSP00 on the image
+            #looking at https://ginga.readthedocs.io/en/stable/_modules/ginga/canvas/CanvasMixin.html
+            #it should be possible to simply run
+            #CM.CompoundMixin.delete_objects_by_tag(self.canvas,'@check_GSP00')  
+            #but it does not work. Needs newer Ginga version?
+            object_to_remove = self.canvas.get_object_by_tag(self.tag_gsp00)
+            if object_to_remove is not None:
+                self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
+                CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
         self.canvas.redraw()
         
 
@@ -1442,7 +1442,10 @@ class MainPage(SAMOSFrame):
         mode = self.slit_mode.get()
         if mode != "draw":
             self.source_pickup_enabled.set(False)
-        self.canvas.set_draw_mode(mode)
+        if mode != "delete":
+            self.canvas.set_draw_mode(mode)
+        else:
+            self.canvas.set_draw_mode("pick")
 
 
     @check_enabled
@@ -1770,11 +1773,11 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def slit_width_length_adjust(self, event=None):
-        if self.selected_obj_tag is None:
+        if self.selected_object_tag is None:
             self.logger.error("Trying to adjust width of selected slit with no slit selected.")
             return
 
-        picked_slit = self.canvas.get_object_by_tag(self.selected_obj_tag)
+        picked_slit = self.canvas.get_object_by_tag(self.selected_object_tag)
 
         current_dmd_width = self.width_adjust_btn.get()
         current_dmd_length = self.length_adjust_btn.get()
@@ -1802,7 +1805,7 @@ class MainPage(SAMOSFrame):
         self.canvas.set_draw_mode('draw')
         self.canvas.set_draw_mode('pick')
 
-        obj_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(self.selected_obj_tag.strip("@"))
+        obj_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(self.selected_object_tag.strip("@"))
         imcoords_txt_fmt = "{:.2f}"
 
         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=5, redraw=True, value=imcoords_txt_fmt.format(fits_x0))
@@ -1818,13 +1821,18 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def pick_cb(self, obj, canvas, event, pt, ptype):
         self.logger.info(f"Pick {ptype} on object {obj.tag} of kind {obj.kind} at ({pt[0]}, {pt[1]})")
-        if self.selected_obj_tag is not None:
+        if (hasattr(self, "selected_object_tag")) and (self.selected_object_tag is not None):
             self.logger.info("Unselecting existing selection")
-            canvas.get_object_by_tag(self.selected_obj_tag).color = 'red'
+            canvas.get_object_by_tag(self.selected_object_tag).color = 'red'
             canvas.clear_selected()
 
+        if self.slit_mode.get() == "delete":
+            if obj is not None:
+                canvas.delete_object(obj)
+                return True
+
         canvas.select_add(obj.tag)
-        self.selected_obj_tag = obj.tag
+        self.selected_object_tag = obj.tag
         obj.color = 'green'
 
         canvas.set_draw_mode('draw')
@@ -1849,7 +1857,7 @@ class MainPage(SAMOSFrame):
                 self.slit_tab_view.stab.delete_row(self.tab_row_ind)
                 self.slit_tab_view.stab.redraw()
                 self.slit_tab_view.slitDF = self.slit_tab_view.slitDF.drop(index=self.obj_ind)
-                self.slit_tab_view.slit_obj_tags.remove(self.selected_obj_tag)
+                self.slit_tab_view.slit_obj_tags.remove(self.selected_object_tag)
                 canvas.clear_selected()
 
                 try:
@@ -1870,7 +1878,7 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def edit_cb(self, obj):
-        self.logger.info(f"Object {obj.kind} has been edited")
+        self.logger.info(f"Object {obj.kind} with tag {obj.tag} has been edited")
         tab_row_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(int(obj.tag.strip("@")))
         self.slit_tab_view.stab.select_row(row=tab_row_ind, redraw=True)
         self.slit_tab_view.update_table_row_from_obj(obj, self.fits_image)

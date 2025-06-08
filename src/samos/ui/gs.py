@@ -135,7 +135,13 @@ class GSPage(SAMOSFrame):
 
 
     def send_to_telescope(self):
-        self.logger.warning("send_to_telescope has not been implemented!")
+        if self.SOAR.is_on == True:
+            d_ra = self.gs_ra.get()
+            d_dec = self.gs_dec.get()
+            return_message_from_TCS =  self.SOAR.target(ra=float(d_ra), dec=float(d_dec))
+            self.logger.info(return_message_from_TCS)
+        else:
+            self.logger.warning("TCS is not active")
 
 
     def run_query(self, catalog):
