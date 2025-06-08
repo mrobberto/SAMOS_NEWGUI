@@ -428,10 +428,12 @@ class MainPage(SAMOSFrame):
         tk.Label(frame, textvariable=self.loaded_reg_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Send Centre to SOAR", command=self.send_soar_target)
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         l = ttk.Label(frame, text="Point, take and image, and twirl WCS from GAIA")
-        l.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        l.grid(row=5, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file)
-        b.grid(row=5, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         #self.check_widgets[b] = [("valid_wcs", self.PAR), ("valid_file", self.loaded_reg_file_path)]
         b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs)
         #b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -517,20 +519,21 @@ class MainPage(SAMOSFrame):
         self.set_mode_cb()
         self.set_enabled()
 
-    """
-    def send_to_soar(self):
+
+    @check_enabled
+    def send_soar_target(self):
+        """
+        Send the current target (as obtained from the regions file) to SOAR.
+        """
+        target_ra = float(self.ra_cntr.get())
+        target_dec = float(self.dec_cntr.get())
+        if self.SOAR.is_on == True:
+            return_message_from_TCS =  self.SOAR.target(ra=target_ra, dec=target_dec)
+            self.logger.info(return_message_from_TCS)
+        else:
+            self.logger.warning("TCS is not active")
         
-        # Send the currently set target to SOAR with a move command.
-        
-        target = {
-            "ra": self.db.get_value("target_ra"),
-            "dec": self.db.get_value("target_dec"),
-            "epoch": self.db_get_value("target_epoch"),
-            "ra_rate": 0.,
-            "dec_rate": 0.
-        }
-        self.SOAR.target_move(target)
-    """
+
     @check_enabled
     def send_offset_to_soar(self):
         if self.SOAR.is_on == True:
