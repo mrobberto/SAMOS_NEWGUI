@@ -27,8 +27,6 @@ from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
 
 from ginga.util import iqcalc
-iq = iqcalc.IQCalc()
-
 
 import pandas as pd
 from PIL import Image, ImageTk
@@ -56,6 +54,7 @@ class MainPage(SAMOSFrame):
         self.previous_image_name = ""
         self.selected_object_tag = None
         self.last_update_time = datetime.now()
+        self.iq = iqcalc.IQCalc()
         
         self.initialize_slit_table()
 
@@ -363,16 +362,16 @@ class MainPage(SAMOSFrame):
         slit_frame = ttk.LabelFrame(frame, text="Slit Size")
         slit_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         
-        self.slit_w = self.make_db_var(tk.IntVar, "dmd_hadamard_width", 3)
-        ttk.Label(slit_frame, text="Slit Width (mirrors):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        length_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
+        self.slit_xd = self.make_db_var(tk.IntVar, "dmd_hadamard_cross_dispersion", 9)
+        ttk.Label(slit_frame, text="Slit Cross Dispersion (mirrors):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        length_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_xd, width=5, 
                         from_=0, to=1080)
         length_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
         length_adjust_btn.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         
-        self.slit_l = self.make_db_var(tk.IntVar, "dmd_hadamard_length", 9)
-        ttk.Label(slit_frame, text="Slit Length (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        width_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_l, width=5, 
+        self.slit_disp = self.make_db_var(tk.IntVar, "dmd_hadamard_dispersion", 3)
+        ttk.Label(slit_frame, text="Slit Dispersion (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        width_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_disp, width=5, 
                         from_=0, to=1080)
         width_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
         
@@ -1316,8 +1315,8 @@ class MainPage(SAMOSFrame):
         stars = twirl.find_peaks(data, threshold)[:self.fits_nstars.get()]
         med = np.median(data)
         radius_pix = 20
-        slit_width = self.slit_w.get()
-        slit_height = self.slit_l.get()
+        slit_width = self.slit_xd.get()
+        slit_height = self.slit_disp.get()
         coords = [PixCoord(x, y) for x, y in stars]
         regions = Regions([RectanglePixelRegion(center=c, width=slit_width, height=slit_height, angle=0*u.deg) for c in coords])
         for i,region in enumerate(regions):
@@ -1516,7 +1515,7 @@ class MainPage(SAMOSFrame):
         CM.CompoundMixin.delete_object(self.canvas, obj)
 
         # find the peak within the Ginga box
-        peaks = iq.find_bright_peaks(data_box)
+        peaks = self.iq.find_bright_peaks(data_box)
         print(peaks[:20])  # subarea coordinates
         x1 = obj.x - obj.xradius
         y1 = obj.y - obj.yradius
@@ -1541,7 +1540,7 @@ class MainPage(SAMOSFrame):
         #    * ``background``: Median of the input array.
         #    * ``ensquared_energy_fn``: Function of ensquared energy for different pixel radii.
         #    * ``encircled_energy_fn``: Function of encircled energy for different pixel radii.
-        results = iq.evaluate_peaks(peaks, data_box)
+        results = self.iq.evaluate_peaks(peaks, data_box)
         self.logger.debug("Full Evaluation: {}".format(results))
         #self.logger.info("Peak Centroid: ({}, {})".format(results[0].objx, results[0].objy))
         self.logger.info("Peak Centroid (x,y): ({}, {})".format(results[0].objx+x1, results[0].objy+y1))
@@ -1551,8 +1550,8 @@ class MainPage(SAMOSFrame):
 
         # having found the centroid, we need to draw the slit
         slit_box = self.canvas.get_draw_class('box')
-        xradius = self.slit_w.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
-        yradius = self.slit_l.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
+        xradius = self.slit_xd.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
+        yradius = self.slit_disp.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
         new_obj = slit_box(x=results[0].objx + x1, y=results[0].objy + y1, xradius=xradius, yradius=yradius, color='red',
                            alpha=0.8, fill=False, angle=5*u.deg, pickable=True)
         self.canvas.add(new_obj, tag='@slit_{}-{}'.format(results[0].objx + x1, results[0].objy + y1))
@@ -1744,8 +1743,8 @@ class MainPage(SAMOSFrame):
         self.slits_only()
 
         # do the change
-        xr = self.slit_w.get()/2.
-        yr = self.slit_l.get()/2.
+        xr = self.slit_xd.get()/2.
+        yr = self.slit_disp.get()/2.
         CM.CompoundMixin.set_attr_all(self.canvas, xradius=xr, yradius=yr)
         self.canvas.redraw()
         updated_objs = CM.CompoundMixin.get_objects(self.canvas)
@@ -1845,8 +1844,8 @@ class MainPage(SAMOSFrame):
             dmd_y0, dmd_y1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_y0', 'dmd_y1']].astype(int)
             dmd_width = int(dmd_x1-dmd_x0)
             dmd_length = int(dmd_y1-dmd_y0)
-            self.slit_w.set(dmd_width)
-            self.slit_l.set(dmd_length)
+            self.slit_xd.set(dmd_width)
+            self.slit_disp.set(dmd_length)
         except Exception as e:
             self.logger.error(f"ERROR {e} when updating slit view table")
 
