@@ -1210,8 +1210,14 @@ class MainPage(SAMOSFrame):
         except:
             print("We are not online, need to look for the Gaia stars on local disk")    
             self.logger.info("Loading GAIA File")
-            GAIA_file = tk.filedialog.askopenfilename(title="Select a Gaia File",
-                                                     filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
+            initial_dir = self.db.get_value(
+                "config_science_targets_dir", default=Path.cwd().as_posix()
+            )
+            GAIA_file = tk.filedialog.askopenfilename(
+                title="Select a Gaia File",
+                initialdir=initial_dir,
+                filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
+            )
             csvFile = pd.read_csv(GAIA_file)
             g=np.transpose(np.array([csvFile['ra_now'].values,csvFile['dec_now'].values])) #extract RADEC
             gaias = g[:self.fits_nstars.get(),:]   #select the first Nstars
