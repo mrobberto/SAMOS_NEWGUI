@@ -428,7 +428,7 @@ class MainPage(SAMOSFrame):
         tk.Label(frame, textvariable=self.loaded_reg_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Send Centre to SOAR", command=self.send_soar_target)
+        b = ttk.Button(frame, text="Send Centre to SOAR", command=self.send_soar_target, bootstyle="success")
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         l = ttk.Label(frame, text="Point, take and image, and twirl WCS from GAIA")
         l.grid(row=5, column=0, sticky=TK_STICKY_ALL)
