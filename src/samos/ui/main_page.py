@@ -1011,7 +1011,11 @@ class MainPage(SAMOSFrame):
         """
         if (not self.CCD.initialized) or (not self.CCD.ccd_on):
             # Open a test image
-            image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
+            initial_dir = self.db.get_value("config_science_targets_dir", default=Path.cwd().as_posix())
+            image_to_open = tk.filedialog.askopenfilename(
+                initialdir=initial_dir,
+                filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")]
+            )
             self.Display(image_to_open)
             return
         exposure_params = {
