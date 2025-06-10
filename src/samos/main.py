@@ -41,10 +41,6 @@ class App(ttk.Window):
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
-        log_file = Path.cwd() / "samos_log.txt"
-        handler = TimedRotatingFileHandler(log_file, when='midnight')
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
         self.log_window = LoggingWindow(self)
         self.log_window.text_handler.setLevel(logging.INFO)
         self.log_window.text_handler.setFormatter(formatter)
@@ -76,6 +72,13 @@ class App(ttk.Window):
             "DB": self.DB,
             "registry": self.registry
         }
+
+        log_path = self.PAR.output_dir
+        log_file = log_path / "samos_log.txt"
+        print(f"Logging to {log_file}")
+        handler = TimedRotatingFileHandler(log_file, when='midnight')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
         
         # Setting up Initial Things
         self.title("SAMOS Control System")

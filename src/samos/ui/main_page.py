@@ -199,8 +199,12 @@ class MainPage(SAMOSFrame):
         exp_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         exp_frame.columnconfigure(0, weight=1)
         exp_frame.columnconfigure(1, weight=1)
-        b = ttk.Button(exp_frame, text="START", command=self.start_an_exposure, bootstyle="success")
-        b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
+        self.start_exp_button = ttk.Button(
+            exp_frame, text="START", command=self.start_an_exposure, bootstyle="success"
+        )
+        self.start_exp_button.grid(
+            row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL
+        )
 
         # FITS manager
         frame = ttk.LabelFrame(fleft, text="FITS Manager")
@@ -519,6 +523,7 @@ class MainPage(SAMOSFrame):
         self.toggle_gsp00()
         self.set_mode_cb()
         self.set_enabled()
+        self._set_expnum()
 
 
     @check_enabled
@@ -684,18 +689,19 @@ class MainPage(SAMOSFrame):
         reg_file = tk.filedialog.askopenfilename(initialdir=get_data_file("regions.radec"), title="Select a File",
                                                  filetypes=(("Text files", "*.reg"), ("all files", "*.*")))
         self.loaded_reg_file_path = Path(reg_file)
-        self.loaded_reg_file.set(self.loaded_reg_file_path.name)
+        file_name = self.loaded_reg_file_path.name
+        self.loaded_reg_file.set(file_name)
         initial_regions = Regions.read(self.loaded_reg_file_path, format='ds9')
         astropy_regions_radec = Regions()
         for region in initial_regions:
             if region not in astropy_regions_radec:
                 astropy_regions_radec.append(region)
-        self.target_name = self.loaded_reg_file_path.name[:self.loaded_reg_file_path.name.find("_")]
+        self.target_name = file_name[:file_name.find("_")]
         self.db.update_value("POTN_Target", self.target_name)
         if self.image_type.get() == "Science":
             self.image_name.set(self.target_name)
-        if "RADEC=" in self.loaded_reg_file_path.name:
-            radec_str = self.loaded_reg_file_path.name
+        if "RADEC=" in file_name:
+            radec_str = file_name
              # FIXED THIS LINE BECAUSE WAS NOT READING PROPERLY THE RADEC STRING [MR]
             #radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
             radec_str = radec_str[radec_str.find("RADEC=")+6:radec_str.find(".reg")]
@@ -1022,7 +1028,7 @@ class MainPage(SAMOSFrame):
                 )
                 image_to_open = tk.filedialog.askopenfilename(
                     initialdir=initial_dir,
-                    filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")]
+                    filetypes=[("fitsfiles", "*.fits"), ("allfiles", "*")]
                 )
                 input_image = Path(image_to_open)
                 if input_image.is_file():
@@ -1060,6 +1066,7 @@ class MainPage(SAMOSFrame):
                 self.ql_bias.set(1)
                 self.ql_dark.set(1)
 
+            self.start_exp_button.configure(state="disabled")
             exp_window = ExposureProgressWindow(
                 self,
                 self.CCD,
@@ -1142,8 +1149,10 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def load_existing_file(self):
 #        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
-        loaded_file = tk.filedialog.askopenfilename(title="Select a File",
-                                                    filetypes=(("fits files", "*.fits"), ("all files","*.*")))
+        loaded_file = tk.filedialog.askopenfilename(
+            title="Select a File",
+            filetypes=(("fits files", "*.fits"), ("all files","*.*"))
+        )
         self.fits_image_ql  = loaded_file
         self.Display(loaded_file)
 
@@ -1229,6 +1238,8 @@ class MainPage(SAMOSFrame):
             initial_dir = self.db.get_value(
                 "config_science_targets_dir", default=Path.cwd().as_posix()
             )
+            if (initial_dir / self.target_name).is_dir():
+                initial_dir = initial_dir / self.target_name
             GAIA_file = tk.filedialog.askopenfilename(
                 title="Select a Gaia File",
                 initialdir=initial_dir,
@@ -1391,8 +1402,9 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def open_quicklook_file(self):
         """ to be written """
-        filename = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"),
-                                                 ("fitsfiles", "*.fits")])
+        filename = tk.filedialog.askopenfilename(
+            filetypes=[("fitsfiles", "*.fits"), ("allfiles", "*")]
+        )
         self.Display(filename)
         if self.AstroImage.wcs.wcs.has_celestial:
             self.PAR.wcs = self.AstroImage.wcs.wcs

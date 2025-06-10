@@ -41,6 +41,11 @@ class ExposureProgressWindow(tk.Toplevel):
         self.exposure_progress.grid(row=3, column=0, sticky=TK_STICKY_ALL)
 
 
+    def destroy(self):
+        self.parent.start_exp_button.configure(state="normal")
+        super().destroy()
+
+
     def start_exposure(self, exptype, **params):
         """ 
         This is the landing procedure after the START button has been pressed
