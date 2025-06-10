@@ -34,6 +34,8 @@ from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, Rectangle
 
 import tkinter as tk
 import ttkbootstrap as ttk
+from ttkbootstrap.dialogs import Querybox
+
 from samos.dmd.utilities import DMDGroup
 from samos.ui.slit_table_view import SlitTableView as STView
 from samos.utilities import get_data_file, get_temporary_dir
@@ -151,7 +153,7 @@ class MainPage(SAMOSFrame):
         self.image_exptime = self.make_db_var(tk.DoubleVar, "exptime_set", 0.01)
         ttk.Label(acquire_frame, text="Exposure Time (s):").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(acquire_frame, textvariable=self.image_exptime).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        self.image_expnum = self.make_db_var(tk.IntVar, f"{self.PAR.today_str}_expnum", 1)
+        self.image_expnum = tk.IntVar(self, value=1)
         ttk.Label(acquire_frame, text="Exposure Nr:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.expnum = ttk.Spinbox(acquire_frame, textvariable=self.image_expnum, increment=1, from_=1, to=1000)
         self.expnum.grid(row=3, column=1, sticky=TK_STICKY_ALL)
@@ -186,12 +188,12 @@ class MainPage(SAMOSFrame):
         ttk.Label(self.image_frame, text="Nr. of Frames:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.image_frames = self.make_db_var(tk.IntVar, "exposure_n_frames", 1)
         tk.Entry(self.image_frame, textvariable=self.image_frames).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        ttk.Label(self.image_frame, text="Comments:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        self.image_comments = self.make_db_var(tk.StringVar, "POTN_Comment", "")
-        tk.Entry(self.image_frame, textvariable=self.image_comments).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        w = ttk.Button(self.image_frame, text="Add Comment to Log", command=self.log_comment)
+        w.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.image_save_single = self.make_db_var(tk.BooleanVar, "save_single_frames", False)
         c = tk.Checkbutton(self.image_frame, text="Save Single Frames", variable=self.image_save_single, onvalue=True, offvalue=False)
         c.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+
         # Take Exposure Frame
         exp_frame = ttk.LabelFrame(frame, text="Take Exposure")
         exp_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
@@ -205,10 +207,10 @@ class MainPage(SAMOSFrame):
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load Existing File", command=self.load_existing_file)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.fits_ra = self.make_db_var(tk.DoubleVar, "target_ra", 150.17110)
+        self.fits_ra = tk.DoubleVar(self, value=0.)
         ttk.Label(frame, text="RA:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_ra).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.fits_dec = self.make_db_var(tk.DoubleVar, "target_dec", -54.79004)
+        self.fits_dec = tk.DoubleVar(self, value=0.)
         ttk.Label(frame, text="DEC:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_dec).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.fits_nstars = self.make_db_var(tk.IntVar, "twirl_n_stars", 25)
@@ -219,7 +221,6 @@ class MainPage(SAMOSFrame):
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Send to SOAR", command=self.send_offset_to_soar, bootstyle="success")
         b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
         """
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "target_ra", "target_dec", **self.samos_classes)
@@ -274,7 +275,7 @@ class MainPage(SAMOSFrame):
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
         # Image Canvas
-        canvas = tk.Canvas(frame, bg="grey", width=528, height=518)
+        canvas = tk.Canvas(frame, bg="grey", width=450, height=450)
         canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         fi = CanvasView(self.logger)
         fi.set_widget(canvas)
@@ -1009,44 +1010,68 @@ class MainPage(SAMOSFrame):
         """ 
         This is the landing procedure after the START button has been pressed
         """
-        if (not self.CCD.initialized) or (not self.CCD.ccd_on):
-            # Open a test image
-            initial_dir = self.db.get_value("config_science_targets_dir", default=Path.cwd().as_posix())
-            image_to_open = tk.filedialog.askopenfilename(
-                initialdir=initial_dir,
-                filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")]
+        try:
+            if not self.PAR.fits_dir.is_dir():
+                self.logger.info(f"Creating FITS directory {self.PAR.fits_dir} for tonight")
+                self.PAR.fits_dir.mkdir(parents=True, exist_ok=True)
+            status = self.db.get_value("config_ip_status", default="disconnected")
+            if (not self.CCD.initialized) or (not self.CCD.ccd_on) or (status == "disconnected"):
+                # Open a test image
+                initial_dir = self.db.get_value(
+                    "config_science_targets_dir", default=Path.cwd().as_posix()
+                )
+                image_to_open = tk.filedialog.askopenfilename(
+                    initialdir=initial_dir,
+                    filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")]
+                )
+                input_image = Path(image_to_open)
+                if input_image.is_file():
+                    output_name = f"sample_{self.image_expnum.get():04d}_.fits"
+                    image_output = self.PAR.fits_dir / output_name
+                    image_output.write_bytes(input_image.read_bytes())
+                    self.Display(image_output.as_posix())
+                    self._set_expnum()
+                return
+            exposure_params = {
+                'file_number': self.image_expnum.get(),
+                'exptime': self.image_exptime.get() * 1000,  # ms
+                'exp_frames': self.image_frames.get(),
+                'image_name': self.image_name.get(),
+                'image_type': self.image_type.get(),
+                'filter': self.current_filter.get(),
+                'grating': self.current_grating.get(),
+                'sub_bias': self.ql_bias.get() == 1,
+                'sub_dark': self.ql_dark.get() == 1,
+                'sub_flat': self.ql_flat.get() == 1,
+                'sub_buffer': self.ql_buffer.get() == 1,
+                'save_individual': self.image_save_single.get() == 1,
+            }
+            #are we observing a new target? BCS we may haave lost the WCS solution
+            if self.image_name.get() !=  self.previous_image_name:
+                # yes,  we changed the target
+                # therefore we lost the WCS solution
+                self.PAR.valid_wcs = False
+                self.previous_image_name = self.image_name.get()
+            if self.image_type.get() == "Dark":
+                # By default, subtract the bias in the quicklook
+                self.ql_bias.set(1)
+            elif self.image_type.get() == "Flat":
+                # By default, subtract bias and dark
+                self.ql_bias.set(1)
+                self.ql_dark.set(1)
+
+            exp_window = ExposureProgressWindow(
+                self,
+                self.CCD,
+                self.PAR,
+                self.db,
+                self.main_fits_header,
+                self.DMD,
+                self.logger
             )
-            self.Display(image_to_open)
-            return
-        exposure_params = {
-            'file_number': self.image_expnum.get(),
-            'exptime': self.image_exptime.get() * 1000,  # ms
-            'exp_frames': self.image_frames.get(),
-            'image_name': self.image_name.get(),
-            'image_type': self.image_type.get(),
-            'filter': self.current_filter.get(),
-            'grating': self.current_grating.get(),
-            'sub_bias': self.ql_bias.get() == 1,
-            'sub_dark': self.ql_dark.get() == 1,
-            'sub_flat': self.ql_flat.get() == 1,
-            'sub_buffer': self.ql_buffer.get() == 1,
-            'save_individual': self.image_save_single.get() == 1,
-        }
-        #are we observing a new target? BCS we may haave lost the WCS solution
-        if self.image_name.get() !=  self.previous_image_name:
-            # yes,  we changed the target
-            # therefore we lost the WCS solution
-            self.PAR.valid_wcs = False
-            self.previous_image_name = self.image_name.get()
-        if self.image_type.get() == "Dark":
-            # By default, subtract the bias in the quicklook
-            self.ql_bias.set(1)
-        elif self.image_type.get() == "Flat":
-            # By default, subtract bias and dark
-            self.ql_bias.set(1)
-            self.ql_dark.set(1)
-        exp_window = ExposureProgressWindow(self, self.CCD, self.PAR, self.db, self.main_fits_header, self.DMD, self.logger)
-        exp_window.start_exposure(self.image_type.get(), **exposure_params)
+            exp_window.start_exposure(self.image_type.get(), **exposure_params)
+        finally:
+            self._set_expnum()
 
 
     @check_enabled
@@ -1055,6 +1080,24 @@ class MainPage(SAMOSFrame):
         self.Display(results["superfile"].as_posix())
         self.fits_image.rotate(self.PAR.Ginga_PA)
         self._set_expnum()
+
+
+    @check_enabled
+    def log_comment(self):
+        """
+        Gets the comment and adds it to the logbook.
+        """
+        if not self.PAR.logbook_exists:
+            self.PAR.create_log_file()
+
+        user_comment = Querybox.get_string(
+            title="Comment", prompt="Enter Comment for Log:", parent=self
+        )
+
+        with open(self.PAR.logfile_name, 'a') as logbook:
+            today = datetime.now()
+            logbook.write(f"{today.strftime('%Y-%m-%d')},{today.strftime('%H:%M:%S')},")
+            logbook.write(f"{user_comment}\n")
 
 
     @check_enabled
@@ -1080,29 +1123,6 @@ class MainPage(SAMOSFrame):
                 logbook.write(f"{self.image_exptime.get()},{file_name}\n")
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     @check_enabled
     def change_acq_type(self, event):
         """
@@ -1119,10 +1139,6 @@ class MainPage(SAMOSFrame):
         self.fits_image_ql = imagefile
 
 
-    
-    
-    
-    
     @check_enabled
     def load_existing_file(self):
 #        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
@@ -1388,6 +1404,8 @@ class MainPage(SAMOSFrame):
         """ erase all objects in the canvas except slits (boxes) """
         objects_to_remove = []
         for obj in CM.CompoundMixin.get_objects(self.canvas):
+            if obj.tag == self.tag_gsp00:
+                continue
             if "slit" not in obj.tag:
                 self.logger.info(f"Removing {obj} {obj.tag}")
                 objects_to_remove.append(obj)
@@ -2023,17 +2041,22 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def _set_expnum(self):
         min_num = 0
-        match_str = "*_" + "[0-9]" * 4 + ".fits"
-        current_files = self.PAR.fits_dir.glob(match_str)
+        self.logger.info(f"Checking directory {self.PAR.fits_dir}")
+        current_files = self.PAR.fits_dir.glob("*.fits")
         for file in current_files:
-            num_results = list(map(int, re.findall(r"\d+", file.name)))
-            for number in num_results:
+            self.logger.info(f"Checking exposure number in {file}")
+            num_results = list(map(str, re.findall(r"_\d+_", file.name)))
+            for str_num in num_results:
+                number = int(str_num[1:-1])
+                self.logger.info(f"\tFound number {number}")
                 if number > min_num:
                     min_num = number
         min_num += 1
+        self.logger.info(f"Setting minimum exposure number to {min_num}")
         self.expnum.config(from_=min_num)
         if self.image_expnum.get() < min_num:
             self.image_expnum.set(min_num)
+        self.expnum.configure(from_=min_num)
 
 
     def update_status_box(self):

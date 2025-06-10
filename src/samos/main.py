@@ -3,7 +3,9 @@
 Main entrypoint to SAMOS GUI
 """
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import multiprocessing as mp
+from pathlib import Path
 import socket
 import sys
 
@@ -37,6 +39,10 @@ class App(ttk.Window):
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        log_file = Path.cwd() / "samos_log.txt"
+        handler = TimedRotatingFileHandler(log_file, when='midnight')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
         self.log_window = LoggingWindow(self)
