@@ -211,20 +211,30 @@ class MainPage(SAMOSFrame):
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load Existing File", command=self.load_existing_file)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.image_flip_status = tk.BooleanVar(self, value=False)
+        c = ttk.Checkbutton(
+            frame,
+            text="Flip Image",
+            variable=self.image_flip_status,
+            command=self.toggle_image_flip,
+            onvalue=True,
+            offvalue=False
+        )
+        c.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.fits_ra = tk.DoubleVar(self, value=0.)
-        ttk.Label(frame, text="RA:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_ra).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="RA:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_ra).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.fits_dec = tk.DoubleVar(self, value=0.)
-        ttk.Label(frame, text="DEC:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_dec).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="DEC:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_dec).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         self.fits_nstars = self.make_db_var(tk.IntVar, "twirl_n_stars", 25)
-        ttk.Label(frame, text="Number of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Number of Stars:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_nstars).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
         b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
-        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=5, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Send to SOAR", command=self.send_offset_to_soar, bootstyle="success")
-        b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=5, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         """
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "target_ra", "target_dec", **self.samos_classes)
@@ -816,7 +826,7 @@ class MainPage(SAMOSFrame):
         slit_shape, slit_regions = self.collect_slit_shape()
         self.push_slits(slit_shape)
         region_name = f"{self.image_name.get()}_{self.image_expnum.get():04d}"
-        region_name += f"_{datetime.now().strftime('%H-%M-%S')}_pix.reg"
+        region_name += f"_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}_pix.reg"
         region_name = region_name.replace(" ", "_")
         region_file = self.PAR.fits_dir / region_name
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
@@ -1065,6 +1075,16 @@ class MainPage(SAMOSFrame):
         self.Display(results["superfile"].as_posix())
         self.fits_image.rotate(self.PAR.Ginga_PA)
         self._set_expnum()
+        self.image_flip_status.set(False)
+        self.toggle_image_flip()
+
+
+    @check_enabled
+    def toggle_image_flip(self):
+        """
+        Flip or un-flip the image X axis.
+        """
+        self.canvas.viewer.transform(self.image_flip_status.get(), False, False)
 
 
     @check_enabled
