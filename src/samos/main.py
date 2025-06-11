@@ -8,6 +8,8 @@ import multiprocessing as mp
 from pathlib import Path
 import socket
 import sys
+import urllib.request
+import webbrowser
 
 from ginga.util import iqcalc
 from ginga.AstroImage import AstroImage
@@ -180,15 +182,12 @@ class App(ttk.Window):
         self.log_window.deiconify()
  
     def show_Ginga_keystrokes(self):
-        import webbrowser
-        
-        # define an instance of tkinter
-        # Open website
-        try:
-            webbrowser.open('https://ginga.readthedocs.io/en/v5.0.1/quickref.html#ginga-quick-reference')
-        except:
-            url = 'file://./utilities/QuickReference_ginga_v5.0.1_rev.html'
-            webbrowser.open(url)
+        ginga_url = 'https://ginga.readthedocs.io/en/v5.0.1/quickref.html#ginga-quick-reference'
+        if urllib.request.urlopen(ginga_url).getcode() == 200:
+            webbrowser.open(ginga_url)
+        else:
+            ref_file = get_data_file("documentation", "ginga_quick_reference_v5.0.1.html")
+            webbrowser.open(ref_file)
             
         
 
