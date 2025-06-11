@@ -56,6 +56,7 @@ class MainPage(SAMOSFrame):
         self.selected_object_tag = None
         self.last_update_time = datetime.now()
         self.iq = iqcalc.IQCalc()
+        self.target_name = ""
         
         self.initialize_slit_table()
 
@@ -233,13 +234,13 @@ class MainPage(SAMOSFrame):
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         self.ra_cntr = self.make_db_var(tk.DoubleVar, "centre_ra", self.fits_ra.get())
-        ttk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(cntr_frame, text="GSP00 Set RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.x_offset = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
         ttk.Label(cntr_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
         self.dec_cntr = self.make_db_var(tk.DoubleVar, "centre_dec", self.fits_dec.get())
-        ttk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(cntr_frame, text="GSP00 Set DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
         ttk.Label(cntr_frame, text="Y offset (arsec):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
@@ -249,11 +250,11 @@ class MainPage(SAMOSFrame):
         frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup!")
         frame.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         # X_GSP00
-        self.gs_x0 = tk.DoubleVar(self, 0.)
+        self.gs_x0 = tk.DoubleVar(self, 550)
         ttk.Label(frame, text="X GSP00 (pix)").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_x0).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         # Y GSP00
-        self.gs_y0 = tk.DoubleVar(self, -0.)
+        self.gs_y0 = tk.DoubleVar(self, 488)
         ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # Command Show Buttons
@@ -278,7 +279,7 @@ class MainPage(SAMOSFrame):
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
         # Image Canvas
-        canvas = tk.Canvas(frame, bg="grey", width=450, height=450)
+        canvas = tk.Canvas(frame, bg="grey", width=300, height=300)
         canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         fi = CanvasView(self.logger)
         fi.set_widget(canvas)
@@ -812,11 +813,13 @@ class MainPage(SAMOSFrame):
         self.remove_traces()
         slit_shape, slit_regions = self.collect_slit_shape()
         self.push_slits(slit_shape)
-        region_name = f"{self.image_name.get()}_{self.image_expnum.get():04d}_{datetime.now()}_pix.reg"
+        region_name = f"{self.image_name.get()}_{self.image_expnum.get():04d}"
+        region_name += f"_{datetime.now().strftime('%H-%M-%S')}_pix.reg"
+        region_name = region_name.replace(" ", "_")
         region_file = self.PAR.fits_dir / region_name
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
-        astropy_regions_pix.write(region_file, overwrite=True)
+        astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
                 
 
     @check_enabled
@@ -1157,17 +1160,17 @@ class MainPage(SAMOSFrame):
 
         #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         # not all headers use ra,dec
-        try:  #good header...
-            ra, dec = header["RA"], header["DEC"]
-            self.logger.info(f"From FITS header: ra={ra}, dec={dec}")
-            self.fits_ra.set(ra)
-            self.fits_dec.set(dec)
-        except:
-            self.logger.warning("no RA and  DEC in the FITS header")
+#         try:  #good header...
+#             ra, dec = header["RA"], header["DEC"]
+#             self.logger.info(f"From FITS header: ra={ra}, dec={dec}")
+#             self.fits_ra.set(ra)
+#             self.fits_dec.set(dec)
+#         except:
+#             self.logger.warning("no RA and  DEC in the FITS header")
 
         if  self.ra_cntr.get() !=  0. and self.ra_cntr.get() != 0.:   
             ra = self.ra_cntr.get()
-            dec = self.ra_cntr.get()
+            dec = self.dec_cntr.get()
             self.logger.info("RA and DEC read from the text box")
 
         #MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
@@ -1210,8 +1213,8 @@ class MainPage(SAMOSFrame):
             initial_dir = self.db.get_value(
                 "config_science_targets_dir", default=Path.cwd().as_posix()
             )
-            if (initial_dir / self.target_name).is_dir():
-                initial_dir = initial_dir / self.target_name
+            if (Path(initial_dir) / self.target_name).is_dir():
+                initial_dir = Path(initial_dir) / self.target_name
             GAIA_file = tk.filedialog.askopenfilename(
                 title="Select a Gaia File",
                 initialdir=initial_dir,
@@ -1254,7 +1257,8 @@ class MainPage(SAMOSFrame):
         #ADD '_QL' SUFFIX IF NOT ALREADY PRESENT
         if self.fits_image_ql[-8:-5] != '_QL':
             self.fits_image_ql = self.fits_image_ql[:-5] + '_QL.fits'
-        hdu_wcs[0].writeto(self.fits_image_ql, overwrite=True)
+        if not Path(self.fits_image_ql).is_file():
+            hdu_wcs[0].writeto(self.fits_image_ql, overwrite=True)
 
         #self.Display(self.wcs_filename)
         #self.fits_image.rotate(self.PAR.Ginga_PA)  
@@ -1939,10 +1943,11 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def load_slits(self):
-        filename_slits = tk.filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.slits"),
-                                                       title="Select a File",
-                                                       filetypes=(("Text files", "*.csv"),
-                                                                  ("all files", "*.*")))
+        filename_slits = tk.filedialog.askopenfilename(
+            initialdir=get_data_file("dmd.scv.slits"),
+            title="Select a File",
+            filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
+        )
         self.saved_slit_file_path = Path(filename_slits)
         self.saved_slit_file.set(self.saved_slit_file_path.name)
 
