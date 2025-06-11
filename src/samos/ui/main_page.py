@@ -58,7 +58,7 @@ class MainPage(SAMOSFrame):
         self.iq = iqcalc.IQCalc()
         self.target_name = ""
         
-        self.initialize_slit_table()
+#         self.initialize_slit_table()
 
         # keep track of the entry number for header keys that need to be added. will be used to write "OtherParameters.txt"
         self.extra_header_params = 0
@@ -319,6 +319,9 @@ class MainPage(SAMOSFrame):
         self.drawtypes.sort()
         self.readout = ttk.Label(frame, text='', font='TkFixedFont')
         self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        blank_data = np.zeros((1056, 1032), dtype=np.int16)
+        self.AstroImage = AstroImage(data_np=blank_data)
+        self.fits_image.set_image(self.AstroImage)
 
         # Ginga Tool Box
         frame = ttk.LabelFrame(fctr, text="Tools")
@@ -586,8 +589,8 @@ class MainPage(SAMOSFrame):
         self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix, tag="slit")
         self.logger.info("Converted Astropy pixel regions to Ginga")
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
         #self.slit_tab_view.load_table_from_regfile_RADEC(regs_RADEC=astropy_regions_wcs, img_wcs=self.PAR.wcs)
         self.logger.info("Finished displaying regions and loading slit tab view")
 
@@ -724,9 +727,9 @@ class MainPage(SAMOSFrame):
                 astropy_regions_pix.append(region)
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
         self.loaded_ginga_regions = ginga_regions
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
-        self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
+#         self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
 
 
     @check_enabled
@@ -1335,8 +1338,8 @@ class MainPage(SAMOSFrame):
     def find_stars(self):
         self.Display(self.fits_image_ql)
         self.fits_image.rotate(self.PAR.Ginga_PA)  
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
         
         self.set_slit_drawtype()
         with fits.open(self.fits_image_ql) as hdul:
@@ -1369,7 +1372,7 @@ class MainPage(SAMOSFrame):
             obj.color = "red"
             obj.add_callback('pick-up', self.pick_cb, 'up')
             obj.add_callback('edited', self.edit_cb)
-            self.slit_tab_view.add_slit_obj(region, obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(region, obj.tag, self.fits_image)
 
     @check_enabled
     def toggle_gsp00(self):
@@ -1508,8 +1511,8 @@ class MainPage(SAMOSFrame):
         obj.add_callback('edited', self.edit_cb)
         kind = self.draw_type.get()
         self.logger.info(f"User draw object of kind {kind} with tag {tag} on canvas {canvas}")
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
         
         if kind == "box" and self.source_pickup_enabled.get():
             # User drew a box in source-pickup mode (should never happen)
@@ -1521,11 +1524,11 @@ class MainPage(SAMOSFrame):
                 obj.kind = "box"
 
             new_obj = self.slit_handler(obj)
-            self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
         elif self.source_pickup_enabled.get() and kind == 'point':
             # User clicked on a point in source pick-up mode.
             new_obj = self.slit_handler(obj)
-            self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
         elif kind == "box" and not self.source_pickup_enabled.get():
             # a box is drawn but centroid is not searched, just drawn...
 
@@ -1536,7 +1539,7 @@ class MainPage(SAMOSFrame):
             r = g2r(obj)
             
             # the astropy object is added to the table
-            self.slit_tab_view.add_slit_obj(r, obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(r, obj.tag, self.fits_image)
         # Done draw_cb
 
 
@@ -1801,7 +1804,7 @@ class MainPage(SAMOSFrame):
         self.canvas.redraw()
         updated_objs = CM.CompoundMixin.get_objects(self.canvas)
         viewer_list = np.full(len(updated_objs), self.canvas.viewer)
-        np.array(list(map(self.slit_tab_view.update_table_from_obj, updated_objs, viewer_list)))
+#         np.array(list(map(self.slit_tab_view.update_table_from_obj, updated_objs, viewer_list)))
 
 
     @check_enabled
@@ -1856,17 +1859,17 @@ class MainPage(SAMOSFrame):
         self.canvas.set_draw_mode('draw')
         self.canvas.set_draw_mode('pick')
 
-        obj_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(self.selected_object_tag.strip("@"))
-        imcoords_txt_fmt = "{:.2f}"
-
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=5, redraw=True, value=imcoords_txt_fmt.format(fits_x0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=6, redraw=True, value=imcoords_txt_fmt.format(fits_y0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=7, redraw=True, value=imcoords_txt_fmt.format(fits_x1))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=8, redraw=True, value=imcoords_txt_fmt.format(fits_y1))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=11, redraw=True, value=int(dmd_x0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=12, redraw=True, value=int(dmd_y0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=13, redraw=True, value=int(dmd_x1))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=14, redraw=True, value=int(dmd_y1))
+#         obj_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(self.selected_object_tag.strip("@"))
+#         imcoords_txt_fmt = "{:.2f}"
+# 
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=5, redraw=True, value=imcoords_txt_fmt.format(fits_x0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=6, redraw=True, value=imcoords_txt_fmt.format(fits_y0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=7, redraw=True, value=imcoords_txt_fmt.format(fits_x1))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=8, redraw=True, value=imcoords_txt_fmt.format(fits_y1))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=11, redraw=True, value=int(dmd_x0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=12, redraw=True, value=int(dmd_y0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=13, redraw=True, value=int(dmd_x1))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=14, redraw=True, value=int(dmd_y1))
 
 
     @check_enabled
@@ -1890,79 +1893,79 @@ class MainPage(SAMOSFrame):
         canvas.set_draw_mode('pick')
 
         self.obj_ind = int(obj.tag.strip('@'))-1
-        try:
-            self.tab_row_ind = self.slit_tab_view.stab.get_column_data(0).index(obj.tag.strip('@'))
-            dmd_x0, dmd_x1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_x0', 'dmd_x1']].astype(int)
-            dmd_y0, dmd_y1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_y0', 'dmd_y1']].astype(int)
-            dmd_width = int(dmd_x1-dmd_x0)
-            dmd_length = int(dmd_y1-dmd_y0)
-            self.slit_xd.set(dmd_width)
-            self.slit_disp.set(dmd_length)
-        except Exception as e:
-            self.logger.error(f"ERROR {e} when updating slit view table")
+#         try:
+#             self.tab_row_ind = self.slit_tab_view.stab.get_column_data(0).index(obj.tag.strip('@'))
+#             dmd_x0, dmd_x1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_x0', 'dmd_x1']].astype(int)
+#             dmd_y0, dmd_y1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_y0', 'dmd_y1']].astype(int)
+#             dmd_width = int(dmd_x1-dmd_x0)
+#             dmd_length = int(dmd_y1-dmd_y0)
+#             self.slit_xd.set(dmd_width)
+#             self.slit_disp.set(dmd_length)
+#         except Exception as e:
+#             self.logger.error(f"ERROR {e} when updating slit view table")
 
         if ptype == 'up' or ptype == 'down':
             canvas.delete_object(obj)
-            try:
-                self.slit_tab_view.stab.select_row(row=self.tab_row_ind)
-                self.slit_tab_view.stab.delete_row(self.tab_row_ind)
-                self.slit_tab_view.stab.redraw()
-                self.slit_tab_view.slitDF = self.slit_tab_view.slitDF.drop(index=self.obj_ind)
-                self.slit_tab_view.slit_obj_tags.remove(self.selected_object_tag)
-                canvas.clear_selected()
-
-                try:
-                    for si in range(len(self.pattern_series)):
-                        sub = self.pattern_series[si]
-                        tag = int(obj.tag.strip("@"))
-                        if tag in sub.object.values:
-                            sub_ind = sub.where(sub.object == tag).dropna(how="all").index.values[0]
-                            sub = sub.drop(index=sub_ind)
-                            self.pattern_series[si] = sub
-                except Exception as e:
-                    self.logger.error(f"Error {e} while looping through sub-patterns")
-            except Exception as e:
-                self.logger.error(f"Error {e} (possibly slit table does not exist)")
-                print("No slit table created yet.")
+#             try:
+#                 self.slit_tab_view.stab.select_row(row=self.tab_row_ind)
+#                 self.slit_tab_view.stab.delete_row(self.tab_row_ind)
+#                 self.slit_tab_view.stab.redraw()
+#                 self.slit_tab_view.slitDF = self.slit_tab_view.slitDF.drop(index=self.obj_ind)
+#                 self.slit_tab_view.slit_obj_tags.remove(self.selected_object_tag)
+#                 canvas.clear_selected()
+# 
+#                 try:
+#                     for si in range(len(self.pattern_series)):
+#                         sub = self.pattern_series[si]
+#                         tag = int(obj.tag.strip("@"))
+#                         if tag in sub.object.values:
+#                             sub_ind = sub.where(sub.object == tag).dropna(how="all").index.values[0]
+#                             sub = sub.drop(index=sub_ind)
+#                             self.pattern_series[si] = sub
+#                 except Exception as e:
+#                     self.logger.error(f"Error {e} while looping through sub-patterns")
+#             except Exception as e:
+#                 self.logger.error(f"Error {e} (possibly slit table does not exist)")
+#                 print("No slit table created yet.")
         return True
 
 
     @check_enabled
     def edit_cb(self, obj):
         self.logger.info(f"Object {obj.kind} with tag {obj.tag} has been edited")
-        tab_row_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(int(obj.tag.strip("@")))
-        self.slit_tab_view.stab.select_row(row=tab_row_ind, redraw=True)
-        self.slit_tab_view.update_table_row_from_obj(obj, self.fits_image)
+#         tab_row_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(int(obj.tag.strip("@")))
+#         self.slit_tab_view.stab.select_row(row=tab_row_ind, redraw=True)
+#         self.slit_tab_view.update_table_row_from_obj(obj, self.fits_image)
         return True
 
 
-    @check_enabled
-    def initialize_slit_table(self):
-        if (not hasattr(self, "slit_window")) or (self.slit_window is None):
-            self.slit_window = tk.Toplevel()
-            self.slit_window.title("Slit Table")
-            self.slit_window.geometry("700x407")
-            self.slit_tab_view = STView(self.slit_window, self.parent, self.PAR, self.logger)
-            self.slit_window.withdraw()
+#     @check_enabled
+#     def initialize_slit_table(self):
+#         if (not hasattr(self, "slit_window")) or (self.slit_window is None):
+#             self.slit_window = tk.Toplevel()
+#             self.slit_window.title("Slit Table")
+#             self.slit_window.geometry("700x407")
+#             self.slit_tab_view = STView(self.slit_window, self.parent, self.PAR, self.logger)
+#             self.slit_window.withdraw()
 
 
-    @check_enabled
-    def show_slit_table(self):
-        try:
-            self.slit_window.deiconify()
-        except AttributeError as e:
-            self.logger.warning("No slits to show in slit table")
-        except Exception as e:
-            # need to remake the table viewing window if it is destroyed
-            if not self.slit_window.winfo_exists():
-                # preserve the slit data frame so it is republished in the new window
-                current_slitDF = self.slit_tab_view.slitDF
-                self.initialize_slit_table()
-                self.slit_tab_view.slitDF = current_slitDF
-                # re-add the table rows
-                if not self.slit_tab_view.slitDF.empty:
-                    self.slit_tab_view.recover_window()
-                self.slit_window.deiconify()
+#     @check_enabled
+#     def show_slit_table(self):
+#         try:
+#             self.slit_window.deiconify()
+#         except AttributeError as e:
+#             self.logger.warning("No slits to show in slit table")
+#         except Exception as e:
+#             # need to remake the table viewing window if it is destroyed
+#             if not self.slit_window.winfo_exists():
+#                 # preserve the slit data frame so it is republished in the new window
+#                 current_slitDF = self.slit_tab_view.slitDF
+#                 self.initialize_slit_table()
+#                 self.slit_tab_view.slitDF = current_slitDF
+#                 # re-add the table rows
+#                 if not self.slit_tab_view.slitDF.empty:
+#                     self.slit_tab_view.recover_window()
+#                 self.slit_window.deiconify()
 
 
     @check_enabled
