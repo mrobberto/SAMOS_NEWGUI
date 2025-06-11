@@ -263,8 +263,8 @@ class CCD():
         # write to file
         # 1) the last file is always saved as newimage.fit, and handled by ginga
         self.write_exposure(self.PAR.QL_images / "newimage.fits", data)
-        self.write_exposure("{}_{:04n}.fits".format(night_dir_basename, fnumber), data)
-        return "{}_{:04n}.fits".format(night_dir_basename, fnumber), read_bytes
+        self.write_exposure("{}_{:04d}.fits".format(night_dir_basename, fnumber), data)
+        return "{}_{:04d}.fits".format(night_dir_basename, fnumber), read_bytes
 
 
     def finish_exposure(self, collected_images, startTime, total_read_bytes):
