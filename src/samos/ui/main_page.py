@@ -319,9 +319,6 @@ class MainPage(SAMOSFrame):
         self.drawtypes.sort()
         self.readout = ttk.Label(frame, text='', font='TkFixedFont')
         self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        blank_data = np.zeros((1056, 1032), dtype=np.int16)
-        self.AstroImage = AstroImage(data_np=blank_data)
-        self.fits_image.set_image(self.AstroImage)
 
         # Ginga Tool Box
         frame = ttk.LabelFrame(fctr, text="Tools")
@@ -505,6 +502,8 @@ class MainPage(SAMOSFrame):
         self.set_mode_cb()
         self.set_enabled()
         self._set_expnum()
+        # Start out displaying an empty file
+        self.Display(get_data_file("system", "blank.fits"))
 
 
     @check_enabled
