@@ -701,8 +701,10 @@ class MainPage(SAMOSFrame):
         - Valid WCS
         """
         self.logger.info("Loading DS9 pixel region file to Astropy Pixels")
-        reg_file = tk.filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
-                                                 initialdir=get_data_file("regions.pixels"))
+        reg_file = tk.filedialog.askopenfilename(
+            filetypes=[("region files", "*.reg")],
+            initialdir=get_data_file("regions.pixels")
+        )
         self.loaded_ginga_file_path = Path(reg_file)
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
         initial_regions = Regions.read(self.loaded_ginga_file_path, format="ds9")
@@ -712,7 +714,7 @@ class MainPage(SAMOSFrame):
                 astropy_regions_pix.append(region)
         if self.slit_tab_view is None:
             self.initialize_slit_table()
-        self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=asatropy_regions_pix, img_wcs=self.PAR.wcs)
+        self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
         self.loaded_ginga_regions = ginga_regions
 
@@ -820,6 +822,7 @@ class MainPage(SAMOSFrame):
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
         astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
+        region_file = get_data_file("")
                 
 
     @check_enabled
@@ -1530,7 +1533,7 @@ class MainPage(SAMOSFrame):
             CM.CompoundMixin.delete_object(self.canvas, obj)
 
             # create area to search, use astropy and convert to ginga (historic reasons...)
-            r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)), width=40, height=40, angle=0*u.deg)
+            r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)), width=15, height=15, angle=0*u.deg)
             # and we convert it to ginga.
             obj = r2g(r)
             self.canvas.add(obj)
