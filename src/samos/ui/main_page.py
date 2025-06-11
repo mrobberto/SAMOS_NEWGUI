@@ -111,10 +111,11 @@ class MainPage(SAMOSFrame):
         self.filter_data = ascii.read(get_data_file("system", 'SAMOS_Filter_positions.txt'))
         filter_names = list(self.PCM.FILTER_WHEEL_MAPPINGS.keys())
         self.current_filter = self.make_db_var(tk.StringVar, "pcm_filter", filter_names[2])
+        self.selected_filter = tk.StringVar(self, value=self.current_filter.get())
         ttk.Label(filter_frame, text="Current Filter:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(filter_frame, textvariable=self.current_filter, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.current_filter, None, *filter_names)
+        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.selected_filter, None, *filter_names)
         self.filter_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(filter_frame, text="Set Filter", command=self.set_filter, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -125,10 +126,11 @@ class MainPage(SAMOSFrame):
         grating_names = list(self.PCM.GRISM_RAIL_MAPPINGS.keys())
         self.grating_positions = list(self.filter_data['Position'][12:18])
         self.current_grating = self.make_db_var(tk.StringVar, "pcm_grating", grating_names[2])
+        self.selected_grating = tk.StringVar(self, value=self.current_grating.get())
         ttk.Label(grating_frame, text="Current Grating:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(grating_frame, textvariable=self.current_grating, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.current_grating, None, *grating_names)
+        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.selected_grating, None, *grating_names)
         self.grating_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(grating_frame, text="Set Grating", command=self.set_grating, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -852,7 +854,7 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def set_filter(self):
         self.logger.info("Setting Filter to {}".format(self.current_filter.get()))
-        new_filter = self.current_filter.get()
+        new_filter = self.selected_filter.get()
         self.main_fits_header.set_param("filter", new_filter)
         filter_pos = self.PCM.FILTER_WHEEL_MAPPINGS[new_filter.lower()]
         self.main_fits_header.set_param("filtpos", f"{filter_pos[0]},{filter_pos[1]}")
@@ -867,12 +869,13 @@ class MainPage(SAMOSFrame):
             'Selected filter'
         )
         self.header_entry_string += entry_string
+        self.current_filter.set(self.selected_filter.get())
 
 
     @check_enabled
     def set_grating(self):
         self.logger.info("Setting Grating to {}".format(self.current_grating.get()))
-        new_grating = self.current_grating.get()
+        new_grating = self.selected_grating.get()
         self.main_fits_header.set_param("grating", new_grating)
         grating_pos = self.PCM.GRISM_RAIL_MAPPINGS[new_grating.lower()]
         self.main_fits_header.set_param("gratpos", f"{grating_pos[0]},{grating_pos[1]}")
@@ -881,6 +884,7 @@ class MainPage(SAMOSFrame):
         self.extra_header_params += 1
         entry_string = PARAM_ENTRY_FORMAT.format(self.extra_header_params, 'String', 'GRISM', new_grating, 'Grism position')
         self.header_entry_string += entry_string
+        self.current_grating.set(self.selected_grating.get())
 
 
     @check_enabled
@@ -901,6 +905,8 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def clear_canvas(self):
         self.canvas.delete_all_objects(redraw=True)
+        self.tag_gsp00 = None
+        self.toggle_gsp00()
 
     """ NO FLIP IMAGE
     @check_enabled
@@ -919,23 +925,13 @@ class MainPage(SAMOSFrame):
             photometric information, in particular the PSF
             Created October 14, 2024
         """
-        
-        """command to rotate the image, not sure why we have it. Still needed?"""
-        #self.fitsimage.rotate(self.PAR.Ginga_PA)  
-        
-        "display the current image again"
         self.Display(self.fits_image_ql)
-        # self.load_file()   #for ging
-    
-        "extract header and data plane"
-        hdu_Main = fits.open(self.fits_image_ql)  # for this function to work
-        hdu = hdu_Main[0]
-        #header = hdu.header
-        data = hdu.data
-        hdu_Main.close()
+        with fits.open(self.fits_image_ql) as fits_file:
+            hdu = fits_file[0]
+            data = hdu.data
             
         # Let's find some stars and display the image
-        self.canvas.delete_all_objects(redraw=True)
+        self.clear_canvas()
         
         "why do we care about SDSS_stars?"
         #check first if it exist, as we may have not yet queried SDSS   
@@ -978,10 +974,10 @@ class MainPage(SAMOSFrame):
             obj.color="blue"
             self.canvas.add(obj)
         #print(fwhm_x,'n',fwhm_y,'\n')    
-        print("           Mean      Median     std")
-        print("FWHM_x:   %6.3f,   %6.3f,   %6.3f" % (np.mean(fwhm_x),np.median(fwhm_x),np.std(fwhm_x)))
-        print("FWHM_y:   %6.3f,   %6.3f,   %6.3f" % (np.mean(fwhm_y),np.median(fwhm_y),np.std(fwhm_y)))
-        print("FWHM values calculated using ",len(fwhm_x),"stars")
+        self.logger.info("           Mean      Median     std")
+        self.logger.info(f"FWHM_x:   {np.mean(fwhm_x):6.3f},   {np.median(fwhm_x):6.3f},   {np.std(fwhm_x):6.3f}")
+        self.logger.info(f"FWHM_y:   {np.mean(fwhm_y):6.3f},   {np.median(fwhm_y):6.3f},   {np.std(fwhm_y):6.3f}")
+        self.logger.info("FWHM values calculated using ",len(fwhm_x),"stars")
         return(np.mean(fwhm_x),np.mean(fwhm_y))
 
     def profiles(self,image,xpix, ypix):

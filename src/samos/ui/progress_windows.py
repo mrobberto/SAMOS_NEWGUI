@@ -305,7 +305,7 @@ class ExposureProgressWindow(tk.Toplevel):
             superfile_numbered = f"{image_type}_{params['exptime']/1000}_{params['image_name']}_{last_number:04n}_coadd.fits"
         else:
             superfile_name = "{}_coadd.fits".format(image_type)
-            superfile_numbered = f"{image_type}_{params['image_name']}_{last_number:04n}_coadd.fits"
+            superfile_numbered = f"{image_type}_{params['image_name']}_{last_number:04d}_coadd.fits"
         
         self.main_fits_header.set_param("filename", superfile_name)
         self.main_fits_header.set_param("combined", "T")
