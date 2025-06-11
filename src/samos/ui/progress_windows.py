@@ -43,6 +43,7 @@ class ExposureProgressWindow(tk.Toplevel):
 
     def destroy(self):
         self.parent.start_exp_button.configure(state="normal")
+        self.parent._set_expnum()
         super().destroy()
 
 

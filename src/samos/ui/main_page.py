@@ -258,7 +258,7 @@ class MainPage(SAMOSFrame):
         ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # Command Show Buttons
-        self.show_gsp00 = self.make_db_var(tk.BooleanVar, "show_gsp00", True)
+        self.show_gsp00 = tk.BooleanVar(self, value=False)
         c = ttk.Checkbutton(
             frame,
             text="Show GSP00",
@@ -449,7 +449,6 @@ class MainPage(SAMOSFrame):
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load (x, y) Regions from DS9 Region file", command=self.load_regions_pix)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_wcs", self.PAR)]
         self.loaded_ginga_file = self.make_db_var(tk.StringVar, "dmd_loaded_ginga_file", "none")
         self.loaded_ginga_file_path = None
         ttk.Label(frame, text="Loaded File in CCD Units:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
@@ -520,7 +519,6 @@ class MainPage(SAMOSFrame):
         # Register the frame with PAR
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
-        self.toggle_gsp00()
         self.set_mode_cb()
         self.set_enabled()
         self._set_expnum()
@@ -1391,11 +1389,15 @@ class MainPage(SAMOSFrame):
             #it should be possible to simply run
             #CM.CompoundMixin.delete_objects_by_tag(self.canvas,'@check_GSP00')  
             #but it does not work. Needs newer Ginga version?
-            object_to_remove = self.canvas.get_object_by_tag(self.tag_gsp00)
-            if object_to_remove is not None:
-                self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
-                CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
-            self.tag_gsp00 = None
+            try:
+                object_to_remove = self.canvas.get_object_by_tag(self.tag_gsp00)
+                if object_to_remove is not None:
+                    self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
+                    CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
+            except Exception as e:
+                self.logger.error(f"Exception {e} trying to remove the circle. Aborting.")
+            finally:
+                self.tag_gsp00 = None
         self.canvas.redraw()
         
 
