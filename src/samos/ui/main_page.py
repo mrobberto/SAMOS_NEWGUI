@@ -294,10 +294,11 @@ class MainPage(SAMOSFrame):
         fi.get_bindings().enable_all(True)
         self.fits_image = fi
         # Drawing Canvas
+        self.draw_type = tk.StringVar(self, value="box")
         self.canvas = self.canvas_types.DrawingCanvas()
         self.canvas.enable_draw(True)
         self.canvas.enable_edit(True)
-        self.canvas.set_drawtype('box', color='red')
+        self.canvas.set_drawtype(self.draw_type.get(), color='red')
         self.canvas.register_for_cursor_drawing(fi)
         self.canvas.add_callback('draw-event', self.draw_cb)
         self.canvas.set_draw_mode('draw')
@@ -722,6 +723,7 @@ class MainPage(SAMOSFrame):
         Export all Ginga objects to Astropy region
         """
         self.logger.info("Collecting Slit")
+        slit_regions = []
         objects = CM.CompoundMixin.get_objects(self.canvas)
         try:
             pattern_index = self.pattern_group.current()
@@ -747,11 +749,13 @@ class MainPage(SAMOSFrame):
                 x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 slit_shape[x1, y1] = 0
+                slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])
             elif self.source_pickup_enabled.get() and obj.kind == 'point':
                 x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2, y2 = ccd_to_dmd(ccd_x1, ccd_y1, self.PAR.dmd_wcs)
                 x2, y2 = int(np.ceil(x2)), int(np.ceil(y2))
+                slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])
             else:
                 print("generic aperture")
                 # 3 load the slit pattern
@@ -776,6 +780,7 @@ class MainPage(SAMOSFrame):
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
                     slit_shape[x1-2:x1, y1-2:y2+1] = 1
+                    slit_regions.append([cx0, cx0+1, cy0, cy0+1])
                 # paint black the horizontal columns, avoids rounding error in the pixel->dmd sub-int conversion
                 for i in np.unique(good_box_y):  # scanning multiple rows means each steps moves up along the y axis
                     # the indices of the y values pertinent to that x
@@ -793,7 +798,8 @@ class MainPage(SAMOSFrame):
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
                     slit_shape[x1-2:x1, y1-2:y1] = 1
-        return slit_shape
+                    slit_regions.append([cx0, cx1+1, cy0, cy0+1])
+        return slit_shape, slit_regions
 
 
     @check_enabled
@@ -804,8 +810,13 @@ class MainPage(SAMOSFrame):
         """
         self.logger.info("Pushing slit shape to DMD")
         self.remove_traces()
-        slit_shape = self.collect_slit_shape()
+        slit_shape, slit_regions = self.collect_slit_shape()
         self.push_slits(slit_shape)
+        region_name = f"{self.image_name.get()}_{self.image_expnum.get():04d}_{datetime.now()}_pix.reg"
+        region_file = self.PAR.fits_dir / region_name
+        ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
+        astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
+        astropy_regions_pix.write(region_file, overwrite=True)
                 
 
     @check_enabled
@@ -1148,15 +1159,16 @@ class MainPage(SAMOSFrame):
         # not all headers use ra,dec
         try:  #good header...
             ra, dec = header["RA"], header["DEC"]
-            print(ra,dec)
+            self.logger.info(f"From FITS header: ra={ra}, dec={dec}")
             self.fits_ra.set(ra)
             self.fits_dec.set(dec)
         except:
-            print("no RA and  DEC in the FITS header")
-        if  self.fits_ra.get() !=  '' and self.fits_dec.get() != '':   
-            ra = self.fits_ra.get()
-            dec = self.fits_dec.get()
-            print("RA and DEC read from the text box")
+            self.logger.warning("no RA and  DEC in the FITS header")
+
+        if  self.ra_cntr.get() !=  0. and self.ra_cntr.get() != 0.:   
+            ra = self.ra_cntr.get()
+            dec = self.ra_cntr.get()
+            self.logger.info("RA and DEC read from the text box")
 
         #MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
         elif self.SOAR.is_on == True:               #was self.PAR.inoutvar.get() == "inside": 
@@ -1165,12 +1177,12 @@ class MainPage(SAMOSFrame):
             dec=infoa_dict['MOUNT_DEC']
             self.fits_ra.set(ra)
             self.fits_dec.set(dec)
-            print("RADEC provided by the SOAR TCS")               
+            self.logger.info("RADEC provided by the SOAR TCS")               
         else:   
             messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
             return
 
-        print("Pointed coordinates: ",ra,dec)
+        self.logger.info(f"Pointed coordinates: {ra} {dec}")
         #<<<<<<<<<<<<<<<<<<<<
 
         center = SkyCoord(ra, dec, unit=[u.deg, u.deg])
@@ -1193,7 +1205,7 @@ class MainPage(SAMOSFrame):
         try:
             gaias = twirl.gaia_radecs(center, fov, limit=self.fits_nstars.get())
         except:
-            print("We are not online, need to look for the Gaia stars on local disk")    
+            self.logger.info("We are not online, need to look for the Gaia stars on local disk")    
             self.logger.info("Loading GAIA File")
             initial_dir = self.db.get_value(
                 "config_science_targets_dir", default=Path.cwd().as_posix()
@@ -1229,7 +1241,7 @@ class MainPage(SAMOSFrame):
             self.PAR.valid_wcs = True
             self.logger.info("Found WCS solution")
 
-        print(self.PAR.wcs)               # print the WCS solution
+        self.logger.info(f"WCS Solution is: {self.PAR.wcs}")
         hdu_wcs = self.PAR.wcs.to_fits()  # creates a primaryHDU object 
         if self.loaded_reg_file_path is not None:
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)   #write in the fits header the name of the DMD map used
@@ -1256,8 +1268,8 @@ class MainPage(SAMOSFrame):
         # determine the RA,DEC coordinates actually pof_inted by the telescope
         ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00, y_GSP00, 0)
         x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra, dec, 0)
-        print(x_pointed, y_pointed, ra, dec)
-        print(x_GSP00, y_GSP00, ra_tel, dec_tel)
+        self.logger.info(f"{x_pointed}, {y_pointed}, {ra}, {dec}")
+        self.logger.info(f"{x_GSP00}, {y_GSP00}, {ra_tel}, {dec_tel}")
         # calculate the offset in RADEC between the telescope and commanded positions
         Delta_ra = float(ra_tel) - float(ra)
         Delta_dec = float(dec_tel) - float(dec)
@@ -1267,8 +1279,8 @@ class MainPage(SAMOSFrame):
         #display
         self.x_offset.set(Delta_RA_arcsec)
         self.y_offset.set(Delta_DEC_arcsec)
-        print(Delta_RA_arcsec,Delta_DEC_arcsec)
-        print('done')
+        self.logger.info(f"{Delta_RA_arcsec}, {Delta_DEC_arcsec}")
+        self.logger.info('done')
         # ready to offset the telescope to the commanded position
 
         """ => SUPERSEDED BY THE ABOVE CODE
@@ -1600,11 +1612,12 @@ class MainPage(SAMOSFrame):
             if "slit" not in obj.tag:
                 continue
             if hasattr(obj, 'x'):
+                self.logger.info(f"Object: ({obj.x}, {obj.y}) size ({obj.xradius}, {obj.yradius})")
                 ox, oy = round(obj.x), round(obj.y)
                 x1, x2 = max(ox - obj.xradius, 0), min(ox + obj.xradius, max_x)
-                y1, y2 = max(oy - 1024, 0), min(oy + 1024, max_y)
-                if (x1 < 0) or (x2 < 0) or (y1 < 0) or (y2 < 0):
-                    continue
+                y1, y2 = oy - 1024, oy + 1024
+#                 if (x1 < 0) or (x2 < 0) or (y1 < 0) or (y2 < 0):
+#                     continue
 #                 x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
 #                 y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
                 self.logger.info(f"Slit {i}: Trace ({x1} -> {x2}, {y1} -> {y2})")
