@@ -49,7 +49,6 @@ from .gs_query_frame import GSQueryFrame
 from scipy.interpolate import UnivariateSpline # for PSF calculation
 
 
-
 class MainPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "Main Frame", **kwargs)
@@ -119,7 +118,6 @@ class MainPage(SAMOSFrame):
         self.filter_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(filter_frame, text="Set Filter", command=self.set_filter, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.PCM, "is_on", True)]
         # Grating
         grating_frame = ttk.Label(frame, text="Grating")
         grating_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -134,7 +132,6 @@ class MainPage(SAMOSFrame):
         self.grating_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(grating_frame, text="Set Grating", command=self.set_grating, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.PCM, "is_on", True)]
 
         # CCD Management
         frame = ttk.LabelFrame(fleft, text="CCD Setup")
@@ -316,27 +313,6 @@ class MainPage(SAMOSFrame):
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Early variable definition because it's needed to set an enable condition.
         self.source_pickup_enabled = self.make_db_var(tk.BooleanVar, "source_pickup_enabled", False)
-        # Shape
-        ttk.Label(frame, text="Shape:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.draw_type = self.make_db_var(tk.StringVar, "main_draw_type", "box")
-        e = tk.Entry(frame, textvariable=self.draw_type)
-        e.bind("<Return>", self.set_drawparams)
-        e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = [("tkvar", self.source_pickup_enabled, True)]
-        # Colour
-        self.draw_color = ttk.Combobox(frame, values=self.drawcolors, style="TCombobox")
-        self.draw_color.current(self.drawcolors.index("red"))
-        self.draw_color.bind("<<ComboboxSelected>>", self.set_drawparams)
-        self.draw_color.grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        # Fill
-        self.draw_fill = self.make_db_var(tk.BooleanVar, "main_draw_fill", False)
-        c = ttk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=True, offvalue=False)
-        c.grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        ttk.Label(frame, text="Alpha:").grid(row=0, column=4, sticky=TK_STICKY_ALL)
-        self.draw_alpha = self.make_db_var(tk.DoubleVar, "main_draw_alpha", 1.0)
-        e = tk.Entry(frame, width=8, textvariable=self.draw_alpha)
-        e.bind("<Return>", self.set_drawparams)
-        e.grid(row=0, column=5, sticky=TK_STICKY_ALL)
         # Slit Configurations
         b = tk.Checkbutton(
             frame,
@@ -347,20 +323,22 @@ class MainPage(SAMOSFrame):
             offvalue=False
         )
         self.source_pickup_enabled.set(False)
-        b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         # Buttons
         b = ttk.Button(frame, text="Show Traces", command=self.show_traces)
-        b.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Remove Traces", command=self.remove_traces)
-        b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Slits Only", command=self.slits_only)
-        b.grid(row=2, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas)
-        b.grid(row=2, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get <PSF>", command=self.get_PSF)
-        b.grid(row=2, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Open File", command=self.open_quicklook_file)
-        b.grid(row=2, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=6, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Find Stars", command=self.find_stars)
+        b.grid(row=0, column=7, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # Slit Configuration Frame
         frame = ttk.LabelFrame(fctr, text="Slit Configuration:")
@@ -401,17 +379,11 @@ class MainPage(SAMOSFrame):
         self.draw_mode.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.draw_mode = tk.Radiobutton(draw_frame, text="Delete", variable=self.slit_mode, value="delete", command=self.set_mode_cb)
         self.draw_mode.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        # Misc
-        b = ttk.Button(frame, text="View Slit Table", command=self.show_slit_table)
-        b.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Find Stars", command=self.find_stars)
-        b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # Pattern Series
         pattern_frame = ttk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
         pattern_frame.grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
         self.base_pattern_name = self.make_db_var(tk.StringVar, "dmd_base_pattern", "none")
         e = tk.Entry(pattern_frame, width=15, textvariable=self.base_pattern_name)
         e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -441,10 +413,8 @@ class MainPage(SAMOSFrame):
         l.grid(row=5, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file)
         b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        #self.check_widgets[b] = [("valid_wcs", self.PAR), ("valid_file", self.loaded_reg_file_path)]
         b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs)
-        #b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_wcs", self.PAR)]
+        b.grid(row=7, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # CCD Module
         frame = ttk.LabelFrame(fright, text="CCD Regions (x, y)")
@@ -467,7 +437,6 @@ class MainPage(SAMOSFrame):
         b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Save Slit List", command=self.save_slit_table)
         b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.saved_slit_file_path)]
         ttk.Label(frame, text="Saved Slit List:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.saved_slit_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load and Push Slit List from File", command=self.load_slits)
@@ -478,7 +447,6 @@ class MainPage(SAMOSFrame):
         tk.Entry(frame, textvariable=self.current_slit_file).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert Slit Regions to Pixels", command=self.draw_slits)
         b.grid(row=4, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.current_slit_file_path)]
 
         # HTS Module
         frame = ttk.LabelFrame(fright, text="HTS")
@@ -496,11 +464,9 @@ class MainPage(SAMOSFrame):
         tk.Entry(frame, textvariable=self.pushed_mask_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Push Mask", command=self.push_masks_file_HTS)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
         # Next Mask
         b = ttk.Button(frame, text="Next Mask", command=self.next_masks_file_HTS)
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
 
         # Status Indicator Frame
         frame = ttk.LabelFrame(fright, text="STATUS")
@@ -1214,7 +1180,7 @@ class MainPage(SAMOSFrame):
         shape = data.shape
         fov = 0.05
 
-        self.canvas.delete_all_objects(redraw=True)
+        self.clear_canvas()
         stars = twirl.find_peaks(data)[:self.fits_nstars.get()]
         radius_pix = 7
         regs = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in stars])
@@ -1347,7 +1313,7 @@ class MainPage(SAMOSFrame):
         fov = (np.max(shape) * u.pix * pixel.to(u.deg)).value
 
         # Let's find some stars and display the image
-        self.canvas.delete_all_objects(redraw=True)
+        self.clear_canvas()
         threshold = 0.1
         stars = twirl.find_peaks(data, threshold)[:self.fits_nstars.get()]
         med = np.median(data)

@@ -183,12 +183,15 @@ class App(ttk.Window):
  
     def show_Ginga_keystrokes(self):
         ginga_url = 'https://ginga.readthedocs.io/en/v5.0.1/quickref.html#ginga-quick-reference'
-        if urllib.request.urlopen(ginga_url).getcode() == 200:
-            webbrowser.open(ginga_url)
-        else:
+        try:
+            if urllib.request.urlopen(ginga_url).getcode() == 200:
+                webbrowser.open(ginga_url)
+            else:
+                ref_file = get_data_file("documentation", "ginga_quick_reference_v5.0.1.html")
+                webbrowser.open(ref_file)
+        except Exception as e:
             ref_file = get_data_file("documentation", "ginga_quick_reference_v5.0.1.html")
             webbrowser.open(ref_file)
-            
         
 
     def create_menubar(self):
