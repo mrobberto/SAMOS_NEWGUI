@@ -712,11 +712,11 @@ class MainPage(SAMOSFrame):
         for region in initial_regions:
             if region not in astropy_regions_pix:
                 astropy_regions_pix.append(region)
+        ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
+        self.loaded_ginga_regions = ginga_regions
         if self.slit_tab_view is None:
             self.initialize_slit_table()
         self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
-        ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
-        self.loaded_ginga_regions = ginga_regions
 
 
     @check_enabled
@@ -822,7 +822,8 @@ class MainPage(SAMOSFrame):
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
         astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
-        region_file = get_data_file("")
+        region_file = get_data_file("regions.pixels") / region_name
+        astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
                 
 
     @check_enabled
@@ -960,7 +961,7 @@ class MainPage(SAMOSFrame):
         self.logger.info("           Mean      Median     std")
         self.logger.info(f"FWHM_x:   {np.mean(fwhm_x):6.3f},   {np.median(fwhm_x):6.3f},   {np.std(fwhm_x):6.3f}")
         self.logger.info(f"FWHM_y:   {np.mean(fwhm_y):6.3f},   {np.median(fwhm_y):6.3f},   {np.std(fwhm_y):6.3f}")
-        self.logger.info("FWHM values calculated using ",len(fwhm_x),"stars")
+        self.logger.info(f"FWHM values calculated using {len(fwhm_x)} stars")
         return(np.mean(fwhm_x),np.mean(fwhm_y))
 
     def profiles(self,image,xpix, ypix):
