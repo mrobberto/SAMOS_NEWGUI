@@ -4,6 +4,7 @@ SAMOS Main tk Frame Class
 from copy import deepcopy
 import csv
 from datetime import datetime
+from functools import partial
 import numpy as np
 from pathlib import Path
 import random
@@ -243,13 +244,13 @@ class MainPage(SAMOSFrame):
         # Chosen Star Frame
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        self.ra_cntr = self.make_db_var(tk.DoubleVar, "centre_ra", self.fits_ra.get())
+        self.ra_cntr = tk.DoubleVar(self, value=0.)
         ttk.Label(cntr_frame, text="GSP00 Set RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.x_offset = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
         ttk.Label(cntr_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        self.dec_cntr = self.make_db_var(tk.DoubleVar, "centre_dec", self.fits_dec.get())
+        self.dec_cntr = tk.DoubleVar(self, value=0.)
         ttk.Label(cntr_frame, text="GSP00 Set DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
@@ -499,11 +500,37 @@ class MainPage(SAMOSFrame):
         # Register the frame with PAR
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
+
+        # Control slit motion
+        frame = ttk.LabelFrame(fright, text="Control Slits")
+        frame.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        # self.shift_all_slits uses CM.CompoundMixin.move_delta_pt, which takes a single value or tuple argument
+        # If single value is passed, the move occurs as if (VAL, VAL) was passed.
+        # For here:
+        #     left arrow triggers shift of (-VAL, 0)
+        #     right arrow triggers shift of (+VAL, 0)
+        #     up arrow triggers shift of (0, +VAL)
+        #     down arrow triggers shift of (0, -VAL)
+        self.shift_value = self.make_db_var(tk.IntVar, "slit_shift_size", default=1)
+        w = ttk.Label(frame, text="Shift Size (px)")
+        w.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Entry(frame, textvariable=self.shift_value)
+        w.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="⬅️", command=partial(self.shift_all_slits, "left"))
+        b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="➡️", command=partial(self.shift_all_slits, "right"))
+        b.grid(row=2, column=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="⬆️", command=partial(self.shift_all_slits, "up"))
+        b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="⬇️", command=partial(self.shift_all_slits, "down"))
+        b.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+
         self.set_mode_cb()
         self.set_enabled()
         self._set_expnum()
         # Start out displaying an empty file
-        self.Display(get_data_file("system", "blank.fits"))
+        # ***** Removed because it doesn't end up working, for unknown reasons.
+#         self.Display(get_data_file("system", "blank.fits").as_posix())
 
 
     @check_enabled
@@ -845,6 +872,25 @@ class MainPage(SAMOSFrame):
         self.DMD.initialize()
         self.DMD._open()
         self.DMD.apply_shape(slit_shape)
+
+
+    @check_enabled
+    def shift_all_slits(self, shift_direction):
+        shift_magnitude = self.shift_value.get()
+
+        if shift_direction == "left":
+            shift = (-shift_magnitude, 0)
+        elif shift_direction == "right":
+            shift = (shift_magnitude, 0)
+        elif shift_direction == "up":
+            shift = (0, shift_magnitude)
+        elif shift_direction == "down":
+            shift = (0, -shift_magnitude)
+
+        self.logger.info(f"Shifting all slits by {shift}")
+        self.slits_only()
+        CM.CompoundMixin.move_delta_pt(self.canvas, off_pt=shift)
+        self.canvas.redraw()
 
 
     @check_enabled
