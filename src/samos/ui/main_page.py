@@ -801,7 +801,11 @@ class MainPage(SAMOSFrame):
             else:
                 print("generic aperture")
                 # 3 load the slit pattern
-                data_box = self.AstroImage.cutout_shape(obj)
+                try:
+                    data_box = self.AstroImage.cutout_shape(obj)
+                except Exception as e:
+                    self.logger.error(f"Unable to compute cutout shape at ({ccd_x0, ccd_y0}), ({ccd_x1}, {ccd_y1})")
+                    continue
                 good_box = data_box.nonzero()
                 good_box_x = good_box[1]
                 good_box_y = good_box[0]
@@ -1615,6 +1619,9 @@ class MainPage(SAMOSFrame):
 
         # find the peak within the Ginga box
         peaks = self.iq.find_bright_peaks(data_box)
+        if len(peaks) == 0:
+            self.logger.warning("No peaks found")
+            return
         print(peaks[:20])  # subarea coordinates
         x1 = obj.x - obj.xradius
         y1 = obj.y - obj.yradius
