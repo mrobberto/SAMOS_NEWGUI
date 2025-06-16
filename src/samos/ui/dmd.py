@@ -102,21 +102,16 @@ class DMDPage(SAMOSFrame):
         self.slits_filename_path = None
         w = ttk.Button(frame, text="Add", command=self.add_slit)
         w.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.slits_filename_path)]
-        w = ttk.Button(frame, text="Push", command=self.push_current_map, bootstyle="success")
+        w = ttk.Button(frame, text="Push", command=self.push_slits, bootstyle="success")
         w.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.slits_filename_path)]
         w = ttk.Button(frame, text="Save", command=self.save_slits)
         w.grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True), ("valid_file", self.slits_filename_path)]
         # Create New Slit List
         w = ttk.Button(frame, text="New Slit List", command=self.create_slits)
         w.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True)]
         # Load Slit List
         w = ttk.Button(frame, text="Load Slit List", command=self.load_slits)
         w.grid(row=2, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True)]
         ttk.Label(frame, text="Current Slit List:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         ttk.Label(frame, textvariable=self.slits_filename, anchor="w").grid(row=3, column=1, columnspan=2, sticky=TK_STICKY_ALL)
 
@@ -340,21 +335,26 @@ class DMDPage(SAMOSFrame):
         self.main_fits_header.set_param("dmdmap", self.slits_filename_path.name)
         self.map = []
         table = pd.read_csv(self.slits_filename_path)
-        xoffset = 0
-        yoffset = np.full(len(table.index), int(2048/4))
-        y0 = (round(table['x'])-np.floor(table['dx1'])).astype(int) + yoffset
-        y1 = (round(table['x'])+np.ceil(table['dx2'])).astype(int) + yoffset
-        x0 = (round(table['y'])-np.floor(table['dy1'])).astype(int) + xoffset
-        x1 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
-        for i in table.index:
+        self.logger.info("Starting to create map from file")
+        for index, row in table.iterrows():
+            self.logger.info(f"\tRow is {row['x']} {row['y']} {row['dx1']} {row['dx2']} {row['dy1']} {row['dy2']}")
+            xoffset = 0
+            yoffset = 2048 // 4
+            y0 = round(row['x']) - np.floor(row['dx1']).astype(int) + yoffset
+            y1 = round(row['x']) + np.floor(row['dx2']).astype(int) + yoffset
+            x0 = round(row['y']) - np.floor(row['dy1']).astype(int) + xoffset
+            x1 = round(row['y']) + np.floor(row['dy2']).astype(int) + xoffset
+            self.logger.info(f"\tAdding [{x0}, {x1}, {y0}, {y1}, 0] to map")
             self.map.append([x0, x1, y0, y1, 0])
+        self.logger.info(f"Finished.")
+        self.logger.info(f"Map is {self.map}")
 
 
     @check_enabled
     def push_slits(self):
         dmd_shape = self._make_dmd_array(self.map)
         self.DMD.apply_shape(dmd_shape)
-        self._set_slit_image("current_dmd_state.png", file_path.name[:-4])
+        self._set_slit_image("current_dmd_state.png", self.slits_filename.get()[:-4])
 
 
     @check_enabled
@@ -404,7 +404,7 @@ class DMDPage(SAMOSFrame):
         self.logger.info("Pushing map to DMD")
         filename_in_text = self.map_filename.get()
         if filename_in_text[-4:] != ".csv":
-            filename_in_text.append(".csv")
+            filename_in_text += ".csv"
         self.map_filename_path = get_data_file("dmd.scv.maps", filename_in_text)
         map_list = self._load_map(self.map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)

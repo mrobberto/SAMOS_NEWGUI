@@ -42,6 +42,13 @@ class ConfigPage(SAMOSFrame):
         tk.Label(frame, text="Nightly Files Location:", anchor=tk.W).grid(row=5, column=0, sticky=TK_STICKY_ALL)
         self.nightly_files_dir = self.make_db_var(tk.StringVar, "config_nightly_files_dir", "")
         tk.Label(frame, textvariable=self.nightly_files_dir, width=75).grid(row=5, column=1, sticky=TK_STICKY_ALL)
+        self.science_targets_dir = self.make_db_var(tk.StringVar, "config_science_targets_dir", "")
+        w = ttk.Label(frame, text="Science Target Files Location:")
+        w.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Label(frame, textvariable=self.science_targets_dir, width=75)
+        w.grid(row=6, column=1, sticky=TK_STICKY_ALL)
+        w = ttk.Button(frame, text="Set Location", command=self.set_science_loc)
+        w.grid(row=6, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # Set up servers frame
         frame = ttk.LabelFrame(self.main_frame, text="Servers", borderwidth=2)
@@ -146,6 +153,21 @@ class ConfigPage(SAMOSFrame):
                 title = "Select a Location to store files"
                 custom_loc = tk.filedialog.askdirectory(initialdir=initial_dir, title=title)
                 self.custom_files_path.set(custom_loc)
+
+
+    @check_enabled
+    def set_science_loc(self):
+        self.logger.info(f"Setting location to find science files")
+        initial_dir = self.science_targets_dir.get()
+        if self.science_targets_dir.get() == "":
+            initial_dir = Path.cwd()
+        initial_dir = Path(initial_dir)
+        title = "Select Science Target Directory"
+        custom_loc = tk.filedialog.askdirectory(initialdir=initial_dir, title=title)
+        if custom_loc != "":
+            custom_loc = Path(custom_loc)
+            if custom_loc.is_dir():
+                self.science_targets_dir.set(custom_loc.as_posix())
 
 
     @check_enabled

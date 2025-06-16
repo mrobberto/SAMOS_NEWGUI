@@ -4,6 +4,7 @@ SAMOS Main tk Frame Class
 from copy import deepcopy
 import csv
 from datetime import datetime
+from functools import partial
 import numpy as np
 from pathlib import Path
 import random
@@ -27,8 +28,6 @@ from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
 
 from ginga.util import iqcalc
-iq = iqcalc.IQCalc()
-
 
 import pandas as pd
 from PIL import Image, ImageTk
@@ -36,6 +35,8 @@ from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, Rectangle
 
 import tkinter as tk
 import ttkbootstrap as ttk
+from ttkbootstrap.dialogs import Querybox
+
 from samos.dmd.utilities import DMDGroup
 from samos.ui.slit_table_view import SlitTableView as STView
 from samos.utilities import get_data_file, get_temporary_dir
@@ -49,15 +50,16 @@ from .gs_query_frame import GSQueryFrame
 from scipy.interpolate import UnivariateSpline # for PSF calculation
 
 
-
 class MainPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
         super().__init__(parent, container, "Main Frame", **kwargs)
         self.previous_image_name = ""
         self.selected_object_tag = None
         self.last_update_time = datetime.now()
+        self.iq = iqcalc.IQCalc()
+        self.target_name = ""
         
-        self.initialize_slit_table()
+#         self.initialize_slit_table()
 
         # keep track of the entry number for header keys that need to be added. will be used to write "OtherParameters.txt"
         self.extra_header_params = 0
@@ -110,28 +112,28 @@ class MainPage(SAMOSFrame):
         self.filter_data = ascii.read(get_data_file("system", 'SAMOS_Filter_positions.txt'))
         filter_names = list(self.PCM.FILTER_WHEEL_MAPPINGS.keys())
         self.current_filter = self.make_db_var(tk.StringVar, "pcm_filter", filter_names[2])
+        self.selected_filter = tk.StringVar(self, value=self.current_filter.get())
         ttk.Label(filter_frame, text="Current Filter:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(filter_frame, textvariable=self.current_filter, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.current_filter, None, *filter_names)
+        self.filter_option_menu = ttk.OptionMenu(filter_frame, self.selected_filter, None, *filter_names)
         self.filter_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(filter_frame, text="Set Filter", command=self.set_filter, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.PCM, "is_on", True)]
         # Grating
         grating_frame = ttk.Label(frame, text="Grating")
         grating_frame.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         grating_names = list(self.PCM.GRISM_RAIL_MAPPINGS.keys())
         self.grating_positions = list(self.filter_data['Position'][12:18])
         self.current_grating = self.make_db_var(tk.StringVar, "pcm_grating", grating_names[2])
+        self.selected_grating = tk.StringVar(self, value=self.current_grating.get())
         ttk.Label(grating_frame, text="Current Grating:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         l = tk.Label(grating_frame, textvariable=self.current_grating, font=('Georgia 20'), bg='white', fg='green')
         l.grid(row=1, column=0, columnspan=2, sticky=TK_STICKY_ALL)
-        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.current_grating, None, *grating_names)
+        self.grating_option_menu = ttk.OptionMenu(grating_frame, self.selected_grating, None, *grating_names)
         self.grating_option_menu.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(grating_frame, text="Set Grating", command=self.set_grating, bootstyle="success")
         b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.PCM, "is_on", True)]
 
         # CCD Management
         frame = ttk.LabelFrame(fleft, text="CCD Setup")
@@ -152,7 +154,7 @@ class MainPage(SAMOSFrame):
         self.image_exptime = self.make_db_var(tk.DoubleVar, "exptime_set", 0.01)
         ttk.Label(acquire_frame, text="Exposure Time (s):").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(acquire_frame, textvariable=self.image_exptime).grid(row=2, column=1, sticky=TK_STICKY_ALL)
-        self.image_expnum = self.make_db_var(tk.IntVar, f"{self.PAR.today_str}_expnum", 1)
+        self.image_expnum = tk.IntVar(self, value=1)
         ttk.Label(acquire_frame, text="Exposure Nr:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.expnum = ttk.Spinbox(acquire_frame, textvariable=self.image_expnum, increment=1, from_=1, to=1000)
         self.expnum.grid(row=3, column=1, sticky=TK_STICKY_ALL)
@@ -187,40 +189,53 @@ class MainPage(SAMOSFrame):
         ttk.Label(self.image_frame, text="Nr. of Frames:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.image_frames = self.make_db_var(tk.IntVar, "exposure_n_frames", 1)
         tk.Entry(self.image_frame, textvariable=self.image_frames).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        ttk.Label(self.image_frame, text="Comments:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        self.image_comments = self.make_db_var(tk.StringVar, "POTN_Comment", "")
-        tk.Entry(self.image_frame, textvariable=self.image_comments).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        w = ttk.Button(self.image_frame, text="Add Comment to Log", command=self.log_comment)
+        w.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         self.image_save_single = self.make_db_var(tk.BooleanVar, "save_single_frames", False)
         c = tk.Checkbutton(self.image_frame, text="Save Single Frames", variable=self.image_save_single, onvalue=True, offvalue=False)
         c.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+
         # Take Exposure Frame
         exp_frame = ttk.LabelFrame(frame, text="Take Exposure")
         exp_frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
         exp_frame.columnconfigure(0, weight=1)
         exp_frame.columnconfigure(1, weight=1)
-        b = ttk.Button(exp_frame, text="START", command=self.start_an_exposure, bootstyle="success")
-        b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
+        self.start_exp_button = ttk.Button(
+            exp_frame, text="START", command=self.start_an_exposure, bootstyle="success"
+        )
+        self.start_exp_button.grid(
+            row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL
+        )
 
         # FITS manager
         frame = ttk.LabelFrame(fleft, text="FITS Manager")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load Existing File", command=self.load_existing_file)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.fits_ra = self.make_db_var(tk.DoubleVar, "target_ra", 150.17110)
-        ttk.Label(frame, text="RA:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_ra).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.fits_dec = self.make_db_var(tk.DoubleVar, "target_dec", -54.79004)
-        ttk.Label(frame, text="DEC:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_dec).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        self.image_flip_status = tk.BooleanVar(self, value=False)
+        c = ttk.Checkbutton(
+            frame,
+            text="Flip Image",
+            variable=self.image_flip_status,
+            command=self.toggle_image_flip,
+            onvalue=True,
+            offvalue=False
+        )
+        c.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.fits_ra = tk.DoubleVar(self, value=0.)
+        ttk.Label(frame, text="RA:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_ra).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        self.fits_dec = tk.DoubleVar(self, value=0.)
+        ttk.Label(frame, text="DEC:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_dec).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         self.fits_nstars = self.make_db_var(tk.IntVar, "twirl_n_stars", 25)
-        ttk.Label(frame, text="Number of Stars:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.fits_nstars).grid(row=3, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Number of Stars:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(frame, textvariable=self.fits_nstars).grid(row=4, column=1, sticky=TK_STICKY_ALL)
         # Command Buttons
         b = ttk.Button(frame, text="twirl WCS", command=self.twirl_Astrometry)
-        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=5, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Send to SOAR", command=self.send_offset_to_soar, bootstyle="success")
-        b.grid(row=4, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("condition", self.SOAR, "is_on", True)]
+        b.grid(row=5, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         """
         # QUERY Server
         self.gs_query_frame = GSQueryFrame(self, frame, self.Query_Survey, "target_ra", "target_dec", **self.samos_classes)
@@ -229,14 +244,14 @@ class MainPage(SAMOSFrame):
         # Chosen Star Frame
         cntr_frame = ttk.Frame(frame)
         cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        self.ra_cntr = self.make_db_var(tk.DoubleVar, "centre_ra", self.fits_ra.get())
-        ttk.Label(cntr_frame, text="CNTR RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.ra_cntr = tk.DoubleVar(self, value=0.)
+        ttk.Label(cntr_frame, text="GSP00 Set RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.x_offset = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
         ttk.Label(cntr_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        self.dec_cntr = self.make_db_var(tk.DoubleVar, "centre_dec", self.fits_dec.get())
-        ttk.Label(cntr_frame, text="CNTR DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        self.dec_cntr = tk.DoubleVar(self, value=0.)
+        ttk.Label(cntr_frame, text="GSP00 Set DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
         ttk.Label(cntr_frame, text="Y offset (arsec):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
@@ -246,18 +261,25 @@ class MainPage(SAMOSFrame):
         frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup!")
         frame.grid(row=4, column=0, sticky=TK_STICKY_ALL)
         # X_GSP00
-        self.gs_x0 = tk.DoubleVar(self, 0.)
+        self.gs_x0 = tk.DoubleVar(self, 550)
         ttk.Label(frame, text="X GSP00 (pix)").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_x0).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         # Y GSP00
-        self.gs_y0 = tk.DoubleVar(self, -0.)
+        self.gs_y0 = tk.DoubleVar(self, 488)
         ttk.Label(frame, text="Y GSP00 (pix)").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.gs_y0).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         # Command Show Buttons
-        b_show = ttk.Button(frame, text="Show GSP00", command=self.show_GSP00)
-        b_show.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b_hide = ttk.Button(frame, text="Hide GSP00", command=self.hide_GSP00)
-        b_hide.grid(row=1, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        self.show_gsp00 = tk.BooleanVar(self, value=False)
+        c = ttk.Checkbutton(
+            frame,
+            text="Show GSP00",
+            variable=self.show_gsp00,
+            command=self.toggle_gsp00,
+            onvalue=True,
+            offvalue=False
+        )
+        c.grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        self.tag_gsp00 = None
 
        
         # CENTRE COLUMN
@@ -268,7 +290,7 @@ class MainPage(SAMOSFrame):
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
         # Image Canvas
-        canvas = tk.Canvas(frame, bg="grey", width=528, height=518)
+        canvas = tk.Canvas(frame, bg="grey", width=300, height=300)
         canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         fi = CanvasView(self.logger)
         fi.set_widget(canvas)
@@ -284,10 +306,11 @@ class MainPage(SAMOSFrame):
         fi.get_bindings().enable_all(True)
         self.fits_image = fi
         # Drawing Canvas
+        self.draw_type = tk.StringVar(self, value="box")
         self.canvas = self.canvas_types.DrawingCanvas()
         self.canvas.enable_draw(True)
         self.canvas.enable_edit(True)
-        self.canvas.set_drawtype('box', color='red')
+        self.canvas.set_drawtype(self.draw_type.get(), color='red')
         self.canvas.register_for_cursor_drawing(fi)
         self.canvas.add_callback('draw-event', self.draw_cb)
         self.canvas.set_draw_mode('draw')
@@ -303,27 +326,6 @@ class MainPage(SAMOSFrame):
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Early variable definition because it's needed to set an enable condition.
         self.source_pickup_enabled = self.make_db_var(tk.BooleanVar, "source_pickup_enabled", False)
-        # Shape
-        ttk.Label(frame, text="Shape:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.draw_type = self.make_db_var(tk.StringVar, "main_draw_type", "box")
-        e = tk.Entry(frame, textvariable=self.draw_type)
-        e.bind("<Return>", self.set_drawparams)
-        e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[e] = [("tkvar", self.source_pickup_enabled, True)]
-        # Colour
-        self.draw_color = ttk.Combobox(frame, values=self.drawcolors, style="TCombobox")
-        self.draw_color.current(self.drawcolors.index("red"))
-        self.draw_color.bind("<<ComboboxSelected>>", self.set_drawparams)
-        self.draw_color.grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        # Fill
-        self.draw_fill = self.make_db_var(tk.BooleanVar, "main_draw_fill", False)
-        c = tk.Checkbutton(frame, text="Fill", variable=self.draw_fill, onvalue=True, offvalue=False)
-        c.grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        ttk.Label(frame, text="Alpha:").grid(row=0, column=4, sticky=TK_STICKY_ALL)
-        self.draw_alpha = self.make_db_var(tk.DoubleVar, "main_draw_alpha", 1.0)
-        e = tk.Entry(frame, width=8, textvariable=self.draw_alpha)
-        e.bind("<Return>", self.set_drawparams)
-        e.grid(row=0, column=5, sticky=TK_STICKY_ALL)
         # Slit Configurations
         b = tk.Checkbutton(
             frame,
@@ -334,20 +336,22 @@ class MainPage(SAMOSFrame):
             offvalue=False
         )
         self.source_pickup_enabled.set(False)
-        b.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         # Buttons
         b = ttk.Button(frame, text="Show Traces", command=self.show_traces)
-        b.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Remove Traces", command=self.remove_traces)
-        b.grid(row=2, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Slits Only", command=self.slits_only)
-        b.grid(row=2, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas)
-        b.grid(row=2, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get <PSF>", command=self.get_PSF)
-        b.grid(row=2, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Open File", command=self.open_quicklook_file)
-        b.grid(row=2, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b.grid(row=0, column=6, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Find Stars", command=self.find_stars)
+        b.grid(row=0, column=7, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # Slit Configuration Frame
         frame = ttk.LabelFrame(fctr, text="Slit Configuration:")
@@ -357,23 +361,20 @@ class MainPage(SAMOSFrame):
         slit_frame = ttk.LabelFrame(frame, text="Slit Size")
         slit_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         
-        self.slit_w = self.make_db_var(tk.IntVar, "dmd_hadamard_width", 3)
-        ttk.Label(slit_frame, text="Slit Width (mirrors):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        length_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_w, width=5, 
+        self.slit_xd = self.make_db_var(tk.IntVar, "dmd_hadamard_cross_dispersion", 9)
+        ttk.Label(slit_frame, text="Slit Cross Dispersion (mirrors):").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        length_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_xd, width=5, 
                         from_=0, to=1080)
         length_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
         length_adjust_btn.grid(row=0, column=1, sticky=TK_STICKY_ALL)
         
-        self.check_widgets[length_adjust_btn] = [("is_something", self.selected_object_tag)]
-        
-        self.slit_l = self.make_db_var(tk.IntVar, "dmd_hadamard_length", 9)
-        ttk.Label(slit_frame, text="Slit Length (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        width_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_l, width=5, 
+        self.slit_disp = self.make_db_var(tk.IntVar, "dmd_hadamard_dispersion", 3)
+        ttk.Label(slit_frame, text="Slit Dispersion (mirrors):").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        width_adjust_btn = tk.Spinbox(slit_frame, command=self.slit_width_length_adjust, increment=1, textvariable=self.slit_disp, width=5, 
                         from_=0, to=1080)
         width_adjust_btn.bind("<Return>", self.slit_width_length_adjust)
         
         width_adjust_btn.grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        self.check_widgets[width_adjust_btn] = [("is_something", self.selected_object_tag)]
         
         self.force_orthonormal = self.make_db_var(tk.BooleanVar, "main_slit_force_orthonormal", False)
         b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal, onvalue=True, offvalue=False)
@@ -391,17 +392,11 @@ class MainPage(SAMOSFrame):
         self.draw_mode.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.draw_mode = tk.Radiobutton(draw_frame, text="Delete", variable=self.slit_mode, value="delete", command=self.set_mode_cb)
         self.draw_mode.grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        # Misc
-        b = ttk.Button(frame, text="View Slit Table", command=self.show_slit_table)
-        b.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Find Stars", command=self.find_stars)
-        b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         # Pattern Series
         pattern_frame = ttk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
         pattern_frame.grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Generate Patterns", command=self.create_pattern_series_from_traces)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.loaded_reg_file_path)]
         self.base_pattern_name = self.make_db_var(tk.StringVar, "dmd_base_pattern", "none")
         e = tk.Entry(pattern_frame, width=15, textvariable=self.base_pattern_name)
         e.grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -425,21 +420,20 @@ class MainPage(SAMOSFrame):
         tk.Label(frame, textvariable=self.loaded_reg_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="Send Centre to SOAR", command=self.send_soar_target, bootstyle="success")
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         l = ttk.Label(frame, text="Point, take and image, and twirl WCS from GAIA")
-        l.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        l.grid(row=5, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file)
-        b.grid(row=5, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        #self.check_widgets[b] = [("valid_wcs", self.PAR), ("valid_file", self.loaded_reg_file_path)]
+        b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs)
-        #b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_wcs", self.PAR)]
+        b.grid(row=7, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # CCD Module
         frame = ttk.LabelFrame(fright, text="CCD Regions (x, y)")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load (x, y) Regions from DS9 Region file", command=self.load_regions_pix)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_wcs", self.PAR)]
         self.loaded_ginga_file = self.make_db_var(tk.StringVar, "dmd_loaded_ginga_file", "none")
         self.loaded_ginga_file_path = None
         ttk.Label(frame, text="Loaded File in CCD Units:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
@@ -456,7 +450,6 @@ class MainPage(SAMOSFrame):
         b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Save Slit List", command=self.save_slit_table)
         b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.saved_slit_file_path)]
         ttk.Label(frame, text="Saved Slit List:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.saved_slit_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Load and Push Slit List from File", command=self.load_slits)
@@ -467,7 +460,6 @@ class MainPage(SAMOSFrame):
         tk.Entry(frame, textvariable=self.current_slit_file).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Convert Slit Regions to Pixels", command=self.draw_slits)
         b.grid(row=4, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.current_slit_file_path)]
 
         # HTS Module
         frame = ttk.LabelFrame(fright, text="HTS")
@@ -485,11 +477,9 @@ class MainPage(SAMOSFrame):
         tk.Entry(frame, textvariable=self.pushed_mask_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Push Mask", command=self.push_masks_file_HTS)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
         # Next Mask
         b = ttk.Button(frame, text="Next Mask", command=self.next_masks_file_HTS)
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[b] = [("valid_file", self.current_mask_file_path)]
 
         # Status Indicator Frame
         frame = ttk.LabelFrame(fright, text="STATUS")
@@ -510,37 +500,63 @@ class MainPage(SAMOSFrame):
         # Register the frame with PAR
         # Give the PCM class a copy of the status box so that it can set colours as well.
         self.PCM.initialize_indicator(self.status_box)
-        self.set_enabled()
 
-    """
-    def send_to_soar(self):
+        # Control slit motion
+        frame = ttk.LabelFrame(fright, text="Control Slits")
+        frame.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        # self.shift_all_slits uses CM.CompoundMixin.move_delta_pt, which takes a single value or tuple argument
+        # If single value is passed, the move occurs as if (VAL, VAL) was passed.
+        # For here:
+        #     left arrow triggers shift of (-VAL, 0)
+        #     right arrow triggers shift of (+VAL, 0)
+        #     up arrow triggers shift of (0, +VAL)
+        #     down arrow triggers shift of (0, -VAL)
+        self.shift_value = self.make_db_var(tk.IntVar, "slit_shift_size", default=1)
+        w = ttk.Label(frame, text="Shift Size (px)")
+        w.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        w = ttk.Entry(frame, textvariable=self.shift_value)
+        w.grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="⬅️", command=partial(self.shift_all_slits, "left"))
+        b.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="➡️", command=partial(self.shift_all_slits, "right"))
+        b.grid(row=2, column=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="⬆️", command=partial(self.shift_all_slits, "up"))
+        b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame, text="⬇️", command=partial(self.shift_all_slits, "down"))
+        b.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+
+        self.set_mode_cb()
+        self.set_enabled()
+        self._set_expnum()
+        # Start out displaying an empty file
+        # ***** Removed because it doesn't end up working, for unknown reasons.
+#         self.Display(get_data_file("system", "blank.fits").as_posix())
+
+
+    @check_enabled
+    def send_soar_target(self):
+        """
+        Send the current target (as obtained from the regions file) to SOAR.
+        """
+        target_ra = float(self.ra_cntr.get())
+        target_dec = float(self.dec_cntr.get())
+        if self.SOAR.is_on == True:
+            return_message_from_TCS =  self.SOAR.target(ra=target_ra, dec=target_dec)
+            self.logger.info(return_message_from_TCS)
+        else:
+            self.logger.warning("TCS is not active")
         
-        # Send the currently set target to SOAR with a move command.
-        
-        target = {
-            "ra": self.db.get_value("target_ra"),
-            "dec": self.db.get_value("target_dec"),
-            "epoch": self.db_get_value("target_epoch"),
-            "ra_rate": 0.,
-            "dec_rate": 0.
-        }
-        self.SOAR.target_move(target)
-    """
+
     @check_enabled
     def send_offset_to_soar(self):
-        #push the calculated offsets in to the TCS page
-        #FIX SYNTAX!
         if self.SOAR.is_on == True:
             d_ra = self.x_offset.get()
             d_dec = self.y_offset.get()
             message = { "offset_ra": float(d_ra), "offset_dec": float(d_dec) }
             return_message_from_TCS =  self.SOAR.offset(message)
-            print(return_message_from_TCS)
+            self.logger.info(return_message_from_TCS)
         else:
-            print("TCS is not active")
-            return
-        
-
+            self.logger.warning("TCS is not active")
 
 
     @check_enabled
@@ -599,8 +615,8 @@ class MainPage(SAMOSFrame):
         self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix, tag="slit")
         self.logger.info("Converted Astropy pixel regions to Ginga")
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
         #self.slit_tab_view.load_table_from_regfile_RADEC(regs_RADEC=astropy_regions_wcs, img_wcs=self.PAR.wcs)
         self.logger.info("Finished displaying regions and loading slit tab view")
 
@@ -649,6 +665,8 @@ class MainPage(SAMOSFrame):
             ginga_object.add_callback('pick-down', self.pick_cb, 'down')
             ginga_object.add_callback('pick-up', self.pick_cb, 'up')
             ginga_object.add_callback('pick-key', self.pick_cb, 'key')
+            ginga_object.add_callback('pick-move', self.pick_cb, 'move')
+            ginga_object.add_callback('edited', self.edit_cb)
             ginga_objects.append(ginga_object)
             self.canvas.add(ginga_object, tag='@{}_{}'.format(tag, i))
         return ginga_objects
@@ -678,18 +696,19 @@ class MainPage(SAMOSFrame):
         reg_file = tk.filedialog.askopenfilename(initialdir=get_data_file("regions.radec"), title="Select a File",
                                                  filetypes=(("Text files", "*.reg"), ("all files", "*.*")))
         self.loaded_reg_file_path = Path(reg_file)
-        self.loaded_reg_file.set(self.loaded_reg_file_path.name)
+        file_name = self.loaded_reg_file_path.name
+        self.loaded_reg_file.set(file_name)
         initial_regions = Regions.read(self.loaded_reg_file_path, format='ds9')
         astropy_regions_radec = Regions()
         for region in initial_regions:
             if region not in astropy_regions_radec:
                 astropy_regions_radec.append(region)
-        self.target_name = self.loaded_reg_file_path.name[:self.loaded_reg_file_path.name.find("_")]
+        self.target_name = file_name[:file_name.find("_")]
         self.db.update_value("POTN_Target", self.target_name)
         if self.image_type.get() == "Science":
             self.image_name.set(self.target_name)
-        if "RADEC=" in self.loaded_reg_file_path.name:
-            radec_str = self.loaded_reg_file_path.name
+        if "RADEC=" in file_name:
+            radec_str = file_name
              # FIXED THIS LINE BECAUSE WAS NOT READING PROPERLY THE RADEC STRING [MR]
             #radec_str = radec_str[radec_str.find("RADEC=")+6:max([i for i,s in enumerate(str) if s.isdigit()])+1]
             radec_str = radec_str[radec_str.find("RADEC=")+6:radec_str.find(".reg")]
@@ -721,8 +740,10 @@ class MainPage(SAMOSFrame):
         - Valid WCS
         """
         self.logger.info("Loading DS9 pixel region file to Astropy Pixels")
-        reg_file = tk.filedialog.askopenfilename(filetypes=[("region files", "*.reg")],
-                                                 initialdir=get_data_file("regions.pixels"))
+        reg_file = tk.filedialog.askopenfilename(
+            filetypes=[("region files", "*.reg")],
+            initialdir=get_data_file("regions.pixels")
+        )
         self.loaded_ginga_file_path = Path(reg_file)
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
         initial_regions = Regions.read(self.loaded_ginga_file_path, format="ds9")
@@ -730,11 +751,11 @@ class MainPage(SAMOSFrame):
         for region in initial_regions:
             if region not in astropy_regions_pix:
                 astropy_regions_pix.append(region)
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
-        self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=asatropy_regions_pix, img_wcs=self.PAR.wcs)
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
         self.loaded_ginga_regions = ginga_regions
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
+#         self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
 
 
     @check_enabled
@@ -744,6 +765,7 @@ class MainPage(SAMOSFrame):
         Export all Ginga objects to Astropy region
         """
         self.logger.info("Collecting Slit")
+        slit_regions = []
         objects = CM.CompoundMixin.get_objects(self.canvas)
         try:
             pattern_index = self.pattern_group.current()
@@ -769,15 +791,21 @@ class MainPage(SAMOSFrame):
                 x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.round(x1)), int(np.round(y1))
                 slit_shape[x1, y1] = 0
+                slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])
             elif self.source_pickup_enabled.get() and obj.kind == 'point':
                 x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
                 x1, y1 = int(np.floor(x1)), int(np.floor(y1))
                 x2, y2 = ccd_to_dmd(ccd_x1, ccd_y1, self.PAR.dmd_wcs)
                 x2, y2 = int(np.ceil(x2)), int(np.ceil(y2))
+                slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])
             else:
                 print("generic aperture")
                 # 3 load the slit pattern
-                data_box = self.AstroImage.cutout_shape(obj)
+                try:
+                    data_box = self.AstroImage.cutout_shape(obj)
+                except Exception as e:
+                    self.logger.error(f"Unable to compute cutout shape at ({ccd_x0, ccd_y0}), ({ccd_x1}, {ccd_y1})")
+                    continue
                 good_box = data_box.nonzero()
                 good_box_x = good_box[1]
                 good_box_y = good_box[0]
@@ -798,6 +826,7 @@ class MainPage(SAMOSFrame):
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
                     slit_shape[x1-2:x1, y1-2:y2+1] = 1
+                    slit_regions.append([cx0, cx0+1, cy0, cy0+1])
                 # paint black the horizontal columns, avoids rounding error in the pixel->dmd sub-int conversion
                 for i in np.unique(good_box_y):  # scanning multiple rows means each steps moves up along the y axis
                     # the indices of the y values pertinent to that x
@@ -815,7 +844,8 @@ class MainPage(SAMOSFrame):
                     x2, y2 = int(np.round(x2)), int(np.round(y2))
                     slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
                     slit_shape[x1-2:x1, y1-2:y1] = 1
-        return slit_shape
+                    slit_regions.append([cx0, cx1+1, cy0, cy0+1])
+        return slit_shape, slit_regions
 
 
     @check_enabled
@@ -826,8 +856,17 @@ class MainPage(SAMOSFrame):
         """
         self.logger.info("Pushing slit shape to DMD")
         self.remove_traces()
-        slit_shape = self.collect_slit_shape()
+        slit_shape, slit_regions = self.collect_slit_shape()
         self.push_slits(slit_shape)
+        region_name = f"{self.image_name.get()}_{self.image_expnum.get():04d}"
+        region_name += f"_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}_pix.reg"
+        region_name = region_name.replace(" ", "_")
+        region_file = self.PAR.fits_dir / region_name
+        ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
+        astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
+        astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
+        region_file = get_data_file("regions.pixels") / region_name
+        astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
                 
 
     @check_enabled
@@ -840,9 +879,28 @@ class MainPage(SAMOSFrame):
 
 
     @check_enabled
+    def shift_all_slits(self, shift_direction):
+        shift_magnitude = self.shift_value.get()
+
+        if shift_direction == "left":
+            shift = (-shift_magnitude, 0)
+        elif shift_direction == "right":
+            shift = (shift_magnitude, 0)
+        elif shift_direction == "up":
+            shift = (0, shift_magnitude)
+        elif shift_direction == "down":
+            shift = (0, -shift_magnitude)
+
+        self.logger.info(f"Shifting all slits by {shift}")
+        self.slits_only()
+        CM.CompoundMixin.move_delta_pt(self.canvas, off_pt=shift)
+        self.canvas.redraw()
+
+
+    @check_enabled
     def set_filter(self):
         self.logger.info("Setting Filter to {}".format(self.current_filter.get()))
-        new_filter = self.current_filter.get()
+        new_filter = self.selected_filter.get()
         self.main_fits_header.set_param("filter", new_filter)
         filter_pos = self.PCM.FILTER_WHEEL_MAPPINGS[new_filter.lower()]
         self.main_fits_header.set_param("filtpos", f"{filter_pos[0]},{filter_pos[1]}")
@@ -857,12 +915,13 @@ class MainPage(SAMOSFrame):
             'Selected filter'
         )
         self.header_entry_string += entry_string
+        self.current_filter.set(self.selected_filter.get())
 
 
     @check_enabled
     def set_grating(self):
         self.logger.info("Setting Grating to {}".format(self.current_grating.get()))
-        new_grating = self.current_grating.get()
+        new_grating = self.selected_grating.get()
         self.main_fits_header.set_param("grating", new_grating)
         grating_pos = self.PCM.GRISM_RAIL_MAPPINGS[new_grating.lower()]
         self.main_fits_header.set_param("gratpos", f"{grating_pos[0]},{grating_pos[1]}")
@@ -871,6 +930,7 @@ class MainPage(SAMOSFrame):
         self.extra_header_params += 1
         entry_string = PARAM_ENTRY_FORMAT.format(self.extra_header_params, 'String', 'GRISM', new_grating, 'Grism position')
         self.header_entry_string += entry_string
+        self.current_grating.set(self.selected_grating.get())
 
 
     @check_enabled
@@ -891,6 +951,8 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def clear_canvas(self):
         self.canvas.delete_all_objects(redraw=True)
+        self.tag_gsp00 = None
+        self.toggle_gsp00()
 
     """ NO FLIP IMAGE
     @check_enabled
@@ -909,23 +971,13 @@ class MainPage(SAMOSFrame):
             photometric information, in particular the PSF
             Created October 14, 2024
         """
-        
-        """command to rotate the image, not sure why we have it. Still needed?"""
-        #self.fitsimage.rotate(self.PAR.Ginga_PA)  
-        
-        "display the current image again"
         self.Display(self.fits_image_ql)
-        # self.load_file()   #for ging
-    
-        "extract header and data plane"
-        hdu_Main = fits.open(self.fits_image_ql)  # for this function to work
-        hdu = hdu_Main[0]
-        #header = hdu.header
-        data = hdu.data
-        hdu_Main.close()
+        with fits.open(self.fits_image_ql) as fits_file:
+            hdu = fits_file[0]
+            data = hdu.data
             
         # Let's find some stars and display the image
-        self.canvas.delete_all_objects(redraw=True)
+        self.clear_canvas()
         
         "why do we care about SDSS_stars?"
         #check first if it exist, as we may have not yet queried SDSS   
@@ -968,10 +1020,10 @@ class MainPage(SAMOSFrame):
             obj.color="blue"
             self.canvas.add(obj)
         #print(fwhm_x,'n',fwhm_y,'\n')    
-        print("           Mean      Median     std")
-        print("FWHM_x:   %6.3f,   %6.3f,   %6.3f" % (np.mean(fwhm_x),np.median(fwhm_x),np.std(fwhm_x)))
-        print("FWHM_y:   %6.3f,   %6.3f,   %6.3f" % (np.mean(fwhm_y),np.median(fwhm_y),np.std(fwhm_y)))
-        print("FWHM values calculated using ",len(fwhm_x),"stars")
+        self.logger.info("           Mean      Median     std")
+        self.logger.info(f"FWHM_x:   {np.mean(fwhm_x):6.3f},   {np.median(fwhm_x):6.3f},   {np.std(fwhm_x):6.3f}")
+        self.logger.info(f"FWHM_y:   {np.mean(fwhm_y):6.3f},   {np.median(fwhm_y):6.3f},   {np.std(fwhm_y):6.3f}")
+        self.logger.info(f"FWHM values calculated using {len(fwhm_x)} stars")
         return(np.mean(fwhm_x),np.mean(fwhm_y))
 
     def profiles(self,image,xpix, ypix):
@@ -1004,40 +1056,69 @@ class MainPage(SAMOSFrame):
         """ 
         This is the landing procedure after the START button has been pressed
         """
-        if (not self.CCD.initialized) or (not self.CCD.ccd_on):
-            # Open a test image
-            image_to_open = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"), ("fitsfiles", "*.fits")])
-            self.Display(image_to_open)
-            return
-        exposure_params = {
-            'file_number': self.image_expnum.get(),
-            'exptime': self.image_exptime.get() * 1000,  # ms
-            'exp_frames': self.image_frames.get(),
-            'image_name': self.image_name.get(),
-            'image_type': self.image_type.get(),
-            'filter': self.current_filter.get(),
-            'grating': self.current_grating.get(),
-            'sub_bias': self.ql_bias.get() == 1,
-            'sub_dark': self.ql_dark.get() == 1,
-            'sub_flat': self.ql_flat.get() == 1,
-            'sub_buffer': self.ql_buffer.get() == 1,
-            'save_individual': self.image_save_single.get() == 1,
-        }
-        #are we observing a new target? BCS we may haave lost the WCS solution
-        if self.image_name.get() !=  self.previous_image_name:
-            # yes,  we changed the target
-            # therefore we lost the WCS solution
-            self.PAR.valid_wcs = False
-            self.previous_image_name = self.image_name.get()
-        if self.image_type.get() == "Dark":
-            # By default, subtract the bias in the quicklook
-            self.ql_bias.set(1)
-        elif self.image_type.get() == "Flat":
-            # By default, subtract bias and dark
-            self.ql_bias.set(1)
-            self.ql_dark.set(1)
-        exp_window = ExposureProgressWindow(self, self.CCD, self.PAR, self.db, self.main_fits_header, self.DMD, self.logger)
-        exp_window.start_exposure(self.image_type.get(), **exposure_params)
+        try:
+            if not self.PAR.fits_dir.is_dir():
+                self.logger.info(f"Creating FITS directory {self.PAR.fits_dir} for tonight")
+                self.PAR.fits_dir.mkdir(parents=True, exist_ok=True)
+            status = self.db.get_value("config_ip_status", default="disconnected")
+            if (not self.CCD.initialized) or (not self.CCD.ccd_on) or (status == "disconnected"):
+                # Open a test image
+                initial_dir = self.db.get_value(
+                    "config_science_targets_dir", default=Path.cwd().as_posix()
+                )
+                image_to_open = tk.filedialog.askopenfilename(
+                    initialdir=initial_dir,
+                    filetypes=[("fitsfiles", "*.fits"), ("allfiles", "*")]
+                )
+                input_image = Path(image_to_open)
+                if input_image.is_file():
+                    output_name = f"sample_{self.image_expnum.get():04d}_.fits"
+                    image_output = self.PAR.fits_dir / output_name
+                    image_output.write_bytes(input_image.read_bytes())
+                    self.Display(image_output.as_posix())
+                    self._set_expnum()
+                return
+            exposure_params = {
+                'file_number': self.image_expnum.get(),
+                'exptime': self.image_exptime.get() * 1000,  # ms
+                'exp_frames': self.image_frames.get(),
+                'image_name': self.image_name.get(),
+                'image_type': self.image_type.get(),
+                'filter': self.current_filter.get(),
+                'grating': self.current_grating.get(),
+                'sub_bias': self.ql_bias.get() == 1,
+                'sub_dark': self.ql_dark.get() == 1,
+                'sub_flat': self.ql_flat.get() == 1,
+                'sub_buffer': self.ql_buffer.get() == 1,
+                'save_individual': self.image_save_single.get() == 1,
+            }
+            #are we observing a new target? BCS we may haave lost the WCS solution
+            if self.image_name.get() !=  self.previous_image_name:
+                # yes,  we changed the target
+                # therefore we lost the WCS solution
+                self.PAR.valid_wcs = False
+                self.previous_image_name = self.image_name.get()
+            if self.image_type.get() == "Dark":
+                # By default, subtract the bias in the quicklook
+                self.ql_bias.set(1)
+            elif self.image_type.get() == "Flat":
+                # By default, subtract bias and dark
+                self.ql_bias.set(1)
+                self.ql_dark.set(1)
+
+            self.start_exp_button.configure(state="disabled")
+            exp_window = ExposureProgressWindow(
+                self,
+                self.CCD,
+                self.PAR,
+                self.db,
+                self.main_fits_header,
+                self.DMD,
+                self.logger
+            )
+            exp_window.start_exposure(self.image_type.get(), **exposure_params)
+        finally:
+            self._set_expnum()
 
 
     @check_enabled
@@ -1046,6 +1127,34 @@ class MainPage(SAMOSFrame):
         self.Display(results["superfile"].as_posix())
         self.fits_image.rotate(self.PAR.Ginga_PA)
         self._set_expnum()
+        self.image_flip_status.set(False)
+        self.toggle_image_flip()
+
+
+    @check_enabled
+    def toggle_image_flip(self):
+        """
+        Flip or un-flip the image X axis.
+        """
+        self.canvas.viewer.transform(self.image_flip_status.get(), False, False)
+
+
+    @check_enabled
+    def log_comment(self):
+        """
+        Gets the comment and adds it to the logbook.
+        """
+        if not self.PAR.logbook_exists:
+            self.PAR.create_log_file()
+
+        user_comment = Querybox.get_string(
+            title="Comment", prompt="Enter Comment for Log:", parent=self
+        )
+
+        with open(self.PAR.logfile_name, 'a') as logbook:
+            today = datetime.now()
+            logbook.write(f"{today.strftime('%Y-%m-%d')},{today.strftime('%H:%M:%S')},")
+            logbook.write(f"{user_comment}\n")
 
 
     @check_enabled
@@ -1071,29 +1180,6 @@ class MainPage(SAMOSFrame):
                 logbook.write(f"{self.image_exptime.get()},{file_name}\n")
 
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     @check_enabled
     def change_acq_type(self, event):
         """
@@ -1110,15 +1196,13 @@ class MainPage(SAMOSFrame):
         self.fits_image_ql = imagefile
 
 
-    
-    
-    
-    
     @check_enabled
     def load_existing_file(self):
 #        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
-        loaded_file = tk.filedialog.askopenfilename(title="Select a File",
-                                                    filetypes=(("fits files", "*.fits"), ("all files","*.*")))
+        loaded_file = tk.filedialog.askopenfilename(
+            title="Select a File",
+            filetypes=(("fits files", "*.fits"), ("all files","*.*"))
+        )
         self.fits_image_ql  = loaded_file
         self.Display(loaded_file)
 
@@ -1152,17 +1236,18 @@ class MainPage(SAMOSFrame):
 
         #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         # not all headers use ra,dec
-        try:  #good header...
-            ra, dec = header["RA"], header["DEC"]
-            print(ra,dec)
-            self.fits_ra.set(ra)
-            self.fits_dec.set(dec)
-        except:
-            print("no RA and  DEC in the FITS header")
-        if  self.fits_ra.get() !=  '' and self.fits_dec.get() != '':   
-            ra = self.fits_ra.get()
-            dec = self.fits_dec.get()
-            print("RA and DEC read from the text box")
+#         try:  #good header...
+#             ra, dec = header["RA"], header["DEC"]
+#             self.logger.info(f"From FITS header: ra={ra}, dec={dec}")
+#             self.fits_ra.set(ra)
+#             self.fits_dec.set(dec)
+#         except:
+#             self.logger.warning("no RA and  DEC in the FITS header")
+
+        if  self.ra_cntr.get() !=  0. and self.ra_cntr.get() != 0.:   
+            ra = self.ra_cntr.get()
+            dec = self.dec_cntr.get()
+            self.logger.info("RA and DEC read from the text box")
 
         #MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
         elif self.SOAR.is_on == True:               #was self.PAR.inoutvar.get() == "inside": 
@@ -1171,12 +1256,12 @@ class MainPage(SAMOSFrame):
             dec=infoa_dict['MOUNT_DEC']
             self.fits_ra.set(ra)
             self.fits_dec.set(dec)
-            print("RADEC provided by the SOAR TCS")               
+            self.logger.info("RADEC provided by the SOAR TCS")               
         else:   
             messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
             return
 
-        print("Pointed coordinates: ",ra,dec)
+        self.logger.info(f"Pointed coordinates: {ra} {dec}")
         #<<<<<<<<<<<<<<<<<<<<
 
         center = SkyCoord(ra, dec, unit=[u.deg, u.deg])
@@ -1186,7 +1271,7 @@ class MainPage(SAMOSFrame):
         shape = data.shape
         fov = 0.05
 
-        self.canvas.delete_all_objects(redraw=True)
+        self.clear_canvas()
         stars = twirl.find_peaks(data)[:self.fits_nstars.get()]
         radius_pix = 7
         regs = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in stars])
@@ -1199,10 +1284,18 @@ class MainPage(SAMOSFrame):
         try:
             gaias = twirl.gaia_radecs(center, fov, limit=self.fits_nstars.get())
         except:
-            print("We are not online, need to look for the Gaia stars on local disk")    
+            self.logger.info("We are not online, need to look for the Gaia stars on local disk")    
             self.logger.info("Loading GAIA File")
-            GAIA_file = tk.filedialog.askopenfilename(title="Select a Gaia File",
-                                                     filetypes=(("Text files", "*.csv"), ("all files", "*.*")))
+            initial_dir = self.db.get_value(
+                "config_science_targets_dir", default=Path.cwd().as_posix()
+            )
+            if (Path(initial_dir) / self.target_name).is_dir():
+                initial_dir = Path(initial_dir) / self.target_name
+            GAIA_file = tk.filedialog.askopenfilename(
+                title="Select a Gaia File",
+                initialdir=initial_dir,
+                filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
+            )
             csvFile = pd.read_csv(GAIA_file)
             g=np.transpose(np.array([csvFile['ra_now'].values,csvFile['dec_now'].values])) #extract RADEC
             gaias = g[:self.fits_nstars.get(),:]   #select the first Nstars
@@ -1227,7 +1320,7 @@ class MainPage(SAMOSFrame):
             self.PAR.valid_wcs = True
             self.logger.info("Found WCS solution")
 
-        print(self.PAR.wcs)               # print the WCS solution
+        self.logger.info(f"WCS Solution is: {self.PAR.wcs}")
         hdu_wcs = self.PAR.wcs.to_fits()  # creates a primaryHDU object 
         if self.loaded_reg_file_path is not None:
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)   #write in the fits header the name of the DMD map used
@@ -1240,7 +1333,8 @@ class MainPage(SAMOSFrame):
         #ADD '_QL' SUFFIX IF NOT ALREADY PRESENT
         if self.fits_image_ql[-8:-5] != '_QL':
             self.fits_image_ql = self.fits_image_ql[:-5] + '_QL.fits'
-        hdu_wcs[0].writeto(self.fits_image_ql, overwrite=True)
+        if not Path(self.fits_image_ql).is_file():
+            hdu_wcs[0].writeto(self.fits_image_ql, overwrite=True)
 
         #self.Display(self.wcs_filename)
         #self.fits_image.rotate(self.PAR.Ginga_PA)  
@@ -1252,10 +1346,10 @@ class MainPage(SAMOSFrame):
         x_GSP00 = self.gs_x0.get()
         y_GSP00 = self.gs_y0.get() 
         # determine the RA,DEC coordinates actually pof_inted by the telescope
-        ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00,y_GSP00,0)
-        x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra,dec,0)
-        print(x_pointed,y_pointed,ra,dec)
-        print(x_GSP00,y_GSP00,ra_tel,dec_tel)
+        ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00, y_GSP00, 0)
+        x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra, dec, 0)
+        self.logger.info(f"{x_pointed}, {y_pointed}, {ra}, {dec}")
+        self.logger.info(f"{x_GSP00}, {y_GSP00}, {ra_tel}, {dec_tel}")
         # calculate the offset in RADEC between the telescope and commanded positions
         Delta_ra = float(ra_tel) - float(ra)
         Delta_dec = float(dec_tel) - float(dec)
@@ -1265,8 +1359,8 @@ class MainPage(SAMOSFrame):
         #display
         self.x_offset.set(Delta_RA_arcsec)
         self.y_offset.set(Delta_DEC_arcsec)
-        print(Delta_RA_arcsec,Delta_DEC_arcsec)
-        print('done')
+        self.logger.info(f"{Delta_RA_arcsec}, {Delta_DEC_arcsec}")
+        self.logger.info('done')
         # ready to offset the telescope to the commanded position
 
         """ => SUPERSEDED BY THE ABOVE CODE
@@ -1293,8 +1387,8 @@ class MainPage(SAMOSFrame):
     def find_stars(self):
         self.Display(self.fits_image_ql)
         self.fits_image.rotate(self.PAR.Ginga_PA)  
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
         
         self.set_slit_drawtype()
         with fits.open(self.fits_image_ql) as hdul:
@@ -1311,13 +1405,13 @@ class MainPage(SAMOSFrame):
         fov = (np.max(shape) * u.pix * pixel.to(u.deg)).value
 
         # Let's find some stars and display the image
-        self.canvas.delete_all_objects(redraw=True)
+        self.clear_canvas()
         threshold = 0.1
         stars = twirl.find_peaks(data, threshold)[:self.fits_nstars.get()]
         med = np.median(data)
         radius_pix = 20
-        slit_width = self.slit_w.get()
-        slit_height = self.slit_l.get()
+        slit_width = self.slit_xd.get()
+        slit_height = self.slit_disp.get()
         coords = [PixCoord(x, y) for x, y in stars]
         regions = Regions([RectanglePixelRegion(center=c, width=slit_width, height=slit_height, angle=0*u.deg) for c in coords])
         for i,region in enumerate(regions):
@@ -1327,40 +1421,46 @@ class MainPage(SAMOSFrame):
             obj.color = "red"
             obj.add_callback('pick-up', self.pick_cb, 'up')
             obj.add_callback('edited', self.edit_cb)
-            self.slit_tab_view.add_slit_obj(region, obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(region, obj.tag, self.fits_image)
 
     @check_enabled
-    def show_GSP00(self):
-        # Show the position of the GSP00 on the image
-        radius_pix = 15
-        reg_GSP00 = CirclePixelRegion(center=PixCoord(self.gs_x0.get(), self.gs_y0.get()), radius=radius_pix)
-        obj = r2g(reg_GSP00)
-        obj.color = "blue"
-        obj.linewidth = 3
-        self.tag_GSP00 = '@check_GSP00_'+str(time.time())  #change the tag each time the circle is created
-        self.canvas.add(obj, tag=self.tag_GSP00)
-        self.logger.info(f"Showing {obj} {obj.tag}")
-        
-    @check_enabled
-    def hide_GSP00(self):
-        # Hide the position of the GSP00 on the image
-        
-        #looking at https://ginga.readthedocs.io/en/stable/_modules/ginga/canvas/CanvasMixin.html
-        #it should be possible to simply run
-        #CM.CompoundMixin.delete_objects_by_tag(self.canvas,'@check_GSP00')  
-        #but it does not work. Needs newer Ginga version?
-        
-        object_to_remove = self.canvas.get_object_by_tag(self.tag_GSP00)
-        self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
-        CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
+    def toggle_gsp00(self):
+        if (self.show_gsp00.get()) and (self.tag_gsp00 is None):
+            # Show the position of the GSP00 on the image
+            radius_pix = 15
+            reg_GSP00 = CirclePixelRegion(
+                center=PixCoord(self.gs_x0.get(), self.gs_y0.get()), radius=radius_pix
+            )
+            obj = r2g(reg_GSP00)
+            obj.color = "blue"
+            obj.linewidth = 3
+            self.tag_gsp00 = '@check_GSP00_'+str(time.time())  #change the tag each time the circle is created
+            self.canvas.add(obj, tag=self.tag_gsp00)
+            self.logger.info(f"Showing {obj} {obj.tag}")
+        elif (not self.show_gsp00.get()) and (self.tag_gsp00 is not None):
+            # Hide the position of the GSP00 on the image
+            #looking at https://ginga.readthedocs.io/en/stable/_modules/ginga/canvas/CanvasMixin.html
+            #it should be possible to simply run
+            #CM.CompoundMixin.delete_objects_by_tag(self.canvas,'@check_GSP00')  
+            #but it does not work. Needs newer Ginga version?
+            try:
+                object_to_remove = self.canvas.get_object_by_tag(self.tag_gsp00)
+                if object_to_remove is not None:
+                    self.logger.info(f"Hiding {object_to_remove} {object_to_remove.tag}")
+                    CM.CompoundMixin.delete_object(self.canvas, object_to_remove)
+            except Exception as e:
+                self.logger.error(f"Exception {e} trying to remove the circle. Aborting.")
+            finally:
+                self.tag_gsp00 = None
         self.canvas.redraw()
         
 
     @check_enabled
     def open_quicklook_file(self):
         """ to be written """
-        filename = tk.filedialog.askopenfilename(filetypes=[("allfiles", "*"),
-                                                 ("fitsfiles", "*.fits")])
+        filename = tk.filedialog.askopenfilename(
+            filetypes=[("fitsfiles", "*.fits"), ("allfiles", "*")]
+        )
         self.Display(filename)
         if self.AstroImage.wcs.wcs.has_celestial:
             self.PAR.wcs = self.AstroImage.wcs.wcs
@@ -1372,6 +1472,8 @@ class MainPage(SAMOSFrame):
         """ erase all objects in the canvas except slits (boxes) """
         objects_to_remove = []
         for obj in CM.CompoundMixin.get_objects(self.canvas):
+            if obj.tag == self.tag_gsp00:
+                continue
             if "slit" not in obj.tag:
                 self.logger.info(f"Removing {obj} {obj.tag}")
                 objects_to_remove.append(obj)
@@ -1442,7 +1544,10 @@ class MainPage(SAMOSFrame):
         mode = self.slit_mode.get()
         if mode != "draw":
             self.source_pickup_enabled.set(False)
-        self.canvas.set_draw_mode(mode)
+        if mode != "delete":
+            self.canvas.set_draw_mode(mode)
+        else:
+            self.canvas.set_draw_mode("pick")
 
 
     @check_enabled
@@ -1455,8 +1560,8 @@ class MainPage(SAMOSFrame):
         obj.add_callback('edited', self.edit_cb)
         kind = self.draw_type.get()
         self.logger.info(f"User draw object of kind {kind} with tag {tag} on canvas {canvas}")
-        if self.slit_tab_view is None:
-            self.initialize_slit_table()
+#         if self.slit_tab_view is None:
+#             self.initialize_slit_table()
         
         if kind == "box" and self.source_pickup_enabled.get():
             # User drew a box in source-pickup mode (should never happen)
@@ -1468,11 +1573,11 @@ class MainPage(SAMOSFrame):
                 obj.kind = "box"
 
             new_obj = self.slit_handler(obj)
-            self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
         elif self.source_pickup_enabled.get() and kind == 'point':
             # User clicked on a point in source pick-up mode.
             new_obj = self.slit_handler(obj)
-            self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(g2r(new_obj), new_obj.tag, self.fits_image)
         elif kind == "box" and not self.source_pickup_enabled.get():
             # a box is drawn but centroid is not searched, just drawn...
 
@@ -1483,7 +1588,7 @@ class MainPage(SAMOSFrame):
             r = g2r(obj)
             
             # the astropy object is added to the table
-            self.slit_tab_view.add_slit_obj(r, obj.tag, self.fits_image)
+#             self.slit_tab_view.add_slit_obj(r, obj.tag, self.fits_image)
         # Done draw_cb
 
 
@@ -1501,7 +1606,7 @@ class MainPage(SAMOSFrame):
             CM.CompoundMixin.delete_object(self.canvas, obj)
 
             # create area to search, use astropy and convert to ginga (historic reasons...)
-            r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)), width=40, height=40, angle=0*u.deg)
+            r = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)), width=15, height=15, angle=0*u.deg)
             # and we convert it to ginga.
             obj = r2g(r)
             self.canvas.add(obj)
@@ -1513,7 +1618,10 @@ class MainPage(SAMOSFrame):
         CM.CompoundMixin.delete_object(self.canvas, obj)
 
         # find the peak within the Ginga box
-        peaks = iq.find_bright_peaks(data_box)
+        peaks = self.iq.find_bright_peaks(data_box)
+        if len(peaks) == 0:
+            self.logger.warning("No peaks found")
+            return
         print(peaks[:20])  # subarea coordinates
         x1 = obj.x - obj.xradius
         y1 = obj.y - obj.yradius
@@ -1538,7 +1646,7 @@ class MainPage(SAMOSFrame):
         #    * ``background``: Median of the input array.
         #    * ``ensquared_energy_fn``: Function of ensquared energy for different pixel radii.
         #    * ``encircled_energy_fn``: Function of encircled energy for different pixel radii.
-        results = iq.evaluate_peaks(peaks, data_box)
+        results = self.iq.evaluate_peaks(peaks, data_box)
         self.logger.debug("Full Evaluation: {}".format(results))
         #self.logger.info("Peak Centroid: ({}, {})".format(results[0].objx, results[0].objy))
         self.logger.info("Peak Centroid (x,y): ({}, {})".format(results[0].objx+x1, results[0].objy+y1))
@@ -1548,8 +1656,8 @@ class MainPage(SAMOSFrame):
 
         # having found the centroid, we need to draw the slit
         slit_box = self.canvas.get_draw_class('box')
-        xradius = self.slit_w.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
-        yradius = self.slit_l.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
+        xradius = self.slit_xd.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
+        yradius = self.slit_disp.get() * 0.5 * DMD_MIRROR_TO_PIXEL_SCALE
         new_obj = slit_box(x=results[0].objx + x1, y=results[0].objy + y1, xradius=xradius, yradius=yradius, color='red',
                            alpha=0.8, fill=False, angle=5*u.deg, pickable=True)
         self.canvas.add(new_obj, tag='@slit_{}-{}'.format(results[0].objx + x1, results[0].objy + y1))
@@ -1587,11 +1695,12 @@ class MainPage(SAMOSFrame):
             if "slit" not in obj.tag:
                 continue
             if hasattr(obj, 'x'):
+                self.logger.info(f"Object: ({obj.x}, {obj.y}) size ({obj.xradius}, {obj.yradius})")
                 ox, oy = round(obj.x), round(obj.y)
                 x1, x2 = max(ox - obj.xradius, 0), min(ox + obj.xradius, max_x)
-                y1, y2 = max(oy - 1024, 0), min(oy + 1024, max_y)
-                if (x1 < 0) or (x2 < 0) or (y1 < 0) or (y2 < 0):
-                    continue
+                y1, y2 = oy - 1024, oy + 1024
+#                 if (x1 < 0) or (x2 < 0) or (y1 < 0) or (y2 < 0):
+#                     continue
 #                 x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
 #                 y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
                 self.logger.info(f"Slit {i}: Trace ({x1} -> {x2}, {y1} -> {y2})")
@@ -1741,13 +1850,13 @@ class MainPage(SAMOSFrame):
         self.slits_only()
 
         # do the change
-        xr = self.slit_w.get()/2.
-        yr = self.slit_l.get()/2.
+        xr = self.slit_xd.get()/2.
+        yr = self.slit_disp.get()/2.
         CM.CompoundMixin.set_attr_all(self.canvas, xradius=xr, yradius=yr)
         self.canvas.redraw()
         updated_objs = CM.CompoundMixin.get_objects(self.canvas)
         viewer_list = np.full(len(updated_objs), self.canvas.viewer)
-        np.array(list(map(self.slit_tab_view.update_table_from_obj, updated_objs, viewer_list)))
+#         np.array(list(map(self.slit_tab_view.update_table_from_obj, updated_objs, viewer_list)))
 
 
     @check_enabled
@@ -1770,11 +1879,11 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def slit_width_length_adjust(self, event=None):
-        if self.selected_obj_tag is None:
+        if self.selected_object_tag is None:
             self.logger.error("Trying to adjust width of selected slit with no slit selected.")
             return
 
-        picked_slit = self.canvas.get_object_by_tag(self.selected_obj_tag)
+        picked_slit = self.canvas.get_object_by_tag(self.selected_object_tag)
 
         current_dmd_width = self.width_adjust_btn.get()
         current_dmd_length = self.length_adjust_btn.get()
@@ -1802,116 +1911,122 @@ class MainPage(SAMOSFrame):
         self.canvas.set_draw_mode('draw')
         self.canvas.set_draw_mode('pick')
 
-        obj_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(self.selected_obj_tag.strip("@"))
-        imcoords_txt_fmt = "{:.2f}"
-
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=5, redraw=True, value=imcoords_txt_fmt.format(fits_x0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=6, redraw=True, value=imcoords_txt_fmt.format(fits_y0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=7, redraw=True, value=imcoords_txt_fmt.format(fits_x1))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=8, redraw=True, value=imcoords_txt_fmt.format(fits_y1))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=11, redraw=True, value=int(dmd_x0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=12, redraw=True, value=int(dmd_y0))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=13, redraw=True, value=int(dmd_x1))
-        self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=14, redraw=True, value=int(dmd_y1))
+#         obj_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(self.selected_object_tag.strip("@"))
+#         imcoords_txt_fmt = "{:.2f}"
+# 
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=5, redraw=True, value=imcoords_txt_fmt.format(fits_x0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=6, redraw=True, value=imcoords_txt_fmt.format(fits_y0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=7, redraw=True, value=imcoords_txt_fmt.format(fits_x1))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=8, redraw=True, value=imcoords_txt_fmt.format(fits_y1))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=11, redraw=True, value=int(dmd_x0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=12, redraw=True, value=int(dmd_y0))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=13, redraw=True, value=int(dmd_x1))
+#         self.slit_tab_view.stab.set_cell_data(r=obj_ind, c=14, redraw=True, value=int(dmd_y1))
 
 
     @check_enabled
     def pick_cb(self, obj, canvas, event, pt, ptype):
         self.logger.info(f"Pick {ptype} on object {obj.tag} of kind {obj.kind} at ({pt[0]}, {pt[1]})")
-        if self.selected_obj_tag is not None:
+        if (hasattr(self, "selected_object_tag")) and (self.selected_object_tag is not None):
             self.logger.info("Unselecting existing selection")
-            canvas.get_object_by_tag(self.selected_obj_tag).color = 'red'
+            canvas.get_object_by_tag(self.selected_object_tag).color = 'red'
             canvas.clear_selected()
 
+        if self.slit_mode.get() == "delete":
+            if obj is not None:
+                canvas.delete_object(obj)
+                return True
+
         canvas.select_add(obj.tag)
-        self.selected_obj_tag = obj.tag
+        self.selected_object_tag = obj.tag
         obj.color = 'green'
 
         canvas.set_draw_mode('draw')
         canvas.set_draw_mode('pick')
 
         self.obj_ind = int(obj.tag.strip('@'))-1
-        try:
-            self.tab_row_ind = self.slit_tab_view.stab.get_column_data(0).index(obj.tag.strip('@'))
-            dmd_x0, dmd_x1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_x0', 'dmd_x1']].astype(int)
-            dmd_y0, dmd_y1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_y0', 'dmd_y1']].astype(int)
-            dmd_width = int(dmd_x1-dmd_x0)
-            dmd_length = int(dmd_y1-dmd_y0)
-            self.slit_w.set(dmd_width)
-            self.slit_l.set(dmd_length)
-        except Exception as e:
-            self.logger.error(f"ERROR {e} when updating slit view table")
+#         try:
+#             self.tab_row_ind = self.slit_tab_view.stab.get_column_data(0).index(obj.tag.strip('@'))
+#             dmd_x0, dmd_x1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_x0', 'dmd_x1']].astype(int)
+#             dmd_y0, dmd_y1 = self.slit_tab_view.slitDF.loc[self.obj_ind, ['dmd_y0', 'dmd_y1']].astype(int)
+#             dmd_width = int(dmd_x1-dmd_x0)
+#             dmd_length = int(dmd_y1-dmd_y0)
+#             self.slit_xd.set(dmd_width)
+#             self.slit_disp.set(dmd_length)
+#         except Exception as e:
+#             self.logger.error(f"ERROR {e} when updating slit view table")
 
         if ptype == 'up' or ptype == 'down':
             canvas.delete_object(obj)
-            try:
-                self.slit_tab_view.stab.select_row(row=self.tab_row_ind)
-                self.slit_tab_view.stab.delete_row(self.tab_row_ind)
-                self.slit_tab_view.stab.redraw()
-                self.slit_tab_view.slitDF = self.slit_tab_view.slitDF.drop(index=self.obj_ind)
-                self.slit_tab_view.slit_obj_tags.remove(self.selected_obj_tag)
-                canvas.clear_selected()
-
-                try:
-                    for si in range(len(self.pattern_series)):
-                        sub = self.pattern_series[si]
-                        tag = int(obj.tag.strip("@"))
-                        if tag in sub.object.values:
-                            sub_ind = sub.where(sub.object == tag).dropna(how="all").index.values[0]
-                            sub = sub.drop(index=sub_ind)
-                            self.pattern_series[si] = sub
-                except Exception as e:
-                    self.logger.error(f"Error {e} while looping through sub-patterns")
-            except Exception as e:
-                self.logger.error(f"Error {e} (possibly slit table does not exist)")
-                print("No slit table created yet.")
+#             try:
+#                 self.slit_tab_view.stab.select_row(row=self.tab_row_ind)
+#                 self.slit_tab_view.stab.delete_row(self.tab_row_ind)
+#                 self.slit_tab_view.stab.redraw()
+#                 self.slit_tab_view.slitDF = self.slit_tab_view.slitDF.drop(index=self.obj_ind)
+#                 self.slit_tab_view.slit_obj_tags.remove(self.selected_object_tag)
+#                 canvas.clear_selected()
+# 
+#                 try:
+#                     for si in range(len(self.pattern_series)):
+#                         sub = self.pattern_series[si]
+#                         tag = int(obj.tag.strip("@"))
+#                         if tag in sub.object.values:
+#                             sub_ind = sub.where(sub.object == tag).dropna(how="all").index.values[0]
+#                             sub = sub.drop(index=sub_ind)
+#                             self.pattern_series[si] = sub
+#                 except Exception as e:
+#                     self.logger.error(f"Error {e} while looping through sub-patterns")
+#             except Exception as e:
+#                 self.logger.error(f"Error {e} (possibly slit table does not exist)")
+#                 print("No slit table created yet.")
         return True
 
 
     @check_enabled
     def edit_cb(self, obj):
-        self.logger.info(f"Object {obj.kind} has been edited")
-        tab_row_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(int(obj.tag.strip("@")))
-        self.slit_tab_view.stab.select_row(row=tab_row_ind, redraw=True)
-        self.slit_tab_view.update_table_row_from_obj(obj, self.fits_image)
+        self.logger.info(f"Object {obj.kind} with tag {obj.tag} has been edited")
+#         tab_row_ind = list(self.slit_tab_view.stab.get_column_data(0)).index(int(obj.tag.strip("@")))
+#         self.slit_tab_view.stab.select_row(row=tab_row_ind, redraw=True)
+#         self.slit_tab_view.update_table_row_from_obj(obj, self.fits_image)
         return True
 
 
-    @check_enabled
-    def initialize_slit_table(self):
-        if (not hasattr(self, "slit_window")) or (self.slit_window is None):
-            self.slit_window = tk.Toplevel()
-            self.slit_window.title("Slit Table")
-            self.slit_window.geometry("700x407")
-            self.slit_tab_view = STView(self.slit_window, self.parent, self.PAR, self.logger)
-            self.slit_window.withdraw()
+#     @check_enabled
+#     def initialize_slit_table(self):
+#         if (not hasattr(self, "slit_window")) or (self.slit_window is None):
+#             self.slit_window = tk.Toplevel()
+#             self.slit_window.title("Slit Table")
+#             self.slit_window.geometry("700x407")
+#             self.slit_tab_view = STView(self.slit_window, self.parent, self.PAR, self.logger)
+#             self.slit_window.withdraw()
 
 
-    @check_enabled
-    def show_slit_table(self):
-        try:
-            self.slit_window.deiconify()
-        except AttributeError as e:
-            self.logger.warning("No slits to show in slit table")
-        except Exception as e:
-            # need to remake the table viewing window if it is destroyed
-            if not self.slit_window.winfo_exists():
-                # preserve the slit data frame so it is republished in the new window
-                current_slitDF = self.slit_tab_view.slitDF
-                self.initialize_slit_table()
-                self.slit_tab_view.slitDF = current_slitDF
-                # re-add the table rows
-                if not self.slit_tab_view.slitDF.empty:
-                    self.slit_tab_view.recover_window()
-                self.slit_window.deiconify()
+#     @check_enabled
+#     def show_slit_table(self):
+#         try:
+#             self.slit_window.deiconify()
+#         except AttributeError as e:
+#             self.logger.warning("No slits to show in slit table")
+#         except Exception as e:
+#             # need to remake the table viewing window if it is destroyed
+#             if not self.slit_window.winfo_exists():
+#                 # preserve the slit data frame so it is republished in the new window
+#                 current_slitDF = self.slit_tab_view.slitDF
+#                 self.initialize_slit_table()
+#                 self.slit_tab_view.slitDF = current_slitDF
+#                 # re-add the table rows
+#                 if not self.slit_tab_view.slitDF.empty:
+#                     self.slit_tab_view.recover_window()
+#                 self.slit_window.deiconify()
 
 
     @check_enabled
     def load_slits(self):
-        filename_slits = tk.filedialog.askopenfilename(initialdir=get_data_file("dmd.scv.slits"),
-                                                       title="Select a File",
-                                                       filetypes=(("Text files", "*.csv"),
-                                                                  ("all files", "*.*")))
+        filename_slits = tk.filedialog.askopenfilename(
+            initialdir=get_data_file("dmd.scv.slits"),
+            title="Select a File",
+            filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
+        )
         self.saved_slit_file_path = Path(filename_slits)
         self.saved_slit_file.set(self.saved_slit_file_path.name)
 
@@ -1999,17 +2114,22 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def _set_expnum(self):
         min_num = 0
-        match_str = "*_" + "[0-9]" * 4 + ".fits"
-        current_files = self.PAR.fits_dir.glob(match_str)
+        self.logger.info(f"Checking directory {self.PAR.fits_dir}")
+        current_files = self.PAR.fits_dir.glob("*.fits")
         for file in current_files:
-            num_results = list(map(int, re.findall(r"\d+", file.name)))
-            for number in num_results:
+            self.logger.info(f"Checking exposure number in {file}")
+            num_results = list(map(str, re.findall(r"_\d+_", file.name)))
+            for str_num in num_results:
+                number = int(str_num[1:-1])
+                self.logger.info(f"\tFound number {number}")
                 if number > min_num:
                     min_num = number
         min_num += 1
+        self.logger.info(f"Setting minimum exposure number to {min_num}")
         self.expnum.config(from_=min_num)
         if self.image_expnum.get() < min_num:
             self.image_expnum.set(min_num)
+        self.expnum.configure(from_=min_num)
 
 
     def update_status_box(self):

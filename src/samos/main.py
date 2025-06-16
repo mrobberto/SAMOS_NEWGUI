@@ -3,9 +3,13 @@
 Main entrypoint to SAMOS GUI
 """
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import multiprocessing as mp
+from pathlib import Path
 import socket
 import sys
+import urllib.request
+import webbrowser
 
 from ginga.util import iqcalc
 from ginga.AstroImage import AstroImage
@@ -70,6 +74,13 @@ class App(ttk.Window):
             "DB": self.DB,
             "registry": self.registry
         }
+
+        log_path = self.PAR.output_dir
+        log_file = log_path / "samos_log.txt"
+        print(f"Logging to {log_file}")
+        handler = TimedRotatingFileHandler(log_file, when='midnight')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
         
         # Setting up Initial Things
         self.title("SAMOS Control System")
@@ -171,16 +182,16 @@ class App(ttk.Window):
         self.log_window.deiconify()
  
     def show_Ginga_keystrokes(self):
-        import webbrowser
-        
-        # define an instance of tkinter
-        # Open website
+        ginga_url = 'https://ginga.readthedocs.io/en/v5.0.1/quickref.html#ginga-quick-reference'
         try:
-            webbrowser.open('https://ginga.readthedocs.io/en/v5.0.1/quickref.html#ginga-quick-reference')
-        except:
-            url = 'file://./utilities/QuickReference_ginga_v5.0.1_rev.html'
-            webbrowser.open(url)
-            
+            if urllib.request.urlopen(ginga_url).getcode() == 200:
+                webbrowser.open(ginga_url)
+            else:
+                ref_file = get_data_file("documentation", "ginga_quick_reference_v5.0.1.html")
+                webbrowser.open(ref_file)
+        except Exception as e:
+            ref_file = get_data_file("documentation", "ginga_quick_reference_v5.0.1.html")
+            webbrowser.open(ref_file)
         
 
     def create_menubar(self):

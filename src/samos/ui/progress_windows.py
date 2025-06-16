@@ -41,6 +41,12 @@ class ExposureProgressWindow(tk.Toplevel):
         self.exposure_progress.grid(row=3, column=0, sticky=TK_STICKY_ALL)
 
 
+    def destroy(self):
+        self.parent.start_exp_button.configure(state="normal")
+        self.parent._set_expnum()
+        super().destroy()
+
+
     def start_exposure(self, exptype, **params):
         """ 
         This is the landing procedure after the START button has been pressed
@@ -299,7 +305,7 @@ class ExposureProgressWindow(tk.Toplevel):
             superfile_numbered = f"{image_type}_{params['exptime']/1000}_{params['image_name']}_{last_number:04n}_coadd.fits"
         else:
             superfile_name = "{}_coadd.fits".format(image_type)
-            superfile_numbered = f"{image_type}_{params['image_name']}_{last_number:04n}_coadd.fits"
+            superfile_numbered = f"{image_type}_{params['image_name']}_{last_number:04d}_coadd.fits"
         
         self.main_fits_header.set_param("filename", superfile_name)
         self.main_fits_header.set_param("combined", "T")
