@@ -52,8 +52,8 @@ class FITSHead(object):
         ### SAMOS Imaging CCD parameters
         self.pixsize1 = 13
         self.pixsize2 = 13
-        self.pixscale1 = 0.17
-        self.pixscale2 = 0.17
+        self.pixscale1 = 0.1824
+        self.pixscale2 = 0.1824
         
         # matrix elements for astrometric solution
         self.wcsdim = 2
