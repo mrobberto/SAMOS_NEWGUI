@@ -804,13 +804,23 @@ class MainPage(SAMOSFrame):
         )
         self.loaded_ginga_file_path = Path(reg_file)
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
+        
         initial_regions = Regions.read(self.loaded_ginga_file_path, format="ds9")
         astropy_regions_pix = Regions()
         for region in initial_regions:
             if region not in astropy_regions_pix:
                 astropy_regions_pix.append(region)
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
-        self.loaded_ginga_regions = ginga_regions
+        
+        #inserting a "slit" object ta needed e.g. to show trace
+        counter = 0
+        for object in ginga_regions:
+            object.tag = '@slit_{}'.format(str(counter))
+            print(object.tag)
+            counter+=1
+            
+        self.loaded_ginga_regions = ginga_regions    
+        #obj.tag = '@slit_{}'.format(obj.tag)
 #         if self.slit_tab_view is None:
 #             self.initialize_slit_table()
 #         self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
@@ -1149,6 +1159,7 @@ class MainPage(SAMOSFrame):
                 'sub_flat': self.ql_flat.get() == 1,
                 'sub_buffer': self.ql_buffer.get() == 1,
                 'save_individual': self.image_save_single.get() == 1,
+                
             }
             #are we observing a new target? BCS we may haave lost the WCS solution
             if self.image_name.get() !=  self.previous_image_name:
@@ -1342,20 +1353,86 @@ class MainPage(SAMOSFrame):
         # image shape and pixel size in "
         #shape = data.shape
         fov = 0.05
+        
+        """
+        #clean the image background
+        #NOT IMPLEMENTED
+        
+        coverage_mask = (data == 0)
+        from astropy.stats import SigmaClip
+        from photutils.background import Background2D, MedianBackground
+        sigma_clip = SigmaClip(sigma=3.0)
+        bkg_estimator = MedianBackground()
+        bkg = Background2D(data, (50, 50), filter_size=(3, 3),
+                   sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+        
+        from astropy.stats import sigma_clipped_stats, SigmaClip
+        from photutils.segmentation import detect_threshold, detect_sources
+        from photutils.utils import circular_footprint
+        coverage_mask = (data == 0)
+        bkg3 = Background2D(data, (15, 15), filter_size=(3, 3),
+                            coverage_mask=coverage_mask, fill_value=0.0,
+                            exclude_percentile=50.0)
+        data=data - bkg3.backgroun
+        
+        sigma_clip = SigmaClip(sigma=3.0, maxiters=10)
+        threshold = detect_threshold(data, nsigma=2.0, sigma_clip=sigma_clip)
+        segment_img = detect_sources(data, threshold, npixels=10)
+        footprint = circular_footprint(radius=10)
+        mask = segment_img.make_source_mask(footprint=footprint)
+        mean, median, std = sigma_clipped_stats(data, sigma=3.0, mask=mask)
+        print(np.array((mean, median, std)))
+        # mask
+        from photutils import make_source_mask
+        mask_sci = make_source_mask(data, snr=2, npixels=3, dilate_size=11)
+        mask_ref = make_source_mask(data, snr=2, npixels=3, dilate_size=11)
 
+        sigma_clip = SigmaClip(sigma=3) # Sigma clipping
+        from photutils.background import Background2D, MedianBackground
+        bkg_estimator = MedianBackground()
+        
+        bkg_sci = Background2D(data, (200, 150), filter_size=(3, 3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, mask=mask_sci)
+        bkg_ref = Background2D(data, (200, 150), filter_size=(3, 3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, mask=mask_ref)
+        """
+        
+        
+        #
+        #  FIND STARS IN THE FIELD
+        #
         self.clear_canvas()
         stars = twirl.find_peaks(data)[:self.fits_nstars.get()]
+       
+        
+       
+        """
+        #remove problematic peaks
+        #NOT IMPLEMENTED
+        
+        stars_x = np.array(list(stars))[:,0]
+        stars_y = np.array(list(stars))[:,1]
+        peaks = data[stars_y.astype(int),stars_x.astype(int)]
+        indices = np.where(peaks < 0)
+        newstars = np.delete(stars, indices, axis=0)
+        stars=newstars
+        """
+        
+        #
+        #  DRAW STARS IN THE FIELD, COLOR RED
+        #
         radius_pix = 7
         regs = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in stars])
         for i, reg in enumerate(regs):
             obj = r2g(reg)
             obj.color="red"
             self.canvas.add(obj, tag='@twirl_{}'.format(i))
+        
         #Now the GAIA stars
+        
         #If we are online, twirl will find the GAIA stars on the internet
         try:
-            gaias = twirl.gaia_radecs(center, fov, limit=self.fits_nstars.get())
+            gaias = twirl.gaia_radecs(center, fov, circular=True, limit=self.fits_nstars.get())
         except:
+        #If we are at the telescope, we read a Gaia catalog
             self.logger.info("We are not online, need to look for the Gaia stars on local disk")    
             self.logger.info("Loading GAIA File")
             initial_dir = self.db.get_value(
@@ -1374,11 +1451,44 @@ class MainPage(SAMOSFrame):
             
         # we can now compute the WCS
         self.PAR.wcs = twirl.compute_wcs(stars, gaias)
+        
+        """
+        #now let's refine the solution
+        #consider working on the full gaia g list
+        #gaias = twirl.gaia_radecs(center, fov, circular=False)
+        """
+        px = []
+        py = []
+        for i in range(len(gaias)):
+            ipx, ipy = self.PAR.wcs.wcs_world2pix(gaias[i][0],gaias[i][1], 1)
+            px = np.append(px,ipx)
+            py = np.append(py,ipy)
+            
+        #=>do a centroid
+        from photutils.centroids import centroid_2dg, centroid_sources
+        px1,py1 = centroid_sources(data, px, py, box_size=9)#,
+#                        centroid_func=centroid_2dg)
+        """        
+        #px1=px
+        #py1=py
+        import astropy.wcs.utils as aputils
+        wcs1 = aputils.fit_wcs_from_points(xy=[px1,py1],world_coords=SkyCoord(gaias,frame="icrs",unit="deg"),projection="TAN",sip_degree=4)
+        wcs1.sip.a
+        
+        #TEST ON A TARGET
+        aaa,ddd=[84.62021435578	, -69.10457041397]
+        px1,py1 = self.PAR.wcs.all_world2pix(aaa,ddd,0) ; print(px1,py1)
+        #px2,py2 = wcs1.all_world2pix(aaa,ddd,0) ; print(px2,py2)
+        truex,truey = (centroid_sources(data, px1, py1, box_size=9)) 
+        print(np.sqrt( (px1-truex[0])**2 + (py1-truey[0])**2)) 
+        #print(np.sqrt( (px2-truex[0])**2 + (py2-truey[0])**2))
+        """
 
         # Lets check the WCS solution
         radius_pix = 21
-        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.PAR.wcs)).T
-        regs_gaia = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in gaia_pixel])
+        #gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.PAR.wcs)).T
+        gaia_pixel2 =np.array([px1,py1]).T
+        regs_gaia = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in gaia_pixel2])
         for i, reg in enumerate(regs_gaia):
             obj = r2g(reg)
             obj.color = "green"
@@ -1405,17 +1515,20 @@ class MainPage(SAMOSFrame):
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)   #write in the fits header the name of the DMD map used
         hdu_wcs[0].data = data            # add data to fits file
         
-        """
-        HERE I HACK THE HEADER
-        """
-        hdu_wcs[0].header = self.fits_header_manager(raw_header, hdu_wcs[0].header)
-
+        
+        
+        
         # I THINK THAT ONCE WE GET THE WCS SOLUTION WE JUST UPODATE THE FILE SUFFIX ADDING 
         #self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
         #self.wcs_filename = str( get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec) ) # I think it's better to just use the string
         #hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
         #ADD '_QL' SUFFIX IF NOT ALREADY PRESENT
         if self.fits_image_ql[-8:-5] != '_QL':
+            """
+            IF WE WORK WITH THE NATIVE IMAGE, IMPROVE THE HEADER FOR THE _QL VERSION
+            """
+            hdu_wcs[0].header = self.fits_header_manager(raw_header, hdu_wcs[0].header)
+            
             self.fits_image_ql = self.fits_image_ql[:-5] + '_QL.fits'
         #if not Path(self.fits_image_ql).is_file():
             hdu_wcs[0].writeto(self.fits_image_ql, overwrite=True)
@@ -1468,13 +1581,12 @@ class MainPage(SAMOSFrame):
         Delta_DEC_mm = round(Delta_DEC * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
         self.x_offset.set(Delta_RA_mm)
         self.y_offset.set(Delta_DEC_mm)
+       
         """
-        
-        #self.get_ZeroPoint()
-        
+     
     def fits_header_manager(self, SI_original_header, determined_wcs):
         """
-        fix the header received by SI camera withg the stuff we want to save in the _QL file
+        fix the header received by SI camera withg the stuff we wmay want to save in the _QL file
         """
         
         "START WITH THE SISI HEADER"
