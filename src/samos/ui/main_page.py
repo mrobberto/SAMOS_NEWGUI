@@ -360,7 +360,7 @@ class MainPage(SAMOSFrame):
         b.grid(row=0, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get ZeroPoint", command=self.get_ZeroPoint)
         b.grid(row=0, column=6, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Open File", command=self.open_quicklook_file)
+        b = ttk.Button(frame, text="Centroid Slits", command=self.centroid_slits)
         b.grid(row=0, column=7, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame,text="Find Stars", command=self.find_stars)
         b.grid(row=0, column=8, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -591,13 +591,13 @@ class MainPage(SAMOSFrame):
             if i % 2 == 0:
                 even_regions.append(region)
             if i % 2 == 1:
-                odd_regions.append(region)
+                 odd_regions.append(region)
         #
         #CREATE THE FILE NAMES FOR OUTPUT
         #
         #The directory must be PIXELS directory in the last opened RegionFiles folder
         self.dir_regions_pixels = os.path.join( str(self.loaded_reg_file_path.parent),
-                                                "PIXELS")   
+                                                "../PIXELS")   
         #create it if it does not exist
         Path(self.dir_regions_pixels).mkdir(parents=True, exist_ok=True)
         #
@@ -607,27 +607,27 @@ class MainPage(SAMOSFrame):
         #and we use the target name self.target_name, e.g. 'RMC 136-T00'
         
         # 1) We insert "PIXEL" in the global astropy region pix
-        filename  = self.target_name+"_PIXEL_RADEC="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]
+        file_name_pixel  = self.target_name+"_PIXEL="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]
         save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                         defaultextension=".reg",
-                                        initialfile = file_name,
+                                        initialfile = file_name_pixel,
                                         #initialdir=get_data_file("regions.pixels"))
                                         initialdir= self.dir_regions_pixels)
         astropy_regions_pix.write(save_file.name, overwrite=True)
         self.logger.info("Saved regions to {}".format(save_file.name))
         
-        save_file = os.path.join(self.dir_regions_pixels,
-                                 self.target_name+"_PIXEL_EVEN_RADEC="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+        #save_file = os.path.join(self.dir_regions_pixels,
+        #                         self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
         
         # 2) We insert "PIXEL_EVEN" in the global astropy region pix
         save_file = os.path.join(self.dir_regions_pixels,
-                                 self.target_name+"_PIXEL_EVEN_RADEC="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+                                 self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
         Regions(even_regions).write(save_file, overwrite=True)
         self.logger.info("Saved Even regions to {}".format(save_file))
         
         # 3) We insert "PIXEL_ODD" in the global astropy region pix 
         save_file = os.path.join(self.dir_regions_pixels,
-                                 self.target_name+"_PIXEL_ODD_RADEC="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+                                 self.target_name+"_PIXEL_ODD="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
         Regions(odd_regions).write(save_file, overwrite=True)
         self.logger.info("Saved Even regions to {}".format(save_file))
        
@@ -704,6 +704,47 @@ class MainPage(SAMOSFrame):
                 box_h = (y1 - y0)
                 obj = box_tool(box_x, box_y, box_w, box_h, color='red')
                 self.canvas.add(obj, tag='@slit_{}'.format(i))
+                
+                
+    def centroid_slits(self):
+        from photutils.centroids import centroid_2dg, centroid_sources
+        """
+        #let's refine the centering of the slit
+        #consider working on the full gaia g list
+        #gaias = twirl.gaia_radecs(center, fov, circular=False)
+        """
+        #We know the regions
+        ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
+        
+        #We know the image
+        with fits.open(self.fits_image_ql) as hdul:
+            data = hdul[0].data
+
+        #We loop over the regions         
+        box_size = 15
+        for i in range(len(ginga_regions)):
+            #We may have slits out of the field. Ignore then
+            if (ginga_regions[i].x < 10) or (ginga_regions[i].x > (data.shape[1]-10)) or (ginga_regions[i].y < 10) or ginga_regions[i].y > (data.shape[0]-10):
+                self.logger.info(f'skipping slit {i} out of the field')
+                continue
+            
+            px1,py1 = centroid_sources(data, ginga_regions[i].x, ginga_regions[i].y, box_size = box_size)#,
+    #                        centroid_func=centroid_2dg)   
+            # check if the solution is acceptable
+            if np.sqrt( (px1.item() - ginga_regions[i].x)**2 + (py1.item() - ginga_regions[i].y)**2) < box_size:
+                ginga_regions[i].move_to_pt([px1.item(),py1.item()])
+                ginga_regions[i].color = 'blue'
+                self.canvas.draw
+                #do the substitution
+                #obj = ginga_regions[i]
+                #self.canvas.delete_object(ginga_regions[i])
+                #self.canvas.add(obj, tag='@slit_{}'.format(i))
+                self.logger.info(f"Adjusting slit {i}")
+            else:
+                continue
+        self.logger.info("All slits checked for centroid")
+                
+            
 
 
     @check_enabled
@@ -1124,6 +1165,15 @@ class MainPage(SAMOSFrame):
         """ 
         This is the landing procedure after the START button has been pressed
         """
+        #CHECK TO AVOID LONG EXPOSURES BY ERROR
+        duration = self.image_exptime.get() * 1000 * self.image_frames.get()
+        if duration > 60:
+            if tk.messagebox.askyesno(title="Time Check", message="exposure longer than 60s. Continue?"):
+                self.logger.info(f"Starting Exposure")
+            else:
+                return
+                
+        
         try:
             if not self.PAR.fits_dir.is_dir():
                 self.logger.info(f"Creating FITS directory {self.PAR.fits_dir} for tonight")
@@ -1461,8 +1511,12 @@ class MainPage(SAMOSFrame):
         py = []
         for i in range(len(gaias)):
             ipx, ipy = self.PAR.wcs.wcs_world2pix(gaias[i][0],gaias[i][1], 1)
-            px = np.append(px,ipx)
-            py = np.append(py,ipy)
+            if (ipx.item() < 10) or (ipx.item() > (data.shape[1]-10)) or (ipy.item() < 10) or ipy.item() > (data.shape[0]-10):
+                self.logger.info(f'skipping Gaia source at (px,py)={ipx.item()},{ipy.item()}')
+                continue
+            else:
+                px = np.append(px,ipx.item())
+                py = np.append(py,ipy.item())
             
         #=>do a centroid
         from photutils.centroids import centroid_2dg, centroid_sources
@@ -1476,7 +1530,7 @@ class MainPage(SAMOSFrame):
         wcs1.sip.a
         
         #TEST ON A TARGET
-        aaa,ddd=[84.62021435578	, -69.10457041397]
+        aaa,ddd=[84.62021435578    , -69.10457041397]
         px1,py1 = self.PAR.wcs.all_world2pix(aaa,ddd,0) ; print(px1,py1)
         #px2,py2 = wcs1.all_world2pix(aaa,ddd,0) ; print(px2,py2)
         truex,truey = (centroid_sources(data, px1, py1, box_size=9)) 
@@ -1509,7 +1563,11 @@ class MainPage(SAMOSFrame):
         scale_radec_deg = wcs.utils.proj_plane_pixel_scales(self.PAR.wcs)    
         scale_arcsec= np.mean(scale_radec_deg) * 3600
         self.logger.info(f"Scale measured: {scale_arcsec:.4f}")
-        
+        #FIND THE POSITION ANGLE, JUST A CHECK
+        pc = self.PAR.wcs.pixel_scale_matrix
+        position_angle = np.degrees(np.arctan2(pc[0][1], pc[0][0]))
+        self.logger.info(f"Position angle: {position_angle} degrees")
+                
         
         if self.loaded_reg_file_path is not None:
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)   #write in the fits header the name of the DMD map used
@@ -1596,7 +1654,7 @@ class MainPage(SAMOSFrame):
         del good_fix_header['N_PARAM']  #=                   60 / Number of Parameters                           
         del good_fix_header['PARAM1']   #=                    0 / Image Type      
         good_fix_header.rename_keyword('INSTRUME', 'CAMERA') #    10000 / Exposure Time   
-        good_fix_header.rename_keyword('PARAM2', 'EXPTIME') #    10000 / Exposure Time                                  
+        #good_fix_header.rename_keyword('PARAM2', 'EXPTIME') #    10000 / Exposure Time                                  
         #good_fix_header.rename_keyword('PARAM3', 'CCD_TSP') #     1880 / CCD Temperature Setpoint                       
         del good_fix_header['PARAM4']   #=                   20 / Shutter Close Delay                            
         del good_fix_header['PARAM5']   #  =                    0 / Server Data Source                             
@@ -1702,17 +1760,22 @@ class MainPage(SAMOSFrame):
         # SOUTHERN HEMISPHERE, use SkyMapper
         #The directory must be PIXELS directory in the last opened RegionFiles folder
         dir_target = str(self.loaded_reg_file_path.parent.parent.parent)
-        target = self.target_name.split("-")[0]
+        #target = self.target_name.split("-")[0]
         
         #limit RADEC to 4 decimals, as this is the way the script creates the filename
-        radec_center = '%.4f'%(self.ra_target.get())+' %.4f'%(self.dec_target.get())
+        #radec_center = '%.4f'%(self.ra_target.get())+' %.4f'%(self.dec_target.get())
+        
         
         if self.dec_target.get() <= 0:
-            SkyMap_cat = pd.read_csv(dir_target+"/"+target+"-SkyMapper_in_field_"+radec_center+".csv")
-            SkyMap_cat.rename(columns={'g_band':'sloan-g', 'r_band':'sloan-r', 'i_band':'sloan-i', 'z_band':'sloan-z'})
-            snr=SkyMap_cat['i_band']/SkyMap_cat['e_i_psf']
-            SkyMap_cat['SNR']=snr
-            SkyMap_cat = SkyMap_cat.dropna()
+            for filename in os.listdir(dir_target):
+                if 'SkyMapper_in_field_' in filename:    
+                    SkyMap_cat = pd.read_csv(os.path.join(dir_target,filename))
+                    
+                    #pd.read_csv(dir_target+"/"+target+"-SkyMapper_in_field_"+radec_center+".csv")
+                    SkyMap_cat.rename(columns={'g_band':'sloan-g', 'r_band':'sloan-r', 'i_band':'sloan-i', 'z_band':'sloan-z'})
+                    snr=SkyMap_cat['i_band']/SkyMap_cat['e_i_psf']
+                    SkyMap_cat['SNR']=snr
+                    SkyMap_cat = SkyMap_cat.dropna()
 
         if self.dec_target.get() > 0:
             PanSTARRS_phot_pandas.to_csv(dir_name+"/"+Target_name+"-PanSTARRS_in_field_"+radec_center.to_string()+".csv")
@@ -1895,10 +1958,10 @@ class MainPage(SAMOSFrame):
                 self.tag_gsp00 = None
         self.canvas.redraw()
         
-
+    """
     @check_enabled
     def open_quicklook_file(self):
-        """ to be written """
+        #to be written
         filename = tk.filedialog.askopenfilename(
             filetypes=[("fitsfiles", "*.fits"), ("allfiles", "*")]
         )
@@ -1906,6 +1969,7 @@ class MainPage(SAMOSFrame):
         if self.AstroImage.wcs.wcs.has_celestial:
             self.PAR.wcs = self.AstroImage.wcs.wcs
             self.PAR.valid_wcs = True
+    """
 
 
     @check_enabled

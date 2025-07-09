@@ -47,7 +47,7 @@ class ExposureProgressWindow(tk.Toplevel):
         super().destroy()
 
 
-    def start_exposure(self, exptype, **params):
+    def start_exposurec(self, exptype, **params):
         """ 
         This is the landing procedure after the START button has been pressed
         """
