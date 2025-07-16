@@ -181,7 +181,7 @@ class MotorsPage(SAMOSFrame):
     def initialize_filters(self):
         msg = "Do you really want to initialize the filter wheels? This should only be "
         msg += "needed after changing a motor or other component."
-        res = ttk.messagebox.askquestion("Initialize Filter Wheels", msg)
+        res = tk.messagebox.askquestion("Initialize Filter Wheels", msg)
         if res == 'yes':
             self.logger.info("Initializing wheel 1")
             result = self.PCM.initialize_filter_wheel("FW1")
@@ -195,7 +195,7 @@ class MotorsPage(SAMOSFrame):
     def initialize_grisms(self):
         msg = "Do you really want to initialize the grism rails? This should only be "
         msg += "needed after changing a motor or other component."
-        res = ttk.messagebox.askquestion("Initialize Grism Rails", msg)
+        res = tk.messagebox.askquestion("Initialize Grism Rails", msg)
         if res == 'yes':
             self.logger.info("Initializing rails")
             result = self.PCM.initialize_grism_rails()

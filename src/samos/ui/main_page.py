@@ -258,13 +258,13 @@ class MainPage(SAMOSFrame):
         ttk.Label(target_frame, text="Target RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(target_frame, textvariable=self.ra_target, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.x_offset = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
-        ttk.Label(target_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(target_frame, text='dRA"  (+/- move tel. W/E):').grid(row=0, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(target_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
         self.dec_target = tk.DoubleVar(self, value=0.)
         ttk.Label(target_frame, text="Target DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(target_frame, textvariable=self.dec_target, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
-        ttk.Label(target_frame, text="Y offset (arsec):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(target_frame, text='dDec" (+/- move tel. S/N):').grid(row=1, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(target_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
         # Guide Star Probe Frame
@@ -420,6 +420,36 @@ class MainPage(SAMOSFrame):
         b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Save All Patterns", command=self.save_all_sub_patterns)
         b.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        
+        
+        # Buffer  Frame
+        credits_frame = ttk.LabelFrame(fctr, text="CREDITS")
+        credits_frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        # Create a StringVar to associate with the label
+        text_var = tk.StringVar()
+        text_var.set("SAMOS was funded by NSF, STScI and JHU/IDG")
+
+        # Create the label widget with all options
+        label = tk.Label(credits_frame, 
+                         textvariable=text_var, 
+                         anchor=tk.CENTER,       
+                         bg="lightblue",      
+                         height=3,              
+                         width=50,              
+                         bd=3,                  
+                         font=("Arial", 16, "bold"), 
+                         cursor="hand2",   
+                         fg="red",             
+                         padx=15,               
+                         pady=15,                
+                         justify=tk.CENTER,    
+                         relief=tk.RAISED,     
+                         underline=0,           
+                         wraplength=250         
+                        )
+        label.pack()
+        
+        
 
         # RIGHT COLUMN
 
@@ -493,29 +523,9 @@ class MainPage(SAMOSFrame):
         b = ttk.Button(frame, text="Next Mask", command=self.next_masks_file_HTS)
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
-        # Status Indicator Frame
-        frame = ttk.LabelFrame(fright, text="STATUS")
-        frame.grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        frame.rowconfigure(0, weight=1)
-        frame.columnconfigure(0, weight=1)
-        self.status_box = tk.Canvas(frame, background="gray")
-        self.status_box.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.status_box.create_oval(20, 20, 60, 60, fill=INDICATOR_LIGHT_ON_COLOR, outline=None, tags=["filter_ind"])
-        self.status_box.create_text(40, 70, text="Filters")
-        self.status_box.create_oval(100, 20, 140, 60, fill=INDICATOR_LIGHT_ON_COLOR, tags=["grism_ind"], outline=None)
-        self.status_box.create_text(120, 70, text="Grisms")
-        # indicator for mirror and SOAR TCS applicable at telescope
-        self.status_box.create_oval(170, 20, 210, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["mirror_ind"], outline=None)
-        self.status_box.create_text(190, 70, text="Mirror")
-        self.status_box.create_oval(240, 20, 280, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["tcs_ind"], outline=None)
-        self.status_box.create_text(260, 70, text="TCS")
-        # Register the frame with PAR
-        # Give the PCM class a copy of the status box so that it can set colours as well.
-        self.PCM.initialize_indicator(self.status_box)
-
         # Control slit motion
         frame = ttk.LabelFrame(fright, text="Control Slits")
-        frame.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        frame.grid(row=5, column=0, sticky=TK_STICKY_ALL)
         # self.shift_all_slits uses CM.CompoundMixin.move_delta_pt, which takes a single value or tuple argument
         # If single value is passed, the move occurs as if (VAL, VAL) was passed.
         # For here:
@@ -536,6 +546,27 @@ class MainPage(SAMOSFrame):
         b.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="⬇️", command=partial(self.shift_all_slits, "down"))
         b.grid(row=3, column=1, sticky=TK_STICKY_ALL)
+
+        # Status Indicator Frame
+        frame = ttk.LabelFrame(fright, text="STATUS")
+        frame.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+        self.status_box = tk.Canvas(frame, background="gray")
+        self.status_box.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.status_box.create_oval(20, 20, 60, 60, fill=INDICATOR_LIGHT_ON_COLOR, outline=None, tags=["filter_ind"])
+        self.status_box.create_text(40, 70, text="Filters")
+        self.status_box.create_oval(100, 20, 140, 60, fill=INDICATOR_LIGHT_ON_COLOR, tags=["grism_ind"], outline=None)
+        self.status_box.create_text(120, 70, text="Grisms")
+        # indicator for mirror and SOAR TCS applicable at telescope
+        self.status_box.create_oval(170, 20, 210, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["mirror_ind"], outline=None)
+        self.status_box.create_text(190, 70, text="Mirror")
+        self.status_box.create_oval(240, 20, 280, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["tcs_ind"], outline=None)
+        self.status_box.create_text(260, 70, text="TCS")
+        # Register the frame with PAR
+        # Give the PCM class a copy of the status box so that it can set colours as well.
+        self.PCM.initialize_indicator(self.status_box)
+
 
         self.set_mode_cb()
         self.set_enabled()
@@ -707,7 +738,7 @@ class MainPage(SAMOSFrame):
                 
                 
     def centroid_slits(self):
-        from photutils.centroids import centroid_2dg, centroid_sources
+        from photutils.centroids import centroid_2dg, centroid_sources, centroid_com, centroid_1dg,centroid_quadratic
         """
         #let's refine the centering of the slit
         #consider working on the full gaia g list
@@ -721,25 +752,27 @@ class MainPage(SAMOSFrame):
             data = hdul[0].data
 
         #We loop over the regions         
-        box_size = 15
+        box_size = 21
         for i in range(len(ginga_regions)):
             #We may have slits out of the field. Ignore then
             if (ginga_regions[i].x < 10) or (ginga_regions[i].x > (data.shape[1]-10)) or (ginga_regions[i].y < 10) or ginga_regions[i].y > (data.shape[0]-10):
                 self.logger.info(f'skipping slit {i} out of the field')
                 continue
             
-            px1,py1 = centroid_sources(data, ginga_regions[i].x, ginga_regions[i].y, box_size = box_size)#,
-    #                        centroid_func=centroid_2dg)   
+            
+            px1,py1 = centroid_sources(data, ginga_regions[i].x, ginga_regions[i].y, box_size = box_size,
+                       centroid_func=centroid_quadratic)#1dg)#com)   
             # check if the solution is acceptable
             if np.sqrt( (px1.item() - ginga_regions[i].x)**2 + (py1.item() - ginga_regions[i].y)**2) < box_size:
+                self.logger.info(f"Adjusting slit {i} from {ginga_regions[i].x:.2f},{ginga_regions[i].y:.2f} to {px1.item():.2f},{py1.item():.2f}")
                 ginga_regions[i].move_to_pt([px1.item(),py1.item()])
                 ginga_regions[i].color = 'blue'
-                self.canvas.draw
+                self.canvas.redraw()
                 #do the substitution
                 #obj = ginga_regions[i]
                 #self.canvas.delete_object(ginga_regions[i])
                 #self.canvas.add(obj, tag='@slit_{}'.format(i))
-                self.logger.info(f"Adjusting slit {i}")
+                #self.logger.info(f"Adjusting slit {i} from {ginga_regions[i].x:.2f, ginga_regions[i].y} to {px1.item(),py1.item()}")
             else:
                 continue
         self.logger.info("All slits checked for centroid")
@@ -1133,6 +1166,11 @@ class MainPage(SAMOSFrame):
         self.logger.info(f"FWHM_x:   {np.mean(fwhm_x):6.3f},   {np.median(fwhm_x):6.3f},   {np.std(fwhm_x):6.3f}")
         self.logger.info(f"FWHM_y:   {np.mean(fwhm_y):6.3f},   {np.median(fwhm_y):6.3f},   {np.std(fwhm_y):6.3f}")
         self.logger.info(f"FWHM values calculated using {len(fwhm_x)} stars")
+        summary_psf_mean = np.mean([np.mean(fwhm_x),np.mean(fwhm_y)]) * 0.184
+        summary_psf_median = np.mean([np.median(fwhm_x),np.median(fwhm_y)]) *0.184
+        summary_psf_std = np.mean([np.std(fwhm_x),np.std(fwhm_y)]) * 0.184
+        
+        tk.messagebox.showinfo(title="PSF", message=(f"PSF: Mean={summary_psf_mean:.2f}, Median={summary_psf_median:.2f}, StDev=={summary_psf_std:.2f} arcsec"))
         return(np.mean(fwhm_x),np.mean(fwhm_y))
 
     def profiles(self,image,xpix, ypix):
@@ -1166,7 +1204,7 @@ class MainPage(SAMOSFrame):
         This is the landing procedure after the START button has been pressed
         """
         #CHECK TO AVOID LONG EXPOSURES BY ERROR
-        duration = self.image_exptime.get() * 1000 * self.image_frames.get()
+        duration = self.image_exptime.get() * self.image_frames.get()
         if duration > 60:
             if tk.messagebox.askyesno(title="Time Check", message="exposure longer than 60s. Continue?"):
                 self.logger.info(f"Starting Exposure")
@@ -1481,7 +1519,7 @@ class MainPage(SAMOSFrame):
         #If we are online, twirl will find the GAIA stars on the internet
         try:
             gaias = twirl.gaia_radecs(center, fov, circular=True, limit=self.fits_nstars.get())
-        except:
+        #except:
         #If we are at the telescope, we read a Gaia catalog
             self.logger.info("We are not online, need to look for the Gaia stars on local disk")    
             self.logger.info("Loading GAIA File")
@@ -1498,6 +1536,9 @@ class MainPage(SAMOSFrame):
             csvFile = pd.read_csv(GAIA_file)
             g=np.transpose(np.array([csvFile['ra_now'].values,csvFile['dec_now'].values])) #extract RADEC
             gaias = g[:self.fits_nstars.get(),:]   #select the first Nstars
+            
+        except:
+            print("killme")
             
         # we can now compute the WCS
         self.PAR.wcs = twirl.compute_wcs(stars, gaias)
@@ -1883,6 +1924,7 @@ class MainPage(SAMOSFrame):
         sZP = np.std(ZP)
         self.logger.info(f"Zero Point: Fitted Normal Distribution (μ={mu:.2f}, σ={std:.2f})")
         self.logger.info(f"Zero Point: Mean={mZP:.2f}, StDev={sZP:.2f}")
+        tk.messagebox.showinfo(title="Zero Point", message=(f"Zero Point: Mean={mZP:.2f}, StDev={sZP:.2f}"))
 
         
 
@@ -2091,6 +2133,10 @@ class MainPage(SAMOSFrame):
 
             # Declare the object as a slit by so tagging it
             obj.tag = '@slit_{}'.format(obj.tag)
+            
+            #in the case it is just a mouse click with the "Draw" button selected and we are in kind = "box"...
+            if obj.width <=0:
+                return
             
             # the ginga object, a box, is converted to an astropy region
             r = g2r(obj)
