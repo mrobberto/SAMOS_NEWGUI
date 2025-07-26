@@ -28,7 +28,7 @@ an R at the end. The command to query the current step count is `?0`, and the co
 query the limit switches is `?4`. For example: `~@,9600_8N1T2000,/3?4` asks drive 3 (/3)
 to return the position switch status (?4). Query commands are on page 9 of the manual.
 
-You should query the of the motor controller to see if it has stopped moving, then
+You should query the status of the motor controller to see if it has stopped moving, then
 query the step count, and the position sensor status, to make sure it went to where you
 thought it should go to.
 
