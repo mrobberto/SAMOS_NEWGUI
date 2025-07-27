@@ -49,6 +49,16 @@ from .gs_query_frame import GSQueryFrame
 
 from scipy.interpolate import UnivariateSpline # for PSF calculation
 
+#imported for the Zero Point Calculation
+from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats
+from astropy.stats import SigmaClip, sigma_clip
+from scipy.stats import norm
+#from astropy import units as u
+#from astropy.coordinates import SkyCoord
+from photutils.aperture import SkyCircularAperture
+
+import os
+
 
 class MainPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
@@ -223,10 +233,10 @@ class MainPage(SAMOSFrame):
         )
         c.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.fits_ra = tk.DoubleVar(self, value=0.)
-        ttk.Label(frame, text="RA:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Pointed RA:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_ra).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.fits_dec = tk.DoubleVar(self, value=0.)
-        ttk.Label(frame, text="DEC:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(frame, text="Pointed DEC:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.fits_dec).grid(row=3, column=1, sticky=TK_STICKY_ALL)
         self.fits_nstars = self.make_db_var(tk.IntVar, "twirl_n_stars", 25)
         ttk.Label(frame, text="Number of Stars:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
@@ -242,20 +252,20 @@ class MainPage(SAMOSFrame):
         self.gs_query_frame.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         """
         # Chosen Star Frame
-        cntr_frame = ttk.Frame(frame)
-        cntr_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
-        self.ra_cntr = tk.DoubleVar(self, value=0.)
-        ttk.Label(cntr_frame, text="GSP00 Set RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.ra_cntr, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
+        target_frame = ttk.Frame(frame)
+        target_frame.grid(row=6, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        self.ra_target = tk.DoubleVar(self, value=0.)
+        ttk.Label(target_frame, text="Target RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(target_frame, textvariable=self.ra_target, w=6).grid(row=0, column=1, sticky=TK_STICKY_ALL)
         self.x_offset = self.make_db_var(tk.DoubleVar, "centre_ra_offset_mm", 0.)
-        ttk.Label(cntr_frame, text="X offset (arsec):").grid(row=0, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
-        self.dec_cntr = tk.DoubleVar(self, value=0.)
-        ttk.Label(cntr_frame, text="GSP00 Set DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.dec_cntr, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
+        ttk.Label(target_frame, text='dRA"  (+/- move tel. W/E):').grid(row=0, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(target_frame, textvariable=self.x_offset, w=6).grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        self.dec_target = tk.DoubleVar(self, value=0.)
+        ttk.Label(target_frame, text="Target DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
+        tk.Entry(target_frame, textvariable=self.dec_target, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
-        ttk.Label(cntr_frame, text="Y offset (arsec):").grid(row=1, column=2, sticky=TK_STICKY_ALL)
-        tk.Entry(cntr_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
+        ttk.Label(target_frame, text='dDec" (+/- move tel. S/N):').grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        tk.Entry(target_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
         # Guide Star Probe Frame
         frame = ttk.LabelFrame(fleft, text="Guide Star Probe Setup!")
@@ -348,10 +358,12 @@ class MainPage(SAMOSFrame):
         b.grid(row=0, column=4, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get <PSF>", command=self.get_PSF)
         b.grid(row=0, column=5, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Open File", command=self.open_quicklook_file)
+        b = ttk.Button(frame, text="Get ZeroPoint", command=self.get_ZeroPoint)
         b.grid(row=0, column=6, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Find Stars", command=self.find_stars)
+        b = ttk.Button(frame, text="Centroid Slits", command=self.centroid_slits)
         b.grid(row=0, column=7, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        b = ttk.Button(frame,text="Find Stars", command=self.find_stars)
+        b.grid(row=0, column=8, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # Slit Configuration Frame
         frame = ttk.LabelFrame(fctr, text="Slit Configuration:")
@@ -408,6 +420,36 @@ class MainPage(SAMOSFrame):
         b.grid(row=1, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(pattern_frame, text="Save All Patterns", command=self.save_all_sub_patterns)
         b.grid(row=2, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        
+        
+        # Buffer  Frame
+        credits_frame = ttk.LabelFrame(fctr, text="CREDITS")
+        credits_frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        # Create a StringVar to associate with the label
+        text_var = tk.StringVar()
+        text_var.set("SAMOS was funded by NSF, STScI and JHU/IDG")
+
+        # Create the label widget with all options
+        label = tk.Label(credits_frame, 
+                         textvariable=text_var, 
+                         anchor=tk.CENTER,       
+                         bg="lightblue",      
+                         height=3,              
+                         width=50,              
+                         bd=3,                  
+                         font=("Arial", 16, "bold"), 
+                         cursor="hand2",   
+                         fg="red",             
+                         padx=15,               
+                         pady=15,                
+                         justify=tk.CENTER,    
+                         relief=tk.RAISED,     
+                         underline=0,           
+                         wraplength=250         
+                        )
+        label.pack()
+        
+        
 
         # RIGHT COLUMN
 
@@ -418,27 +460,27 @@ class MainPage(SAMOSFrame):
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="Loaded Region File:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, textvariable=self.loaded_reg_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Get Centre/Point from Filename", command=self.push_RADEC)
+        b = ttk.Button(frame, text="Get Target RADEC from Filename", command=self.push_RADEC)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Send Centre to SOAR", command=self.send_soar_target, bootstyle="success")
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         l = ttk.Label(frame, text="Point, take and image, and twirl WCS from GAIA")
         l.grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file)
+        b = ttk.Button(frame, text="Convert DS9 Regions -> Ginga", command=self.load_region_file, bootstyle="success")
         b.grid(row=6, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_wcs)
+        b = ttk.Button(frame, text="Save Ginga Regions -> DS9/RADEC Region File", command=self.save_ginga_regions_wcs)
         b.grid(row=7, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # CCD Module
         frame = ttk.LabelFrame(fright, text="CCD Regions (x, y)")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Load (x, y) Regions from DS9 Region file", command=self.load_regions_pix)
+        b = ttk.Button(frame, text="Load (x, y) Regions from DS9/xy Region file", command=self.load_regions_pix)
         b.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.loaded_ginga_file = self.make_db_var(tk.StringVar, "dmd_loaded_ginga_file", "none")
         self.loaded_ginga_file_path = None
         ttk.Label(frame, text="Loaded File in CCD Units:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Label(frame, textvariable=self.loaded_ginga_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Save Ginga Regions -> DS9 Region File", command=self.save_ginga_regions_pix)
+        b = ttk.Button(frame, text="Save Ginga Regions -> DS9/xy Region File", command=self.save_ginga_regions_pix)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
         # DMD Module
@@ -481,29 +523,9 @@ class MainPage(SAMOSFrame):
         b = ttk.Button(frame, text="Next Mask", command=self.next_masks_file_HTS)
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
-        # Status Indicator Frame
-        frame = ttk.LabelFrame(fright, text="STATUS")
-        frame.grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        frame.rowconfigure(0, weight=1)
-        frame.columnconfigure(0, weight=1)
-        self.status_box = tk.Canvas(frame, background="gray")
-        self.status_box.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.status_box.create_oval(20, 20, 60, 60, fill=INDICATOR_LIGHT_ON_COLOR, outline=None, tags=["filter_ind"])
-        self.status_box.create_text(40, 70, text="Filters")
-        self.status_box.create_oval(100, 20, 140, 60, fill=INDICATOR_LIGHT_ON_COLOR, tags=["grism_ind"], outline=None)
-        self.status_box.create_text(120, 70, text="Grisms")
-        # indicator for mirror and SOAR TCS applicable at telescope
-        self.status_box.create_oval(170, 20, 210, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["mirror_ind"], outline=None)
-        self.status_box.create_text(190, 70, text="Mirror")
-        self.status_box.create_oval(240, 20, 280, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["tcs_ind"], outline=None)
-        self.status_box.create_text(260, 70, text="TCS")
-        # Register the frame with PAR
-        # Give the PCM class a copy of the status box so that it can set colours as well.
-        self.PCM.initialize_indicator(self.status_box)
-
         # Control slit motion
         frame = ttk.LabelFrame(fright, text="Control Slits")
-        frame.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        frame.grid(row=5, column=0, sticky=TK_STICKY_ALL)
         # self.shift_all_slits uses CM.CompoundMixin.move_delta_pt, which takes a single value or tuple argument
         # If single value is passed, the move occurs as if (VAL, VAL) was passed.
         # For here:
@@ -525,6 +547,27 @@ class MainPage(SAMOSFrame):
         b = ttk.Button(frame, text="⬇️", command=partial(self.shift_all_slits, "down"))
         b.grid(row=3, column=1, sticky=TK_STICKY_ALL)
 
+        # Status Indicator Frame
+        frame = ttk.LabelFrame(fright, text="STATUS")
+        frame.grid(row=6, column=0, sticky=TK_STICKY_ALL)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+        self.status_box = tk.Canvas(frame, background="gray")
+        self.status_box.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        self.status_box.create_oval(20, 20, 60, 60, fill=INDICATOR_LIGHT_ON_COLOR, outline=None, tags=["filter_ind"])
+        self.status_box.create_text(40, 70, text="Filters")
+        self.status_box.create_oval(100, 20, 140, 60, fill=INDICATOR_LIGHT_ON_COLOR, tags=["grism_ind"], outline=None)
+        self.status_box.create_text(120, 70, text="Grisms")
+        # indicator for mirror and SOAR TCS applicable at telescope
+        self.status_box.create_oval(170, 20, 210, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["mirror_ind"], outline=None)
+        self.status_box.create_text(190, 70, text="Mirror")
+        self.status_box.create_oval(240, 20, 280, 60, fill=INDICATOR_LIGHT_OFF_COLOR, tags=["tcs_ind"], outline=None)
+        self.status_box.create_text(260, 70, text="TCS")
+        # Register the frame with PAR
+        # Give the PCM class a copy of the status box so that it can set colours as well.
+        self.PCM.initialize_indicator(self.status_box)
+
+
         self.set_mode_cb()
         self.set_enabled()
         self._set_expnum()
@@ -538,8 +581,8 @@ class MainPage(SAMOSFrame):
         """
         Send the current target (as obtained from the regions file) to SOAR.
         """
-        target_ra = float(self.ra_cntr.get())
-        target_dec = float(self.dec_cntr.get())
+        target_ra = float(self.ra_target.get())
+        target_dec = float(self.dec_target.get())
         if self.SOAR.is_on == True:
             return_message_from_TCS =  self.SOAR.target(ra=target_ra, dec=target_dec)
             self.logger.info(return_message_from_TCS)
@@ -567,13 +610,59 @@ class MainPage(SAMOSFrame):
         (using the Ginga utilities).
         """
         self.logger.info("Saving Canvas Regions to Astropy File (pixel format)")
-        save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
-                                                defaultextension=".reg",
-                                                initialdir=get_data_file("regions.pixels"))
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
+        #
+        #SORT THE REGIONS AND CREATE THE EVEN/ODD LISTS
+        sorted_regions = sorted(astropy_regions_pix, key=lambda region: region.center.x)
+        odd_regions = []
+        even_regions = []
+        for i, region in enumerate(sorted_regions):
+            # Select every second region (even index)
+            if i % 2 == 0:
+                even_regions.append(region)
+            if i % 2 == 1:
+                 odd_regions.append(region)
+        #
+        #CREATE THE FILE NAMES FOR OUTPUT
+        #
+        #The directory must be PIXELS directory in the last opened RegionFiles folder
+        self.dir_regions_pixels = os.path.join( str(self.loaded_reg_file_path.parent),
+                                                "../PIXELS")   
+        #create it if it does not exist
+        Path(self.dir_regions_pixels).mkdir(parents=True, exist_ok=True)
+        #
+        # the current mask name is in the variable self.loaded_reg_file_path.name, e.g. 
+        # 'RMC 136-T00_RADEC=84.6787022-69.1007396.reg'
+        file_name = self.loaded_reg_file_path.name
+        #and we use the target name self.target_name, e.g. 'RMC 136-T00'
+        
+        # 1) We insert "PIXEL" in the global astropy region pix
+        file_name_pixel  = self.target_name+"_PIXEL="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]
+        save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
+                                        defaultextension=".reg",
+                                        initialfile = file_name_pixel,
+                                        #initialdir=get_data_file("regions.pixels"))
+                                        initialdir= self.dir_regions_pixels)
         astropy_regions_pix.write(save_file.name, overwrite=True)
         self.logger.info("Saved regions to {}".format(save_file.name))
+        
+        #save_file = os.path.join(self.dir_regions_pixels,
+        #                         self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+        
+        # 2) We insert "PIXEL_EVEN" in the global astropy region pix
+        save_file = os.path.join(self.dir_regions_pixels,
+                                 self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+        Regions(even_regions).write(save_file, overwrite=True)
+        self.logger.info("Saved Even regions to {}".format(save_file))
+        
+        # 3) We insert "PIXEL_ODD" in the global astropy region pix 
+        save_file = os.path.join(self.dir_regions_pixels,
+                                 self.target_name+"_PIXEL_ODD="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+        Regions(odd_regions).write(save_file, overwrite=True)
+        self.logger.info("Saved Even regions to {}".format(save_file))
+       
+
 
 
     @check_enabled
@@ -646,6 +735,49 @@ class MainPage(SAMOSFrame):
                 box_h = (y1 - y0)
                 obj = box_tool(box_x, box_y, box_w, box_h, color='red')
                 self.canvas.add(obj, tag='@slit_{}'.format(i))
+                
+                
+    def centroid_slits(self):
+        from photutils.centroids import centroid_2dg, centroid_sources, centroid_com, centroid_1dg,centroid_quadratic
+        """
+        #let's refine the centering of the slit
+        #consider working on the full gaia g list
+        #gaias = twirl.gaia_radecs(center, fov, circular=False)
+        """
+        #We know the regions
+        ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
+        
+        #We know the image
+        with fits.open(self.fits_image_ql) as hdul:
+            data = hdul[0].data
+
+        #We loop over the regions         
+        box_size = 21
+        for i in range(len(ginga_regions)):
+            #We may have slits out of the field. Ignore then
+            if (ginga_regions[i].x < 10) or (ginga_regions[i].x > (data.shape[1]-10)) or (ginga_regions[i].y < 10) or ginga_regions[i].y > (data.shape[0]-10):
+                self.logger.info(f'skipping slit {i} out of the field')
+                continue
+            
+            
+            px1,py1 = centroid_sources(data, ginga_regions[i].x, ginga_regions[i].y, box_size = box_size,
+                       centroid_func=centroid_quadratic)#1dg)#com)   
+            # check if the solution is acceptable
+            if np.sqrt( (px1.item() - ginga_regions[i].x)**2 + (py1.item() - ginga_regions[i].y)**2) < box_size:
+                self.logger.info(f"Adjusting slit {i} from {ginga_regions[i].x:.2f},{ginga_regions[i].y:.2f} to {px1.item():.2f},{py1.item():.2f}")
+                ginga_regions[i].move_to_pt([px1.item(),py1.item()])
+                ginga_regions[i].color = 'blue'
+                self.canvas.redraw()
+                #do the substitution
+                #obj = ginga_regions[i]
+                #self.canvas.delete_object(ginga_regions[i])
+                #self.canvas.add(obj, tag='@slit_{}'.format(i))
+                #self.logger.info(f"Adjusting slit {i} from {ginga_regions[i].x:.2f, ginga_regions[i].y} to {px1.item(),py1.item()}")
+            else:
+                continue
+        self.logger.info("All slits checked for centroid")
+                
+            
 
 
     @check_enabled
@@ -677,8 +809,8 @@ class MainPage(SAMOSFrame):
         """
         Load canvas RA/DEC from entries
         """
-        self.fits_ra.set(self.ra_cntr.get())
-        self.fits_dec.set(self.dec_cntr.get())
+        self.fits_ra.set(self.ra_target.get())
+        self.fits_dec.set(self.dec_target.get())
 
 
     @check_enabled
@@ -720,8 +852,8 @@ class MainPage(SAMOSFrame):
                 dec_factor = 1.
             ra = float(str_items[0])
             dec = float(str_items[1]) * dec_factor
-            self.ra_cntr.set(ra)
-            self.dec_cntr.set(dec)
+            self.ra_target.set(ra)
+            self.dec_target.set(dec)
         self.loaded_astropy_regions = astropy_regions_radec
 
 
@@ -746,13 +878,23 @@ class MainPage(SAMOSFrame):
         )
         self.loaded_ginga_file_path = Path(reg_file)
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
+        
         initial_regions = Regions.read(self.loaded_ginga_file_path, format="ds9")
         astropy_regions_pix = Regions()
         for region in initial_regions:
             if region not in astropy_regions_pix:
                 astropy_regions_pix.append(region)
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix)
-        self.loaded_ginga_regions = ginga_regions
+        
+        #inserting a "slit" object ta needed e.g. to show trace
+        counter = 0
+        for object in ginga_regions:
+            object.tag = '@slit_{}'.format(str(counter))
+            print(object.tag)
+            counter+=1
+            
+        self.loaded_ginga_regions = ginga_regions    
+        #obj.tag = '@slit_{}'.format(obj.tag)
 #         if self.slit_tab_view is None:
 #             self.initialize_slit_table()
 #         self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
@@ -1024,6 +1166,11 @@ class MainPage(SAMOSFrame):
         self.logger.info(f"FWHM_x:   {np.mean(fwhm_x):6.3f},   {np.median(fwhm_x):6.3f},   {np.std(fwhm_x):6.3f}")
         self.logger.info(f"FWHM_y:   {np.mean(fwhm_y):6.3f},   {np.median(fwhm_y):6.3f},   {np.std(fwhm_y):6.3f}")
         self.logger.info(f"FWHM values calculated using {len(fwhm_x)} stars")
+        summary_psf_mean = np.mean([np.mean(fwhm_x),np.mean(fwhm_y)]) * 0.184
+        summary_psf_median = np.mean([np.median(fwhm_x),np.median(fwhm_y)]) *0.184
+        summary_psf_std = np.mean([np.std(fwhm_x),np.std(fwhm_y)]) * 0.184
+        
+        tk.messagebox.showinfo(title="PSF", message=(f"PSF: Mean={summary_psf_mean:.2f}, Median={summary_psf_median:.2f}, StDev=={summary_psf_std:.2f} arcsec"))
         return(np.mean(fwhm_x),np.mean(fwhm_y))
 
     def profiles(self,image,xpix, ypix):
@@ -1056,6 +1203,15 @@ class MainPage(SAMOSFrame):
         """ 
         This is the landing procedure after the START button has been pressed
         """
+        #CHECK TO AVOID LONG EXPOSURES BY ERROR
+        duration = self.image_exptime.get() * self.image_frames.get()
+        if duration > 60:
+            if tk.messagebox.askyesno(title="Time Check", message="exposure longer than 60s. Continue?"):
+                self.logger.info(f"Starting Exposure")
+            else:
+                return
+                
+        
         try:
             if not self.PAR.fits_dir.is_dir():
                 self.logger.info(f"Creating FITS directory {self.PAR.fits_dir} for tonight")
@@ -1091,6 +1247,7 @@ class MainPage(SAMOSFrame):
                 'sub_flat': self.ql_flat.get() == 1,
                 'sub_buffer': self.ql_buffer.get() == 1,
                 'save_individual': self.image_save_single.get() == 1,
+                
             }
             #are we observing a new target? BCS we may haave lost the WCS solution
             if self.image_name.get() !=  self.previous_image_name:
@@ -1191,6 +1348,19 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def Display(self, imagefile):
+        """
+        Display the raw image arrived  from SAMI, still with the original Spectral Instruments FITS header""
+
+        Parameters
+        ----------
+        imagefile : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.AstroImage = load_data(imagefile, logger=self.logger)
         self.fits_image.set_image(self.AstroImage)
         self.fits_image_ql = imagefile
@@ -1228,10 +1398,10 @@ class MainPage(SAMOSFrame):
         
         #had to change open => fits.open [MR] to make this working
         with fits.open(self.fits_image_ql) as hdul:
-            header = hdul[0].header
+            raw_header = hdul[0].header
             data = hdul[0].data
         
-        img_wcs = wcs.WCS(header)
+        img_wcs = wcs.WCS(raw_header)
         #ra, dec = img_wcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
 
         #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1244,12 +1414,13 @@ class MainPage(SAMOSFrame):
 #         except:
 #             self.logger.warning("no RA and  DEC in the FITS header")
 
-        if  self.ra_cntr.get() !=  0. and self.ra_cntr.get() != 0.:   
-            ra = self.ra_cntr.get()
-            dec = self.dec_cntr.get()
+        #CASE 1. WE KNOW WHERE WE ARE POINTING FROM THE REGION FILE
+        if  self.ra_target.get() !=  0. and self.ra_target.get() != 0.:   
+            ra = self.ra_target.get()
+            dec = self.dec_target.get()
             self.logger.info("RA and DEC read from the text box")
 
-        #MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
+        #CASE 2. MOST IMPORTANT, WE HOPE TO GET THE POINTED RADEC FROM SOAR TCS...   
         elif self.SOAR.is_on == True:               #was self.PAR.inoutvar.get() == "inside": 
             infoa_dict = self.SOAR_PAGE.Handle_Infox('INFOA')  # TO BE FIXED: we need to grab the INFOA message from the SOAR TCS
             ra=infoa_dict['MOUNT_RA']                          # to extract the pointed RA,DEC coordinates 
@@ -1268,22 +1439,88 @@ class MainPage(SAMOSFrame):
         center = [center.ra.value, center.dec.value]
 
         # image shape and pixel size in "
-        shape = data.shape
+        #shape = data.shape
         fov = 0.05
+        
+        """
+        #clean the image background
+        #NOT IMPLEMENTED
+        
+        coverage_mask = (data == 0)
+        from astropy.stats import SigmaClip
+        from photutils.background import Background2D, MedianBackground
+        sigma_clip = SigmaClip(sigma=3.0)
+        bkg_estimator = MedianBackground()
+        bkg = Background2D(data, (50, 50), filter_size=(3, 3),
+                   sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+        
+        from astropy.stats import sigma_clipped_stats, SigmaClip
+        from photutils.segmentation import detect_threshold, detect_sources
+        from photutils.utils import circular_footprint
+        coverage_mask = (data == 0)
+        bkg3 = Background2D(data, (15, 15), filter_size=(3, 3),
+                            coverage_mask=coverage_mask, fill_value=0.0,
+                            exclude_percentile=50.0)
+        data=data - bkg3.backgroun
+        
+        sigma_clip = SigmaClip(sigma=3.0, maxiters=10)
+        threshold = detect_threshold(data, nsigma=2.0, sigma_clip=sigma_clip)
+        segment_img = detect_sources(data, threshold, npixels=10)
+        footprint = circular_footprint(radius=10)
+        mask = segment_img.make_source_mask(footprint=footprint)
+        mean, median, std = sigma_clipped_stats(data, sigma=3.0, mask=mask)
+        print(np.array((mean, median, std)))
+        # mask
+        from photutils import make_source_mask
+        mask_sci = make_source_mask(data, snr=2, npixels=3, dilate_size=11)
+        mask_ref = make_source_mask(data, snr=2, npixels=3, dilate_size=11)
 
+        sigma_clip = SigmaClip(sigma=3) # Sigma clipping
+        from photutils.background import Background2D, MedianBackground
+        bkg_estimator = MedianBackground()
+        
+        bkg_sci = Background2D(data, (200, 150), filter_size=(3, 3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, mask=mask_sci)
+        bkg_ref = Background2D(data, (200, 150), filter_size=(3, 3), sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, mask=mask_ref)
+        """
+        
+        
+        #
+        #  FIND STARS IN THE FIELD
+        #
         self.clear_canvas()
         stars = twirl.find_peaks(data)[:self.fits_nstars.get()]
+       
+        
+       
+        """
+        #remove problematic peaks
+        #NOT IMPLEMENTED
+        
+        stars_x = np.array(list(stars))[:,0]
+        stars_y = np.array(list(stars))[:,1]
+        peaks = data[stars_y.astype(int),stars_x.astype(int)]
+        indices = np.where(peaks < 0)
+        newstars = np.delete(stars, indices, axis=0)
+        stars=newstars
+        """
+        
+        #
+        #  DRAW STARS IN THE FIELD, COLOR RED
+        #
         radius_pix = 7
         regs = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in stars])
         for i, reg in enumerate(regs):
             obj = r2g(reg)
             obj.color="red"
             self.canvas.add(obj, tag='@twirl_{}'.format(i))
+        
         #Now the GAIA stars
+        
         #If we are online, twirl will find the GAIA stars on the internet
         try:
-            gaias = twirl.gaia_radecs(center, fov, limit=self.fits_nstars.get())
-        except:
+            gaias = twirl.gaia_radecs(center, fov, circular=True, limit=self.fits_nstars.get())
+        #except:
+        #If we are at the telescope, we read a Gaia catalog
             self.logger.info("We are not online, need to look for the Gaia stars on local disk")    
             self.logger.info("Loading GAIA File")
             initial_dir = self.db.get_value(
@@ -1300,13 +1537,53 @@ class MainPage(SAMOSFrame):
             g=np.transpose(np.array([csvFile['ra_now'].values,csvFile['dec_now'].values])) #extract RADEC
             gaias = g[:self.fits_nstars.get(),:]   #select the first Nstars
             
+        except:
+            print("killme")
+            
         # we can now compute the WCS
         self.PAR.wcs = twirl.compute_wcs(stars, gaias)
+        
+        """
+        #now let's refine the solution
+        #consider working on the full gaia g list
+        #gaias = twirl.gaia_radecs(center, fov, circular=False)
+        """
+        px = []
+        py = []
+        for i in range(len(gaias)):
+            ipx, ipy = self.PAR.wcs.wcs_world2pix(gaias[i][0],gaias[i][1], 1)
+            if (ipx.item() < 10) or (ipx.item() > (data.shape[1]-10)) or (ipy.item() < 10) or ipy.item() > (data.shape[0]-10):
+                self.logger.info(f'skipping Gaia source at (px,py)={ipx.item()},{ipy.item()}')
+                continue
+            else:
+                px = np.append(px,ipx.item())
+                py = np.append(py,ipy.item())
+            
+        #=>do a centroid
+        from photutils.centroids import centroid_2dg, centroid_sources
+        px1,py1 = centroid_sources(data, px, py, box_size=9)#,
+#                        centroid_func=centroid_2dg)
+        """        
+        #px1=px
+        #py1=py
+        import astropy.wcs.utils as aputils
+        wcs1 = aputils.fit_wcs_from_points(xy=[px1,py1],world_coords=SkyCoord(gaias,frame="icrs",unit="deg"),projection="TAN",sip_degree=4)
+        wcs1.sip.a
+        
+        #TEST ON A TARGET
+        aaa,ddd=[84.62021435578    , -69.10457041397]
+        px1,py1 = self.PAR.wcs.all_world2pix(aaa,ddd,0) ; print(px1,py1)
+        #px2,py2 = wcs1.all_world2pix(aaa,ddd,0) ; print(px2,py2)
+        truex,truey = (centroid_sources(data, px1, py1, box_size=9)) 
+        print(np.sqrt( (px1-truex[0])**2 + (py1-truey[0])**2)) 
+        #print(np.sqrt( (px2-truex[0])**2 + (py2-truey[0])**2))
+        """
 
         # Lets check the WCS solution
         radius_pix = 21
-        gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.PAR.wcs)).T
-        regs_gaia = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in gaia_pixel])
+        #gaia_pixel = np.array(SkyCoord(gaias, unit="deg").to_pixel(self.PAR.wcs)).T
+        gaia_pixel2 =np.array([px1,py1]).T
+        regs_gaia = Regions([CirclePixelRegion(center=PixCoord(x, y), radius=radius_pix) for x, y in gaia_pixel2])
         for i, reg in enumerate(regs_gaia):
             obj = r2g(reg)
             obj.color = "green"
@@ -1322,71 +1599,339 @@ class MainPage(SAMOSFrame):
 
         self.logger.info(f"WCS Solution is: {self.PAR.wcs}")
         hdu_wcs = self.PAR.wcs.to_fits()  # creates a primaryHDU object 
+        
+        #FIND THE IMAGE SCALE; JUST A CHECK:
+        scale_radec_deg = wcs.utils.proj_plane_pixel_scales(self.PAR.wcs)    
+        scale_arcsec= np.mean(scale_radec_deg) * 3600
+        self.logger.info(f"Scale measured: {scale_arcsec:.4f}")
+        #FIND THE POSITION ANGLE, JUST A CHECK
+        pc = self.PAR.wcs.pixel_scale_matrix
+        position_angle = np.degrees(np.arctan2(pc[0][1], pc[0][0]))
+        self.logger.info(f"Position angle: {position_angle} degrees")
+                
+        
         if self.loaded_reg_file_path is not None:
             hdu_wcs[0].header.set("dmdmap", self.loaded_reg_file_path.name)   #write in the fits header the name of the DMD map used
         hdu_wcs[0].data = data            # add data to fits file
-
+        
+        
+        
+        
         # I THINK THAT ONCE WE GET THE WCS SOLUTION WE JUST UPODATE THE FILE SUFFIX ADDING 
         #self.wcs_filename = get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec)
         #self.wcs_filename = str( get_fits_dir() / "WCS_{}_{}.fits".format(ra, dec) ) # I think it's better to just use the string
         #hdu_wcs[0].writeto(self.wcs_filename, overwrite=True)
         #ADD '_QL' SUFFIX IF NOT ALREADY PRESENT
         if self.fits_image_ql[-8:-5] != '_QL':
+            """
+            IF WE WORK WITH THE NATIVE IMAGE, IMPROVE THE HEADER FOR THE _QL VERSION
+            """
+            hdu_wcs[0].header = self.fits_header_manager(raw_header, hdu_wcs[0].header)
+            
             self.fits_image_ql = self.fits_image_ql[:-5] + '_QL.fits'
-        if not Path(self.fits_image_ql).is_file():
+        #if not Path(self.fits_image_ql).is_file():
             hdu_wcs[0].writeto(self.fits_image_ql, overwrite=True)
 
         #self.Display(self.wcs_filename)
         #self.fits_image.rotate(self.PAR.Ginga_PA)  
         self.Display(self.fits_image_ql)
         
-         #calculate the offset in mm between pointed and actual position for the GS
+        #calculate the offset in mm between pointed and actual position for the GS
         #mywcs = wcs.WCS(header)
         # take the xy coordinates of the GS probe home, entered in the GSPage...
         x_GSP00 = self.gs_x0.get()
         y_GSP00 = self.gs_y0.get() 
         # determine the RA,DEC coordinates actually pof_inted by the telescope
         ra_tel, dec_tel = self.PAR.wcs.wcs_pix2world(x_GSP00, y_GSP00, 0)
+        
+        #Display the coordinates of the GP00 point
+        #self.ra_target.set(ra_tel) 
+        #self.dec_target.set(dec_tel) 
+        self.fits_ra.set(ra_tel) 
+        self.fits_dec.set(dec_tel)      
+        
         x_pointed, y_pointed = self.PAR.wcs.wcs_world2pix(ra, dec, 0)
-        self.logger.info(f"{x_pointed}, {y_pointed}, {ra}, {dec}")
-        self.logger.info(f"{x_GSP00}, {y_GSP00}, {ra_tel}, {dec_tel}")
+        self.logger.info(f"Pointed  RADEC {ra}, {dec} at {x_pointed:.3f}, {y_pointed:.3f}")
+        self.logger.info(f"At {x_GSP00}, {y_GSP00} we have RADEC {ra_tel}, {dec_tel}")
         # calculate the offset in RADEC between the telescope and commanded positions
         Delta_ra = float(ra_tel) - float(ra)
         Delta_dec = float(dec_tel) - float(dec)
+        self.logger.info(f"Telescope is {Delta_ra*3600:.3f}, {Delta_dec*3600:.3f} arcseconds off")
         #convert to arcseconds, taking into account that we want to account for the cos(dec) factor
         Delta_RA_arcsec = Delta_ra*3600.*np.cos(dec*math.pi/180.)
         Delta_DEC_arcsec = Delta_dec*3600.
         #display
         self.x_offset.set(Delta_RA_arcsec)
         self.y_offset.set(Delta_DEC_arcsec)
-        self.logger.info(f"{Delta_RA_arcsec}, {Delta_DEC_arcsec}")
-        self.logger.info('done')
+        #self.logger.info(f"{Delta_RA_arcsec}, {Delta_DEC_arcsec}")
+        self.logger.info('WCS done')
         # ready to offset the telescope to the commanded position
 
         """ => SUPERSEDED BY THE ABOVE CODE
         #calculate the offset in mm between pointed and actual position for the GS
         mywcs = wcs.WCS(header)
-        ra_cntr, dec_cntr = mywcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
+        ra_target, dec_target = mywcs.all_pix2world([[data.shape[0] / 2, data.shape[1] / 2]], 0)[0]
 
-        self.ra_cntr.set(ra)
-        self.dec_cntr.set(dec)
+        self.ra_target.set(ra)
+        self.dec_target.set(dec)
         Delta_RA = ra - self.fits_ra.get()
         Delta_DEC = dec - self.fits_dec.get()
         Delta_RA_mm = round(Delta_RA * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
         Delta_DEC_mm = round(Delta_DEC * 3600 / SOAR_ARCS_MM_SCALE.value, 3)
         self.x_offset.set(Delta_RA_mm)
         self.y_offset.set(Delta_DEC_mm)
+       
+        """
+     
+    def fits_header_manager(self, SI_original_header, determined_wcs):
+        """
+        fix the header received by SI camera withg the stuff we wmay want to save in the _QL file
         """
         
+        "START WITH THE SISI HEADER"
+        import copy
+        good_fix_header = copy.deepcopy(SI_original_header)
+        
+        del good_fix_header['N_PARAM']  #=                   60 / Number of Parameters                           
+        del good_fix_header['PARAM1']   #=                    0 / Image Type      
+        good_fix_header.rename_keyword('INSTRUME', 'CAMERA') #    10000 / Exposure Time   
+        #good_fix_header.rename_keyword('PARAM2', 'EXPTIME') #    10000 / Exposure Time                                  
+        #good_fix_header.rename_keyword('PARAM3', 'CCD_TSP') #     1880 / CCD Temperature Setpoint                       
+        del good_fix_header['PARAM4']   #=                   20 / Shutter Close Delay                            
+        del good_fix_header['PARAM5']   #  =                    0 / Server Data Source                             
+        del good_fix_header['PARAM6']   #  =                    6 / Server Test Image Type                         
+        del good_fix_header['PARAM7']   #  =                    1 / TDI Delay                                      
+        del good_fix_header['PARAM8']   #  =                    4 / Trigger Mode                                   
+        del good_fix_header['PARAM9']   #  =                    1 / Parallel Shift Delay                           
+        del good_fix_header['PARAM10']   # =                   76 / CCD Temp. Setpoint Offset                      
+        del good_fix_header['PARAM11']   # =                    0 / Acquisition Mode                               
+        del good_fix_header['PARAM12']   # =                    0 / UART 100 byte Ack                              
+        del good_fix_header['PARAM13']   # =                    8 / Serial Origin                                  
+        del good_fix_header['PARAM14']   # =                  528 / Serial Length                                  
+        del good_fix_header['PARAM15']   # =                    0 / Serial Post Scan                               
+        del good_fix_header['PARAM16']   # =                    1 / Serial Binning                                 
+        del good_fix_header['PARAM17']   # =                    2 / Serial Phasing                                 
+        del good_fix_header['PARAM18']   # =                    0 / Parallel Origin                                
+        del good_fix_header['PARAM19']   # =                 1032 / Parallel Length                                
+        del good_fix_header['PARAM20']   # =                    0 / Parallel Post Scan                             
+        del good_fix_header['PARAM21']   # =                    1 / Parallel Binning                               
+        del good_fix_header['PARAM22']   # =                    0 / Parallel Phasing                               
+        del good_fix_header['PARAM23']   # =                   18 / DSI Sample Time                                
+        del good_fix_header['PARAM24']   # =                    0 / Analog Attenuation                             
+        del good_fix_header['PARAM25']   # =                  540 / CCD 0 Port 0 Correlation Bias                  
+        del good_fix_header['PARAM26']   # =                  514 / CCD 0 Port 1 Correlation Bias                  
+        del good_fix_header['PARAM27']   # =                39582 / CCD 0 Port 0 ADC Offset                        
+        del good_fix_header['PARAM28']   # =                40116 / CCD 0 Port 1 ADC Offset                        
+        del good_fix_header['PARAM29']   # =                    3 / Port Select                                    
+        good_fix_header.rename_keyword('PARAM30','SIMODEL') # =       850 / Instrument Model                               
+        good_fix_header.rename_keyword('PARAM31','SISERNR') # =       406 / Instrument SN                                  
+        del good_fix_header['PARAM32']   # =                    1 / Installed CCDs                                 
+        del good_fix_header['PARAM33']   # =                    1 / CCD Enable Mask                                
+        del good_fix_header['PARAM34']   # =                    1 / Camera De-interlace                            
+        del good_fix_header['PARAM35']   # =                    1 / Rectangular Grid X                             
+        del good_fix_header['PARAM36']   # =                    1 / Rectangular Grid Y                             
+        del good_fix_header['PARAM37']   # =                    0 / Two Serial Registers                           
+        del good_fix_header['PARAM38']   # =                    2 / Installed Ports                                
+        del good_fix_header['PARAM39']   # =                   18 / Tested Speeds                                  
+        del good_fix_header['PARAM40']   # =                    0 / Hardware Revision                              
+        del good_fix_header['PARAM41']   # =                  560 / Serial Size                                    
+        del good_fix_header['PARAM42']   # =                 1150 / Parallel Size                                  
+        del good_fix_header['PARAM43']   # =                 1780 / Low Temp Limit                                 
+        del good_fix_header['PARAM44']   # =                 2030 / Operational Temp                               
+        del good_fix_header['PARAM45']   # =                    0 / Port 0 Connect                                 
+        del good_fix_header['PARAM46']   # =                    0 / Port 0 Map                                     
+        del good_fix_header['PARAM47']   # =                    0 / Port 0 Shift Direction                         
+        del good_fix_header['PARAM48']   # =                    0 / Port 1 Connect                                 
+        del good_fix_header['PARAM49']   # =                    1 / Port 1 Map                                     
+        del good_fix_header['PARAM50']   # =                    1 / Port 1 Shift Direction                         
+        del good_fix_header['PARAM51']   # =                   65 / Server Flags                                   
+        del good_fix_header['PARAM52']   # =               813305 / Server Up Time                                 
+        del good_fix_header['PARAM53']   # =                 3281 / Server I/O FPGA Core Temp.                     
+        del good_fix_header['PARAM54']   # =               813300 / Camera Connection Duration                     
+        del good_fix_header['PARAM55']   # =                98470 / Camera Status Age                              
+        good_fix_header.rename_keyword('PARAM56','CCDTEMP') # =      1876 / CCD 0 CCD Temp.                                
+        good_fix_header.rename_keyword('PARAM57','BKPTEMP') # =      2907 / Backplate Temperature                          
+        del good_fix_header['PARAM58'] # =                      0 / Shutter Status                                 
+        del good_fix_header['PARAM59'] # =                      0 / XIRQA Status                                   
+        good_fix_header.rename_keyword('PARAM60','COOLER') # =                   1 / Cooler Status                                  
+
+        """NOW ADD THE NEW INFOO FROM THE WCS SOLVER"""
+        good_fix_header['WCSAXES'] = (determined_wcs['WCSAXES'], 'Number of coordinate axes')                      
+        good_fix_header['CRPIX1'] = (determined_wcs['CRPIX1'],'Pixel coordinate of reference point')            
+        good_fix_header['CRPIX2'] = (determined_wcs['CRPIX2'],' Pixel coordinate of reference point')         
+        good_fix_header['PC1_1'] = (determined_wcs['PC1_1'],'Coordinate transformation matrix element')       
+        good_fix_header['PC1_2'] = (determined_wcs['PC1_2'],'Coordinate transformation matrix element')       
+        good_fix_header['PC2_1'] = (determined_wcs['PC2_1'],'Coordinate transformation matrix element')       
+        good_fix_header['PC2_2'] = (determined_wcs['PC2_2'],'Coordinate transformation matrix element')       
+        good_fix_header['CDELT1'] = (determined_wcs['CDELT1'],'[deg] Coordinate increment at reference point')  
+        good_fix_header['CDELT2'] = (determined_wcs['CDELT2'],'[deg] Coordinate increment at reference point') 
+        good_fix_header['CUNIT1'] = (determined_wcs['CUNIT1'],'Units of coordinate increment and value')   
+        good_fix_header['CUNIT2'] = (determined_wcs['CUNIT2'],'Units of coordinate increment and value')        
+        good_fix_header['CTYPE1'] = (determined_wcs['CTYPE1'],'Right ascension, gnomonic projection')           
+        good_fix_header['CTYPE2'] = (determined_wcs['CTYPE2'],'Declination, gnomonic projection')               
+        good_fix_header['CRVAL1'] = (determined_wcs['CRVAL1'],'[deg] Coordinate value at reference point')      
+        good_fix_header['CRVAL2'] = (determined_wcs['CRVAL2'],'[deg] Coordinate value at reference point')      
+        good_fix_header['LONPOLE'] = (determined_wcs['LONPOLE'],'[deg] Native longitude of celestial pole')       
+        good_fix_header['LONPOLE'] = (determined_wcs['LONPOLE'],'[deg] Native latitude of celestial pole')        
+        good_fix_header['MJDREF'] = (determined_wcs[' MJDREF'],'[d] MJD of fiducial time')                       
+        good_fix_header['RADESYS'] = (determined_wcs['RADESYS'],'Equatorial coordinate system')                   
+        good_fix_header['DMDMAP'] = (determined_wcs['DMDMAP'],'R136-T00_RADEC=84.67665-69.1009333.reg')       
+        
+        """
+        THIRD SET OF KEYWORDS COMING FROM SAMOS
+        """
+        good_fix_header['INSTRUME'] = 'SAMOS'
+        
+        
+        
+        return good_fix_header
 
 
+    @check_enabled
+    def get_ZeroPoint(self):
+        
+        #Zero point can be derived only if we are dealing with sloan g,r,i,z filters
+        griz_filters = ["sloan-g", "sloan-r", "sloan-i", "sloan-z"]
+        if self.current_filter.get() not in griz_filters:
+            self.logger.info("Cannot determine Zero Point for the current filter")
+            return
+    
+        
+        # LOAD THE RIGHT CATALOG, EITHER SKYMAPPER OR PANSTARRS, FOR THE FILTER
+        # SOUTHERN HEMISPHERE, use SkyMapper
+        #The directory must be PIXELS directory in the last opened RegionFiles folder
+        dir_target = str(self.loaded_reg_file_path.parent.parent.parent)
+        #target = self.target_name.split("-")[0]
+        
+        #limit RADEC to 4 decimals, as this is the way the script creates the filename
+        #radec_center = '%.4f'%(self.ra_target.get())+' %.4f'%(self.dec_target.get())
+        
+        
+        if self.dec_target.get() <= 0:
+            for filename in os.listdir(dir_target):
+                if 'SkyMapper_in_field_' in filename:    
+                    SkyMap_cat = pd.read_csv(os.path.join(dir_target,filename))
+                    
+                    #pd.read_csv(dir_target+"/"+target+"-SkyMapper_in_field_"+radec_center+".csv")
+                    SkyMap_cat.rename(columns={'g_band':'sloan-g', 'r_band':'sloan-r', 'i_band':'sloan-i', 'z_band':'sloan-z'})
+                    snr=SkyMap_cat['i_band']/SkyMap_cat['e_i_psf']
+                    SkyMap_cat['SNR']=snr
+                    SkyMap_cat = SkyMap_cat.dropna()
 
+        if self.dec_target.get() > 0:
+            PanSTARRS_phot_pandas.to_csv(dir_name+"/"+Target_name+"-PanSTARRS_in_field_"+radec_center.to_string()+".csv")
 
+        
+
+        # TAKE THE BRIGHTEST CATALOG STARS
+        #stars = twirl.find_peaks(data)[:self.fits_nstars.get()]
+        #radius_pix = 7
+        from photutils.aperture import aperture_photometry
+        from regions import CirclePixelRegion
+        with fits.open(self.fits_image_ql) as hdul:
+            data = hdul[0].data
+            hhh =  hdul[0].header
+            EXPTIM = hhh['EXPTIME']
+        
+        #add xy coords to the catalog
+        x_stars, y_stars = self.PAR.wcs.wcs_world2pix(SkyMap_cat['RA'], SkyMap_cat['DEC'], 0)
+        SkyMap_cat['x'] = x_stars
+        SkyMap_cat['y'] = y_stars
+        
+        #positions = np.column_stack((x_stars,y_stars))
+        
+        #select coordinates in field
+        x_lower_bound = 39
+        x_upper_bound = 1022
+        y_lower_bound = 24
+        y_upper_bound = 1000
+        x_infield=[]
+        y_infield=[]
+        ixy_drop=[]
+        import copy
+        SkyMap_cat2=copy.deepcopy(SkyMap_cat)
+        for ixy in range(len(x_stars)):
+            if (x_lower_bound <= x_stars[ixy] <= x_upper_bound) and (y_lower_bound <=y_stars[ixy] <= y_upper_bound):
+                x_infield = np.append(x_infield,x_stars[ixy])
+                y_infield = np.append(y_infield,y_stars[ixy])
+            else:    
+                print(SkyMap_cat.index[ixy])
+                ixy_drop = np.append(ixy_drop,SkyMap_cat.index[ixy])
+        SkyMap_cat2 = SkyMap_cat.drop(ixy_drop)
+                                             
+        #refinbe position
+        from photutils.centroids import centroid_2dg, centroid_sources        
+        SkyMap_cat2['x'], SkyMap_cat2['y']= centroid_sources(data, x_infield, y_infield, box_size=25,
+                        centroid_func=centroid_2dg)
+        positions = np.column_stack((SkyMap_cat2['x'], SkyMap_cat2['y']))
+        #APERTURE PHOTOMETRY FROM 
+        #https://photutils.readthedocs.io/en/latest/user_guide/aperture.html#
+        
+        regs = Regions([CirclePixelRegion(center=PixCoord(x,y), radius=5) for x, y in positions])
+        #phot_table = aperture_photometry(data, regs) 
+        #annulus_aperture = CircularAnnulus(positions, r_in=10, r_out=15)
+        phot_table = [aperture_photometry(data, reg)['aperture_sum'] for reg in regs]
+        counts = [phot_table[i].value [0]for i in range(len(SkyMap_cat2['x']))]
+        
+        #counts_s = np.array(counts)/EXPTIM
+
+        #positions = xy_stars
+        
+        
+        aperture = CircularAperture(positions, r=5)
+        annulus_aperture = CircularAnnulus(positions, r_in=10, r_out=25)
+        sigclip = SigmaClip(sigma=3.0, maxiters=10)
+        aper_stats = ApertureStats(data, aperture, sigma_clip=None)
+        bkg_stats = ApertureStats(data, annulus_aperture, sigma_clip=sigclip)
+        total_bkg = bkg_stats.median * aper_stats.sum_aper_area.value
+        apersum_bkgsub = aper_stats.sum - total_bkg
+        #print(apersum_bkgsub)
+        counts_s = np.array(apersum_bkgsub)/(EXPTIM/1000)
+        counts_s[counts_s < 0] = np.nan
+        counts_s_final = copy.deepcopy(counts_s[~np.isnan(counts_s)])
+        SkyMap_cat3 = copy.deepcopy(SkyMap_cat2[~np.isnan(counts_s)])
+        ZP = np.array(SkyMap_cat3['i_band'])+2.5*np.log10(counts_s_final)
+        #ZP = ZP[~np.isnan(ZP)]
+        import matplotlib.pyplot as plt
+        plt.scatter(np.array(SkyMap_cat3['i_band']), -2.5*np.log10(counts_s_final))
+        
+        #counts_s = counts_s[~np.isnan(counts_s)]
+        #non_negative_counts_s = [num for num in counts_s if num >= 0]
+        #ZP = SkyMap_cat['i_band']+2.5*np.log10(non_negative_counts_s)
+        
+        #ZP = ZP[~np.isnan(ZP)]
+        
+
+        ZP = sigma_clip(ZP, sigma=2, maxiters=5)
+        
+        import matplotlib.pyplot as plt
+        counts, bin_edges, _  = plt.hist(ZP, bins=7)
+        
+        xmin, xmax = plt.xlim()
+        x = np.linspace(xmin, xmax, 100)
+        mu, std = norm.fit(ZP) # Fit a normal distribution to the data
+        p = norm.pdf(x, mu, std)        
+        plt.plot(x, p, 'k', linewidth=2, label=f'Fitted Normal Distribution (μ={mu:.2f}, σ={std:.2f})')
+        plt.xlabel('Value')
+        plt.ylabel('Density')
+        plt.title('Histogram with Normal Distribution Overlay')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        
+        
+        mZP = np.mean(ZP)
+        sZP = np.std(ZP)
+        self.logger.info(f"Zero Point: Fitted Normal Distribution (μ={mu:.2f}, σ={std:.2f})")
+        self.logger.info(f"Zero Point: Mean={mZP:.2f}, StDev={sZP:.2f}")
+        tk.messagebox.showinfo(title="Zero Point", message=(f"Zero Point: Mean={mZP:.2f}, StDev={sZP:.2f}"))
+
+        
 
     @check_enabled
     def find_stars(self):
         self.Display(self.fits_image_ql)
-        self.fits_image.rotate(self.PAR.Ginga_PA)  
+#        self.fits_image.rotate(self.PAR.Ginga_PA)  
 #         if self.slit_tab_view is None:
 #             self.initialize_slit_table()
         
@@ -1395,28 +1940,29 @@ class MainPage(SAMOSFrame):
             header = hdul[0].header
             data = hdul[0].data
 
-        ra, dec = header["RA"], header["DEC"]
+        ra, dec = header["CRVAL1"], header["CRVAL2"]
         center = SkyCoord(ra, dec, unit=["deg", "deg"])
         center = [center.ra.value, center.dec.value]
 
         # image shape and pixel size in "
-        shape = data.shape
-        pixel_scale = SISI_PIXEL_SCALE
-        fov = (np.max(shape) * u.pix * pixel.to(u.deg)).value
+        #shape = data.shape
+        #pixel_scale = SISI_PIXEL_SCALE
+        #fov = (np.max(shape) * u.pix * pixel.to(u.deg)).value
 
         # Let's find some stars and display the image
         self.clear_canvas()
         threshold = 0.1
         stars = twirl.find_peaks(data, threshold)[:self.fits_nstars.get()]
         med = np.median(data)
-        radius_pix = 20
+        radius_pix = 10
         slit_width = self.slit_xd.get()
         slit_height = self.slit_disp.get()
         coords = [PixCoord(x, y) for x, y in stars]
         regions = Regions([RectanglePixelRegion(center=c, width=slit_width, height=slit_height, angle=0*u.deg) for c in coords])
         for i,region in enumerate(regions):
             obj = r2g(region)
-            self.canvas.add(obj, tag='@star_{}'.format(i))
+            #tab must be slit, allowing e.g. showtraces to work...
+            self.canvas.add(obj, tag='@slit_{}'.format(i))
             obj.pickable = True
             obj.color = "red"
             obj.add_callback('pick-up', self.pick_cb, 'up')
@@ -1454,10 +2000,10 @@ class MainPage(SAMOSFrame):
                 self.tag_gsp00 = None
         self.canvas.redraw()
         
-
+    """
     @check_enabled
     def open_quicklook_file(self):
-        """ to be written """
+        #to be written
         filename = tk.filedialog.askopenfilename(
             filetypes=[("fitsfiles", "*.fits"), ("allfiles", "*")]
         )
@@ -1465,6 +2011,7 @@ class MainPage(SAMOSFrame):
         if self.AstroImage.wcs.wcs.has_celestial:
             self.PAR.wcs = self.AstroImage.wcs.wcs
             self.PAR.valid_wcs = True
+    """
 
 
     @check_enabled
@@ -1520,7 +2067,10 @@ class MainPage(SAMOSFrame):
                 # No image loaded
                 return
             ra_deg, dec_deg = image.pixtoradec(fits_x, fits_y)
-            self.ra_center, self.dec_center = image.pixtoradec(528, 516, format='str', coords='fits')
+            
+            #no more used, superseeded by self.ra_target, self.dec_target; removed
+            #self.ra_center, self.dec_center = image.pixtoradec(528, 516, format='str', coords='fits')
+            
             text = f"(RA, DEC): ({ra_deg:8.4f}, {dec_deg:8.4f}). " + text
         except Exception as e:
             self.logger.error("Error {} in printing co-ordinates".format(e))
@@ -1583,6 +2133,10 @@ class MainPage(SAMOSFrame):
 
             # Declare the object as a slit by so tagging it
             obj.tag = '@slit_{}'.format(obj.tag)
+            
+            #in the case it is just a mouse click with the "Draw" button selected and we are in kind = "box"...
+            if obj.width <=0:
+                return
             
             # the ginga object, a box, is converted to an astropy region
             r = g2r(obj)

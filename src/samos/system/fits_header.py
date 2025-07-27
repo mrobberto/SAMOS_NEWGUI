@@ -6,6 +6,7 @@ Created on Wed Feb 22 11:34:16 2023
 @author: danakoeppe
 """
 
+from datetime import datetime,timezone
 
 class FITSHead(object):
     """
@@ -30,6 +31,10 @@ class FITSHead(object):
         self.combined = "F"
         self.ncombined = 0
         
+        #ADDING THE MOST CRITICAL DATE/TIME OF OBS
+        self.date = None
+        self.time = None
+        
         self.exptime = None
         self.objname = None
         self.obstype = None  # 'OBSTYPE' type of observation e.g. BIAS, FLAT, OBJ...
@@ -52,8 +57,8 @@ class FITSHead(object):
         ### SAMOS Imaging CCD parameters
         self.pixsize1 = 13
         self.pixsize2 = 13
-        self.pixscale1 = 0.17
-        self.pixscale2 = 0.17
+        self.pixscale1 = 0.1824
+        self.pixscale2 = 0.1824
         
         # matrix elements for astrometric solution
         self.wcsdim = 2
@@ -107,6 +112,8 @@ class FITSHead(object):
             'OBSERVER' : (self.db.get_value("POTN_Observer"), 'Observer Name(s)'),
             'PROGID' : (self.db.get_value("POTN_Program"), 'Program ID'),
             'TONAMES' : (self.db.get_value("POTN_Telescope_Operator"), 'Telescope Operator(s)'),
+            'DATE-OBS' : (datetime.now(timezone.utc).strftime('%Y-%m-%d'), 'Date of observation start (UTC approximate)'),
+            'TIME-OBS' : (datetime.now(timezone.utc).strftime('%H:%M:%S.%f')[:-3], 'Time of observation start (UTC approximate)'),
             'GRIDFNAM' : (self.gridfnam, 'Grid pattern filename'),
             'EXPTIME': (self.exptime, 'Exposure time (s)'),
             'COMBO' : (self.combined, 'Is combined image (T/F)'),
