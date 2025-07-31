@@ -843,6 +843,7 @@ class MainPage(SAMOSFrame):
         self.target_name = file_name[:file_name.find("_")]
         self.db.update_value("POTN_Target", self.target_name)
         if self.image_type.get() == "Science":
+            self.image_base_name.set(self.target_name)
             self.image_name.set(self.target_name)
         if "RADEC=" in file_name:
             radec_str = file_name
@@ -860,6 +861,7 @@ class MainPage(SAMOSFrame):
             self.ra_target.set(ra)
             self.dec_target.set(dec)
         self.loaded_astropy_regions = astropy_regions_radec
+        
 
 
     @check_enabled
