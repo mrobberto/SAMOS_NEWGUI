@@ -674,13 +674,30 @@ class MainPage(SAMOSFrame):
         --------
         - valid WCS
         """
+        self.logger.info("Saving Canvas Regions to Astropy File (RADEC format)")
+        
+        #if we have already loaded a RADEC region file, we save the variant we created on the same directory
+        #otherwise we save whatever we have created in the default "regions.radec" folder
+        try:
+            self.loaded_reg_file_path
+            RADEC_region_dir = self.loaded_reg_file_path.parent
+            RADEC_filename = self.loaded_reg_file_path.name
+        except:
+            RADEC_region_dir = get_data_file("regions.radec")
+            RADEC_filename = ""
+            
         self.logger.info("Saving Canvas Regions to Astropy File (WCS format)")
         save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                                 defaultextension=".reg",
-                                                initialdir=get_data_file("regions.radec"))
+                                                initialfile = RADEC_filename,
+                                                #initialdir=get_data_file("regions.radec"))
+                                                initialdir=RADEC_region_dir)
+        
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
         astropy_regions_wcs = Regions([r.to_sky(self.PAR.wcs) for r in astropy_regions_pix])
+
+        #Oct.1, 2025, mr- corrected filename 
         astropy_regions_wcs.write(save_file.name, overwrite=True)
         self.logger.info("Saved regions to {}".format(save_file.name))
 
@@ -689,7 +706,7 @@ class MainPage(SAMOSFrame):
     def load_region_file(self):
         """ 
         converting ds9/radec Regions to AP/radec Regions
-        - open ds9/radec region file and convert to AP/xy (aka RRR_xyAP)
+        - open the already exisitng ds9/radec region list and convert to AP/xy (aka RRR_xyAP)
         - convert AP/xy to Ginga/xy (aka RRR_xyGA)
         - convert AP/xy to AP/ad (aka RRR_RADec)
         
@@ -699,15 +716,16 @@ class MainPage(SAMOSFrame):
         - Region File
         """
         self.logger.info("Displaying DS9 Region File on canvas")
-        astropy_regions_wcs = Regions.read(self.loaded_reg_file_path, format='ds9')
-        astropy_regions_pix = Regions([r.to_pixel(self.PAR.wcs) for r in astropy_regions_wcs])
-        self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
+        #astropy_regions_wcs = Regions.read(self.loaded_reg_file_path, format='ds9') #=ASSUME ALREADY LOADED
+        #astropy_regions_pix = Regions([r.to_pixel(self.PAR.wcs) for r in astropy_regions_wcs])
+        astropy_regions_pix = Regions([r.to_pixel(self.PAR.wcs) for r in self.loaded_astropy_regions])
+        #self.logger.info("Loaded file {}".format(self.loaded_reg_file_path))
         ginga_regions = self.convert_astropy_to_ginga_pix(astropy_regions_pix, tag="slit")
         self.logger.info("Converted Astropy pixel regions to Ginga")
 #         if self.slit_tab_view is None:
 #             self.initialize_slit_table()
         #self.slit_tab_view.load_table_from_regfile_RADEC(regs_RADEC=astropy_regions_wcs, img_wcs=self.PAR.wcs)
-        self.logger.info("Finished displaying regions and loading slit tab view")
+        #self.logger.info("Finished displaying regions and loading slit tab view")
 
 
     @check_enabled
@@ -871,7 +889,12 @@ class MainPage(SAMOSFrame):
         --------
         - Valid WCS
         """
+        
         self.logger.info("Loading DS9 pixel region file to Astropy Pixels")
+        
+        #cleanup the canvas
+        self.delete_all()
+                        
         reg_file = tk.filedialog.askopenfilename(
             filetypes=[("region files", "*.reg")],
             initialdir=get_data_file("regions.pixels")
@@ -899,7 +922,6 @@ class MainPage(SAMOSFrame):
 #             self.initialize_slit_table()
 #         self.slit_tab_view.load_table_from_regfile_CCD(regs_CCD=astropy_regions_pix, img_wcs=self.PAR.wcs)
 
-
     @check_enabled
     def collect_slit_shape(self):
         """
@@ -909,6 +931,7 @@ class MainPage(SAMOSFrame):
         self.logger.info("Collecting Slit")
         slit_regions = []
         objects = CM.CompoundMixin.get_objects(self.canvas)
+        self.logger.info(f"Collected Nr. {len(objects)} slits")
         try:
             pattern_index = self.pattern_group.current()
             current_pattern = self.pattern_series[pattern_index]
@@ -1003,6 +1026,13 @@ class MainPage(SAMOSFrame):
         region_name = f"{self.image_name.get()}_{self.image_expnum.get():04d}"
         region_name += f"_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}_pix.reg"
         region_name = region_name.replace(" ", "_")
+        
+        #The following lines create a directory in /src/samos/data/tmp/SISI_images 
+        #to store the loaded mask.
+        if not self.PAR.fits_dir.is_dir():
+            self.logger.info(f"Creating FITS directory {self.PAR.fits_dir} for tonight")
+            self.PAR.fits_dir.mkdir(parents=True, exist_ok=True)
+
         region_file = self.PAR.fits_dir / region_name
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
@@ -1429,7 +1459,7 @@ class MainPage(SAMOSFrame):
             self.fits_dec.set(dec)
             self.logger.info("RADEC provided by the SOAR TCS")               
         else:   
-            messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
+            tk.messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
             return
 
         self.logger.info(f"Pointed coordinates: {ra} {dec}")
@@ -1519,7 +1549,7 @@ class MainPage(SAMOSFrame):
         #If we are online, twirl will find the GAIA stars on the internet
         try:
             gaias = twirl.gaia_radecs(center, fov, circular=True, limit=self.fits_nstars.get())
-        #except:
+        except:
         #If we are at the telescope, we read a Gaia catalog
             self.logger.info("We are not online, need to look for the Gaia stars on local disk")    
             self.logger.info("Loading GAIA File")
@@ -1537,8 +1567,8 @@ class MainPage(SAMOSFrame):
             g=np.transpose(np.array([csvFile['ra_now'].values,csvFile['dec_now'].values])) #extract RADEC
             gaias = g[:self.fits_nstars.get(),:]   #select the first Nstars
             
-        except:
-            print("killme")
+        #except:
+        #    print("killme")
             
         # we can now compute the WCS
         self.PAR.wcs = twirl.compute_wcs(stars, gaias)
@@ -1592,11 +1622,23 @@ class MainPage(SAMOSFrame):
         if self.PAR.wcs is None:
             self.PAR.valid_wcs = False
             self.logger.error("No valid WCS solution found.")
+            tk.messagebox.showinfo(title="Manual WCS", message="Put the target at the GS(0,0) position")
+            self.create_manual_WCS()
             return
         else:
             self.PAR.valid_wcs = True
             self.logger.info("Found WCS solution")
-
+            #We put on a dummy file the WCS just found, it will be used next time if a WCS cannot be found
+            #and we need to call self.create_manual_WCS()
+            fn = os.path.join(get_data_file("system"),'blank.fits')
+            hdul = fits.open(fn)  
+            hdr = hdul[0].header
+            new_wcs = self.PAR.wcs.to_header()
+            hdr.update(new_wcs)
+            #hdul = fits.HDUList([hdul])
+            hdul.writeto(os.path.join(get_data_file("system"),'blank.fits'),overwrite=True)
+            
+            
         self.logger.info(f"WCS Solution is: {self.PAR.wcs}")
         hdu_wcs = self.PAR.wcs.to_fits()  # creates a primaryHDU object 
         
@@ -1682,7 +1724,40 @@ class MainPage(SAMOSFrame):
         self.y_offset.set(Delta_DEC_mm)
        
         """
-     
+
+    def create_manual_WCS(self):
+        """
+        Determine an approximated WCS using the RADEC of the target for CRVAL, the CD matrix "on file" from the latest solution
+        and for CRPIX the (0,0) coordinates of the guide star
+        Returns
+        -------
+        None.
+
+        """
+        
+        #1 READ THE LAST WCS 
+        fn = os.path.join(get_data_file("system"),'blank.fits')
+        hdul = fits.open(fn)  
+        hdr = hdul[0].header
+        
+        
+        #2 SUBSTITUE THE CRVALS with the RADEC of the target
+        #  AND CRPIX with the coordinates of the (0,0) point of the Guide stars
+        if  self.ra_target.get() !=  0. and self.ra_target.get() != 0.:   
+            ra = self.ra_target.get()
+            dec = self.dec_target.get()
+            self.logger.info("RA and DEC read from the text box")
+            hdr['CRVAL1'] = (ra,'[deg] Coordinate value at reference point')      
+            hdr['CRVAL2'] = (dec,'[deg] Coordinate value at reference point')  
+            hdr['CRPIX1'] = (self.gs_x0.get(),'[deg] Coordinate value at reference point')      
+            hdr['CRPIX2'] = (self.gs_y0.get(),'[deg] Coordinate value at reference point') 
+            wcs_ = wcs.WCS(hdr)
+            self.PAR.wcs = WCS
+        else:
+            tk.messagebox.showinfo(title="Manual WCS", message="target coordinates missing")
+        return 
+    
+    
     def fits_header_manager(self, SI_original_header, determined_wcs):
         """
         fix the header received by SI camera withg the stuff we wmay want to save in the _QL file
@@ -2027,6 +2102,19 @@ class MainPage(SAMOSFrame):
         CM.CompoundMixin.delete_objects(self.canvas, objects_to_remove)
         CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
 
+    @check_enabled
+    def delete_all(self):
+        """ erase all objects in the canvas
+            and also astropy regions for a frew shart with enternew regions"""
+        self.logger.info("Removing all objects")
+        objects_to_remove = []
+        for obj in CM.CompoundMixin.get_objects(self.canvas):
+            #self.logger.info(f"Removing {obj} {obj.tag}")
+            objects_to_remove.append(obj)
+        CM.CompoundMixin.delete_objects(self.canvas, objects_to_remove)
+        CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
+        self.loaded_astropy_regions = ""
+        
 
     def cursor_cb(self, viewer, button, data_x, data_y):
         """
@@ -2134,9 +2222,12 @@ class MainPage(SAMOSFrame):
             # Declare the object as a slit by so tagging it
             obj.tag = '@slit_{}'.format(obj.tag)
             
-            #in the case it is just a mouse click with the "Draw" button selected and we are in kind = "box"...
-            if obj.width <=0:
-                return
+            #in the case it is just a mouse click with the "Draw" button selected and we are in kind = "box"...']
+            #
+            #Oct.1 2025: from https://ginga.readthedocs.io/en/stable/dev_manual/canvas.html
+            #"Box: a rectangular shape defined by a single center point, two radii and a rotation angle."
+            #if obj.width <=0:
+            #    return
             
             # the ginga object, a box, is converted to an astropy region
             r = g2r(obj)
@@ -2239,7 +2330,7 @@ class MainPage(SAMOSFrame):
         # We want to create rectangles
         Rectangle = self.canvas.get_draw_class('rectangle')
 
-        # we should hanve only boxes/slits
+        # we should have only boxes/slits
         self.trace_boxes_objlist = []  # create container of the list traces
         for i, obj in enumerate(CM.CompoundMixin.get_objects(self.canvas)):
             self.logger.info(f"Checking object {obj} with tag {obj.tag}")
