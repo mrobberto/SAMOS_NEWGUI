@@ -98,7 +98,7 @@ class MainPage(SAMOSFrame):
         self.main_frame.columnconfigure(2, weight=1)
 
         # LEFT COLUMN
-
+        """
         # Observation Info Frame
         frame = ttk.LabelFrame(fleft, text="Observer Information")
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
@@ -112,6 +112,7 @@ class MainPage(SAMOSFrame):
         self.telescope_operator = self.make_db_var(tk.StringVar, "POTN_Telescope_Operator", "")
         ttk.Label(frame, text="Telescope Operator:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.telescope_operator).grid(row=2, column=1, sticky=TK_STICKY_ALL)
+        """
 
         # Filter and Grating Status
         frame = ttk.LabelFrame(fleft, text="Filter and Grating Status")
@@ -264,7 +265,7 @@ class MainPage(SAMOSFrame):
         ttk.Label(target_frame, text="Target DEC:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(target_frame, textvariable=self.dec_target, w=6).grid(row=1, column=1, sticky=TK_STICKY_ALL)
         self.y_offset = self.make_db_var(tk.DoubleVar, "centre_dec_offset_mm", 0.)
-        ttk.Label(target_frame, text='dDec" (+/- move tel. S/N):').grid(row=1, column=2, sticky=TK_STICKY_ALL)
+        ttk.Label(target_frame, text='dDec" (+/- move tel. N/S):').grid(row=1, column=2, sticky=TK_STICKY_ALL)
         tk.Entry(target_frame, textvariable=self.y_offset, w=6).grid(row=1, column=3, sticky=TK_STICKY_ALL)
 
         # Guide Star Probe Frame
@@ -323,6 +324,7 @@ class MainPage(SAMOSFrame):
         self.canvas.set_drawtype(self.draw_type.get(), color='red')
         self.canvas.register_for_cursor_drawing(fi)
         self.canvas.add_callback('draw-event', self.draw_cb)
+        self.canvas.add_callback('cursor-up', self.examine_source)
         self.canvas.set_draw_mode('draw')
         self.canvas.ui_set_active(True)
         fi.get_canvas().add(self.canvas)
@@ -336,7 +338,11 @@ class MainPage(SAMOSFrame):
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         # Early variable definition because it's needed to set an enable condition.
         self.source_pickup_enabled = self.make_db_var(tk.BooleanVar, "source_pickup_enabled", False)
+        
         # Slit Configurations
+        # Let's see if we can remove the Checkbutton. 
+        
+        """
         b = tk.Checkbutton(
             frame,
             text="Source Pickup",
@@ -345,13 +351,25 @@ class MainPage(SAMOSFrame):
             onvalue=True,
             offvalue=False
         )
+        
         self.source_pickup_enabled.set(False)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        """
+        
         # Buttons
+        
+        #self.var_show_traces = self.make_db_var(tk.IntVar,"show_remove_traces", False)
+        self.var_show_traces = tk.BooleanVar(value=True)
+        """
         b = ttk.Button(frame, text="Show Traces", command=self.show_traces)
         b.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Remove Traces", command=self.remove_traces)
         b.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        """
+        self.var_show_traces.set("False")
+        self.button_show_remove_traces = ttk.Button(frame, text="Show Traces", command=self.show_remove_traces)
+        self.button_show_remove_traces.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
+        
         b = ttk.Button(frame, text="Slits Only", command=self.slits_only)
         b.grid(row=0, column=3, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Clear Canvas", command=self.clear_canvas)
@@ -404,6 +422,8 @@ class MainPage(SAMOSFrame):
         self.draw_mode.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.draw_mode = tk.Radiobutton(draw_frame, text="Delete", variable=self.slit_mode, value="delete", command=self.set_mode_cb)
         self.draw_mode.grid(row=2, column=0, sticky=TK_STICKY_ALL)
+        self.draw_mode = tk.Radiobutton(draw_frame, text="Pick", variable=self.slit_mode, value="pick", command=self.set_mode_cb)
+        self.draw_mode.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         # Pattern Series
         pattern_frame = ttk.LabelFrame(frame, text="Create Pattern Series with No Overlapping Slits")
         pattern_frame.grid(row=0, column=2, rowspan=2, sticky=TK_STICKY_ALL)
@@ -462,7 +482,7 @@ class MainPage(SAMOSFrame):
         tk.Label(frame, textvariable=self.loaded_reg_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Get Target RADEC from Filename", command=self.push_RADEC)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Send Centre to SOAR", command=self.send_soar_target, bootstyle="success")
+        b = ttk.Button(frame, text="OffsetCe SOAR", command=self.send_soar_target, bootstyle="success")
         b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         l = ttk.Label(frame, text="Point, take and image, and twirl WCS from GAIA")
         l.grid(row=5, column=0, sticky=TK_STICKY_ALL)
@@ -610,6 +630,13 @@ class MainPage(SAMOSFrame):
         (using the Ginga utilities).
         """
         self.logger.info("Saving Canvas Regions to Astropy File (pixel format)")
+        
+        #remove regions (slit boxes) that have xradius=0, i.e. single clicks on the canvas
+        for r in ginga_regions:
+            if r.xradius == 0:
+                objects_to_remove.append(r)
+        CM.CompoundMixin.delete_objects(self.canvas, objects_to_remove)
+        
         ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
         #
@@ -626,41 +653,79 @@ class MainPage(SAMOSFrame):
         #
         #CREATE THE FILE NAMES FOR OUTPUT
         #
-        #The directory must be PIXELS directory in the last opened RegionFiles folder
-        self.dir_regions_pixels = os.path.join( str(self.loaded_reg_file_path.parent),
-                                                "../PIXELS")   
+        #The directory SHOULD BE the PIXELS directory in the last opened RegionFiles folder
+        try:
+            self.dir_regions_pixels = os.path.join( str(self.loaded_reg_file_path.parent),
+                                                   "../PIXELS")   
+        #
+        except: 
+            self.dir_regions_pixels = tk.filedialog.askdirectory(
+                    title = 'Select the target folder for saving records',
+                    initialdir=get_data_file("regions.radec") )#, 
+#                    filetypes=(("Text files", "*.reg"), ("all files", "*.*")))
+            
         #create it if it does not exist
         Path(self.dir_regions_pixels).mkdir(parents=True, exist_ok=True)
         #
-        # the current mask name is in the variable self.loaded_reg_file_path.name, e.g. 
+        
+        # IF EXISTS
+        #the current mask name is in the variable self.loaded_reg_file_path.name, e.g. 
         # 'RMC 136-T00_RADEC=84.6787022-69.1007396.reg'
-        file_name = self.loaded_reg_file_path.name
-        #and we use the target name self.target_name, e.g. 'RMC 136-T00'
+        try: 
+            file_name = self.loaded_reg_file_path.name
+            #and we use the target name self.target_name, e.g. 'RMC 136-T00'        
+            # 1) We insert "PIXEL" in the global astropy region pix
+            file_name_pixel  = self.target_name+"_PIXEL="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]
         
-        # 1) We insert "PIXEL" in the global astropy region pix
-        file_name_pixel  = self.target_name+"_PIXEL="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]
-        save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
-                                        defaultextension=".reg",
-                                        initialfile = file_name_pixel,
-                                        #initialdir=get_data_file("regions.pixels"))
-                                        initialdir= self.dir_regions_pixels)
+            save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
+                                            defaultextension=".reg",
+                                            initialfile = file_name_pixel,
+                                            #initialdir=get_data_file("regions.pixels"))
+                                            initialdir= self.dir_regions_pixels)
+            #astropy_regions_pix.write(save_file.name, overwrite=True)
+            #self.logger.info("Saved regions to {}".format(save_file.name))
+            
+            #save_file = os.path.join(self.dir_regions_pixels,
+            #                         self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+            
+            # 2) We insert "PIXEL_EVEN" in the global astropy region pix
+            save_file_even = os.path.join(self.dir_regions_pixels,
+                                     self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+            #Regions(even_regions).write(save_file_even, overwrite=True)
+            #self.logger.info("Saved Even regions to {}".format(save_file_even))
+            
+            # 3) We insert "PIXEL_ODD" in the global astropy region pix 
+            save_file_odd = os.path.join(self.dir_regions_pixels,
+                                     self.target_name+"_PIXEL_ODD="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+            #Regions(odd_regions).write(save_file_odd, overwrite=True)
+            #self.logger.info("Saved Even regions to {}".format(save_file_odd))
+        
+            #IF DOES NOT EXIST (SLITS CREATED ON THE FLY, FIRST TIME BEFORE LOADING REG FILE, ETC...)
+        except:
+            from tkinter.simpledialog import askstring
+            from tkinter.messagebox import showinfo
+            file_name_pixel = askstring('Missing File Name', 'Enter file Name?')
+            showinfo('Hello!', 'Entered, {}'.format(file_name_pixel))
+            
+            save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
+                                            defaultextension=".reg",
+                                            initialfile = file_name_pixel,
+                                            #initialdir=get_data_file("regions.pixels"))
+                                            initialdir= self.dir_regions_pixels)
+            # 2) We insert "PIXEL_EVEN" in the global astropy region pix
+            endname = save_file.name.find(".reg")
+            save_file_even = os.path.join(save_file.name[:endname]+"_EVEN.reg")
+            # 3) We insert "PIXEL_ODD" in the global astropy region pix 
+            save_file_odd = os.path.join(save_file.name[:endname]+"_ODD.reg")
+
         astropy_regions_pix.write(save_file.name, overwrite=True)
-        self.logger.info("Saved regions to {}".format(save_file.name))
+        self.logger.info("Saved regions to {}".format(save_file.name))        
         
-        #save_file = os.path.join(self.dir_regions_pixels,
-        #                         self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
-        
-        # 2) We insert "PIXEL_EVEN" in the global astropy region pix
-        save_file = os.path.join(self.dir_regions_pixels,
-                                 self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
-        Regions(even_regions).write(save_file, overwrite=True)
-        self.logger.info("Saved Even regions to {}".format(save_file))
-        
-        # 3) We insert "PIXEL_ODD" in the global astropy region pix 
-        save_file = os.path.join(self.dir_regions_pixels,
-                                 self.target_name+"_PIXEL_ODD="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
-        Regions(odd_regions).write(save_file, overwrite=True)
-        self.logger.info("Saved Even regions to {}".format(save_file))
+        Regions(even_regions).write(save_file_even, overwrite=True)
+        self.logger.info("Saved Even regions to {}".format(save_file_even))
+            
+        Regions(odd_regions).write(save_file_odd, overwrite=True)
+        self.logger.info("Saved Even regions to {}".format(save_file_odd))
        
 
 
@@ -1696,12 +1761,18 @@ class MainPage(SAMOSFrame):
         self.logger.info(f"Pointed  RADEC {ra}, {dec} at {x_pointed:.3f}, {y_pointed:.3f}")
         self.logger.info(f"At {x_GSP00}, {y_GSP00} we have RADEC {ra_tel}, {dec_tel}")
         # calculate the offset in RADEC between the telescope and commanded positions
-        Delta_ra = float(ra_tel) - float(ra)
-        Delta_dec = float(dec_tel) - float(dec)
+        
+        #Delta_ra = float(ra_tel) - float(ra)
+        #Delta_dec = float(dec_tel) - float(dec)
+        #More direct
+        Delta_ra = float(ra) - float(ra_tel)    # If positive the target is too far right, i.e. WEST (flipped image). Need to move the telescope WEST (ADD arcsec)
+        Delta_dec = float(dec) - float(dec_tel) # If positive the target is too far North, need to offset the telescope NORH (ADD arcsec)
         self.logger.info(f"Telescope is {Delta_ra*3600:.3f}, {Delta_dec*3600:.3f} arcseconds off")
+        
         #convert to arcseconds, taking into account that we want to account for the cos(dec) factor
         Delta_RA_arcsec = Delta_ra*3600.*np.cos(dec*math.pi/180.)
         Delta_DEC_arcsec = Delta_dec*3600.
+        
         #display
         self.x_offset.set(Delta_RA_arcsec)
         self.y_offset.set(Delta_DEC_arcsec)
@@ -2169,7 +2240,7 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def set_slit_drawtype(self):
         self.slit_mode.set("draw")  # Possibly need to set self.draw_mode instead?
-        self.set_mode_cb()
+        self.set_mode_cb() # method used to set a callback function that is triggered when the viewer's active mode changes. 
         if self.source_pickup_enabled.get():
             self.draw_type.set("point")
         else:
@@ -2177,15 +2248,130 @@ class MainPage(SAMOSFrame):
         self.canvas.set_drawtype(self.draw_type.get())
 
 
+    """
     @check_enabled
     def set_mode_cb(self):
         mode = self.slit_mode.get()
+        print('MODE =',mode)
+        print('self.canvas.get_draw_mode() = ',self.canvas.get_draw_mode())
+        print('self.source_pickup_enabled.get() = ',self.source_pickup_enabled.get())
+        #if we are working on an existing object,  we can either 
+        # - #modify it (edit(
+        # - #get the properties
+        # - delete it
         if mode != "draw":
             self.source_pickup_enabled.set(False)
         if mode != "delete":
             self.canvas.set_draw_mode(mode)
         else:
-            self.canvas.set_draw_mode("pick")
+           self.canvas.set_draw_mode("pick")
+           self.source_pickup_enabled.set(True)
+        print('self.canvas.get_draw_mode() = ',self.canvas.get_draw_mode())
+        print('self.source_pickup_enabled.get() = ',self.source_pickup_enabled.get())
+        #if we are working on an existing object,  we can either 
+    """   
+
+    @check_enabled
+    def set_mode_cb(self):
+        mode = self.slit_mode.get()  # variable for the selected Radio button
+        print(mode)
+        #if we are working on an existing object,  we can either 
+        # - #modify it (edit(
+        # - #get the properties
+        # - delete it
+        if mode == "draw":
+            self.source_pickup_enabled.set(False)
+            self.canvas.set_draw_mode("draw") #  Ginga: mode must be one of: [None, 'draw', 'edit', 'pick']
+        if mode == "edit":
+            self.source_pickup_enabled.set(True)
+            self.canvas.set_draw_mode("edit") #  Ginga: mode must be one of: [None, 'draw', 'edit', 'pick']
+        if mode == "delete":
+            self.source_pickup_enabled.set(True)
+            self.canvas.set_draw_mode("pick") #  Ginga: mode must be one of: [None, 'draw', 'edit', 'pick']
+        if mode == "pick":
+            self.source_pickup_enabled.set(False)
+            self.canvas.set_draw_mode("pick")#   Ginga: mode must be one of: [None, 'draw', 'edit', 'pick']
+        print('MODE =',mode)
+        print('self.canvas.get_draw_mode() = ',self.canvas.get_draw_mode())
+        print('self.source_pickup_enabled.get() = ',self.source_pickup_enabled.get())
+      
+
+
+    @check_enabled
+    def examine_source(self, canvas, PointEvent, x0, y0):
+        """ this procedure is activated when the mouse click goes up
+            thanks to line self.canvas.add_callback('cursor-up', self.examine_source)"""
+
+        #we don't want to examine source if we are e.g. in "draw" mode, that always finishes with a click "up" of the mouse...
+        if self.slit_mode.get() != "pick":
+            return
+
+        self.logger.info(f"User inspecting target on canvas/n")
+        
+        #grab the pixel coordinates of the click
+        coords = PixCoord(x0,y0)
+        
+        #create a region centered on that coordinates
+        region = RectanglePixelRegion(center=coords, width=21, height=21, angle=0*u.deg)
+        
+        #conver to ginga object (type box)
+        obj = r2g(region)
+        
+        #add to the canvas
+        canvas.add(obj)
+        
+        data_box = self.AstroImage.cutout_shape(obj)
+        #convert to data_bax 
+        
+        # the box is no more needed, eliminate
+        CM.CompoundMixin.delete_object(self.canvas, obj)
+        
+        #find the brightest pixel in the data_box
+        peaks = self.iq.find_bright_peaks(data_box)
+        
+        #analyze the peak
+        results = self.iq.evaluate_peaks(peaks, data_box)
+        
+        #original results contain non-necessary info
+        #for key, value in results[0].items():
+        #    print(f"{key}: {value}")
+        
+        #cleanup and display again on the console
+        results[0]['objx'] = x0
+        results[0]['objy'] = y0
+        rrr=dict(results[0].items())
+        rrr.pop('pos')
+        rrr.pop('oid_x')
+        rrr.pop('oid_y')
+        rrr.pop('fwhm_radius')
+        rrr.pop('x')
+        rrr.pop('y')
+        rrr.pop('ensquared_energy_fn')
+        rrr.pop('encircled_energy_fn')
+        for key, value in list(rrr.items()):
+            print(f"{key:10}: {value:.2f}")
+            
+        # THIS DOES NOT WORK YET. The idea is to plot on the canvas the PSF so we don't need to peek at the console.
+        #my_text = self.canvas.get_text(x0, y0, "results[0]['fwhm']", font="sans", fontsize=20, color="yellow")
+        #canvas.add(my_text)
+            
+        #PART 2: GET THE DISTANCE FROM THE Guide Star Probe (0,0) pixel   
+        x_GSP00 = self.gs_x0.get()
+        y_GSP00 = self.gs_y0.get() 
+        
+        #Distance, in pixels
+        #Dx = x0 - x_GSP00   # If Negaive the target is too far left on the screen, i.e. East (right) on the sky(flipped image!)
+        Dx = x0 - x_GSP00   # If Positive the target is too far right on the screen, i.e. WEST on the sky(flipped image!)
+        Dy = y0 - y_GSP00   # Positive if the target is too far north. 
+
+        #Convert to arcseconds assumin a scale of 0.18"/pixel
+        #Delta_RA_arcsec = Dx * 0.18   # If negativee, the telescope is pointing too far West and has to move EAST, removing  arcseconds
+        Delta_RA_arcsec = Dx * 0.18   # If positive, the telescope is pointing too far Eest and has to move WEST, adding arcseconds
+        Delta_DEC_arcsec = Dy * 0.18  # If positive, the telescope has to move North, adding arcseconds
+        
+        #display
+        self.x_offset.set(Delta_RA_arcsec)
+        self.y_offset.set(Delta_DEC_arcsec)
 
 
     @check_enabled
@@ -2311,6 +2497,76 @@ class MainPage(SAMOSFrame):
         new_obj.add_callback('pick-key', self.pick_cb, 'key')
         new_obj.add_callback('edited', self.edit_cb)
         return new_obj
+
+    @check_enabled
+    def show_remove_traces(self):
+        """ Show Traces """
+        if self.var_show_traces.get() == False:
+            # Set the variable to True for next time you enter, to delete
+            self.var_show_traces.set(True)
+            #change the text in the box
+            self.button_show_remove_traces.config(text = "Remove Traces")
+           
+            # keep only the slits/boxes
+            self.slits_only()
+            
+            bbox = self.canvas.get_bbox()
+            bbox_x = [p[0] for p in bbox]
+            bbox_y = [p[1] for p in bbox]
+            min_x, max_x = min(bbox_x), max(bbox_x)
+            min_y, max_y = min(bbox_y), max(bbox_y)
+            self.logger.info(f"Window X is {min_x} {max_x}")
+            self.logger.info(f"Window Y is {min_y} {max_y}")
+    
+            # We want to create rectangles
+            Rectangle = self.canvas.get_draw_class('rectangle')
+    
+            # we should have only boxes/slits
+            self.trace_boxes_objlist = []  # create container of the list traces
+            for i, obj in enumerate(CM.CompoundMixin.get_objects(self.canvas)):
+                self.logger.info(f"Checking object {obj} with tag {obj.tag}")
+                if obj.alpha == 0:
+                    # ***** WHY?
+                    continue
+                if "slit" not in obj.tag:
+                    continue
+                if hasattr(obj, 'x'):
+                    self.logger.info(f"Object: ({obj.x}, {obj.y}) size ({obj.xradius}, {obj.yradius})")
+                    ox, oy = round(obj.x), round(obj.y)
+                    x1, x2 = max(ox - obj.xradius, 0), min(ox + obj.xradius, max_x)
+                    y1, y2 = oy - 1024, oy + 1024
+    #                 if (x1 < 0) or (x2 < 0) or (y1 < 0) or (y2 < 0):
+    #                     continue
+    #                 x1, x2 = max(round(obj.x) - 1024,0), round(obj.x) + 1024
+    #                 y1, y2 = max(round(obj.y) - obj.yradius,0), round(obj.y) + obj.yradius
+                    self.logger.info(f"Slit {i}: Trace ({x1} -> {x2}, {y1} -> {y2})")
+                    r = Rectangle(x1=x1, y1=y1, x2=x2, y2=y2, angle=0*u.deg, color='yellow', fill=1, fillalpha=0.5)
+                    self.canvas.add(r, tag=f'@trace_{i}')
+                    self.trace_boxes_objlist.append(r)  # add the rectangle to the list of traces
+                else:
+                    continue    
+            CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
+            return
+            
+        """ Delete Traces """
+        
+        # We have the variable set to True, therefore we are here to delete...
+        self.var_show_traces.set(False)
+        #change the text in the box
+        self.button_show_remove_traces.config(text = " Show Traces ")
+        """ 
+             Use "try:/except:"
+             We may call this function just to make sure that the field is clean, so
+             we do not need to assume that the traces have been created
+        """
+        objects_to_remove = []
+        for obj in CM.CompoundMixin.get_objects(self.canvas):
+            if "trace" in obj.tag:
+                self.logger.info(f"Removing {obj} {obj.tag}")
+                objects_to_remove.append(obj)
+        CM.CompoundMixin.delete_objects(self.canvas, objects_to_remove)
+        CM.CompoundMixin.draw(self.canvas, self.canvas.viewer)
+
 
 
     @check_enabled
@@ -2581,6 +2837,9 @@ class MainPage(SAMOSFrame):
             if obj is not None:
                 canvas.delete_object(obj)
                 return True
+        
+        if self.slit_mode.get() == "pick":
+            print("pick a ball of cotton....")
 
         canvas.select_add(obj.tag)
         self.selected_object_tag = obj.tag
