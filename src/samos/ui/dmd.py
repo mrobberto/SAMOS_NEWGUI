@@ -119,7 +119,9 @@ class DMDPage(SAMOSFrame):
         self.canvas = tk.Canvas(display_frame, width=300, height=270, bg="dark gray")
         self.canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
+        """ 
         # Hadamard Sub-frame
+        """
         self.hadamard_conf_frame = HadamardGenerator(self, hadamard_frame, **kwargs)
         self.hadamard_conf_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
 

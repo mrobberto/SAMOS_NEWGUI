@@ -358,14 +358,15 @@ class MainPage(SAMOSFrame):
         
         # Buttons
         
-        #self.var_show_traces = self.make_db_var(tk.IntVar,"show_remove_traces", False)
-        self.var_show_traces = tk.BooleanVar(value=True)
+       
         """
+        #self.var_show_traces = self.make_db_var(tk.IntVar,"show_remove_traces", False)
         b = ttk.Button(frame, text="Show Traces", command=self.show_traces)
         b.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(frame, text="Remove Traces", command=self.remove_traces)
         b.grid(row=0, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         """
+        self.var_show_traces = tk.BooleanVar(value=True)
         self.var_show_traces.set("False")
         self.button_show_remove_traces = ttk.Button(frame, text="Show Traces", command=self.show_remove_traces)
         self.button_show_remove_traces.grid(row=0, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -510,7 +511,7 @@ class MainPage(SAMOSFrame):
         self.saved_slit_file_path = None
         b = ttk.Button(frame, text="Send Current Slits to DMD", command=self.push_slit_shape, bootstyle="success")
         b.grid(row=0, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Save Slit List", command=self.save_slit_table)
+        b = ttk.Button(frame, text="Save Slit List as .csv", command=self.save_slit_table)
         b.grid(row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
         ttk.Label(frame, text="Saved Slit List:").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(frame, textvariable=self.saved_slit_file).grid(row=2, column=1, sticky=TK_STICKY_ALL)
@@ -630,15 +631,19 @@ class MainPage(SAMOSFrame):
         (using the Ginga utilities).
         """
         self.logger.info("Saving Canvas Regions to Astropy File (pixel format)")
+        ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
         
+        #
         #remove regions (slit boxes) that have xradius=0, i.e. single clicks on the canvas
+        objects_to_remove = []
         for r in ginga_regions:
             if r.xradius == 0:
                 objects_to_remove.append(r)
         CM.CompoundMixin.delete_objects(self.canvas, objects_to_remove)
         
-        ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
+        #
         astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
+        
         #
         #SORT THE REGIONS AND CREATE THE EVEN/ODD LISTS
         sorted_regions = sorted(astropy_regions_pix, key=lambda region: region.center.x)
@@ -650,6 +655,7 @@ class MainPage(SAMOSFrame):
                 even_regions.append(region)
             if i % 2 == 1:
                  odd_regions.append(region)
+                 
         #
         #CREATE THE FILE NAMES FOR OUTPUT
         #
@@ -685,18 +691,22 @@ class MainPage(SAMOSFrame):
             #astropy_regions_pix.write(save_file.name, overwrite=True)
             #self.logger.info("Saved regions to {}".format(save_file.name))
             
+            #extract the file name you just created with the new mask file
+            new_file_name = os.path.split(save_file.name)[1]
+            new_target_name = new_file_name[:new_file_name.find("_")]
+            
             #save_file = os.path.join(self.dir_regions_pixels,
             #                         self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
             
             # 2) We insert "PIXEL_EVEN" in the global astropy region pix
             save_file_even = os.path.join(self.dir_regions_pixels,
-                                     self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+                                     new_target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
             #Regions(even_regions).write(save_file_even, overwrite=True)
             #self.logger.info("Saved Even regions to {}".format(save_file_even))
             
             # 3) We insert "PIXEL_ODD" in the global astropy region pix 
             save_file_odd = os.path.join(self.dir_regions_pixels,
-                                     self.target_name+"_PIXEL_ODD="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
+                                     new_target_name+"_PIXEL_ODD="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
             #Regions(odd_regions).write(save_file_odd, overwrite=True)
             #self.logger.info("Saved Even regions to {}".format(save_file_odd))
         
@@ -919,6 +929,11 @@ class MainPage(SAMOSFrame):
             if region not in astropy_regions_radec:
                 astropy_regions_radec.append(region)
         self.target_name = file_name[:file_name.find("_")]
+        
+        #let's distinguish between the source name and the mask name
+        self.source_name = self.target_name[:self.target_name.find("-")]
+        self.mask_name = self.target_name[self.target_name.find("-")+1:]
+        
         self.db.update_value("POTN_Target", self.target_name)
         if self.image_type.get() == "Science":
             self.image_name.set(self.target_name)
@@ -1015,19 +1030,20 @@ class MainPage(SAMOSFrame):
             # oriented with the celestial coordinates
             if self.force_orthonormal.get() == 1:
                 obj.rot_deg = 0.0
-            ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
-            # first case: figures that have no extensions (i.e. points): do nothing
-            if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
-                x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
-                x1, y1 = int(np.round(x1)), int(np.round(y1))
-                slit_shape[x1, y1] = 0
-                slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])
-            elif self.source_pickup_enabled.get() and obj.kind == 'point':
-                x1, y1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
-                x1, y1 = int(np.floor(x1)), int(np.floor(y1))
-                x2, y2 = ccd_to_dmd(ccd_x1, ccd_y1, self.PAR.dmd_wcs)
-                x2, y2 = int(np.ceil(x2)), int(np.ceil(y2))
-                slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])
+                ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
+                # first case: figures that have no extensions (i.e. points) add a single mirror to the slit_shape
+                if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
+                    dmd_y1, dmd_x1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
+                    dmd_y1, dmd_x1 = int(np.round(dmd_y1)), int(np.round(dmd_x1))
+                    slit_shape[dmd_y1,dmd_x1] = 0
+                    slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])     
+                else:# self.source_pickup_enabled.get() and obj.kind == 'point':
+                    dmd_y1, dmd_x1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
+                    dmd_y1, dmd_x1 = int(np.floor(dmd_y1)), int(np.floor(dmd_x1))
+                    dmd_y2, dmd_x2 = ccd_to_dmd(ccd_x1, ccd_y1, self.PAR.dmd_wcs)
+                    dmd_y2, dmd_x2 = int(np.ceil(dmd_y2)), int(np.ceil(dmd_x2))
+                    slit_shape[dmd_y1:dmd_y2+1, dmd_x1:dmd_x2+1] = 0
+                    slit_regions.append([ccd_x0, ccd_x1+1, ccd_y0, ccd_y1+1])
             else:
                 print("generic aperture")
                 # 3 load the slit pattern
@@ -1050,12 +1066,12 @@ class MainPage(SAMOSFrame):
                     cy0 = ccd_y0 + good_box_y[iymin]
                     cy1 = ccd_y0 + good_box_y[iymax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = ccd_to_dmd(cx0, cy0, self.PAR.dmd_wcs)
-                    x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = ccd_to_dmd(cx0, cy1, self.PAR.dmd_wcs)  # and the higher
-                    x2, y2 = int(np.round(x2)), int(np.round(y2))
-                    slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
-                    slit_shape[x1-2:x1, y1-2:y2+1] = 1
+                    dmd_y1, dmd_x1 = ccd_to_dmd(cx0, cy0, self.PAR.dmd_wcs)
+                    dmd_y1, dmd_x1 = int(np.round(dmd_y1)), int(np.round(dmd_x1))
+                    dmd_y2, dmd_x2 = ccd_to_dmd(cx0, cy1, self.PAR.dmd_wcs)  # and the higher
+                    dmd_y2, dmd_x2 = int(np.round(dmd_y2)), int(np.round(dmd_x2))
+                    slit_shape[dmd_y1-2:dmd_y2+1, dmd_x1-2:dmd_x2+1] = 0
+                    slit_shape[dmd_y1-2:dmd_y1, dmd_x1-2:dmd_x2+1] = 1
                     slit_regions.append([cx0, cx0+1, cy0, cy0+1])
                 # paint black the horizontal columns, avoids rounding error in the pixel->dmd sub-int conversion
                 for i in np.unique(good_box_y):  # scanning multiple rows means each steps moves up along the y axis
@@ -1068,12 +1084,12 @@ class MainPage(SAMOSFrame):
                     cx0 = ccd_x0 + good_box_x[ixmin]
                     cx1 = ccd_x0 + good_box_x[ixmax]
                     # get the lower value of the column at the x position,
-                    x1, y1 = ccd_to_dmd(cx0, cy0, self.PAR.dmd_wcs)
-                    x1, y1 = int(np.round(x1)), int(np.round(y1))
-                    x2, y2 = ccd_to_dmd(cx1, cy0, self.PAR.dmd_wcs)  # and the higher
-                    x2, y2 = int(np.round(x2)), int(np.round(y2))
-                    slit_shape[x1-2:x2+1, y1-2:y2+1] = 0
-                    slit_shape[x1-2:x1, y1-2:y1] = 1
+                    dmd_y1, dmd_x1 = ccd_to_dmd(cx0, cy0, self.PAR.dmd_wcs)
+                    dmd_y1, dmd_x1 = int(np.round(dmd_y1)), int(np.round(dmd_x1))
+                    dmd_y2, dmd_x2 = ccd_to_dmd(cx1, cy0, self.PAR.dmd_wcs)  # and the higher
+                    dmd_y2, dmd_x2 = int(np.round(dmd_y2)), int(np.round(dmd_x2))
+                    slit_shape[dmd_y1-2:dmd_y2+1, dmd_x1-2:dmd_x2+1] = 0
+                    slit_shape[dmd_y1-2:dmd_y1, dmd_x1-2:dmd_x1] = 1
                     slit_regions.append([cx0, cx1+1, cy0, cy0+1])
         return slit_shape, slit_regions
 
@@ -1701,8 +1717,7 @@ class MainPage(SAMOSFrame):
             new_wcs = self.PAR.wcs.to_header()
             hdr.update(new_wcs)
             #hdul = fits.HDUList([hdul])
-            hdul.writeto(os.path.join(get_data_file("system"),'blank.fits'),overwrite=True)
-            
+            hdul.writeto(os.path.join(get_data_file("system"),'blank.fits'),overwrite=True)        
             
         self.logger.info(f"WCS Solution is: {self.PAR.wcs}")
         hdu_wcs = self.PAR.wcs.to_fits()  # creates a primaryHDU object 
@@ -2572,6 +2587,7 @@ class MainPage(SAMOSFrame):
     @check_enabled
     def show_traces(self):
         """ Show Traces """
+        """ Oct.8, 2025 We keep it for the moment"""
         # keep only the slits/boxes
         self.slits_only()
         
@@ -2620,6 +2636,18 @@ class MainPage(SAMOSFrame):
         We may call this function just to make sure that the field is clean, so
         we do not need to assume that the traces have been created
         """
+        
+        """
+        Oct.8, 2025
+        This is still called by functions around handling the slits so at the moment we keep it here, with 
+        just a change of the variables for the new show_delete method
+        """
+        # We have the variable set to True, therefore we are here to delete...
+        self.var_show_traces.set(False)
+        #change the text in the box
+        self.button_show_remove_traces.config(text = " Show Traces ")
+        """ end addition """
+        
         objects_to_remove = []
         for obj in CM.CompoundMixin.get_objects(self.canvas):
             if "trace" in obj.tag:
@@ -2943,7 +2971,7 @@ class MainPage(SAMOSFrame):
         x2 = (round(table['y'])+np.ceil(table['dy2'])).astype(int) + xoffset
         slit_shape = np.ones((1080, 2048))  # This is the size of the DC2K
         for i in table.index:
-            slit_shape[x1[i]:x2[i], y1[i]:y2[i]] = 0
+            slit_shape[x1[i]:dmd_x1[i], y1[i]:y2[i]] = 0
         self.push_slits(slit_shape)
         # Create a photoimage object of the image in the path
         image_map = Image.open(get_data_file("dmd", "current_dmd_state.png"))
@@ -2955,7 +2983,7 @@ class MainPage(SAMOSFrame):
     def save_slit_table(self):
         file = tk.filedialog.asksaveasfile(filetypes=[("csv file", ".csv")],
                                            defaultextension=".csv",
-                                           initialdir=get_data_file("dmd.scv.slits"),
+                                           initialdir=get_data_file("dmd.csv.slits"),
                                            initialfile=self.filename_regfile_RADEC[0:-4]+".csv")
         slit_shape = self.collect_slit_shape()
         pandas_slit_shape = pd.DataFrame(slit_shape)
