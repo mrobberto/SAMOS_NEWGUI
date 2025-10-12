@@ -407,7 +407,7 @@ class MainPage(SAMOSFrame):
         
         width_adjust_btn.grid(row=1, column=1, sticky=TK_STICKY_ALL)
         
-        self.force_orthonormal = self.make_db_var(tk.BooleanVar, "main_slit_force_orthonormal", False)
+        self.force_orthonormal = self.make_db_var(tk.BooleanVar, "main_slit_force_orthonormal", True)
         b = tk.Checkbutton(slit_frame, text="Force Orthonormal", variable=self.force_orthonormal, onvalue=True, offvalue=False)
         b.grid(row=2, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         b = ttk.Button(slit_frame, text="Apply to All", command=self.apply_to_all, bootstyle="success")
@@ -974,10 +974,17 @@ class MainPage(SAMOSFrame):
         
         #cleanup the canvas
         self.delete_all()
-                        
+        
+        #there is a default directory that we may want to change,
+        #se when we enter we go to the default, but then we use our last choice
+        try: 
+            self.loaded_ginga_file_path.name   
+        except:
+            self.loaded_ginga_file_path = get_data_file("regions.pixels")
+            
         reg_file = tk.filedialog.askopenfilename(
             filetypes=[("region files", "*.reg")],
-            initialdir=get_data_file("regions.pixels")
+            initialdir=self.loaded_ginga_file_path
         )
         self.loaded_ginga_file_path = Path(reg_file)
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
@@ -1028,6 +1035,7 @@ class MainPage(SAMOSFrame):
             # This function is called if a checkbox forces the slits to be Orthonormal on the DMD. 
             # This is intended to havoid having slightly diagonal slits when the position angle of the image is not exactly 
             # oriented with the celestial coordinates
+            ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
             if self.force_orthonormal.get() == 1:
                 obj.rot_deg = 0.0
                 ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
@@ -1540,7 +1548,7 @@ class MainPage(SAMOSFrame):
             self.fits_dec.set(dec)
             self.logger.info("RADEC provided by the SOAR TCS")               
         else:   
-            tk.messagebox.showinfo(title=None, message="cannot find RADEC, enter by hand")
+            tk.messagebox.showinfo(title=None, message="Where are we pointing? Enter RADEC, please.")
             return
 
         self.logger.info(f"Pointed coordinates: {ra} {dec}")
