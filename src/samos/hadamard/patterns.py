@@ -73,8 +73,10 @@ def S_matrix(order):
 
     return s_mat
 
-
-def make_S_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
+##if the spectra are disperseed on the short axis, use
+#   def make_S_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
+#otherwise, if the spectra are disperesed on the long axis, swap Y0 and X0    
+def make_S_matrix_masks(order, DMD_size, slit_width, length, Yo, Xo, folder):
     matrix = S_matrix(order) # Generate the S-matrix
     matrix_type = 'S'
 
@@ -93,11 +95,17 @@ def make_S_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
         # So the width of the slit is in the short (Y) direction, the length is in the long (X) direction
         y1, y2 = Yo - (mask_size_y // 2), Yo + (mask_size_y // 2)
         x1, x2 = Xo - (mask_size_x // 2), Xo + (mask_size_x // 2)
-
-        # For  vertical slits, spectra across the DMD
+        
         for j in range(x1, x2):    
-            DMD_mask[y1:y2 + 1, j]= row_expanded
+#            DMD_mask[y1:y2 + 1, j]= row_expanded
+        # For  spectra across the DMD
+        #    DMD_mask[y1:y2, j]= row_expanded
+        # For  spectra ALONG the DMD
+            DMD_mask[j,y1:y2]= row_expanded
+
         mask_set[:, :, i]= DMD_mask 
+        #CHECK 
+        import matplotlib.pyplot as plt   ;  plt.imshow(DMD_mask)
         mask = DMD_mask.astype(np.uint8)
         name = f"{matrix_type}{order}_mask_{slit_width}w_{i:03d}.bmp"
         imageio.imwrite(folder / name, mask)
@@ -105,7 +113,10 @@ def make_S_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
     return mask_set, matrix
 
 
-def make_H_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
+##if the spectra are disperseed on the short axis, use
+# def make_H_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
+#otherwise, if the spectra are disperesed on the long axis, swap Y0 and X0    
+def make_H_matrix_masks(order, DMD_size, slit_width, length, Yo, Xo, folder):
     matrix = hadamard(order, dtype='float64') # generate the H-matrix 
 
     mask_set_a = np.zeros((DMD_size[0], DMD_size[1], order))
@@ -137,9 +148,12 @@ def make_H_matrix_masks(order, DMD_size, slit_width, length, Xo, Yo, folder):
     
         # For  vertical slits, spectra across the DMD
         for j in range(x1, x2):    # Insert the matrices into the DMD mask array
-            DMD_mask_a[y1:y2, j] = row_a
-            DMD_mask_b[y1:y2, j] = row_b
-
+            # For  spectra across the DMD
+            #   DMD_mask_a[y1:y2, j] = row_a
+            #   DMD_mask_b[y1:y2, j] = row_b
+            # For  spectra ALONG the DMD
+            DMD_mask_a[j, y1:y2] = row_a
+            DMD_mask_b[j, y1:y2] = row_b
 
         mask_set_a[:, :, i]= DMD_mask_a
         mask_set_b[:, :, i]= DMD_mask_b 
