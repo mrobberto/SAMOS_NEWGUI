@@ -64,8 +64,9 @@ def sort_iraf_source_table(pd_iraf_sources, numcols=11):
 
 
 def fit_wcs_with_sip(sip_degree, pattern_source_df, plot_hists=True):
-    dmd_coords = pattern_source_df[['x','y']].values
-    ccd_coords = pattern_source_df[['xcentroid','ycentroid']].values
+    
+    dmd_coords = pattern_source_df[['x_c','y_c']].values  #modified to accept x_c, y_c
+    ccd_coords = pattern_source_df[['dmd_xcentroid','dmd_ycentroid']].values
 
     dmd_sky_coords = SkyCoord(dmd_coords[:,0]*u.arcsecond, dmd_coords[:,1]*u.arcsecond, unit='deg') 
     ccd_sky_coords = SkyCoord(ccd_coords[:,0]*u.arcsecond, ccd_coords[:,1]*u.arcsecond, unit='deg')

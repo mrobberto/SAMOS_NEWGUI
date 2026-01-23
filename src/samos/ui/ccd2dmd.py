@@ -90,7 +90,6 @@ class CCD2DMDPage(SAMOSFrame):
         self.tk_grid_sources_table.grid(row=8, column=0, rowspan=3, columnspan=9, sticky=TK_STICKY_ALL, padx=5, pady=5)
         self.set_enabled()
 
-
     @check_enabled
     def cursor_cb(self, event):
         if self.fits_hdu is None:
@@ -117,7 +116,7 @@ class CCD2DMDPage(SAMOSFrame):
             self.dmd_pattern_text.set(self.grid_pattern_name)
 
             self.grid_pattern_fullPath = get_data_file("dmd.csv.slits", self.grid_pattern_name)
-            dmd_table = pd.read_csv(self.grid_pattern_fullPath)
+            dmd_table = pd.read_csv(self.grid_pattern_fullPath, index_col=0)
             self.dmd_table = dmd_table
             self.loaded_image = True
         except KeyError as k:
@@ -159,42 +158,73 @@ class CCD2DMDPage(SAMOSFrame):
         # bright columns on left and right side of CCD that we don't want to be included 
         # in the starfinder.
         # set them to be the average of surrounding columns
-        upper_avg = np.average((np.average(ccd[:, 1000:1009], axis=1), np.average(ccd[:, 1020:], axis=1)), axis=0)
-        lower_avg = np.average((np.average(ccd[:, 0:20], axis=1), np.average(ccd[:, 40:50], axis=1)), axis=0)
-        for col in range(1010, 1025):
-            ccd[:, col] = upper_avg
-        for col in range(20, 40):
-            ccd[:, col] = lower_avg
+        # => range updated by Massimo on Jan 17, 2026; checked against ds9 image of 11x11x3 spot pattern.
+        right_avg = np.average((np.average(ccd[:, 1000:1009], axis=1), np.average(ccd[:, 1030:], axis=1)), axis=0)
+        left_avg = np.average((np.average(ccd[:, 0:25], axis=1), np.average(ccd[:, 50:60], axis=1)), axis=0)
+        for col in range(1010, 1029):
+            ccd[:, col] = right_avg
+        for col in range(26, 49):
+            ccd[:, col] = left_avg        
         mean_ccd, median_ccd, std_ccd = sigma_clipped_stats(ccd, sigma=4.0)
+        
+        mean_ccd_left, median_ccd_left, std_ccd_left = sigma_clipped_stats(ccd[:,:528], sigma=4.0)
+        mean_ccd_right, median_ccd_right, std_ccd_right = sigma_clipped_stats(ccd[:,529:], sigma=4.0)
+        ccd[:,:528]-=median_ccd_left
+        ccd[:,529:]-=median_ccd_right
 
-        expected_sources = self.dmd_table.shape[0]
+        expected_sources = self.dmd_table.shape[0]   # 121, typical
         xpixels, ypixels = [], []
+        #coefficients for linear relation between DMD mirrors and SISI pixels, checked vs. ds9.
+        #amazingly good centering of CCD allows for using the same linear relation in both x and y
+        #checked mr Jan 17, 2026
+        x0 = 40
+        x1 = 1040
+        y0 = 78
+        y1 = 990
+        # y = (y1-y0) * (x-x0)/(x1-x0) + y0
         for i in self.dmd_table.index.values:
             dmd_x, dmd_y = self.dmd_table.loc[i, ["x", "y"]].values
-            pix_x, pix_y = dmd_to_ccd(dmd_x, dmd_y, self.PAR.dmd_wcs)
+            # instead of existing wcs, use basic equation checked against ds9 image
+            #pix_x, pix_y = dmd_to_ccd(dmd_x, dmd_y, self.PAR.dmd_wcs)
+            pix_x = (y1-y0) * (dmd_x-x0)/(x1-x0) + y0
+            pix_y = (y1-y0) * (dmd_y-x0)/(x1-x0) + y0
             xpixels.append(pix_x)
             ypixels.append(pix_y)
 
-        xypixels = np.vstack((np.array(ypixels), np.array(xpixels))).T
+        from photutils.centroids import centroid_com, centroid_sources
+        x_init=xpixels
+        y_init=ypixels
+        x, y = centroid_sources(ccd, x_init, y_init, box_size=15,
+                                centroid_func=centroid_com)
 
+        xypixels = np.vstack((np.array(ypixels), np.array(xpixels)))  #.T
+        xypixels = np.vstack((x, y)) 
+        xypixels_pandas = pd.DataFrame(xypixels.T,columns=['x_c','y_c'])        
+        self.dmd_table = self.dmd_table.rename(columns={"x":"dmd_xcentroid","y":"dmd_ycentroid"})
+        DMD_PIX_df = pd.concat((xypixels_pandas, self.dmd_table), axis=1)
+        """
         sources_table, unsorted_sources = iraf_gridsource_find(ccd, expected_sources=expected_sources, fwhm=fwhm,
                                                                threshold=3*std_ccd)
-        iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
-        self.sources_table = sources_table.round(3)
-
-        DMD_PIX_df = pd.concat((self.dmd_table, self.sources_table), axis=1)
-        dup_ind_col_drop = DMD_PIX_df.columns.values[0]
-        DMD_PIX_df = DMD_PIX_df.drop(columns=dup_ind_col_drop)
+        #iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
+        sources_table = sources_table.round(3)
+        #self.sources_table = sources_table.rename(columns={"xcentroid":"iraf_xcentroid","ycentroid":"iraf_ycentroid"})
+        #self.dmd_table = self.dmd_table.rename(columns={"xcentroid":"dmd_xcentroid","ycentroid":"dmd_ycentroid"})
+        self.dmd_table = self.dmd_table.rename(columns={"x":"dmd_xcentroid","y":"dmd_ycentroid"})
+        
+        DMD_PIX_df = pd.concat((self.dmd_table, sources_table), axis=1)
+        """
+        # dup_ind_col_drop = DMD_PIX_df.columns.values[0]
+        # DMD_PIX_df = DMD_PIX_df.drop(columns=dup_ind_col_drop)
 
         self.DMD_PIX_df = DMD_PIX_df
         self.tk_grid_sources_table.headers(newheaders=DMD_PIX_df.columns.values, show_headers_if_not_sheet=True, redraw=True)
 
-        for row in DMD_PIX_df.itertuples():
+        for row in DMD_PIX_df.itertuples(index=False):
             self.tk_grid_sources_table.insert_row(row=row, redraw=True)
-            x_c, y_c = row.xcentroid, row.ycentroid
+            x_c, y_c = row.x_c, row.y_c
+            #x_c, y_c = row.dmd_xcentroid, row.dmd_ycentroid
             reg = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)), width=40, height=40, angle=0*u.deg)
             self.fitsimage.canvas.add(r2g(reg))
-
 
     @check_enabled
     def run_coord_transform(self):
