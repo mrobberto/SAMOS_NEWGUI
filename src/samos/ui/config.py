@@ -123,10 +123,12 @@ class ConfigPage(SAMOSFrame):
         # Initialize
         frame = ttk.LabelFrame(self.main_frame, text="Logbook", borderwidth=2)
         frame.grid(row=1, column=1, sticky=TK_STICKY_ALL, padx=3, pady=3)
-        self.init_logbook_button = ttk.Button(frame, text="Initialize Logbook", command=self.LogBookstartup)
+        self.init_logbook_button = ttk.Button(frame, text="Initialize Logbook", command=self.LogBookStartup)
         self.init_logbook_label = ttk.Label(frame, text=f"Logbook File: {self.PAR.logfile_name}")
+        self.new_logbook_button = ttk.Button(frame, text="Start New Logbook", command=self.LogBookStartup)
         if self.PAR.logfile_name.is_file():
             self.init_logbook_label.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+            self.new_logbook_button.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         else:
             self.init_logbook_button.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
@@ -171,7 +173,7 @@ class ConfigPage(SAMOSFrame):
 
 
     @check_enabled
-    def LogBookstartup(self):
+    def LogBookStartup(self):
         self.PAR.create_log_file()
         if self.PAR.logfile_name.is_file():
             self.init_logbook_button.grid_forget()

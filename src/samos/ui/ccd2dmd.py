@@ -180,8 +180,11 @@ class CCD2DMDPage(SAMOSFrame):
         sources_table, unsorted_sources = iraf_gridsource_find(ccd, expected_sources=expected_sources, fwhm=fwhm,
                                                                threshold=3*std_ccd)
         iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
-        self.sources_table = sources_table.round(3)
-
+        sources_table = sources_table.round(3)
+        #self.sources_table = sources_table.rename(columns={"xcentroid":"iraf_xcentroid","ycentroid":"iraf_ycentroid"})
+        #self.dmd_table = self.dmd_table.rename(columns={"xcentroid":"dmd_xcentroid","ycentroid":"dmd_ycentroid"})
+        self.dmd_table = self.dmd_table.rename(columns={"x":"dmd_xcentroid","y":"dmd_ycentroid"})
+        
         DMD_PIX_df = pd.concat((self.dmd_table, self.sources_table), axis=1)
         dup_ind_col_drop = DMD_PIX_df.columns.values[0]
         DMD_PIX_df = DMD_PIX_df.drop(columns=dup_ind_col_drop)
@@ -191,7 +194,8 @@ class CCD2DMDPage(SAMOSFrame):
 
         for row in DMD_PIX_df.itertuples():
             self.tk_grid_sources_table.insert_row(row=row, redraw=True)
-            x_c, y_c = row.xcentroid, row.ycentroid
+            #x_c, y_c = row.xcentroid, row.ycentroid
+            x_c, y_c = row.dmd_xcentroid, row.dmd_ycentroid
             reg = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)), width=40, height=40, angle=0*u.deg)
             self.fitsimage.canvas.add(r2g(reg))
 
@@ -217,6 +221,15 @@ class CCD2DMDPage(SAMOSFrame):
         
         # change name of previous FITS file with the coordinate transformation
         # to save it just in case recalibration went wrong.
+        
+        # Add day of saving
+        from datetime import datetime
+        # Get the current datetime
+        now = datetime.now()
+        # Format the datetime object into a string
+        formatted_date = now.strftime("%Y-%m-%d %H:%M:%S")
+        prev_Mapping_fname = str(prev_Mapping_fname)[:-5]+"_"+formatted_date+".fits"
+        
         os.rename(img_Mapping_fpath, prev_Mapping_fname)
         
         # will change this file to CONVERT/DMD_Mapping_WCS.fits once confident it works
