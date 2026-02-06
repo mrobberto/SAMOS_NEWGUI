@@ -50,18 +50,25 @@ class DMDPage(SAMOSFrame):
         # Basic Patterns
         frame = ttk.LabelFrame(button_frame, text="Basic Patterns")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
+
         w = ttk.Button(frame, text="Blackout", command=self.dmd_blackout, bootstyle="success")
         w.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
+
         w = ttk.Button(frame, text="Whiteout", command=self.dmd_whiteout, bootstyle="success")
         w.grid(row=3, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
+
         w = ttk.Button(frame, text="Checkerboard",command=self.dmd_checkerboard, bootstyle="success")
         w.grid(row=3, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
-        self.check_widgets[w] = [("condition", self, "initialized", True), ("condition", self.DMD, "extended_patterns", True)]
+#        self.check_widgets[w] = [("condition", self, "initialized", True), ("condition", self.DMD, "extended_patterns", True)]
+        #the line above was preventing the activation of the checkerboard button, so I reinstate the vanilla line.    
+        self.check_widgets[w] = [("condition", self, "initialized", True)]
+        
         w = ttk.Button(frame, text="Invert", command=self.dmd_invert, bootstyle="success")
         w.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
+        
         w = ttk.Button(frame, text="AntInvert", command=self.dmd_antinvert, bootstyle="success")
         w.grid(row=4, column=2, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
@@ -119,7 +126,9 @@ class DMDPage(SAMOSFrame):
         self.canvas = tk.Canvas(display_frame, width=300, height=270, bg="dark gray")
         self.canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
+        """ 
         # Hadamard Sub-frame
+        """
         self.hadamard_conf_frame = HadamardGenerator(self, hadamard_frame, **kwargs)
         self.hadamard_conf_frame.grid(row=0, column=0, rowspan=4, sticky=TK_STICKY_ALL)
 

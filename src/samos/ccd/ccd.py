@@ -10,6 +10,7 @@ from time import sleep, time
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 import xml.dom.minidom
+from astropy.io import fits
 
 
 class CCD():
@@ -259,7 +260,7 @@ class CCD():
         timeReceived = time()
         self.logger.info("Read {} bytes in {:.3f} seconds".format(len(data), timeReceived - timeRequested))
         read_bytes = len(data)
-        
+
         # write to file
         # 1) the last file is always saved as newimage.fit, and handled by ginga
         self.write_exposure(self.PAR.QL_images / "newimage.fits", data)
@@ -280,6 +281,34 @@ class CCD():
         with open(file_name, "wb") as out_file:
             out_file.write(data)
         self.convertSIlly(file_name, file_name)
+        self.fits_header_manager(file_name)
+
+    def fits_header_manager(self, input_file):
+        """
+        fix the header received by SI camera withg the stuff we wmay want to save in the _QL file
+        """
+        with fits.open(input_file, mode="update") as fits_file:
+            fits_header = fits_file[0].header
+            self._del_header_item(fits_header, "N_PARAM")
+            self._del_header_item(fits_header, "PARAM1")
+            fits_header.rename_keyword("INSTRUME", "CAMERA")
+            for i in range(4, 30):
+                self._del_header_item(fits_header, f"PARAM{i}")
+            fits_header.rename_keyword("PARAM30", "SIMODEL")
+            fits_header.rename_keyword("PARAM31", "SISERNR")
+            for i in range(32, 56):
+                self._del_header_item(fits_header, f"PARAM{i}")
+            fits_header.rename_keyword("PARAM56", "CCDTEMP")
+            fits_header.rename_keyword("PARAM57", "BKPTEMP")
+            self._del_header_item(fits_header, "PARAM58")
+            self._del_header_item(fits_header, "PARAM59")
+            fits_header.rename_keyword("PARAM60", "COOLER")
+            fits_header["INSTRUME"] = "SAMOS"
+
+
+    def _del_header_item(self, header, keyword):
+        if keyword in header:
+            del header[keyword]
 
 
     EXP_MAPPINGS = {

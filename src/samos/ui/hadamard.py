@@ -1,6 +1,7 @@
 """
 SAMOS Hadamard Generation tk Frame Class
 """
+import numpy as np
 from astropy.io import fits
 from astropy import units as u
 from ginga.AstroImage import AstroImage
@@ -10,14 +11,19 @@ from ginga import colors
 from ginga.canvas import CompoundMixin as CM
 from ginga.canvas.CanvasObject import get_canvas_types
 from ginga.tkw.ImageViewTk import CanvasView
+from ginga.util.loader import load_data
 from regions import PixCoord, CirclePixelRegion, RectanglePixelRegion, RectangleSkyRegion, Regions
 
+
+from ginga.util import iqcalc
 import tkinter as tk
 import ttkbootstrap as ttk
 from tkinter.filedialog import askopenfilename
 
 from samos.utilities import get_data_file, get_temporary_dir
 from samos.utilities.constants import *
+from samos.utilities.utils import ccd_to_dmd, dmd_to_ccd
+from samos.ui.main_page import MainPage
 
 from .common_frame import SAMOSFrame
 from .gs_query_frame import GSQueryFrame
@@ -78,7 +84,7 @@ class HadamardPage(SAMOSFrame):
         frame = ttk.LabelFrame(left_frame, text="Image Controls")
         frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
         frame.grid_columnconfigure(0, weight=1)
-        w = ttk.Button(frame, text="Select Hadamard Centre", command=self.set_hadamard)
+        w = ttk.Button(frame, text="Select Hadamard Centre", command=self.set_hadamard_now)
         w.grid(row=0, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         w = ttk.Button(frame, text="Clear Display", command=self.clear_all)
         w.grid(row=1, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
@@ -87,8 +93,9 @@ class HadamardPage(SAMOSFrame):
         w = ttk.Button(frame, text="Load FITS File", command=self.load_fits)
         w.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
+        """
         # GINGA DISPLAY
-        frame = ttk.LabelFrame(main_frame, text="Image", relief=tk.RAISED)
+        frame = ttk.LabelFrame(main_frame, text="Display", relief=tk.RAISED)
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         frame.rowconfigure(0, minsize=800, weight=1)
         frame.columnconfigure(0, minsize=800, weight=1)
@@ -121,6 +128,37 @@ class HadamardPage(SAMOSFrame):
         self.readout = ttk.Label(frame, text='')
         self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         frame.grid_rowconfigure(1, weight=0)
+        """
+        # FITS file markup canvas
+        canvas = tk.Canvas(self.main_frame, bg="grey", width=528, height=516)
+        canvas.grid(row=0, column=1, rowspan=8, columnspan=8, sticky=TK_STICKY_ALL, padx=5, pady=5)
+        fi = CanvasView(self.logger)
+        fi.set_widget(canvas)
+        fi.enable_autocuts('on')
+        fi.set_autocut_params('zscale')
+        #fi.set_callback('cursor-changed', self.cursor_cb)
+        fi.enable_autozoom('on')
+        fi.set_enter_focus(True)
+        fi.set_bg(0.2, 0.2, 0.2)
+        fi.ui_set_active(True)
+        fi.show_pan_mark(True)
+        fi.show_mode_indicator(True, corner='ur')
+        self.canvas = self.canvas_types.DrawingCanvas()
+        self.canvas = self.canvas_types.DrawingCanvas()
+        self.canvas.enable_draw(True)
+        self.canvas.enable_edit(True)
+        #self.canvas.set_drawtype(self.draw_type.get(), color='red')
+        self.canvas.register_for_cursor_drawing(fi)
+        self.canvas.add_callback('draw-event', self.draw_cb)
+        self.canvas.add_callback('cursor-up', self.set_hadamard_now)
+        self.canvas.set_draw_mode('draw')
+        self.canvas.ui_set_active(True)
+        fi.get_canvas().add(self.canvas)
+        self.drawtypes = self.canvas.get_drawtypes()
+        self.drawtypes.sort()
+        self.fits_image = fi
+        bd = fi.get_bindings()
+        bd.enable_all(True)
 
         self.main_frame.grid_rowconfigure(0, weight=1)
         self.main_frame.grid_columnconfigure(0, weight=0)
@@ -131,16 +169,60 @@ class HadamardPage(SAMOSFrame):
         """
         Load RA and DEC values from current image centre WCS
         """
-        pass
+        loaded_file = tk.filedialog.askopenfilename(
+            title="Select a File",
+            filetypes=(("fits files", "*.fits"), ("all files","*.*"))
+        )
+        self.fits_image_ql  = loaded_file
+        self.Display(loaded_file)        
+        return
+        #pass
 
+    def Display(self, imagefile):
+        """
+        Display the raw image arrived  from SAMI, still with the original Spectral Instruments FITS header""
 
-    def set_hadamard(self):
+        Parameters
+        ----------
+        imagefile : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.AstroImage = load_data(imagefile, logger=self.logger)
+        self.fits_image.set_image(self.AstroImage)
+        self.fits_image_ql = imagefile
+        self.toggle_compass(show=False)
+        
+        
+    def set_hadamard_now(self, canvas, PointEvent, x0, y0):
         """
         Set Hadamard X/Y by clicking on the canvas
         """
+        self.logger.info(f"User inspecting target on canvas/n")
+        
+        #grab the pixel coordinates of the click
+        coords = PixCoord(x0,y0)
+        
+        #create a region centered on that coordinates
+        region = RectanglePixelRegion(center=coords, width=21, height=21, angle=0*u.deg)
+        
+        #conver to ginga object (type box)
+        obj = r2g(region)
+        
+        #add to the canvas
+        canvas.add(obj)
+        """
         self.logger.info("Selecting Hadamard Centre")
         self.select_mode = True
-
+        self.coords = PixCoord(x0,y0)
+        print(self.coords)
+        self.hadamard_conf_frame.slit_xc = self.coords[0]
+        self.hadamard_conf_frame.slit_yc = self.coords[1]
+        """
 
     def clear_all(self):
         """
@@ -196,9 +278,41 @@ class HadamardPage(SAMOSFrame):
         self.table_full = self.catalog.table
         self.table_full.pprint_include_names = ('id', 'ra', 'dec', 'star_mag')
 
+    def cursor_cb(self, viewer, button, data_x, data_y):
+        """
+        This gets called when the data position relative to the cursor changes.
+        """
+        # Start by checking if there's even an image to look at.
+        #if viewer.get_image() is None:
+        #    return
+
+        # Get the value under the data coordinates
+        try:
+            # We report the value across the pixel, even though the coords
+            # change halfway across the pixel
+            value = viewer.get_data(int(data_x + viewer.data_off), int(data_y + viewer.data_off))
+            value = f"{value:8g}"
+        except Exception as e:
+            value = "Invalid"
+
+        fits_x = int(np.floor(data_x) + 1)
+        fits_y = int(np.floor(data_y) + 1)
+        text = f"FITS: ({fits_x:4d}, {fits_y:4d}). Value = {value}"
+  
+
+
+        dmd_x, dmd_y = ccd_to_dmd(fits_x, fits_y, self.PAR.dmd_wcs)
+        dmd_x = int(np.floor(dmd_x))
+        dmd_y = int(np.floor(dmd_y))
+        text = f"DMD: ({dmd_x:7d}, {dmd_y:7d}). " + text
+        print(text)
+
+
 
     def draw_cb(self, canvas, tag):
         self.logger.info(f"User drew {tag} on {canvas}")
+        self.canvas.set_draw_mode("draw")
+        
         obj = canvas.get_object_by_tag(tag)
         if not self.select_mode:
             canvas.delete_object(obj)

@@ -116,16 +116,16 @@ class PCM():
             self.positions["FW1"][name] = data['Counts'][i]
         for i, name in enumerate(["B1", "B2", "B3", "B4", "B5", "B6"]):
             self.positions["FW2"][name] = data['Counts'][i+6]
-        self.positions["GR_A"]["GR_H1"] = data['Counts'][12]
+        self.positions["GR_A"]["GR_AH"] = data['Counts'][12]
+        self.positions["GR_B"]["GR_BH"] = data['Counts'][13]
         self.positions["GR_A"]["GR_A1"] = data['Counts'][14]
-        self.positions["GR_A"]["GR_A2"] = data['Counts'][16]
-        self.positions["GR_B"]["GR_H2"] = data['Counts'][13]
-        self.positions["GR_B"]["GR_B1"] = data['Counts'][15]
+        self.positions["GR_A"]["GR_A2"] = data['Counts'][15]  #swaopoed was 16
+        self.positions["GR_B"]["GR_B1"] = data['Counts'][16]  #swapped, was 15
         self.positions["GR_B"]["GR_B2"] = data['Counts'][17]
         self.home["FW1"] = self.positions["FW1"]["A4"]
         self.home["FW2"] = self.positions["FW2"]["B4"]
-        self.home["GR_A"] = self.positions["GR_A"]["GR_H1"]
-        self.home["GR_B"] = self.positions["GR_B"]["GR_H2"]
+        self.home["GR_A"] = self.positions["GR_A"]["GR_AH"]
+        self.home["GR_B"] = self.positions["GR_B"]["GR_BH"]
 
 
     def initialize_motors(self):
@@ -443,32 +443,32 @@ class PCM():
         """
         self.logger.info("\tMoving grism to {}".format(position))
         results = []
-        if position in ["GR_H1", "GR_A1", "GR_A2"]:
+        if position in ["GR_AH", "GR_A1", "GR_A2"]:
             # Moving grism A away from home. Must home grism B
             if self.get_wheel_position("GR_B") != self.home["GR_B"]:
                 if not self.got_stop:
                     self.logger.info("\tMoving grism B home.")
-                    results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", "GR_H2"))
+                    results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", "GR_BH"))
             # Move Grism A to position
             if not self.got_stop:
                 self.logger.info(f"\tMoving grism A to {position}")
                 results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", position))
-        elif position in ["GR_H2", "GR_B1", "GR_B2"]:
+        elif position in ["GR_BH", "GR_B1", "GR_B2"]:
             # Moving grism B away from home. Must home grism A
             if self.get_wheel_position("GR_A") != self.home["GR_A"]:
                 if not self.got_stop:
                     self.logger.info("\tMoving grism A home.")
-                    results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", "GR_H1"))
+                    results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_A", "GR_AH"))
             # Move Grism B to position
             if not self.got_stop:
                 self.logger.info(f"\tMoving grism B to {position}")
                 results.append(self._move_wheel(self.positions, self.PCM_COMMANDS["move"], "GR_B", position))
         elif position.lower() in self.GRISM_RAIL_MAPPINGS:
             pos_a, pos_b = self.GRISM_RAIL_MAPPINGS[position.lower()]
-            if pos_a != "GR_H1":
+            if pos_a != "GR_AH":
                 # Treat as a grism A move
                 results = self.move_grism_rails(pos_a)
-            elif pos_b != "GR_H2":
+            elif pos_b != "GR_BH":
                 # Treat as a grism b move
                 results = self.move_grism_rails(pos_b)
             else:
@@ -620,11 +620,11 @@ class PCM():
     }
     
     GRISM_RAIL_MAPPINGS = {
-        "grating home": ("GR_H1", "GR_H2"),
-        "low-red": ("GR_A1", "GR_H2"),
-        "low-blue": ("GR_A2", "GR_H2"),
-        "h-beta": ("GR_H1", "GR_B1"),
-        "h-alpha": ("GR_H1", "GR_B2")
+        "grating home": ("GR_AH", "GR_BH"),
+        "low-red": ("GR_A1", "GR_BH"),
+        "low-blue": ("GR_A2", "GR_BH"),
+        "h-beta": ("GR_AH", "GR_B1"),
+        "h-alpha": ("GR_AH", "GR_B2")
     }
     
     PCM_COMMANDS = {
@@ -645,10 +645,10 @@ class PCM():
             "B4": "2e4R",
             "B5": "2e5R",
             "B6": "2e6R",
-            "GR_H1": "3e0R",
+            "GR_AH": "3e0R",
             "GR_A1": "3e1R",
             "GR_A2": "3e2R",
-            "GR_H2": "4e0R",
+            "GR_BH": "4e0R",
             "GR_B1": "4e1R",
             "GR_B2": "4e2R",
             "template": r"(\d)e(\d)R",
