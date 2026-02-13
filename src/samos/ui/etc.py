@@ -1,5 +1,9 @@
 """
 SAMOS ETC tk Frame Class
+
+2025.12.12: remove the unit micron adding .value        
+        self.lambda_min.set(self.ETC.spec_struct["wave"][0].value)
+        self.lambda_max.set(self.ETC.spec_struct["wave"][-1].value)
 """
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
@@ -239,6 +243,7 @@ class ETCPage(SAMOSFrame):
         frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         right_frame.columnconfigure(0, weight=1)
         right_frame.rowconfigure(0, weight=1)
+        
         # Header text
         self.header_text = tk.StringVar(self, "")
         t = tk.Label(frame, textvariable=self.header_text)
@@ -248,6 +253,7 @@ class ETCPage(SAMOSFrame):
         self.plot_frame.grid(row=1, column=0, columnspan=3, sticky=TK_STICKY_ALL)
         self.plot_frame.rowconfigure(0, minsize=500, weight=1)
         self.plot_frame.columnconfigure(0, minsize=250, weight=1)
+#test        self.plot_frame.place(x=4, y=120, anchor="nw", width=220, height=110)
         # Results View
         self.view = ttk.Treeview(frame)
         self.view.grid(row=2, column=0, columnspan=3, sticky=TK_STICKY_ALL)
@@ -330,6 +336,12 @@ class ETCPage(SAMOSFrame):
         ttk.Button(frame, text="Save", command=self.print_to_file).grid(row=2, column=0, sticky=TK_STICKY_ALL)
         self.set_enabled()
 
+        ##UFFER TO KEEP THE WINDOW SMALL
+       # buffer_frame = ttk.LabelFrame(frame, text="SNothing here")
+       # buffer_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
+       # ttk.Label(buffer_frame, text="text\n\n\n\n\n\n\n\nend").grid(row=0, column=0, sticky=TK_STICKY_ALL)
+        
+        
 
     def refresh_plot(self):
         if self.plot_type.get() == "plot_obs":
@@ -437,8 +449,8 @@ class ETCPage(SAMOSFrame):
             view_values = (summary["quant"][i], summary["value"][i], summary["unit"][i])
             self.view.insert(parent='', index='end', iid=i, text='', values=view_values)
 
-        self.lambda_min.set(self.ETC.spec_struct["wave"][0])
-        self.lambda_max.set(self.ETC.spec_struct["wave"][-1])
+        self.lambda_min.set(self.ETC.spec_struct["wave"][0].value)
+        self.lambda_max.set(self.ETC.spec_struct["wave"][-1].value)
         
         if self.plot_type.get() == "plot_obs":
             self.plot_obs()
@@ -448,8 +460,9 @@ class ETCPage(SAMOSFrame):
 
     def config_mag_type(self):
         if self.spec_mag_units.get() == 'AB':
-            self.spec_mag_band.set(self.ab_options[2])
             self.mag_bands.set_menu(self.spec_mag_band, *self.ab_options)
+            self.spec_mag_band.set(self.ab_options[2])
         else:
-            self.spec_mag_band.set(self.vega_options[2])
             self.mag_bands.set_menu(self.spec_mag_band, *self.vega_options)
+            self.spec_mag_band.set(self.vega_options[2])
+            

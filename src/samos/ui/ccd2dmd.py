@@ -202,27 +202,36 @@ class CCD2DMDPage(SAMOSFrame):
         xypixels_pandas = pd.DataFrame(xypixels.T,columns=['x_c','y_c'])        
         self.dmd_table = self.dmd_table.rename(columns={"x":"dmd_xcentroid","y":"dmd_ycentroid"})
         DMD_PIX_df = pd.concat((xypixels_pandas, self.dmd_table), axis=1)
-        """
+        
         sources_table, unsorted_sources = iraf_gridsource_find(ccd, expected_sources=expected_sources, fwhm=fwhm,
                                                                threshold=3*std_ccd)
-        #iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
+        iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
         sources_table = sources_table.round(3)
         #self.sources_table = sources_table.rename(columns={"xcentroid":"iraf_xcentroid","ycentroid":"iraf_ycentroid"})
         #self.dmd_table = self.dmd_table.rename(columns={"xcentroid":"dmd_xcentroid","ycentroid":"dmd_ycentroid"})
         self.dmd_table = self.dmd_table.rename(columns={"x":"dmd_xcentroid","y":"dmd_ycentroid"})
         
         DMD_PIX_df = pd.concat((self.dmd_table, sources_table), axis=1)
-        """
-        # dup_ind_col_drop = DMD_PIX_df.columns.values[0]
-        # DMD_PIX_df = DMD_PIX_df.drop(columns=dup_ind_col_drop)
+        
+        dup_ind_col_drop = DMD_PIX_df.columns.values[0]
+        DMD_PIX_df = DMD_PIX_df.drop(columns=dup_ind_col_drop)
+        iraf_positions = np.transpose((sources_table['xcentroid'], sources_table['ycentroid']))
+        sources_table = sources_table.round(3)
+        #self.sources_table = sources_table.rename(columns={"xcentroid":"iraf_xcentroid","ycentroid":"iraf_ycentroid"})
+        #self.dmd_table = self.dmd_table.rename(columns={"xcentroid":"dmd_xcentroid","ycentroid":"dmd_ycentroid"})
+        self.dmd_table = self.dmd_table.rename(columns={"x":"dmd_xcentroid","y":"dmd_ycentroid"})
+        
+        DMD_PIX_df = pd.concat((self.dmd_table, self.sources_table), axis=1)
+        dup_ind_col_drop = DMD_PIX_df.columns.values[0]
+        DMD_PIX_df = DMD_PIX_df.drop(columns=dup_ind_col_drop)
 
         self.DMD_PIX_df = DMD_PIX_df
         self.tk_grid_sources_table.headers(newheaders=DMD_PIX_df.columns.values, show_headers_if_not_sheet=True, redraw=True)
 
         for row in DMD_PIX_df.itertuples(index=False):
             self.tk_grid_sources_table.insert_row(row=row, redraw=True)
-            x_c, y_c = row.x_c, row.y_c
-            #x_c, y_c = row.dmd_xcentroid, row.dmd_ycentroid
+            #x_c, y_c = row.x_c, row.y_c
+            x_c, y_c = row.dmd_xcentroid, row.dmd_ycentroid
             reg = RectanglePixelRegion(center=PixCoord(x=round(x_c), y=round(y_c)), width=40, height=40, angle=0*u.deg)
             self.fitsimage.canvas.add(r2g(reg))
 

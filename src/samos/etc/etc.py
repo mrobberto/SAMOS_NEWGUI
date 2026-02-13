@@ -1,6 +1,14 @@
 """
 This file contains the SAMOS ETC computation (as separate from the ETC UI tab which is
 located at samos.ui.etc).
+
+2025.12.12: ttk.messgebox -> tk.messagebox
+2025.12.12: corrected various dimensional definitions
+2025.12.14: corrected             
+            SAMOS_throughput_Wave = self.samos_highblue_wave #corrected
+            SAMOS_throughput_Flux = self.samos_highblue_flue #corrected
+
+
 """
 from matplotlib import pyplot as plt
 import numpy as np
@@ -58,6 +66,9 @@ class ETC:
 
 
     def read_AB_filters(self):
+        #this routine runs if we are using AB mags, not Vega mags
+        if self.params["spec_mag_units"] == "Vega":
+            return
         filter_path = get_data_file("etc", "filters")
         AB_filter = self.params["spec_mag_band"]
         if AB_filter  == 'u_SDSS':
@@ -87,7 +98,7 @@ class ETC:
             df = pd.read_csv(self.spec_path, delimiter='\s+', header=None)
             df = df.to_numpy()
             wl_A = df[:,0]
-            userspec_wl_um =  ((df[:,0]).flatten() / 10000.0) * u.um
+            userspec_wl_um =  ((df[:,0]).flatten() / (10000.0 * u.Angstrom/u.um)) * u.um
             userspec_Flam =  ((df[:,1]).flatten()) * u.erg / u.s / (u.cm * u.cm) / u.angstrom
             userspec_Fnu = userspec_Flam * c.c / (userspec_wl_um.to(u.angstrom) * userspec_wl_um.to(u.angstrom))
         elif "BT-Settl" in str(self.spec_path):
@@ -129,7 +140,7 @@ class ETC:
         
         beta is the Moffat parameter, FWHM is in arcseconds.
         """
-        FWHM = FWHM.to(u.arcsec).value
+        FWHM = FWHM.to(u.arcsec).value  # [km / s]
         xc = 512
         yc = 512
         rows, cols = (xc, yc)
@@ -299,9 +310,10 @@ class ETC:
             x = wave_grid
             y = signalSpecObs / max(signalSpecObs)
 
-        fig = plt.Figure(figsize=(6, 6))
+        fig = plt.Figure(figsize=(1, 3))
+#        fig = plt.Figure(figsize=(6, 6))
         a = fig.add_subplot(111)
-        fig.subplots_adjust(top=0.98, bottom=0.18, left=0.12, right=0.86) 
+        fig.subplots_adjust(top=0.98, bottom=0.18, left=0.12, right=0.80) 
         a.plot(x[index], y[index], color='white')
         a.axis(xmin=xrange[0].value, xmax=xrange[1].value)
         a.set_xlabel("Wavelength (micron)", fontsize=12)
@@ -318,7 +330,7 @@ class ETC:
         # Plot signal
         a.plot(x[index], signalSpecObs[index] / (2  *max(signalSpecObs[index])), 'b-', label='science')
 
-        a.legend(bbox_to_anchor=(0.7, 0.97), loc='upper left', borderaxespad=0.02)
+        a.legend(bbox_to_anchor=(0.7, 0.97), loc='upper left', borderaxespad=0.02,prop={'size': 6})
 
         a2 = a.twinx()
         a2.set_ylabel('photons/pixel')
@@ -353,13 +365,18 @@ class ETC:
         lineF = struct['line_flux']
         line_width = struct["line_width"]
 
-        fig = plt.Figure(figsize=(6,6))
+        fig = plt.Figure(figsize=(1,3))
+#        fig = plt.Figure(figsize=(6,6))
         host = fig.add_subplot(111)
-        fig.subplots_adjust(top=0.98, bottom=0.18, left=0.12, right=0.86) 
+        fig.subplots_adjust(top=0.98, bottom=0.18, left=0.12, right=0.80) 
         par1 = host.twinx()
-        host.set_xlim( (x[index])[0], (x[index])[-1] ) 
-        host.set_ylim(0, 1.3 * max(snSpecObs))
-        par1.set_ylim(0, 2 * max(signalSpecObs[index]))
+        
+#        host.set_xlim( (x[index])[0], (x[index])[-1] ) 
+        index = np.where(wave_grid > 0)
+        
+        host.set_xlim( (wave_grid[index])[0].value, (wave_grid[index])[-1].value )         
+        host.set_ylim(0, 1.3 * max(snSpecObs.value))
+        par1.set_ylim(0, 2 * max(signalSpecObs[index]).value)
 
         host.set_xlabel("Wavelength (micron)", fontsize=12)
         host.set_ylabel("S/N per pixel")
@@ -424,7 +441,7 @@ class ETC:
         #          1% non linearity 26K ADU= 55900 electrons
         #          5% non linearity 37K ADUs = 79550 e-
         #          saturation 43K ADUs = 92450 e-
-        sat_limit = 92450       #to be revised
+        sat_limit = 92450 * u.electron / u.pixel      #to be revised
 
         # 1. Throughput: 
         # 1.1 Mirror coating
@@ -445,8 +462,8 @@ class ETC:
             SAMOS_throughput_Wave = self.samos_highred_wave
             SAMOS_throughput_Flux = self.samos_highred_flux     
         elif band == "High Blue":
-            SAMOS_throughput_Wave = self.samos_highred_wave
-            SAMOS_throughput_Flux = self.samos_highred_flux     
+            SAMOS_throughput_Wave = self.samos_highblue_wave #corrected
+            SAMOS_throughput_Flux = self.samos_highblue_flux #corrected
 
         filt_wave = SAMOS_throughput_Wave.to(u.um)
         filt = SAMOS_throughput_Flux 
@@ -455,27 +472,39 @@ class ETC:
         # conversions for J,H,Ks from Blanton et al 2005
         # K from ccs
         # Y from CFHT WIRCam
-        if ( (self.params["flux_mode"] == 'magnitude') and (self.params["spec_mag_units"] == "Vega")):                                                                            
+        if ( (self.params["flux_mode"] == 'magnitude') and (self.params["spec_mag_units"] == "Vega")):     
+            mag = mag.value                                                                       
             if Vega_band == 'U': 
                 mag=mag+0.79
+                mag =mag * u.mag
             elif Vega_band == 'B':
                 mag=mag-0.09 
+                mag =mag * u.mag
             elif Vega_band == 'V':
                 mag=mag+0.02 
+                mag =mag * u.mag
             elif Vega_band == 'R':
                 mag=mag+0.21 
+                mag =mag * u.mag
             elif Vega_band == 'I':
                 mag=mag+0.45
+                mag =mag * u.mag
             elif Vega_band== 'Y': 
                 mag=mag+0.66
+                mag =mag * u.mag
             elif Vega_band == 'J':
                 mag=mag+0.91 
+                mag =mag * u.mag
             elif Vega_band == 'H':
                 mag=mag+1.39 
+                mag =mag * u.mag
             elif Vega_band == 'K':
-                mag=mag+1.95 
+                mag=mag+1.95
+                mag =mag * u.mag
             elif Vega_band == 'Ks':
                 mag=mag+1.85
+                mag =mag * u.mag
+
 
         # CONSTANTS
         # the speed of light in cm/s
@@ -509,8 +538,8 @@ class ETC:
         tot_Npix = 4096 * u.pix
 
         #Detector readnoise in electrons/pix CDS (correlated double sampling)
-        det_RN = 5. * u.electron / u.pix  # SAMI, TBC
-
+        det_RN = 3.8 * u.electron / u.pix  # SAMI, see https://iopscience.iop.org/article/10.1088/1538-3873/128/970/125003/pdf
+        
         #number of elements
         Nelement = 1  # superseeded by SAMOS throughput files.
     
@@ -569,7 +598,7 @@ class ETC:
 #             "lambda": 2.2, 
 #             "background": 16, 
 #             "f_not": np.log10(3.8)-7, 
-            "dark": 0.005 * u.electron / (u.s * u.pix),
+            "dark": 0.00055 * u.electron / (u.s * u.pix), # 2 e/hr, see https://www.teledynespaceimaging.com/en-us/Products_/Documents/ccd-datasheets/CCD231-84%20BSI%20Datasheet%20(v12).pdf
 #             "rt": 3620.0*slit_width, 
 #             "SMRef":1.00 
             "disp": (7000.-5988.) * u.angstrom / (2876.0 * u.pix),  # dispersion [angstrom/px]
@@ -588,7 +617,7 @@ class ETC:
 #             "lambda": 1.65, 
 #             "background": 16.6, 
 #             "f_not": np.log10(1.08)-6, 
-            "dark": 0.005 * u.electron / (u.s * u.pix),
+            "dark": 0.00055 * u.electron / (u.s * u.pix), # 2 e/hr, see https://www.teledynespaceimaging.com/en-us/Products_/Documents/ccd-datasheets/CCD231-84%20BSI%20Datasheet%20(v12).pdf
 #             "rt": 3660.0*slit_width, 
 #             "SMRef": 1.00
             "disp":  (6000.-4000.) * u.angstrom / (2875.0 * u.pix),  # dispersion [angstrom/px]
@@ -607,7 +636,7 @@ class ETC:
 #             "lambda": 1.25, 
 #             "background": 16.8, 
 #             "f_not": np.log10(2.90)-6, 
-            "dark": 0.005 * u.electron / (u.s * u.pix),
+            "dark": 0.00055 * u.electron / (u.s * u.pix), # 2 e/hr, see https://www.teledynespaceimaging.com/en-us/Products_/Documents/ccd-datasheets/CCD231-84%20BSI%20Datasheet%20(v12).pdf
 #             "rt":3310.0*slit_width, 
 #             "SMRef": 1.00
             "disp":(5139.-4504.) * u.angstrom / (2876.0 * u.pix),  # dispersion [angstrom/px]
@@ -626,7 +655,7 @@ class ETC:
 #             "lambda": 1.05, 
 #             "background": 17.3, 
 #             "f_not": np.log10(7.45)-6, 
-            "dark": 0.005 * u.electron / (u.s * u.pix),
+            "dark": 0.00055 * u.electron / (u.s * u.pix), # 2 e/hr, see https://www.teledynespaceimaging.com/en-us/Products_/Documents/ccd-datasheets/CCD231-84%20BSI%20Datasheet%20(v12).pdf
 #             "rt": 3380.0*slit_width, 
 #             "SMRef": 1.00 
             "disp": (9500.-6000.) * u.angstrom / (2874.0 * u.pix),  # dispersion [angstrom/px]
@@ -644,7 +673,7 @@ class ETC:
             stat=HighRedstat
 
         # figure out the THROUGHPUT
-        tp_wave = SAMOS_throughput_Wave 
+        tp_wave = SAMOS_throughput_Wave    # [nm]
         throughput = SAMOS_throughput_Flux 
 
         # number of Keck Mirrors (Primary and Secondary)
@@ -653,17 +682,17 @@ class ETC:
         # the total throughput is the instrument throughput times the reflectance of the 
         # keck primary and secondary
         #    throughput=throughput*stat["SMRef"]**(NKmir)
-        th_SOAR_Wave = Al_reflectivity_Wave 
+        th_SOAR_Wave = Al_reflectivity_Wave # [um]
         th_SOAR_Flux = Al_reflectivity_Flux**(N_SOAR_mirrors)
 
-        # real FWHM resolution
+        # real FWHM Resolving Power R
         R = stat["rt"]/slit_width
 
         # slit width in pixels along the dispersion direction
-        swp = slit_width / pix_disp
+        #swp = slit_width/(0.17 * u.arcsec) *u.pixel # ERROR slit_width / pix_disp
 
         # spectral coverage in micron)
-        cov = tot_Npix * (stat["disp"].to(u.um / u.pix))
+        #cov = tot_Npix * (stat["disp"].to(u.um / u.pix))
 
         # Using a specific line flux
         if self.params["flux_mode"] == 'flux':
@@ -697,6 +726,10 @@ class ETC:
         # a tighter selection of the indexes with high throuhgput for the S/N
         filt_index = np.where(fltSpecObs > 0.05)
         wave_grid = bandpass_degrade["lam"][band_index]
+
+        #Number of Resolution Elements
+        Nr_ResEl = (wave_grid[-1]-wave_grid[0])/res #  e.g. 2483 resolution elements for 0.36"slits
+        
 
         th_SOAR_degrade = self.degrade_resolution(wavelengths=th_SOAR_Wave, flux=th_SOAR_Flux, center_wave=stat["lambda"],
                                                   spec_res=R, disp=stat["disp"], px_tot=tot_Npix)
@@ -733,8 +766,9 @@ class ETC:
         sam_throughput = np.full(len(band_index), self.sam_throughput)
 
         # Final THROGHPUT    
-        # Atmosphere x SOAR Telescope x SAM-AO x SAMOS x SAMI    
-        tpSpecObs = tranSpecObs * th_SOAR_degrade_Flux * sam_throughput * tpSpecObs * SAMISpecObs
+        # Atmosphere x SOAR Telescope x SAM-AO x SAMOS #x SAMI
+        # => SAMI is included in the calculations made by Jack in SAMOS_throughput_20210608.xlsx
+        tpSpecObs = tranSpecObs * th_SOAR_degrade_Flux * sam_throughput * tpSpecObs #* SAMISpecObs
 
         # Using a specific line flux
         if self.params["flux_mode"] == 'flux':
@@ -786,7 +820,7 @@ class ETC:
             sig_rateSpecObs = sig_rateSpecObs * slit_loss
 
             # the number of pixels in the spectral direction
-            nPixSpec = (line_width * 10000.0) / stat["disp"]
+            nPixSpec = (line_width * (10000.0 * u.Angstrom/u.um)) / stat["disp"]
 
             # the spatial pixel scale
             nPixSpatial = theta / pix_scale
@@ -819,7 +853,7 @@ class ETC:
                     warning += "correct format is erg/s/cm2 in two-column format with a space "
                     warning += "or comma as the delimiter. Also please check that you have "
                     warning += "chosen the correct wavelength units."
-                    ttk.messagebox.showarning(title='Check spectrum', message=warning.format(self.source_filename, band))
+                    k.messagebox.showarning(title='Check spectrum', message=warning.format(self.source_filename, band))
 
                 # convolve with the resolution of mosfire
                 userSig_degrade = self.degrade_resolution(wavelengths=self.user_Wave, flux=self.user_Flux, 
@@ -868,13 +902,17 @@ class ETC:
                 # covert to photons: phot/sec/micron = fnu * AT / lam / h
                 # flux hitting the primary in phot/sec/micron (if the earth had no atmosphere)
                 flux_value = 10.**(-0.4 * (mag.value + f_nu_AB))*(u.erg / u.s / (u.cm * u.cm) / u.Hz)
-                signal_spec = ((flux_value * AT / (c.h * wave_grid))).to(1 / u.s / u.um)
+                #ERROR corrected
+                #signal_spec = ((flux_value * AT / (c.h * wave_grid))).to(1 / u.s / u.um)
+                signal_spec = ((flux_value * AT / (c.h.to(u.erg * u.s) * wave_grid))).to(1 / u.s / u.um)
+                
 
             # multiply by the atmospheric transparency
             signal_spec = signal_spec * tranSpecObs
 
             # now put it through the throughput of the telescope (phot/sec/micron)
             sig_rateSpecObs = signal_spec * tpSpecObs
+            
 
             # SLIT LOSSES
             Nslit_X = round((self.params["slit"] / (0.1667*(u.arcsec / u.pix))).value) * u.pix
@@ -884,10 +922,10 @@ class ETC:
             sig_rateSpecObs = sig_rateSpecObs * slit_loss
 
             # now for phot/sec/pix multiply by micron/pix
-            sig_rateSpecObs = sig_rateSpecObs * (stat["disp"] / 10000.0)
+            sig_rateSpecObs = sig_rateSpecObs * (stat["disp"] / (10000.0 * u.Angstrom/u.um))
 
             # number of pixels per resolution element in the spectral direction
-            nPixSpec = (res * 10000.0) /stat["disp"]
+            nPixSpec = (res * (10000.0 * u.Angstrom/u.um)) /stat["disp"]
 
             # the spatial pixel scale
             nPixSpatial = theta / pix_scale
@@ -984,7 +1022,7 @@ class ETC:
 
         # display the results
         summary_struct = {}
-        summary_struct["quant"] = ['Wavelength', 'Resolution','Dispersion', 'Throughput', 'Signal', 'Sky Background', 
+        summary_struct["quant"] = ['CWvelength', 'Resolution','Dispersion', 'Throughput', 'Signal', 'Sky Background', 
                                    'Sky brightness', 'Dark Current', 'Read Noise', 'Total Noise','S/N', 
                                    'Total Exposure Time', 'Max e- per pixel']
 
@@ -1002,13 +1040,13 @@ class ETC:
         if max_epp_scalar >= 1e10:
             max_epp_string = "> 1e10"
         else:
-            max_epp_string = max_epp_scalar
+            max_epp_string = max_epp_scalar 
             
         #checking if the signal is saturating the detector
-        if max_epp_scalar > sat_limit:
-            ttk.messagebox.showerror(title="Saturated Exposure", message="Detector saturated!\n\nTry to increase Nexp.")
+        if max_epp_scalar > sat_limit.value:
+            tk.messagebox.showerror(title="Saturated Exposure", message="Detector saturated!\n\nTry to increase Nexp.")
 
-        summary_struct["value"] = [np.round(center,4), np.round(res * 1e4,1), np.round(stat['disp'],2),
+        summary_struct["value"] = [np.round(center,4), np.round(res * 10000.0 * u.Angstrom/u.um,1), np.round(stat['disp'],3),
                                    np.round(tp,2), np.round(signal,2), np.round(background,2),
                                    np.round(mag_back,2), np.round(dark,2), np.round(RN,2),
                                    np.round(noise,2), np.round(stn,2), np.round(time,2), max_epp_string]
