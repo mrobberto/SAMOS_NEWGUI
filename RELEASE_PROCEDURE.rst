@@ -20,11 +20,24 @@ These procedures are intended to ensure the following:
   out to be hard, we can get the easy one merged in while working on the hard one
 - We avoid having multiple versions of the SAMOS directory on the WS, without a clear idea
   of what their differences are, and why they have those differences.
+- Make sure we have 2 pairs of eyes (minimum) on any repository change
 - In the SAMOS directory on the WS, we have 3 possible "src" directories:
 
   - "src" holds the code that will run if you start SAMOS
   - "src_testing" holds the current code being tested right now
   - "src_working" holds the code that we want to run when doing observations
+
+Merge Procedure
+***************
+
+After creating and committing a branch, create a pull request and ask for reviews. If you
+receive a request for review, look at the code as soon as possible. Having at least a 
+second pairs of eyes on the code change is extremely helpful.
+
+The converse to this is that pull requests should be as small as possible. Especially, 
+keep files that are not relevant to the changes you made out of the pull request. Any
+ephemeral changes (e.g. current DMD position, target planning region files) should not be
+added to the repository unless there's a reason that they need to be a part of the code.
 
 After Making Changes on the WS During Observation
 *************************************************
