@@ -67,8 +67,8 @@ Fixing Bugs or Issues in the Repository
 In this case, we want to make sure the changes are understandable, and we want to make 
 sure that they are added to the WS before the next observations are taken.
 
-1. Create a new branch on the repository. For the branch name, _describe the specific 
-   changes that you are making in this branch_. The fewer changes, the better. For
+1. Create a new branch on the repository. For the branch name, *describe the specific 
+   changes that you are making in this branch*. The fewer changes, the better. For
    example, if the issue is that the up-arrow button isn't working properly, a branch name 
    like "fix_up_arrow_button_main_tab" would be good, and any other changes can (and 
    should) be put in a different branch (using this same procedure for it).
@@ -88,19 +88,19 @@ that it stays up-to-date with any other changes that are being made.
 1.  Create a new branch describing the upgrade. For example, adding SAMI control to the
     GUI might be "upgrade_add_sami_control"
 2.  Do enough work to make a commit and push the branch to the repository.
-3.  Create a pull request _and mark it as a draft_
+3.  Create a pull request *and mark it as a draft*
 4.  Continue work, remembering:
 
     - If you are making other changes to the repository, remember to update the working
       branch so it has those changes added.
     - Commit and push your local changes often
-    - If you need to do work not related to the upgrade, _do it in another branch_ as per
+    - If you need to do work not related to the upgrade, *do it in another branch* as per
       one of the other procedures above.
 
 5.  When you have finished the work, test it. If you need to test it on the WS,
 
     - Compress the "src" directory, and copy it to the WS
-    - _Rename_ the existing WS "src" directory to "src_working"
+    - *Rename* the existing WS "src" directory to "src_working"
     - Add the testing "src" directory to the SAMOS code on the WS, and delete the 
       compressed version
     - Run your tests
@@ -113,3 +113,13 @@ that it stays up-to-date with any other changes that are being made.
 8.  Replace the "src" directory on the WS with your new copy
 9.  Delete the zipped src directory.
 10. Delete the "src_testing" directory (if present) on the WS
+
+Github Command Quick Reference
+******************************
+
+- Create a branch: `git checkout -b <NAME>`
+- Commit code with message: `git commit -m "<MESSAGE>"`
+- Assign an upstream repository to a branch: `git push --set-upstream origin <NAME>`
+- Update a branch from the main repo: `git pull origin <NAME>` (you must be in your branch
+  for this to work)
+
