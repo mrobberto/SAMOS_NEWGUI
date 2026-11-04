@@ -9,13 +9,40 @@ from photutils.detection import IRAFStarFinder
 
 
 def iraf_gridsource_find(ccd, expected_sources, **kwargs):
-    iraffind = IRAFStarFinder(brightest=expected_sources, **kwargs)
+    iraffind = IRAFStarFinder(n_brightest=expected_sources, **kwargs)
     irafsources = iraffind(ccd)
-    for col in irafsources.colnames:
-        irafsources[col].info.format = "%.8f"
-    sorted_irafsources = sort_iraf_source_table(irafsources.to_pandas(), numcols=int(np.sqrt(expected_sources)))
-    return sorted_irafsources, irafsources
 
+    if irafsources is None or len(irafsources) == 0:
+        raise ValueError("IRAFStarFinder detected no sources")
+
+    print(f"CCD2DMD IRAF: detected {len(irafsources)} "
+          f"of {expected_sources} expected sources")
+
+    # Do not rename columns in the Photutils table.
+    # Its deprecated-name compatibility layer can break to_pandas().
+    # Construct an ordinary DataFrame using the actual column names.
+    pd_sources = pd.DataFrame({
+        name: np.asarray(irafsources.columns[name])
+        for name in irafsources.colnames
+    })
+
+    # Restore historical SAMOS column names in Pandas only.
+    pd_sources = pd_sources.rename(columns={
+        "x_centroid": "xcentroid",
+        "y_centroid": "ycentroid",
+    })
+
+    print("CCD2DMD IRAF: Pandas columns =", list(pd_sources.columns))
+
+    if not {"xcentroid", "ycentroid"}.issubset(pd_sources.columns):
+        raise ValueError("IRAFStarFinder returned no usable centroid columns")
+
+    sorted_irafsources = sort_iraf_source_table(
+        pd_sources,
+        numcols=int(np.sqrt(expected_sources))
+    )
+
+    return sorted_irafsources, irafsources
 
 def sort_iraf_source_table(pd_iraf_sources, numcols=11):
     ix_sorted_inds = None

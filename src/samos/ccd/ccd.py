@@ -1,5 +1,6 @@
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timezone
+from samos.utilities.sisi_naming import exposure_basename
 from http.client import BadStatusLine
 import logging
 import math
@@ -210,6 +211,8 @@ class CCD():
 
 
     def start_exposure(self):
+        # PC clock at CCD command dispatch (not verified CCD integration start).
+        self.command_utc_start = datetime.now(timezone.utc)
         self.set_ip()
         target_url = 'http://' + self.ip_port + '/'
         reply = self.get_url(target_url + 'command.txt',f"{self.acquire_cmd}", as_string=True)
@@ -261,11 +264,25 @@ class CCD():
         self.logger.info("Read {} bytes in {:.3f} seconds".format(len(data), timeReceived - timeRequested))
         read_bytes = len(data)
 
-        # write to file
-        # 1) the last file is always saved as newimage.fit, and handled by ginga
+        # The time is captured immediately before the acquisition command;
+        # image.fit retrieval happens only after readout.
+        utc_start = getattr(self, "command_utc_start", None)
+        if utc_start is None:
+            raise RuntimeError("Missing acquisition-command UTC timestamp")
+        obj = getattr(self, "sisi_object_name", "UNNAMED")
+        typ = getattr(self, "sisi_exposure_type", "Test")
+        filename = exposure_basename(utc_start, int(fnumber), obj, typ)
+        outfile = self.PAR.fits_dir / filename
+        self.write_exposure(outfile, data, exclusive=True)
+        with fits.open(outfile, mode="update") as hdul:
+            hdr = hdul[0].header
+            hdr["DATE-OBS"] = (utc_start.isoformat(timespec="milliseconds"), "PC UTC at CCD command dispatch")
+            hdr["TIMESRC"] = ("PC_CMD", "PC UTC at CCD acquire-command dispatch")
+            hdr["EXPNUM"] = (int(fnumber), "Unique nightly raw frame number")
+            hdr["OBJNAME"] = (str(obj), "Original MainPage Object Name")
+            hdr["OBSTYPE"] = (typ.upper(), "Observer-selected exposure classification")
         self.write_exposure(self.PAR.QL_images / "newimage.fits", data)
-        self.write_exposure("{}_{:04d}_.fits".format(night_dir_basename, fnumber), data)
-        return "{}_{:04d}_.fits".format(night_dir_basename, fnumber), read_bytes
+        return str(outfile), read_bytes
 
 
     def finish_exposure(self, collected_images, startTime, total_read_bytes):
@@ -275,10 +292,11 @@ class CCD():
         self.logger.info(f"Read {total_read_bytes} bytes.")        
     
     
-    def write_exposure(self, file_name, data):
+    def write_exposure(self, file_name, data, exclusive=False):
         file_dir = Path(file_name).parent
         file_dir.mkdir(parents=True, exist_ok=True)
-        with open(file_name, "wb") as out_file:
+        mode = "xb" if exclusive else "wb"
+        with open(file_name, mode) as out_file:
             out_file.write(data)
         self.convertSIlly(file_name, file_name)
         self.fits_header_manager(file_name)

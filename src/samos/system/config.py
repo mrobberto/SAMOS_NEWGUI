@@ -86,7 +86,25 @@ class SAMOSConfig():
 
     @property
     def logfile_name(self):
-        return self.fits_dir / "logfile.csv"
+        return getattr(self, "_active_science_log", self.fits_dir / "logfile.csv")
+
+    @property
+    def reports_dir(self):
+        return self.output_dir / "reports" / f"SAMOS_{self.today_str}"
+
+    def new_science_logbook(self):
+        from samos.system.logbook_manager import make_new, science_header
+        new_path=make_new(self.reports_dir, "science_logbook", ".csv")
+        science_header(new_path, self.db)
+        self._active_science_log=new_path
+        return new_path
+
+    def resume_science_logbook(self, path):
+        path=Path(path).expanduser().resolve()
+        if not path.is_file() or path.suffix.lower()!='.csv':
+            raise ValueError("Select an existing CSV logbook")
+        self._active_science_log=path
+        return path
 
 
     @property

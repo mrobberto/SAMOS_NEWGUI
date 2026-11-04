@@ -3,6 +3,8 @@
 Main entrypoint to SAMOS GUI
 """
 import logging
+import uuid
+from samos.system.operations_logger import append_event
 from logging.handlers import TimedRotatingFileHandler
 import multiprocessing as mp
 from pathlib import Path
@@ -25,7 +27,7 @@ from samos.soar import SOAR
 from samos.system.fits_header import FITSHead
 from samos.system.config import SAMOSConfig
 from samos.system.database import StorageDatabase
-from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage, HadamardPage
+from samos.ui import ConfigPage, DMDPage, CCD2DMDPage, MotorsPage, CCDPage, SOARPage, MainPage, ETCPage, GSPage, SAMIPage, HadamardPage, DatabasePage
 from samos.ui.logging_window import LoggingWindow
 from samos.ui.widgets import VariableRegistry
 from samos.utilities import get_data_file, get_config_dir
@@ -56,6 +58,18 @@ class App(ttk.Window):
             logger=self.logger
         )
         self.PAR = SAMOSConfig(self.DB, self.logger)
+        # v4.4: independent append-only observer history; never modifies Settings.yaml.
+        self.ops_session_id = str(uuid.uuid4())
+        self.ops_log_path = self.PAR.output_dir / "operations.jsonl"
+        self.ops_log_enabled = False
+        try:
+            append_event(self.ops_log_path, "GUI_START",
+                         {"database_path": str(database_file), "source": "GUI"},
+                         session_id=self.ops_session_id)
+            self.ops_log_enabled = True
+        except Exception as exc:
+            self.logger.error("OPERATIONS LOG UNAVAILABLE: %s", exc)
+
         self.registry = VariableRegistry(self.DB, self, self.logger)
         self.main_fits_header = FITSHead(self.PAR, self.DB, self.logger)
         self.simulator = None
@@ -81,7 +95,24 @@ class App(ttk.Window):
         handler = TimedRotatingFileHandler(log_file, when='midnight')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
-        
+        self.engineering_file_handler = handler
+        self.engineering_log_path = log_file
+        # SC3_AUTO_SESSION_RECOVERY_V1: recover only logbook paths, never acquisition state.
+        from samos.system.session_recovery import load as _session_load
+        _previous = _session_load(self.PAR.output_dir, self.PAR.today_str)
+        if 'science_log' in _previous:
+            try:
+                self.PAR.resume_science_logbook(_previous['science_log'])
+                self.logger.info('Restored science logbook: %s', _previous['science_log'])
+            except Exception as exc:
+                self.logger.error('Unable to restore science logbook: %s', exc)
+        if 'engineering_log' in _previous:
+            try:
+                self.set_engineering_logbook(_previous['engineering_log'])
+                self.logger.info('Restored engineering logbook: %s', _previous['engineering_log'])
+            except Exception as exc:
+                self.logger.error('Unable to restore engineering logbook: %s', exc)
+
         # Setting up Initial Things
         self.title("SAMOS Control System")
         self.resizable(True, True)
@@ -112,6 +143,41 @@ class App(ttk.Window):
         self.show_frame("ConfigPage")
         self.lift()
 
+
+    # SC3_AUTO_SESSION_RECOVERY_V1
+    def save_observing_session(self):
+        from samos.system.session_recovery import save as _session_save
+        try:
+            science = self.PAR.logfile_name if self.PAR.logbook_exists else None
+            return _session_save(self.PAR.output_dir, self.PAR.today_str,
+                                 science=science,
+                                 engineering=(self.engineering_log_path
+                                              if str(self.engineering_log_path).split('/')[-1] != 'samos_log.txt'
+                                              else None))
+        except Exception as exc:
+            self.logger.error('Unable to save observing session: %s', exc)
+            return None
+
+    def set_engineering_logbook(self, path, create=False):
+        """Switch the existing rotating handler to a selected file."""
+        from logging.handlers import TimedRotatingFileHandler
+        from pathlib import Path
+        p=Path(path).expanduser().resolve()
+        if not create and not p.is_file():
+            raise FileNotFoundError(p)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        previous=self.engineering_file_handler
+        formatter=previous.formatter
+        new_handler=TimedRotatingFileHandler(p, when='midnight', encoding='utf-8')
+        new_handler.setFormatter(formatter)
+        new_handler.setLevel(previous.level)
+        self.logger.addHandler(new_handler)
+        self.logger.removeHandler(previous)
+        previous.close()
+        self.engineering_file_handler=new_handler
+        self.engineering_log_path=p
+        self.logger.info("Engineering logbook active: %s", p)
+        return p
 
     def show_frame(self, frame):
         self.logger.debug("Selecting frame {}".format(frame))
@@ -168,6 +234,12 @@ class App(ttk.Window):
         """
         While closing, if running the simulator, close it.
         """
+        if getattr(self, "ops_log_enabled", False):
+            try:
+                append_event(self.ops_log_path, "GUI_STOP", {"source": "GUI"},
+                             session_id=self.ops_session_id)
+            except Exception as exc:
+                self.logger.error("OPERATIONS LOG STOP EVENT FAILED: %s", exc)
         self.logger.warning("Shutting down SAMOS")
         if self.simulator is not None:
             self.simulator.terminate()
@@ -207,6 +279,7 @@ class App(ttk.Window):
         filemenu.add_command(label="SOAR TCS", command=lambda: self.show_frame("SOARPage"))
         filemenu.add_command(label="MainPage", command=lambda: self.show_frame("MainPage"))
         filemenu.add_command(label="ETC", command=lambda: self.show_frame("ETCPage"))
+        filemenu.add_command(label="Settings Database (read-only)", command=lambda: self.show_frame("DatabasePage"))
         filemenu.add_separator()
         filemenu.add_command(label="Logging", command=self.show_logging_window)
         filemenu.add_command(label="Exit", command=self.destroy)  #quit)
@@ -231,7 +304,8 @@ class App(ttk.Window):
         SAMIPage,
         ETCPage, 
         GSPage,
-        HadamardPage
+        HadamardPage,
+        DatabasePage
     ]
 
 

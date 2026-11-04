@@ -8,7 +8,7 @@ from astropy.coordinates import SkyCoord
 
 import tkinter as tk
 import ttkbootstrap as ttk
-from ttkbootstrap.dialogs.dialogs import Messagebox as mbox
+from ttkbootstrap.dialogs import Messagebox as mbox
 from ttkbootstrap.style import Bootstyle as tbs
 from tkinter.scrolledtext import ScrolledText
 

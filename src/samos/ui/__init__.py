@@ -9,3 +9,5 @@ from .main_page import MainPage
 from .motors import MotorsPage
 from .sami import SAMIPage
 from .soar import SOARPage
+
+from .database_page import DatabasePage
