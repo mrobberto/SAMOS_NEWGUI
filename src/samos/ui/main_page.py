@@ -76,6 +76,8 @@ from scipy.stats import norm
 
 
 import os
+import uuid
+from samos.system.operations_logger import append_event, archive_dmd_request
 
 
 class MainPage(SAMOSFrame):
@@ -102,6 +104,24 @@ class MainPage(SAMOSFrame):
         # Early variable setting when variables must be valid for widgets to be enabled.
         self.loaded_reg_file = self.make_db_var(tk.StringVar, "dmd_loaded_region_file", "none")
         self.loaded_reg_file_path = None
+        self.mask_source_path = None
+        self.mask_source_kind = None
+        self.mask_loaded_signature = None
+        self.last_dmd_mask_request = None  # never implies hardware acknowledgment
+        # Persist chooser folders using the GUI's normal database-backed variables.
+        # Last RADEC source is a navigation hint only, NOT an automatically loaded mask.
+        self._target_dialog_db = {
+            kind: self.make_db_var(tk.StringVar, 'target_dialog_dir_' + kind, '')
+            for kind in ('radec', 'pixels', 'gaia')
+        }
+        self._target_dialog_dirs = {
+            kind: var.get() for kind, var in self._target_dialog_db.items() if var.get()
+        }
+        self._target_last_radec_path = self.make_db_var(
+            tk.StringVar, 'target_dialog_last_radec_path', '')
+        # FITS chooser history is independent of celestial/pixel/Gaia folders.
+        self._fits_dialog_dir = self.make_db_var(
+            tk.StringVar, 'target_dialog_dir_fits', '')
 
         # Create column frames to hopefully keep things as even as possible
         fleft = ttk.Frame(self.main_frame)
@@ -173,8 +193,9 @@ class MainPage(SAMOSFrame):
         acquire_frame = ttk.LabelFrame(frame, text="Acquire")
         acquire_frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
         acquire_frame.columnconfigure(1, weight=1)
-        self.image_type_options = ["Science", "Bias", "Dark", "Flat", "Buffer"]
-        self.image_type = self.make_db_var(tk.StringVar, "image_type_set", self.image_type_options[0])
+        self.image_type_options = ["Test", "Science", "Bias", "Dark", "Flat", "Buffer", "Calibration"]
+        self.image_type = self.make_db_var(tk.StringVar, "image_type_set", "Test")
+        self.image_type.set("Test")  # safety default every GUI startup
         ttk.Label(acquire_frame, text="Exposure Type:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
         m = ttk.OptionMenu(acquire_frame, self.image_type, None, *self.image_type_options, command=self.change_acq_type)
         m.grid(row=0, column=1, sticky=TK_STICKY_ALL)
@@ -185,12 +206,15 @@ class MainPage(SAMOSFrame):
         ttk.Label(acquire_frame, text="Exposure Time (s):").grid(row=2, column=0, sticky=TK_STICKY_ALL)
         tk.Entry(acquire_frame, textvariable=self.image_exptime).grid(row=2, column=1, sticky=TK_STICKY_ALL)
         self.image_expnum = tk.IntVar(self, value=1)
-        ttk.Label(acquire_frame, text="Exposure Nr:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
+        ttk.Label(acquire_frame, text="Next Exposure Nr.:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
         self.expnum = ttk.Spinbox(acquire_frame, textvariable=self.image_expnum, increment=1, from_=1, to=1000)
         self.expnum.grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.image_log = self.make_db_var(tk.BooleanVar, "save_exposures_to_log", True)
-        c = tk.Checkbutton(acquire_frame, text="Save to Logbook", variable=self.image_log, onvalue=True, offvalue=False)
-        c.grid(row=4, column=0, sticky=TK_STICKY_ALL)
+        # Every completed exposure must be recorded. This is a status, not an opt-out.
+        self.science_log_status = tk.StringVar(value="Science Logbook: checking...")
+        ttk.Label(acquire_frame, textvariable=self.science_log_status,
+                  wraplength=380).grid(row=4, column=0, columnspan=3,
+                                       sticky=TK_STICKY_ALL)
+        self.bind("<Visibility>", lambda event: self._refresh_science_log_status(), add="+")
         l = ttk.Label(acquire_frame, text="Correct Quicklook Image For:")
         l.grid(row=5, column=0, columnspan=2, sticky=TK_STICKY_ALL)
         cframe = ttk.Frame(acquire_frame)
@@ -207,6 +231,15 @@ class MainPage(SAMOSFrame):
         self.ql_buffer = self.make_db_var(tk.BooleanVar, "correct_ql_for_buffer", True)
         b = tk.Checkbutton(cframe, text='Buffer', variable=self.ql_buffer, onvalue=True, offvalue=False)
         b.grid(row=0, column=3, sticky=TK_STICKY_ALL)
+        self.ql_master_status = tk.StringVar(self, value="Active QL masters: checking...")
+        ttk.Label(acquire_frame, textvariable=self.ql_master_status,
+                  wraplength=400).grid(row=7, column=0, columnspan=3, sticky=TK_STICKY_ALL)
+        # QL status is populated after acquisition and at GUI startup.
+        try:
+            from samos.ui.ql_safe_processing import active_master_summary
+            self.ql_master_status.set(active_master_summary(self.PAR.QL_images, self.current_filter.get()))
+        except Exception:
+            pass
         
         """
         # Image Type Frame
@@ -214,7 +247,7 @@ class MainPage(SAMOSFrame):
         self.image_frame = ttk.LabelFrame(frame, text=self.image_type.get())
         self.image_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
         self.image_frame.columnconfigure(1, weight=1)
-        self.image_type_label_options = ["Object Name:", "Master Bias:", "Master Dark:", "Master Flat File:", "Master Buffer File:"]
+        self.image_type_label_options = ["Object Name:"] * len(self.image_type_options)
         self.image_label = tk.StringVar(self, self.image_type_label_options[0])
         tk.Label(self.image_frame, textvariable=self.image_label).grid(row=0, column=0, sticky=TK_STICKY_ALL)
         
@@ -245,6 +278,20 @@ class MainPage(SAMOSFrame):
         self.start_exp_button.grid(
             row=1, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL
         )
+        # SC3_SISI_OFFLINE_SIMULATOR_V1 — synthetic quicklook testing ONLY.
+        self.sisi_sim_button = ttk.Button(
+            exp_frame, text="SIMULATE SISI (NO HW)",
+            command=self._simulate_sisi_offline)
+        self.sisi_sim_button.grid(row=2, column=0, padx=2, pady=2,
+                                  columnspan=2, sticky=TK_STICKY_ALL)
+        self._sisi_sim_status = tk.StringVar(self, value="Offline simulator inactive")
+        ttk.Label(exp_frame, textvariable=self._sisi_sim_status,
+                  wraplength=390).grid(row=3, column=0, columnspan=2,
+                                       sticky=TK_STICKY_ALL)
+        self._sisi_sim_master_status = tk.StringVar(self, value="SIM masters: none")
+        ttk.Label(exp_frame, textvariable=self._sisi_sim_master_status,
+                  wraplength=390).grid(row=4, column=0, columnspan=2,
+                                       sticky=TK_STICKY_ALL)
 
         # FITS manager
         frame = ttk.LabelFrame(fleft, text="FITS Manager")
@@ -575,6 +622,11 @@ class MainPage(SAMOSFrame):
         b = ttk.Button(frame, text="Save Ginga Regions -> DS9/xy Region File", command=self.save_ginga_regions_pix)
         b.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
 
+        # Offline science-mask snapshot; never sends a DMD command.
+        b = ttk.Button(frame, text="Preview/Archive Science Mask (NO DMD)",
+                       command=self.preview_science_mask_archive)
+        b.grid(row=4, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
+
         # DMD Module
         frame = ttk.LabelFrame(fright, text="DMD Slits")
         frame.grid(row=2, column=0, sticky=TK_STICKY_ALL)
@@ -754,7 +806,9 @@ class MainPage(SAMOSFrame):
             file_name = self.loaded_reg_file_path.name
             #and we use the target name self.target_name, e.g. 'RMC 136-T00'        
             # 1) We insert "PIXEL" in the global astropy region pix
-            file_name_pixel  = self.target_name+"_PIXEL="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]
+            from samos.ui.mask_filenames import pixel_region_names
+            _pixel_names = pixel_region_names(file_name)
+            file_name_pixel = _pixel_names["full"]
         
             save_file = tk.filedialog.asksaveasfile(filetypes=[("txt file", ".reg")],
                                             defaultextension=".reg",
@@ -766,7 +820,7 @@ class MainPage(SAMOSFrame):
             
             #extract the file name you just created with the new mask file
             new_file_name = os.path.split(save_file.name)[1]
-            new_target_name = new_file_name[:new_file_name.find("_")]
+            new_target_name = self.mask_name
             
             #save_file = os.path.join(self.dir_regions_pixels,
             #                         self.target_name+"_PIXEL_EVEN="+file_name[file_name.find("RADEC=")+6:file_name.find(".reg")]+".reg")
@@ -874,6 +928,9 @@ class MainPage(SAMOSFrame):
 #             self.initialize_slit_table()
         #self.slit_tab_view.load_table_from_regfile_RADEC(regs_RADEC=astropy_regions_wcs, img_wcs=self.PAR.wcs)
         self.logger.info("Finished displaying regions and loading slit tab view")
+        from samos.ui.mask_state import geometry_signature
+        self.mask_loaded_signature = geometry_signature(astropy_regions_pix)
+        self.logger.info('MASK SOURCE: %s [RADEC, projected] baseline recorded', self.mask_source_path)
 
 
     @check_enabled
@@ -997,6 +1054,20 @@ class MainPage(SAMOSFrame):
         self.fits_dec.set(self.dec_target.get())
 
 
+    def _radec_initial_directory(self):
+        """Prefer current field, otherwise persisted RADEC folder, then saved path."""
+        from samos.ui.target_folders import initial_dir as _target_initial_dir
+        current = getattr(self, 'loaded_reg_file_path', None)
+        if current and Path(current).is_file():
+            return _target_initial_dir('radec', current, self._target_dialog_dirs,
+                                       get_data_file('regions.radec'))
+        persisted = self._target_dialog_db['radec'].get()
+        if persisted and Path(persisted).expanduser().is_dir():
+            return str(Path(persisted).expanduser())
+        last = self._target_last_radec_path.get()
+        return _target_initial_dir('radec', last, self._target_dialog_dirs,
+                                   get_data_file('regions.radec'))
+
     @check_enabled
     def load_regions_radec(self):
         """
@@ -1009,9 +1080,17 @@ class MainPage(SAMOSFrame):
         None
         """
         self.logger.info("Loading Region File")
-        reg_file = tk.filedialog.askopenfilename(initialdir=get_data_file("regions.radec"), title="Select a File",
-                                                 filetypes=(("Text files", "*.reg"), ("all files", "*.*")))
+        from samos.ui.target_folders import initial_dir as _target_initial_dir, remember as _target_remember
+        reg_file = tk.filedialog.askopenfilename(
+            initialdir=self._radec_initial_directory(),
+            title="Select a File", filetypes=(("Text files", "*.reg"), ("all files", "*.*")))
+        if not reg_file:
+            return
+        _target_remember(self._target_dialog_dirs, 'radec', reg_file)
+        self._target_dialog_db['radec'].set(self._target_dialog_dirs['radec'])
+        self._target_last_radec_path.set(str(Path(reg_file).expanduser().resolve()))
         self.loaded_reg_file_path = Path(reg_file)
+        self.active_region_source_kind = "RADEC"
         file_name = self.loaded_reg_file_path.name
         self.loaded_reg_file.set(file_name)
         initial_regions = Regions.read(self.loaded_reg_file_path, format='ds9')
@@ -1019,7 +1098,10 @@ class MainPage(SAMOSFrame):
         for region in initial_regions:
             if region not in astropy_regions_radec:
                 astropy_regions_radec.append(region)
-        self.target_name = file_name[:file_name.find("_")]
+        from samos.ui.mask_filenames import parse_science_region_filename
+        _mask_fields = parse_science_region_filename(file_name)
+        self.target_name = _mask_fields["target_name"]
+        self.mask_name = _mask_fields["mask_name"]
         self.db.update_value("POTN_Target", self.target_name)
         if self.image_type.get() == "Science":
             self.image_base_name.set(self.target_name)
@@ -1043,6 +1125,10 @@ class MainPage(SAMOSFrame):
             self.ra_target_HMS.set(c.to_string('hmsdms')[:10]+'s')
             self.dec_target_DMS.set(c.to_string('hmsdms')[17:])            
         self.loaded_astropy_regions = astropy_regions_radec
+        # RADEC source is not yet a pixel mask; establish baseline after projection.
+        self.mask_source_path = self.loaded_reg_file_path
+        self.mask_source_kind = 'RADEC'
+        self.mask_loaded_signature = None
         
 
     @check_enabled
@@ -1071,11 +1157,18 @@ class MainPage(SAMOSFrame):
         except:
             self.loaded_ginga_file_path = get_data_file("regions.pixels")
             
+        from samos.ui.target_folders import initial_dir as _target_initial_dir, remember as _target_remember
         reg_file = tk.filedialog.askopenfilename(
             filetypes=[("region files", "*.reg")],
-            initialdir=self.loaded_ginga_file_path
+            initialdir=_target_initial_dir('pixels', self.loaded_reg_file_path,
+                                          self._target_dialog_dirs, self.loaded_ginga_file_path)
         )
+        if not reg_file:
+            return
+        _target_remember(self._target_dialog_dirs, 'pixels', reg_file)
+        self._target_dialog_db['pixels'].set(self._target_dialog_dirs['pixels'])
         self.loaded_ginga_file_path = Path(reg_file)
+        self.active_region_source_kind = "PIXEL"
         self.loaded_ginga_file.set(self.loaded_ginga_file_path.name)
 
         initial_regions = Regions.read(self.loaded_ginga_file_path, format="ds9")
@@ -1093,6 +1186,11 @@ class MainPage(SAMOSFrame):
             counter+=1
 
         self.loaded_ginga_regions = ginga_regions
+        from samos.ui.mask_state import geometry_signature
+        self.mask_source_path = self.loaded_ginga_file_path
+        self.mask_source_kind = 'PIXEL'
+        self.mask_loaded_signature = geometry_signature(astropy_regions_pix)
+        self.logger.info('MASK SOURCE: %s [PIXEL] baseline recorded', self.mask_source_path)
         #obj.tag = '@slit_{}'.format(obj.tag)
 #         if self.slit_tab_view is None:
 #             self.initialize_slit_table()
@@ -1126,8 +1224,11 @@ class MainPage(SAMOSFrame):
             # oriented with the celestial coordinates
             ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
             if self.force_orthonormal.get() == 1:
-                obj.rot_deg = 0.0
-                ccd_x0, ccd_y0, ccd_x1, ccd_y1 = obj.get_llur()
+                # Work on a detached shallow copy: NEVER rotate the canvas slit.
+                # This preserves the previous unrotated-bounding-box DMD behavior.
+                _dmd_obj = copy.copy(obj)
+                _dmd_obj.rot_deg = 0.0
+                ccd_x0, ccd_y0, ccd_x1, ccd_y1 = _dmd_obj.get_llur()
                 # first case: figures that have no extensions (i.e. points) add a single mirror to the slit_shape
                 if ((ccd_x0 == ccd_x1) and (ccd_y0 == ccd_y1)):
                     dmd_y1, dmd_x1 = ccd_to_dmd(ccd_x0, ccd_y0, self.PAR.dmd_wcs)
@@ -1191,6 +1292,96 @@ class MainPage(SAMOSFrame):
         return slit_shape, slit_regions
 
 
+    def preview_science_mask_archive(self):
+        """Archive current canvas regions as an UNCOMMANDED science preview."""
+        from tkinter import messagebox
+        from samos.ui.mask_preview import save_preview
+        try:
+            objects = CM.CompoundMixin.get_objects(self.canvas)
+            regions = []
+            for obj in objects:
+                # Filter out non-aperture overlays/markers, matching the slit-box intent.
+                if getattr(obj, 'kind', '') not in ('box', 'rectangle', 'square'):
+                    continue
+                if getattr(obj, 'xradius', 1) == 0:
+                    continue
+                regions.append(g2r(obj))
+            if not regions:
+                raise ValueError('No rectangular slit regions on canvas')
+            original = str(self.loaded_reg_file_path) if self.loaded_reg_file_path else ''
+            # Direct immutable commit in the portable observing field:
+            # RADEC/, PIXELS/, MANIFESTS/. No duplicate MASK_ARCHIVE.
+            from samos.ui.three_folder_commit import save_three_folders
+            if getattr(self, 'active_region_source_kind', None) == 'PIXEL':
+                # A PIXEL mask is self-sufficient for detector/DMD calibration.
+                # Do not demand a RADEC source or reconstruct celestial geometry.
+                from samos.ui.pixel_only_snapshot import save_pixel_snapshot
+                pixel_source = getattr(self, 'loaded_ginga_file_path', None)
+                if pixel_source is None or not Path(pixel_source).is_file():
+                    raise ValueError('No valid PIXEL source file loaded')
+                result = save_pixel_snapshot(regions, str(pixel_source))
+            else:
+                result = save_three_folders(regions, self.PAR.wcs, original)
+        except Exception as exc:
+            self.logger.error('Science preview archive refused: %s', exc)
+            messagebox.showerror('Science mask preview refused', str(exc))
+            return
+        self.logger.info('UNCOMMANDED science mask preview: %s', result)
+        messagebox.showinfo('Science mask preview (NO DMD)',
+                            f"{result['status']}: {result['count']} slits\n{result['path']}\nNO DMD COMMAND WAS SENT")
+
+    def mask_geometry_status(self):
+        """Read-only identity of currently displayed slit rectangles."""
+        from samos.ui.mask_state import change_status
+        objects = CM.CompoundMixin.get_objects(self.canvas)
+        regions = [g2r(obj) for obj in objects
+                   if getattr(obj, 'kind', '') in ('box', 'rectangle', 'square')
+                   and getattr(obj, 'xradius', 0) > 0
+                   and 'trace' not in str(getattr(obj, 'tag', ''))]
+        return change_status(self.mask_loaded_signature, regions)
+
+    def _prepare_send_mask(self):
+        """Resolve an immutable name for CURRENT slit geometry; no DMD actions."""
+        from samos.ui.mask_state import geometry_signature
+        from samos.ui.send_identity import save_modified_pixel, science_full_from_manifest
+        source = getattr(self, 'mask_source_path', None)
+        kind = getattr(self, 'mask_source_kind', None)
+        if not source or kind not in ('RADEC','PIXEL'):
+            raise ValueError('Cannot SEND: no recognized RADEC or PIXEL mask was loaded')
+        source = Path(source).expanduser().resolve(strict=True)
+        if not source.is_file(): raise ValueError('Mask source file missing')
+        objects = CM.CompoundMixin.get_objects(self.canvas)
+        regs = [g2r(obj) for obj in objects
+                if getattr(obj, 'kind', '') in ('box','rectangle','square')
+                and getattr(obj,'xradius',0)>0
+                and 'trace' not in str(getattr(obj,'tag',''))]
+        current_signature=geometry_signature(regs)
+        baseline=getattr(self,'mask_loaded_signature',None)
+        if not baseline:
+            raise ValueError('Mask baseline missing: display or reload the region file before SEND')
+        if current_signature == baseline:
+            return {'path':str(source),'filename':source.name,'source_kind':kind,
+                    'modified':False,'created':False}
+        if kind == 'PIXEL':
+            saved=save_modified_pixel(regs,str(source))
+            effective=Path(saved['path'])
+        else:
+            from samos.ui.three_folder_commit import save_three_folders
+            if not getattr(self.PAR,'valid_wcs',False) or self.PAR.wcs is None:
+                raise ValueError('Modified RADEC mask requires valid WCS for versioned save')
+            result=save_three_folders(regs,self.PAR.wcs,str(source))
+            effective=Path(science_full_from_manifest(result['path']))
+        # New saved file is now the immutable reference for repeated sends.
+        self.mask_source_path=effective
+        self.mask_source_kind='PIXEL'
+        self.active_region_source_kind='PIXEL'
+        self.mask_loaded_signature=current_signature
+        self.loaded_ginga_file_path=effective
+        self.loaded_ginga_file.set(effective.name)
+        self.logger.info('New immutable mask version prepared: %s',effective)
+        return {'path':str(effective),'filename':effective.name,'source_kind':'PIXEL',
+                'modified':True,'created':True}
+
     @check_enabled
     def push_slit_shape(self):
         """
@@ -1199,33 +1390,87 @@ class MainPage(SAMOSFrame):
         """
         self.logger.info("Pushing slit shape to DMD")
         self.remove_traces()
-        slit_shape, slit_regions = self.collect_slit_shape()
-        self.push_slits(slit_shape)
-        region_name = f"{self.image_name.get()}_{self.image_expnum.get():04d}"
-        region_name += f"_{datetime.now().strftime('%Y-%m-%dT%H-%M-%S')}_pix.reg"
-        region_name = region_name.replace(" ", "_")
-               
-        #The following lines create a directory in /src/samos/data/tmp/SISI_images 
-        #to store the loaded mask.
-        if not self.PAR.fits_dir.is_dir():
-            self.logger.info(f"Creating FITS directory {self.PAR.fits_dir} for tonight")
-            self.PAR.fits_dir.mkdir(parents=True, exist_ok=True)
-
-        region_file = self.PAR.fits_dir / region_name
-        ginga_regions = CM.CompoundMixin.get_objects(self.canvas)
-        astropy_regions_pix = Regions([g2r(r) for r in ginga_regions])
-        astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
-        region_file = get_data_file("regions.pixels") / region_name
-        astropy_regions_pix.write(region_file.as_posix(), overwrite=True)
-
+        # Fail closed rather than silently skip rotated slits without an image.
+        if not self.force_orthonormal.get() and getattr(self, 'AstroImage', None) is None:
+            self.logger.error('DMD send refused: non-orthonormal rasterization requires an image')
+            return
+        # An ops log is mandatory BEFORE creating any new version.
+        if not getattr(self.parent, 'ops_log_enabled', False):
+            self.logger.error('DMD send refused: operations log unavailable')
+            return
+        try:
+            info = self._prepare_send_mask()
+            slit_shape, slit_regions = self.collect_slit_shape()
+        except Exception as exc:
+            self.logger.error('DMD send preparation refused: %s', exc)
+            from tkinter import messagebox
+            messagebox.showerror('DMD send preparation refused', str(exc))
+            return
+        self.push_slits(slit_shape, mask_info=info)
+        # No unconditional timestamped .reg writes: immutable version only on edit.
+    def _ops_event(self, kind, details, status=None):
+        """Best-effort history; failures are made visible, never treated as success."""
+        app = self.parent
+        if not getattr(app, "ops_log_enabled", False):
+            self.logger.error("OPERATIONS LOG DISABLED: %s not recorded", kind)
+            return None
+        try:
+            return append_event(app.ops_log_path, kind, details,
+                                session_id=app.ops_session_id, status=status)
+        except Exception as exc:
+            self.logger.error("OPERATIONS LOG FAILURE for %s: %s", kind, exc)
+            return None
 
     @check_enabled
-    def push_slits(self, slit_shape):
+    def push_slits(self, slit_shape, mask_info=None):
         """ Actual push of the slit_shape to the DMD """
         self.logger.info("Applying slit shape to DMD")
-        self.DMD.initialize()
-        self.DMD._open()
-        self.DMD.apply_shape(slit_shape)
+        # Archive the physical-orientation array as passed inside DMD.apply_shape.
+        # Do not confuse a returned function with a hardware acknowledgment.
+        load_id = str(uuid.uuid4())
+        if mask_info is None:
+            mask_info = {'path':'', 'filename':'', 'source_kind':'UNKNOWN', 'modified':None, 'created':False}
+        archive = None
+        try:
+            if not getattr(self.parent, "ops_log_enabled", False):
+                raise RuntimeError("operations log is not available")
+            archive = archive_dmd_request(
+                self.parent.ops_log_path.parent / "dmd_masks",
+                self.DMD.flip_shape(slit_shape), load_id=load_id)
+            event = self._ops_event("DMD_LOAD_REQUEST",
+                {"load_id":load_id, "archive":archive,
+                 "parent_mask":mask_info['path'], "mask_name":mask_info['filename'],
+                 "mask_source_kind":mask_info['source_kind'],
+                 "mask_modified":mask_info['modified'],
+                 "mask_version_created":mask_info['created']},
+                status="REQUESTED")
+            if event is None:
+                raise RuntimeError("DMD request event not recorded")
+            self.logger.info('DMD MASK REQUEST: %s | source=%s | modified=%s | new_version=%s | load_id=%s',
+                             mask_info['filename'],mask_info['source_kind'],mask_info['modified'],
+                             mask_info['created'],load_id)
+        except Exception as exc:
+            self.logger.error("DMD ARCHIVE/LOG FAILED; refusing untracked load: %s", exc)
+            return
+        try:
+            self.DMD.initialize()
+            self.DMD._open()
+            result = self.DMD.apply_shape(slit_shape)
+        except Exception as exc:
+            self._ops_event("DMD_LOAD_RESULT",
+                {"load_id":load_id,"request_event_id":event["event_id"],
+                 "error":repr(exc)},status="EXCEPTION")
+            self.logger.error('DMD MASK RESULT: %s | EXCEPTION | load_id=%s | %s',
+                              mask_info['filename'],load_id,exc)
+            raise
+        self._ops_event("DMD_LOAD_RESULT",
+            {"load_id":load_id,"request_event_id":event["event_id"],
+             "mask_name":mask_info['filename'],
+             "return_type":type(result).__name__},status="UNVERIFIED_RETURN")
+        self.logger.info('DMD MASK RESULT: %s | UNVERIFIED_RETURN | load_id=%s',
+                         mask_info['filename'],load_id)
+        self.last_dmd_mask_request = dict(mask_info, load_id=load_id, status='UNVERIFIED_RETURN')
+        # Existing flag behavior retained until controller success is defined.
         self.loaded_new_slits = False
 
 
@@ -1413,11 +1658,74 @@ class MainPage(SAMOSFrame):
             r1, r2 = r#spline.roots()
             return r2-r1 #this is the FWHM along the specified axis
 
+    def _science_logbook_path(self):
+        """A logbook is active only when the selected CSV actually exists."""
+        try:
+            path = Path(self.PAR.logfile_name).expanduser()
+        except (AttributeError, TypeError, ValueError):
+            return None
+        return path if path.is_file() else None
+
+    def _refresh_science_log_status(self):
+        path = self._science_logbook_path()
+        if path is None:
+            self.science_log_status.set("Science Logbook: NOT ACTIVE — select or create on ConfigPage")
+        else:
+            self.science_log_status.set(f"Science Logbook: ACTIVE — {path.name}")
+
+    def _simulate_sisi_offline(self):
+        """DEV-only synthetic frames; NEVER call camera START."""
+        # Same guard for simulated acquisitions, using SIM masters only.
+        if not self._sisi_calibration_preflight(simulated=True):
+            return
+        from samos.ui.sisi_offline_simulator import simulate_from_main
+        return simulate_from_main(self)
+
+    def _sisi_calibration_preflight(self, simulated=False):
+        """Guarded calibration-order check; no CCD/TCS/DMD calls."""
+        from pathlib import Path
+        from tkinter import messagebox
+        from samos.ui.sisi_calibration_policy import check_calibration_order
+        ql_dir = ((Path.home() / "SAMOS_SC3_DEV_SISI_SIM" / "quicklook")
+                  if simulated else self.PAR.QL_images)
+        allowed, detail = check_calibration_order(
+            self.image_type.get(), bool(self.ql_bias.get()),
+            bool(self.ql_dark.get()), ql_dir)
+        if not allowed:
+            messagebox.showwarning("SISI calibration order", detail, parent=self)
+            self.logger.warning("SISI calibration preflight rejected: %s", detail)
+        return allowed
+
     @check_enabled
     def start_an_exposure(self):
         """
         This is the landing procedure after the START button has been pressed
         """
+        # SC3_SISI_CAL_ORDER_GUARD_V1: check BEFORE any hardware command.
+        if not self._sisi_calibration_preflight(simulated=False):
+            return
+        # Never acquire without a writable, existing science logbook.
+        # Do not create a new logbook silently on a GUI restart.
+        from tkinter import messagebox
+        logpath = self._science_logbook_path()
+        self._refresh_science_log_status()
+        if logpath is None:
+            messagebox.showwarning(
+                "Science Logbook required",
+                "No active Science Logbook file was found. Use ConfigPage → "
+                "Science (CSV) → Resume Existing or Create New before START.",
+                parent=self)
+            try:
+                self.winfo_toplevel().show_frame("ConfigPage")
+            except (AttributeError, tk.TclError):
+                pass
+            return
+        try:
+            with logpath.open("a", encoding="utf-8", newline=""):
+                pass
+        except OSError as exc:
+            messagebox.showerror("Science Logbook not writable", str(exc), parent=self)
+            return
         # Check to avoid not having loaded a slit pattern
         if self.loaded_new_slits:
             self.logger.warning("Checking whether slits were forgotten")
@@ -1461,8 +1769,26 @@ class MainPage(SAMOSFrame):
                     self._set_expnum()
                 return
             """
+            # Snapshot GS/SAM states at START; a later GUI edit must not
+            # retroactively alter the exposures in this acquisition sequence.
+            gs_page = self.parent.frames.get("GSPage")
+            gs_state = (gs_page.natural_gs_status.get()
+                        if gs_page is not None and hasattr(gs_page, "natural_gs_status")
+                        else "UNKNOWN")
+            sam_state = (gs_page.sam_ao_loop_status.get()
+                         if gs_page is not None and hasattr(gs_page, "sam_ao_loop_status")
+                         else "UNKNOWN")
+            self.logger.info("EXPOSURE MANUAL STATUS: guide_star=%s SAM_AO_loop=%s",
+                             gs_state, sam_state)
+            self._ops_event("EXPOSURE_MANUAL_STATUS",
+                            {"guide_star": gs_state, "sam_ao_loop": sam_state,
+                             "source": "MANUAL",
+                             "first_file_number": self.image_expnum.get()},
+                            status="RECORDED")
             exposure_params = {
                 'file_number': self.image_expnum.get(),
+                'manual_guide_star': gs_state,
+                'manual_sam_loop': sam_state,
                 'exptime': self.image_exptime.get() * 1000,  # ms
                 'exp_frames': self.image_frames.get(),
                 'image_name': self.image_name.get(),
@@ -1482,13 +1808,8 @@ class MainPage(SAMOSFrame):
                 # therefore we lost the WCS solution
                 self.PAR.valid_wcs = False
                 self.previous_image_name = self.image_name.get()
-            if self.image_type.get() == "Dark":
-                # By default, subtract the bias in the quicklook
-                self.ql_bias.set(1)
-            elif self.image_type.get() == "Flat":
-                # By default, subtract bias and dark
-                self.ql_bias.set(1)
-                self.ql_dark.set(1)
+            # SC3_QL_RAWSAFE_V1: capture exactly the operator checkbox states.
+            # Never change them after assembling exposure_params.
 
             self.start_exp_button.configure(state="disabled")
             exp_window = ExposureProgressWindow(
@@ -1509,6 +1830,12 @@ class MainPage(SAMOSFrame):
     def display_exposure(self, results):
         self.handle_log(results["images"])
         self.Display(results["superfile"].as_posix())
+        # SC3_QL_RAWSAFE_V1: show the active master used for later QL corrections.
+        try:
+            from samos.ui.ql_safe_processing import active_master_summary
+            self.ql_master_status.set(active_master_summary(self.PAR.QL_images, self.current_filter.get()))
+        except Exception as exc:
+            self.logger.warning("Unable to refresh QL master display: %s", exc)
         self.fits_image.rotate(self.PAR.Ginga_PA)
         self._set_expnum()
         self.image_flip_status.set(False)
@@ -1526,85 +1853,68 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def log_comment(self):
-        """
-        Gets the comment and adds it to the logbook.
-        """
-        if not self.PAR.logbook_exists:
-            self.PAR.create_log_file()
-
-        user_comment = Querybox.get_string(
-            title="Comment", prompt="Enter Comment for Log:", parent=self
-        )
-
-        with open(self.PAR.logfile_name, 'w') as logbook:
-            today = datetime.now()
-            logbook.write(f"{today.strftime('%Y-%m-%d')},{today.strftime('%H:%M:%S')},")
-            logbook.write(f"{''},") #Target
-            logbook.write(f"{''},") #Filter
-            logbook.write(f"{''},") #Repeats
-            logbook.write(f"{''},") #Exposure Time
-            logbook.write(f"{''},") #Filename
-            logbook.write(f"{''},") #Mask Name
-            logbook.write(f"{''},") #Grating
-            logbook.write(f"{''},") #Sp. Exp. Time
-            logbook.write(f"{''},") #Sp. Filename
-            logbook.write(f"{user_comment}\n")
-            
-            
+        """Open the shared science-log editor at the latest recorded exposure."""
+        from tkinter import messagebox
+        from samos.ui.science_log_editor import open_science_comment_editor
+        path = Path(self.PAR.logfile_name)
+        if not path.is_file():
+            messagebox.showinfo('Science logbook',
+                                'No science logbook exists yet. Create or resume one on ConfigPage.',
+                                parent=self)
+            return
+        open_science_comment_editor(self, path, select_latest=True)
 
     @check_enabled
     def handle_log(self, newfiles):
         """
         handles the writeup of an entry line in the loogbook
         """
-        #1) Do we want to write?
-        if self.image_log.get() != 1:
+        # Logging is mandatory; do not create or switch CSV files silently.
+        active_log = self._science_logbook_path()
+        if active_log is None:
+            self.logger.error("CRITICAL: completed FITS images have no active science logbook: %r", newfiles)
+            from tkinter import messagebox
+            messagebox.showerror("Science Logbook missing",
+                "Images were saved, but their Science Logbook could not be found. "
+                "Preserve the FITS files and repair the logbook before further observing.",
+                parent=self)
             return
-        
-
-        # Create the logbook if it doens't exist
-        if not self.PAR.logbook_exists:
-            self.PAR.create_log_file()
 
         # now open logfile to write the writeup
-        with open(self.PAR.logfile_name, 'a') as logbook:
-            today = datetime.now()
-            #if a region file has been loaded, it goes in the region file
-            #(remember to update when you go on the DMD page for whiteout)
+        from samos.system.logbook_manager import append_science
+        today=datetime.now()
+        # Last issued command is logged, NOT asserted as acknowledged DMD state.
+        request=getattr(self,'last_dmd_mask_request',None)
+        region_file=request['filename'] if request else ''
+        try: grism=self.current_grating.get()
+        except (AttributeError, TypeError): grism=''
+        for f in newfiles:
             try:
-                self.loaded_reg_file_path
-                region_file = self.loaded_reg_file_path.name
-            except:
-                region_file = ''
-            #if a grating has been loaded, it goes in the region file    
-            try:
-                self.current_grating.get()
-            except:
-                self.current_grating = ''
-                
-            for file in newfiles:
-                file_name = Path(file).name
-                logbook.write(f"{today.strftime('%Y-%m-%d')},{today.strftime('%H:%M:%S')},")
-                logbook.write(f"{self.db.get_value('POTN_Target')},{self.current_filter.get()},{len(newfiles)},")
-                logbook.write(f"{self.image_exptime.get()},{file_name},{region_file},{self.current_grating.get()}\n")
-
+                append_science(active_log, [today.strftime('%Y-%m-%d'),
+                  today.strftime('%H:%M:%S'), self.db.get_value('POTN_Target'),
+                  self.current_filter.get(), len(newfiles), self.image_exptime.get(),
+                  Path(f).name, region_file, grism, '', '', ''])
+            except (OSError, ValueError) as exc:
+                self.logger.exception("CRITICAL: science logbook append failed for %s", f)
+                from tkinter import messagebox
+                messagebox.showerror("Science Logbook write failed",
+                    f"FITS image saved: {Path(f).name}\n"
+                    f"Logbook: {active_log}\nError: {exc}\n"
+                    "Do not delete the FITS file. Repair the logbook and reconcile the entry.",
+                    parent=self)
+                return
 
     @check_enabled
     def change_acq_type(self, event):
         """
         When the acquisition tab is changed
         """
+        # Short FLATs: a master BIAS is required, DARK is not.
+        if self.image_type.get() == "Flat":
+            self.ql_dark.set(False)
         self.image_frame.configure(text=self.image_type.get())
-        #
-        #set the image base name equal to the type of image we are taking.
-        self.image_base_name.set(self.image_type.get())
-        if self.image_type.get() == 'Science':
-            self.image_base_name.set(self.image_name.get())
-        else:
-            self.image_base_name.set(self.image_type.get())
-            self.image_name.set(self.image_type.get())
-            
-        #
+        # The Object Name is independent of exposure type; never replace it
+        # when selecting a bias, test, dark, or calibration exposure.
         self.image_label.set(self.image_type_label_options[self.image_type_options.index(self.image_type.get())])
 
 
@@ -1631,12 +1941,19 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def load_existing_file(self):
-#        loaded_file = ttk.filedialog.askopenfilename(initialdir=self.PAR.QL_images, title="Select a File",
+        # An explicit initialdir avoids the native dialog inheriting Gaia/PIXELS.
+        saved = Path(self._fits_dialog_dir.get()).expanduser() if self._fits_dialog_dir.get() else None
+        legacy = Path(self.PAR.QL_images).expanduser()
+        initial = saved if saved is not None and saved.is_dir() else (legacy if legacy.is_dir() else Path.home())
         loaded_file = tk.filedialog.askopenfilename(
+            initialdir=str(initial),
             title="Select a File",
             filetypes=(("fits files", "*.fits"), ("all files","*.*"))
         )
-        self.fits_image_ql  = loaded_file
+        if not loaded_file:
+            return
+        self._fits_dialog_dir.set(str(Path(loaded_file).expanduser().resolve().parent))
+        self.fits_image_ql = loaded_file
         self.Display(loaded_file)
 
 
@@ -1726,11 +2043,18 @@ class MainPage(SAMOSFrame):
                 )
                 if (Path(initial_dir) / self.target_name).is_dir():
                     initial_dir = Path(initial_dir) / self.target_name
+                from samos.ui.target_folders import initial_dir as _target_initial_dir, remember as _target_remember
                 GAIA_file = tk.filedialog.askopenfilename(
                     title="Select a Gaia File",
-                    initialdir=initial_dir,
+                    initialdir=_target_initial_dir('gaia', self.loaded_reg_file_path,
+                                                  self._target_dialog_dirs, initial_dir),
                     filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
                 )
+                if not GAIA_file:
+                    self.logger.info('Gaia file selection cancelled; WCS calculation aborted')
+                    return
+                _target_remember(self._target_dialog_dirs, 'gaia', GAIA_file)
+                self._target_dialog_db['gaia'].set(self._target_dialog_dirs['gaia'])
                 csvFile = pd.read_csv(GAIA_file)
                 g=np.transpose(np.array([csvFile['ra_now'].values,csvFile['dec_now'].values])) #extract RADEC
                 gaias = g[:self.fits_nstars.get(),:]   #select the first Nstars
@@ -3128,18 +3452,9 @@ class MainPage(SAMOSFrame):
 
     @check_enabled
     def _set_expnum(self):
-        min_num = 0
-        self.logger.info(f"Checking directory {self.PAR.fits_dir}")
-        current_files = self.PAR.fits_dir.glob("*.fits")
-        for file in current_files:
-            self.logger.info(f"Checking exposure number in {file}")
-            num_results = list(map(str, re.findall(r"_\d+_", file.name)))
-            for str_num in num_results:
-                number = int(str_num[1:-1])
-                self.logger.info(f"\tFound number {number}")
-                if number > min_num:
-                    min_num = number
-        min_num += 1
+        from samos.system.exposure_reservations import next_number
+        min_num = next_number(self.PAR.fits_dir)
+        # Never reset a higher in-session next-frame number.
         self.logger.info(f"Setting minimum exposure number to {min_num}")
         self.expnum.config(from_=min_num)
         if self.image_expnum.get() < min_num:

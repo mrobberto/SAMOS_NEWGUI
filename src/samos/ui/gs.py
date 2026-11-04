@@ -25,100 +25,28 @@ from .gs_query_frame import GSQueryFrame
 
 class GSPage(SAMOSFrame):
     def __init__(self, parent, container, **kwargs):
-        super().__init__(parent, container, "Guide Star", **kwargs)
-        self.canvas_types = get_canvas_types()
-        self.drawcolors = colors.get_colors()
-        self.loaded_regfile = None
-
-        # FITS manager
-        frame = ttk.LabelFrame(self.main_frame, text="FITS Manager")
-        frame.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        # RA, DEC Entry box
-        # ***** DEPENDENCY *****
-        self.ra = self.make_db_var(tk.DoubleVar, "gs_centre_ra", 150.17110)
-        ttk.Label(frame, text="RA:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.ra).grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        self.dec = self.make_db_var(tk.DoubleVar, "gs_centre_dec", -54.79004)
-        # ***** DEPENDENCY *****
-        ttk.Label(frame, text="Dec:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.dec).grid(row=1, column=1, sticky=TK_STICKY_ALL)
-
-        # QUERY Server
-        self.gs_query_frame = GSQueryFrame(self, self.main_frame, self.run_query, "gs_centre_ra", "gs_centre_dec", **self.samos_classes)
-        self.gs_query_frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-
-        # GINGA DISPLAY
-        frame = ttk.LabelFrame(self.main_frame, text="Survey Image", relief=tk.RAISED)
-        frame.grid(row=0, column=1, rowspan=4, sticky=TK_STICKY_ALL)
-        frame.rowconfigure(0, minsize=800, weight=1)
-        frame.columnconfigure(0, minsize=800, weight=1)
-        self.ginga_canvas = tk.Canvas(frame, bg="grey", height=800, width=800)
-        self.ginga_canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        self.fits_image = CanvasView(self.logger)
-        self.fits_image.set_widget(self.ginga_canvas)
-        self.fits_image.enable_autocuts('on')
-        self.fits_image.set_autocut_params('zscale')
-        self.fits_image.enable_autozoom('on')
-        self.fits_image.set_enter_focus(True)
-        self.fits_image.set_bg(0.2, 0.2, 0.2)
-        self.fits_image.ui_set_active(True)
-        self.fits_image.show_pan_mark(True)
-        self.fits_image.show_mode_indicator(True, corner='ur')
-        self.fits_image.get_bindings().enable_all(True)
-        self.drawing_canvas = self.canvas_types.DrawingCanvas()
-        self.drawing_canvas.enable_draw(True)
-        self.drawing_canvas.enable_edit(True)
-        self.drawing_canvas.set_drawtype('box', color='red')
-        self.drawing_canvas.register_for_cursor_drawing(self.fits_image)
-        self.drawing_canvas.add_callback('pick-up', self.pick_cb, 'up')
-        self.drawing_canvas.set_draw_mode('pick')
-        self.drawing_canvas.ui_set_active(True)
-        self.fits_image.get_canvas().add(self.drawing_canvas)
-        self.drawtypes = self.drawing_canvas.get_drawtypes()
-        self.drawtypes.sort()
-        self.fits_image.set_window_size(1028, 1044)
-        self.readout = ttk.Label(frame, text='')
-        self.readout.grid(row=1, column=0, sticky=TK_STICKY_ALL)
-
-        # Guide Star Pickup Frame
-        frame = ttk.LabelFrame(self.main_frame, text="Guide Star Pickup")
-        frame.grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        # Low Mag (bright end)
-        self.low_mag =  self.make_db_var(tk.IntVar, "gs_low_mag", 11)
-        ttk.Label(frame, text="Low Mag:").grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        s = tk.Spinbox(frame, increment=1, textvariable=self.low_mag, from_=0, to=25)
-        s.grid(row=0, column=1, sticky=TK_STICKY_ALL)
-        # High mag (faint end)
-        ttk.Label(frame, text="High Mag:").grid(row=1, column=0, sticky=TK_STICKY_ALL)
-        self.high_mag =  self.make_db_var(tk.IntVar, "gs_high_mag", 13)
-        s = tk.Spinbox(frame, increment=1, textvariable=self.high_mag, from_=0, to=25)
-        s.grid(row=1, column=1, sticky=TK_STICKY_ALL)
-        # SLIT POINTER ENABLED
-        self.guide_star_pickup_enabled = self.make_db_var(tk.IntVar, "gs_pickup_enabled", 1)
-        b = ttk.Button(frame, text="Pick Guide Star", command=self.pick_guide_star)
-        b.grid(row=2, column=0, padx=2, pady=2, columnspan=3, sticky=TK_STICKY_ALL)
-        # Candidate Guide Star Co-ordinates
-        self.gs_ra =  self.make_db_var(tk.DoubleVar, "gs_guidestar_ra", self.ra.get())
-        ttk.Label(frame, text="RA:").grid(row=3, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.gs_ra).grid(row=3, column=1, sticky=TK_STICKY_ALL)
-        self.gs_dec =  self.make_db_var(tk.DoubleVar, "gs_guidestar_dec", self.dec.get())
-        ttk.Label(frame, text="Dec:").grid(row=4, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.gs_dec).grid(row=4, column=1, sticky=TK_STICKY_ALL)
-        # X Shift
-        self.gs_xshift =  self.make_db_var(tk.DoubleVar, "gs_guidestar_xshift", 0.)
-        ttk.Label(frame, text="X Shift (mm)").grid(row=5, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.gs_xshift).grid(row=5, column=1, sticky=TK_STICKY_ALL)
-        # Y Shift
-        self.gs_yshift =  self.make_db_var(tk.DoubleVar, "gs_guidestar_yshift", 0.)
-        ttk.Label(frame, text="Y Shift (mm)").grid(row=6, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.gs_yshift).grid(row=6, column=1, sticky=TK_STICKY_ALL)
-        # Magnitude
-        self.gs_mag = self.make_db_var(tk.DoubleVar, "gs_guidestar_mag", 0.0)
-        ttk.Label(frame, text="Magnitude:").grid(row=7, column=0, sticky=TK_STICKY_ALL)
-        tk.Entry(frame, textvariable=self.gs_mag).grid(row=7, column=1, sticky=TK_STICKY_ALL)
-        b = ttk.Button(frame, text="Accept Guide Star", command=self.send_to_telescope, bootstyle="success")
-        b.grid(row=8, column=0, padx=2, pady=2, columnspan=2, sticky=TK_STICKY_ALL)
-
+        super().__init__(parent, container, "SAM Status", **kwargs)
+        # SAM/GS status is DECLARED by observer following coordination with TO.
+        # This page neither acquires a guide star nor operates the SAM laser.
+        self.natural_gs_status = tk.StringVar(self, value="UNKNOWN")
+        self.sam_ao_loop_status = tk.StringVar(self, value="UNKNOWN")
+        self.main_frame.columnconfigure(0, weight=1)
+        panel = ttk.LabelFrame(self.main_frame, text="Observing Status (manual)", padding=14)
+        panel.grid(row=0, column=0, sticky="new", padx=12, pady=12)
+        panel.columnconfigure(1, weight=1)
+        ttk.Label(panel, text="Natural guide star (TO):").grid(row=0, column=0, sticky="w", pady=7)
+        ttk.Combobox(panel, textvariable=self.natural_gs_status,
+                     values=("UNKNOWN", "ACQUIRED", "NOT_ACQUIRED"),
+                     state="readonly", width=22).grid(row=0, column=1, sticky="w")
+        ttk.Label(panel, text="SAM laser AO loop:").grid(row=1, column=0, sticky="w", pady=7)
+        ttk.Combobox(panel, textvariable=self.sam_ao_loop_status,
+                     values=("UNKNOWN", "CLOSED", "OPEN", "OFF"),
+                     state="readonly", width=22).grid(row=1, column=1, sticky="w")
+        ttk.Label(panel, text="Observer-declared states, not live SOAR/SAM telemetry.").grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=(12, 2))
+        ttk.Label(panel, text="The Telescope Operator acquires the guide star.\n"
+                              "Changing these fields sends no telescope or AO command.",
+                  justify="left").grid(row=3, column=0, columnspan=2, sticky="w")
 
     def save_canvas(self):
         """

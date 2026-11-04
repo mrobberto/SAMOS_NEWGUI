@@ -10,6 +10,7 @@ from copy import deepcopy
 import numpy as np
 import os
 from pathlib import Path
+import shutil
 import time
 
 import tkinter as tk
@@ -52,7 +53,13 @@ class ExposureProgressWindow(tk.Toplevel):
         This is the landing procedure after the START button has been pressed
         """
         self.start_time = time.localtime()
-        self.image_type = self.CCD.EXP_MAPPINGS[exptype]
+        # Test and Calibration are classifications, not new hardware commands.
+        # Use closed shutter for these until commissioning defines protocols.
+        mappings = dict(self.CCD.EXP_MAPPINGS)
+        mappings.update({"Test": "buff", "Calibration": "buff"})
+        self.image_type = "sci" if mappings[exptype] == "light" else mappings[exptype]
+        self.CCD.sisi_exposure_type = exptype
+        self.CCD.sisi_object_name = params["image_name"]
         self.params = params
         params["ccd_temp"] = self.CCD.CCD_TEMP
         if exptype == "Science":
@@ -64,7 +71,7 @@ class ExposureProgressWindow(tk.Toplevel):
             params["trigger_mode"] = self.CCD.SHUTTER_OPEN
         elif exptype == "Dark":
             params["trigger_mode"] = self.CCD.SHUTTER_CLOSED
-        elif exptype == "Buffer":
+        elif exptype in ("Buffer", "Test", "Calibration"):
             params["trigger_mode"] = self.CCD.SHUTTER_CLOSED
         self.expose()
 
@@ -114,19 +121,32 @@ class ExposureProgressWindow(tk.Toplevel):
                 'images': self.collected_files,
                 'superfile': superfile,
             }
-            if self.image_type == "Bias":
-                shutil.copy(superfile, self.PAR.QL_images / "superbias.fits")
-                results["superbias"] = self.PAR.QL_images / "superbias.fits"
-            elif self.image_type == "Buffer":
-                shutil.copy(superfile, self.PAR.QL_images / "superbuffer.fits")
-                results["superbuffer"] = self.PAR.QL_images / "superbuffer.fits"
+            if getattr(self, "_ql_last_warning", ""):
+                from tkinter import messagebox
+                messagebox.showwarning("SISI quicklook calibration",
+                                       self._ql_last_warning, parent=self)
             self.parent.display_exposure(results)
             self.destroy()
+            return  # Do not initiate a new CCD exposure after final frame.
         self.exp_start_time = time.localtime()
         self.exposure_number.set(f"Exposing {self.image_number+1} of {self.params['exp_frames']}")
         self.exposure_status.set(f"Exposing for {self.params['exptime']/1000} seconds")
         self.logger.info(f"Collecting image {self.image_number+1} of {self.params['exp_frames']}")
         self.progress_status.set(0.)
+        # SC3_EXPNUM_RECOVERY: reserve each number BEFORE issuing the CCD command.
+        # A crash/failed exposure intentionally leaves a gap; numbers are never reused.
+        from samos.system.exposure_reservations import reserve
+        try:
+            reserve(self.PAR.fits_dir, self.expnum,
+                    object_name=self.params.get("image_name", ""),
+                    exposure_type=self.params.get("image_type", ""),
+                    sequence_index=self.image_number + 1)
+        except (FileExistsError, OSError, ValueError) as exc:
+            self.logger.error("Cannot reserve SISI exposure number %s: %s", self.expnum, exc)
+            from tkinter import messagebox
+            messagebox.showerror("Exposure numbering", str(exc), parent=self)
+            self.destroy()
+            return
         self.CCD.start_exposure()
         self.run_exposure()
 
@@ -185,150 +205,22 @@ class ExposureProgressWindow(tk.Toplevel):
 
                 # update header for new filename/filepath
                 hdul[0].header = self.main_fits_header.create_fits_header(original_header)
+                # Keep CCD command-dispatch provenance through header reconstruction.
+                for key in ("DATE-OBS", "TIMESRC", "EXPNUM", "OBJNAME", "OBSTYPE"):
+                    if key in original_header:
+                        hdul[0].header[key] = original_header[key]
+                # Values captured by MainPage at exposure START; not telemetry.
+                hdul[0].header["GSSTATUS"] = (params.get("manual_guide_star", "UNKNOWN"),
+                                              "Manual natural guide-star state")
+                hdul[0].header["SAMLOOP"] = (params.get("manual_sam_loop", "UNKNOWN"),
+                                             "Manual SAM laser AO-loop state")
+                hdul[0].header["STATSRC"] = ("MANUAL", "Status values declared by observer")
 
 
     def combine_files(self):
-        """
-         this procedure runs after CCD.expose()
-         to handle the decision of saving all single files or just the averages
-         """
-        image_type = self.image_type
-        files = self.collected_files
-        last_number = self.expnum - 1
-        params = self.params
-
-        superfile_cube = np.zeros((1032, 1056, len(files)))  # note y,x,z
-
-        dmd_hdu = None
-        if image_type == "sci":
-            if not hasattr(self.main_fits_header, "dmdmap"):
-                try:
-                    dmd_hdu = self.create_dmd_pattern_hdu(self.main_fits_header.output_header)
-                except Exception as e:
-                    self.logger.error("Unable to add DMD map to main fits header")
-                    self.logger.error("Error was {}".format(e))
-
-        # Loop through files
-        for i, file_name in enumerate(files):
-            with fits.open(file_name, mode="update") as hdul:
-                data = hdul[0].data
-                if image_type in ["flat", "dark"] and params["sub_bias"]:
-                    bias_file = self.PAR.QL_images / "superbias.fits"
-                    if bias_file.is_file():
-                        with fits.open(bias_file) as hdu_bias:
-                            bias = hdu_bias[0].data
-                        data -= bias
-                        hdul[0].header["MSTRBIAS"] = (bias_file, "Master Bias File used for bias subtraction")
-
-                if image_type in ["flat"] and params["sub_dark"]:
-                    dark_file = self.PAR.QL_images / "superdark_s.fits"
-                    if dark_file.is_file():
-                        with fits.open(dark_file) as hdu_dark:
-                            dark = hdu_dark[0].data
-                        # Dark is in counts/s
-                        dark *= params["exptime"] / 1000
-                        data -= dark
-                        hdul[0].header["MSTRDARK"] = (dark_file, "Master Dark File used for dark subtraction")
-
-                if image_type == "dark":
-                    # PARAM2 is the exposure time for the original single exposure
-                    superfile_cube[:, :, i] = hdul[0].data / (hdul[0].header["PARAM2"] / 1000)
-                else:
-                    superfile_cube[:, :, i] = hdul[0].data
-                superfile_header = deepcopy(hdul[0].header)
-                
-            # If not saving individual files
-            # if not params["save_individual"]:
-            #     os.remove(file_name)
-
-        if image_type == "flat":
-            running_flat = superfile_cube.sum(axis=2)
-            median_running_flat = np.median(running_flat)
-            superflat = running_flat / median_running_flat
-            superflat_file = self.PAR.QL_images / f"superflat_{params['filter']}.fits"
-            superflat_hdu = fits.PrimaryHDU(data=superflat, header=superfile_header)
-            superflat_hdu.writeto(superflat_file, overwrite=True)
-        elif image_type == "dark":
-            superdark_s = superfile_cube.sum(axis=2)
-            superdark_s /= len(files)
-            superdark_file = self.PAR.QL_images / "superdark_s.fits"
-            superdark_hdu = fits.PrimaryHDU(data=superdark_s, header=superfile_header)
-            superdark_hdu.header["EXPTIME"] = 1
-            superdark_hdu.writeto(superdark_file, overwrite=True)
-
-        superfile_data = superfile_cube.mean(axis=2)
-        superfile_path = self.PAR.QL_images
-
-        if image_type == "sci":
-            # Check for bias file
-            if params["sub_bias"]:
-                bias_file = self.PAR.QL_images / "superbias.fits"
-                if bias_file.is_file():
-                    with fits.open(bias_file) as hdu_bias:
-                        bias = hdu_bias[0].data
-                    data -= bias
-                    superfile_header["MSTRBIAS"] = (bias_file, "Master Bias File used for bias subtraction")
-
-            # Check for dark file
-            if params["sub_dark"]:
-                dark_file = self.PAR.QL_images / "superdark_s.fits"
-                if dark_file.is_file():
-                    with fits.open(dark_file) as hdu_dark:
-                        dark = hdu_dark[0].data
-                    # Dark is in counts/s
-                    dark *= params["exptime"] / 1000
-                    data -= dark
-                    superfile_header["MSTRDARK"] = (dark_file, "Master Dark File used for dark subtraction")
-
-            # Check for flat file
-            if params["sub_flat"]:
-                flat_file = self.PAR.QL_images / "superflat_{}.fits".format(params['filter'])
-                if flat_file.is_file():
-                    with fits.open(flat_file) as hdu_flat:
-                        flat = hdu_flat[0].data
-                    data = np.divide(data, flat)
-                    superfile_header["MSTRFLAT"] = (flat_file, "Master Flat File used for flat division")
-
-            # Check for buffer file
-            if params["sub_buffer"]:
-                buffer_file = self.PAR.QL_images / "superbuffer.fits"
-                if buffer_file.is_file():
-                    with fits.open(buffer_file) as hdu_buffer:
-                        buffer = hdu_buffer[0].data
-                    data -= buffer
-                    superfile_header["MSTRBUFF"] = (buffer_file, "Master Buffer File used for buffer subtraction")
-        
-        if image_type in ["sci", "flat"]:
-            superfile_name = "{}_{}_coadd.fits".format(image_type, params["filter"])
-            superfile_numbered = f"{image_type}_{params['filter']}s_{params['image_name']}_{last_number:04n}_coadd.fits"
-        elif image_type == "dark":
-            superfile_numbered = f"{image_type}_{params['exptime']/1000}_{params['image_name']}_{last_number:04n}_coadd.fits"
-        else:
-            superfile_name = "{}_coadd.fits".format(image_type)
-            superfile_numbered = f"{image_type}_{params['image_name']}_{last_number:04d}_coadd.fits"
-        
-        self.main_fits_header.set_param("filename", superfile_name)
-        self.main_fits_header.set_param("combined", "T")
-        self.main_fits_header.set_param("ncombined", len(files))
-        self.main_fits_header.set_param("obstype", image_type.upper())
-        super_hdu = fits.PrimaryHDU(header=self.main_fits_header.create_fits_header(superfile_header), data=superfile_data)
-        hdul = fits.HDUList(hdus=[super_hdu])
-        if image_type == "sci" and dmd_hdu is not None:
-            hdul.append(dmd_hdu)
-        hdul.writeto(self.PAR.QL_images / superfile_name, overwrite=True)
-
-        self.main_fits_header.set_param("filename", superfile_numbered)
-        self.main_fits_header.set_param("filedir", self.PAR.fits_dir.as_posix())
-        self.main_fits_header.set_param("combined", "T")
-        self.main_fits_header.set_param("ncombined", len(files))
-        self.main_fits_header.set_param("obstype", image_type.upper())
-        super_hdu = fits.PrimaryHDU(header=self.main_fits_header.create_fits_header(superfile_header), data=superfile_data)
-        hdul = fits.HDUList(hdus=[super_hdu])
-        if image_type == "sci" and dmd_hdu is not None:
-            hdul.append(dmd_hdu)
-        hdul.writeto(self.PAR.fits_dir / superfile_numbered, overwrite=True)
-
-        return self.PAR.fits_dir / superfile_numbered
+        """SC3_QL_RAWSAFE_V1: never edit raw pixels during coadd/quicklook."""
+        from samos.ui.ql_safe_processing import safe_combine_files
+        return safe_combine_files(self)
 
 
     def create_dmd_pattern_hdu(self, primary_header):

@@ -15,7 +15,7 @@ from PIL import Image, ImageTk, ImageOps
 
 import tkinter as tk
 import ttkbootstrap as ttk
-from ttkbootstrap.dialogs.dialogs import Messagebox
+from ttkbootstrap.dialogs import Messagebox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
 from samos.hadamard.patterns import make_S_matrix_masks, make_H_matrix_masks
@@ -126,6 +126,18 @@ class DMDPage(SAMOSFrame):
         self.canvas = tk.Canvas(display_frame, width=300, height=270, bg="dark gray")
         self.canvas.grid(row=0, column=0, sticky=TK_STICKY_ALL)
 
+        # Inline read-only library preview. Do not confuse it with the live DMD state.
+        ttk.Button(display_frame, text="Preview Pixel Mask (.reg/.jpg) — NO SEND",
+                   command=self._open_pixel_mask_browser).grid(
+                       row=1, column=0, padx=3, pady=5, sticky=TK_STICKY_ALL)
+        ttk.Button(display_frame, text="Return to DMD Display",
+                   command=self._restore_pixel_mask_display).grid(
+                       row=2, column=0, padx=3, pady=2, sticky=TK_STICKY_ALL)
+        self._pixel_mask_preview_status = tk.StringVar(self, value="DMD display; no pixel-mask preview selected")
+        ttk.Label(display_frame, textvariable=self._pixel_mask_preview_status,
+                  wraplength=310, anchor="w", justify="left").grid(
+                      row=3, column=0, padx=3, pady=3, sticky="w")
+
         """ 
         # Hadamard Sub-frame
         """
@@ -157,6 +169,65 @@ class DMDPage(SAMOSFrame):
         self.set_enabled()
         self.logger.info("Finished initial widget status.")
 
+
+
+    def _open_pixel_mask_browser(self):
+        """Preview a SISI .reg/.jpg in the EXISTING page canvas; no hardware calls."""
+        from tkinter import messagebox
+        from samos.ui.dmd_mask_inline_preview import (
+            default_pixel_root, jpeg_for_selection, letterboxed_preview)
+        root = default_pixel_root(__file__)
+        initial_dir = getattr(self, "_pixel_mask_preview_lastdir", root)
+        if not Path(initial_dir).is_dir():
+            initial_dir = root
+        chosen = askopenfilename(
+            parent=self,
+            initialdir=str(initial_dir),
+            title="Preview SISI pixel mask (no DMD send)",
+            filetypes=(("SISI pixel masks", "*.reg"),
+                       ("JPEG previews", "*.jpg *.jpeg"),
+                       ("All files", "*.*")))
+        if not chosen:
+            return
+        selected = Path(chosen)
+        try:
+            preview = jpeg_for_selection(selected)
+            with Image.open(preview) as picture:
+                fitted = letterboxed_preview(picture)
+            new_photo = ImageTk.PhotoImage(fitted, master=self.canvas)
+        except (OSError, ValueError) as exc:
+            messagebox.showwarning("Pixel mask preview", str(exc), parent=self)
+            return
+        # Overlay only the image; retain underlying live-DMD display widgets.
+        # This is a preview, NOT a DMD command and NOT a mask-selection action.
+        self._restore_pixel_mask_display()
+        label = tk.Label(self.canvas, image=new_photo, bg="black", bd=0,
+                         highlightthickness=0)
+        label.image = new_photo
+        label.grid(row=0, column=0)
+        label.lift()
+        self._pixel_mask_preview_label = label
+        self._pixel_mask_preview_photo = new_photo
+        self._pixel_mask_preview_lastdir = selected.parent
+        try:
+            shown = str(selected.relative_to(root))
+        except ValueError:
+            shown = selected.name
+        self._pixel_mask_preview_status.set(
+            "PREVIEW ONLY — {} (no DMD command)".format(shown))
+
+    def _restore_pixel_mask_display(self):
+        """Remove the JPEG overlay without changing the DMD controller or map."""
+        label = getattr(self, "_pixel_mask_preview_label", None)
+        if label is not None:
+            try:
+                label.destroy()
+            except tk.TclError:
+                pass
+        self._pixel_mask_preview_label = None
+        self._pixel_mask_preview_photo = None
+        self._pixel_mask_preview_status.set(
+            "DMD display restored (no hardware command)")
 
     @check_enabled
     def load_ra_dec(self):
