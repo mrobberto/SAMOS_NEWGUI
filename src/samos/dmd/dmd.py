@@ -256,11 +256,15 @@ class DigitalMicroMirrorDevice():
 
         # Apply starting shape
         pre_shape, rows, columns = self.find_closest_match(dm_shape)
+        t_base = time.perf_counter()
         pre_shape()
+        self.logger.info("DMD timing: base pattern commands + PNG %.3f s",
+                         time.perf_counter() - t_base)
         rows = rows[0]
 
         # If we have notable deviation from that starting shape 
         if len(rows) > 0:
+            t_encode = time.perf_counter()
             messages = []
             # Start message to set default + display type
             messages.append(self._build_message(data=self.display_type))
@@ -299,7 +303,12 @@ class DigitalMicroMirrorDevice():
 
             # End / refresh message
             messages.append(self._build_message(data_length=0, command_type=7))
+            self.logger.info("DMD timing: custom command encoding %.3f s",
+                             time.perf_counter() - t_encode)
+            t_send = time.perf_counter()
             self.send(messages)
+            self.logger.info("DMD timing: custom command transmission %.3f s",
+                             time.perf_counter() - t_send)
 #             if not self._send_command_set(messages, "custom shape"):
 #                 return
             # Update internal track of the DMD shape
@@ -339,6 +348,7 @@ class DigitalMicroMirrorDevice():
 
     def update_dmd_plot(self, shape=None, plot_name='current_dmd_state'):
         """ Consistent plotting method to write out DMD plot. """
+        t_start = time.perf_counter()
         self.logger.info("Updating current DMD plot")
         if shape is None:
             shape = self.current_dmd_shape
@@ -350,6 +360,8 @@ class DigitalMicroMirrorDevice():
         shape_rotated = np.rot90(shape, k=1, axes=(0, 1))
         plot_image = Image.fromarray(shape_rotated.astype("uint8")*255)
         plot_image.save(get_data_file("dmd") / "current_dmd_state.png")
+        self.logger.info("DMD timing: full-resolution PNG generation %.3f s",
+                         time.perf_counter() - t_start)
 
 
     def _build_message(self, data_length=2, command_type=0, row=0, column=0, data=None):

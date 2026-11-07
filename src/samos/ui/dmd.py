@@ -8,6 +8,7 @@ import numpy as np
 import os
 from pathlib import Path
 import subprocess
+import time
 
 from astropy import wcs
 import pandas as pd
@@ -51,11 +52,11 @@ class DMDPage(SAMOSFrame):
         frame = ttk.LabelFrame(button_frame, text="Basic Patterns")
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL)
 
-        w = ttk.Button(frame, text="Blackout", command=self.dmd_blackout, bootstyle="success")
+        w = ttk.Button(frame, text="Blackout -> SAMI", command=self.dmd_blackout, bootstyle="success")
         w.grid(row=3, column=0, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
-        w = ttk.Button(frame, text="Whiteout", command=self.dmd_whiteout, bootstyle="success")
+        w = ttk.Button(frame, text="Whiteout -> SISI", command=self.dmd_whiteout, bootstyle="success")
         w.grid(row=3, column=1, padx=2, pady=2, sticky=TK_STICKY_ALL)
         self.check_widgets[w] = [("condition", self, "initialized", True)]
 
@@ -137,6 +138,13 @@ class DMDPage(SAMOSFrame):
         ttk.Label(display_frame, textvariable=self._pixel_mask_preview_status,
                   wraplength=310, anchor="w", justify="left").grid(
                       row=3, column=0, padx=3, pady=3, sticky="w")
+        # The left display is the DMD/SAMI selection mask, not a SISI pixel map.
+        # This legend does not imply optical verification of the mirror positions.
+        ttk.Label(display_frame,
+                  text="DMD mirror view: white = to SAMI; black = to SISI. "
+                       "Commanded pattern, not an optical readback.",
+                  wraplength=310, anchor="w", justify="left").grid(
+                      row=4, column=0, padx=3, pady=2, sticky="w")
 
         """ 
         # Hadamard Sub-frame
@@ -348,7 +356,12 @@ class DMDPage(SAMOSFrame):
 
     @check_enabled
     def load_map(self):
-        """ LoadMap """
+        """Load a custom DMD mask and write its SISI-coordinate DS9 region file.
+
+        The DMD WCS is constructed ONCE per load. Previously it was rebuilt
+        twice for every slit rectangle, repeatedly opening the same FITS file.
+        Hardware commands and region geometry are unchanged.
+        """
         self.map_filename.set("none")
         self.map_filename_path = None
         self.slits_filename.set("")
@@ -358,38 +371,65 @@ class DMDPage(SAMOSFrame):
             title="Select a File",
             filetypes=(("Text files", "*.csv"), ("all files", "*.*"))
         )
+        if not filename:
+            return
+
+        t_total = time.perf_counter()
         self.map_filename_path = Path(filename)
         self.logger.info("Loading Map {}".format(self.map_filename_path))
         self.map_filename.set(self.map_filename_path.name)
         self.main_fits_header.set_param("dmdmap", self.map_filename_path.name)
+
+        t_stage = time.perf_counter()
         map_list = self._load_map(self.map_filename_path)
         dmd_shape = self._make_dmd_array(map_list)
-        self.DMD.apply_shape(dmd_shape)
+        self.logger.info("DMD timing: CSV read + array preparation %.3f s",
+                         time.perf_counter() - t_stage)
 
-        # Create astropy regions file
+        t_stage = time.perf_counter()
+        self.DMD.apply_shape(dmd_shape)
+        self.logger.info("DMD timing: apply_shape (encoding + DMD commands + PNG) %.3f s",
+                         time.perf_counter() - t_stage)
+
+        # Preserve the original per-corner transformations and DS9 format.
+        # Accessing PAR.dmd_wcs opens DMD_Mapping_WCS.fits and constructs an
+        # Astropy WCS, so it must not happen inside the rectangle loop.
+        t_stage = time.perf_counter()
+        dmd_wcs = self.PAR.dmd_wcs
+        self.logger.info("DMD timing: WCS construction %.3f s",
+                         time.perf_counter() - t_stage)
+
+        t_stage = time.perf_counter()
         self.logger.info("Creating Regions file")
         region_path = get_data_file("regions.pixels")
         new_region_file = region_path / self.map_filename_path.name.replace(".csv", ".reg")
-        self.logger.info(f"Writing DMD map to {new_region_file}")
+        self.logger.info("Writing DMD map to %s", new_region_file)
         with open(new_region_file, 'w') as f:
             f.write("# Region file format: DS9 astropy/regions\n")
             f.write("global edit=1 width=1 font=Sans Serif fill=0 color=red\n")
             f.write("image\n")
             for row in map_list:
-                x0, y0 = dmd_to_ccd(row[0], row[2], self.PAR.dmd_wcs)
-                x1, y1 = dmd_to_ccd(row[1], row[3], self.PAR.dmd_wcs)
+                x0, y0 = dmd_to_ccd(row[0], row[2], dmd_wcs)
+                x1, y1 = dmd_to_ccd(row[1], row[3], dmd_wcs)
                 xc, yc = (x0 + x1)/2., (y0 + y1)/2.
                 dx, dy = x1 - x0, y1 - y0
                 output = f"box({xc},{yc},{dx},{dy},0)"
                 self.logger.debug(output)
                 f.write(f"{output}\n")
+        self.logger.info("DMD timing: DS9 region generation (%d rectangles) %.3f s",
+                         len(map_list), time.perf_counter() - t_stage)
 
         self.map_filename.set(new_region_file.name)
         # ***** DEPENDENCY *****
         # main_page = self.parent.frames['MainPage']
         # main_page.str_filename_regfile_xyAP.set(new_region_file.name)
         # ***** DEPENDENCY *****
+        t_stage = time.perf_counter()
         self._set_slit_image("current_dmd_state.png", new_region_file.name[:-4])
+        self.logger.info("DMD timing: GUI preview refresh %.3f s",
+                         time.perf_counter() - t_stage)
+        self.logger.info("DMD timing: total load_map %.3f s",
+                         time.perf_counter() - t_total)
 
 
     @check_enabled
@@ -493,18 +533,39 @@ class DMDPage(SAMOSFrame):
 
 
     def _set_slit_image(self, image_file, image_name):
+        """Refresh the mirror-coordinate DMD display (not the SISI preview).
+
+        Reuse the existing Tk label instead of stacking a fresh widget after
+        every DMD command. The separate SISI pixel-mask overlay is unchanged.
         """
-        Set the slit image (centre frame) to the given file, which represents a DMD
-        mirror configuration
-        """
-        with Image.open(get_data_file("dmd", image_file)) as image_map:
-            image_scaled = image_map.resize((300, 270))
+        t_start = time.perf_counter()
+        label = getattr(self, "_dmd_image_label", None)
+        if label is None or not label.winfo_exists():
+            label = ttk.Label(self.canvas)
+            self._dmd_image_label = label
+            label.grid(row=0, column=0)
+        # This file is a display artifact, not proof of the mirror positions.
+        # If an RC1.1 archive lacks it (as happened at SOAR), do not allow
+        # a missing/corrupt PNG to abort the GUI's DMD initialization callback.
+        try:
+            with Image.open(get_data_file("dmd", image_file)) as image_map:
+                image_scaled = image_map.resize((300, 270))
+        except (OSError, ValueError) as exc:
+            self.logger.warning(
+                "DMD display image unavailable (%s): %s. "
+                "No mirror-state readback has been performed.", image_file, exc)
+            label.configure(image="", text="DMD display unavailable\n"
+                                          "Missing or unreadable PNG\n"
+                                          "Not a mirror-state readback")
+            label.image = None
+        else:
             tk_image = ImageTk.PhotoImage(image_scaled)
-            label1 = ttk.Label(self.canvas, image=tk_image)
-            label1.image = tk_image
-            label1.grid(row=0, column=0)
+            label.configure(image=tk_image, text="")
+            label.image = tk_image
         self.map_filename.set(image_name)
         self.map_filename_path = image_file
+        self.logger.info("DMD timing: PNG read/resize + Tk image %.3f s",
+                         time.perf_counter() - t_start)
 
 
     def _load_map(self, filename):

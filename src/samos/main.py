@@ -57,6 +57,15 @@ class App(ttk.Window):
             db_file=database_file,
             logger=self.logger
         )
+        # RC1.1: saved mode is a preference, never proof of a live connection.
+        # Start hardware objects in disconnected mode, to prevent implicit TCS
+        # connection attempts during their constructors. Restore later via TCP
+        # checks after the GUI is fully constructed.
+        self._saved_connection_preference = self.DB.get_value(
+            "config_ip_status", default="disconnected", add_missing=True)
+        if self._saved_connection_preference not in ("connected", "disconnected"):
+            self._saved_connection_preference = "disconnected"
+        self.DB.update_value("config_ip_status", "disconnected")
         self.PAR = SAMOSConfig(self.DB, self.logger)
         # v4.4: independent append-only observer history; never modifies Settings.yaml.
         self.ops_session_id = str(uuid.uuid4())
@@ -142,6 +151,9 @@ class App(ttk.Window):
             self.logger.info(f"Finished creating frame {frame_class.__name__}")
         self.show_frame("ConfigPage")
         self.lift()
+        # Only TCP handshakes at restart; no PCM/DMD commands or TCS contact.
+        self.after(250, self.frames["ConfigPage"].rc_restore_connection,
+                   self._saved_connection_preference)
 
 
     # SC3_AUTO_SESSION_RECOVERY_V1
@@ -241,6 +253,12 @@ class App(ttk.Window):
             except Exception as exc:
                 self.logger.error("OPERATIONS LOG STOP EVENT FAILED: %s", exc)
         self.logger.warning("Shutting down SAMOS")
+        try:
+            config_page = getattr(self, "frames", {}).get("ConfigPage")
+            if config_page is not None:
+                config_page.rc_prepare_for_exit()
+        except Exception:
+            self.logger.exception("RC1.1: local connection cleanup failed")
         if self.simulator is not None:
             self.simulator.terminate()
             self.simulator.join()
@@ -282,7 +300,7 @@ class App(ttk.Window):
         filemenu.add_command(label="Settings Database (read-only)", command=lambda: self.show_frame("DatabasePage"))
         filemenu.add_separator()
         filemenu.add_command(label="Logging", command=self.show_logging_window)
-        filemenu.add_command(label="Exit", command=self.destroy)  #quit)
+        filemenu.add_command(label="Exit", command=self.destroy_all)
 
         # help menu
         help_menu = tk.Menu(menubar, tearoff=0)

@@ -130,7 +130,7 @@ class PCM():
 
     def initialize_motors(self):
         self.initialized = True
-        self.update_status()
+        return self.update_status()
 
 
     @property
@@ -147,9 +147,7 @@ class PCM():
 
 
     def set_ip(self):
-        """
-        Called when the configured IP addresses change
-        """
+        """Called when the configured IP addresses change."""
         ip_addr = self.db.get_value("config_ip_pcm")
         host_port = ip_addr.split(":")
         self.IP_Host = host_port[0]
@@ -157,30 +155,26 @@ class PCM():
 
 
     def update_status(self):
+        """Read PCM status and return True only when a reply was received."""
         self.logger.info("\tChecking PCM Status")
         reply = self._send(self.PCM_COMMANDS["power_status"])
-        try:
-            reply
-        except NameError:    
-            self.logger.warning("\t\tNo reply from Motors")
+        if reply is None or not str(reply).strip() or any(marker in str(reply).upper()
+                            for marker in ("NO RESPONSE", "TIMEOUT", "INVALID", "ERROR")):
+            self.logger.warning("\t\tPCM did not provide a valid status reply")
             self._on = False
-        else:
-            self.logger.info(f"\t\tPCM Replied {reply}")
-            self.reset_indicator(["filter", "grism"])
-            if reply is not None:
-                if "NO RESPONSE" in reply:
-                    self.logger.info("\t\tMotor power is off")
-                    self._on = False
-                    return
-                if not self.have_initial_status:
-                    self.have_initial_status = True
-                    for wheel in ['FW1', 'FW2', 'GR_A', 'GR_B']:
-                        self.logger.info(f"\t\tUpdating PCM {wheel}")
-                        current_step = self.current_filter_step(wheel)
-                        self.logger.info(f"\t\tPCM {wheel} replied {current_step}")
-                        self._positions[wheel] = current_step
-                self._on = True
-                return    
+            self.have_initial_status = False
+            return False
+        self.logger.info("\t\tPCM Replied %s", reply)
+        self.reset_indicator(["filter", "grism"])
+        if not self.have_initial_status:
+            for wheel in ["FW1", "FW2", "GR_A", "GR_B"]:
+                self.logger.info("\t\tUpdating PCM %s", wheel)
+                current_step = self.current_filter_step(wheel)
+                self.logger.info("\t\tPCM %s replied %s", wheel, current_step)
+                self._positions[wheel] = current_step
+            self.have_initial_status = True
+        self._on = True
+        return True
 
 
     def echo_client(self):

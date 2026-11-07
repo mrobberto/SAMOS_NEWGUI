@@ -8,6 +8,10 @@ import os
 from pathlib import Path
 import shutil
 import yaml
+import queue
+import threading
+
+from samos.system.connection_probe import CORE_SERVERS, probe_core_servers
 
 import tkinter as tk
 import ttkbootstrap as ttk
@@ -65,10 +69,19 @@ class ConfigPage(SAMOSFrame):
         frame = ttk.LabelFrame(self.main_frame, text="Servers", borderwidth=2)
         frame.grid(row=1, column=0, sticky=TK_STICKY_ALL, padx=3, pady=3)
 
+        # ip_loc is the *confirmed* communication mode persisted in Settings.yaml.
+        # The radio selection is separate, so a click cannot declare success
+        # before TCP reachability checks finish.
         self.ip_loc = self.make_db_var(tk.StringVar, "config_ip_status", "disconnected")
-        b = tk.Radiobutton(frame, text='Connected', variable=self.ip_loc, value='connected')
+        self.ui_connection = tk.StringVar(value="disconnected")
+        self._probe_generation = 0
+        self._probe_pending = False
+        self._transport_reachable = {name: False for name in CORE_SERVERS}
+        b = tk.Radiobutton(frame, text='Connected', variable=self.ui_connection,
+                           value='connected', command=self.rc_connection_changed)
         b.grid(row=0, column=0, sticky=TK_STICKY_ALL)
-        b = tk.Radiobutton(frame, text='Disconnected', variable=self.ip_loc, value='disconnected')
+        b = tk.Radiobutton(frame, text='Disconnected', variable=self.ui_connection,
+                           value='disconnected', command=self.rc_connection_changed)
         b.grid(row=0, column=1, sticky=TK_STICKY_ALL)
 
         # Hardware Labels
@@ -99,9 +112,15 @@ class ConfigPage(SAMOSFrame):
         tk.Entry(frame, width=20, textvariable=self.IP_SOAR).grid(row=4, column=2, columnspan=2, sticky=TK_STICKY_ALL)
         self.IP_SAMI = self.make_db_var(tk.StringVar, "config_ip_sami", "139.229.15:63")
         tk.Entry(frame, width=20, textvariable=self.IP_SAMI).grid(row=5, column=2, columnspan=2, sticky=TK_STICKY_ALL)
+        # Editing a core endpoint invalidates an earlier TCP check.
+        for endpoint in (self.IP_PCM, self.IP_CCD, self.IP_DMD):
+            endpoint.trace_add('write', self._core_address_changed)
 
         b = ttk.Button(frame, text="Initialize Components", command=self.startup, bootstyle="success")
         b.grid(row=6, column=0, columnspan=2, sticky=TK_STICKY_ALL)
+        self.connection_note = tk.StringVar(value="Disconnected")
+        ttk.Label(frame, textvariable=self.connection_note, wraplength=360).grid(
+            row=7, column=0, columnspan=4, sticky=tk.W)
 
         # Observer Data
         frame = ttk.LabelFrame(self.main_frame, text="Observer Data", borderwidth=2)
@@ -384,46 +403,187 @@ class ConfigPage(SAMOSFrame):
         ttk.Button(window,text='Refresh',command=refresh).pack()
         refresh()
 
+    # RC1.1 communication state management.  The TCP checks below do not
+    # send motor/DMD/CCD commands.  Hardware initialization remains deliberate.
+    def rc_restore_connection(self, saved_mode):
+        """Called after all pages exist; restore preference without blocking GUI."""
+        self._clear_runtime_connection_state()
+        if saved_mode == "connected":
+            self.ui_connection.set("connected")
+            self._begin_tcp_probe()
+        else:
+            self.ui_connection.set("disconnected")
+            self.connection_note.set("Disconnected")
+            self.update_status_box()
+
+    def rc_connection_changed(self):
+        if self.ui_connection.get() == "connected":
+            if self.ip_loc.get() == "connected" and all(self._transport_reachable.values()):
+                return  # Already verified; don't erase initialized controller flags.
+            self._begin_tcp_probe()
+        else:
+            self.rc_disconnect()
+
+    def _core_address_changed(self, *_args):
+        if self.ip_loc.get() == "connected" or self._probe_pending:
+            self.rc_disconnect()
+            self.connection_note.set("IP address changed; reconnect required")
+
+    def _clear_runtime_connection_state(self):
+        """Forget cached client readiness; never power off instrument hardware."""
+        self._transport_reachable = {name: False for name in CORE_SERVERS}
+        self.PAR.connections_initialized = False
+        self.PCM.initialized = False
+        self.PCM._on = False
+        self.PCM.have_initial_status = False
+        self.CCD.initialized = False
+        self.CCD.ccd_on = False
+        self.DMD.is_on = False
+        self.SOAR.is_on = False
+        # The PCM and DMD clients use per-transaction TCP sockets.
+        # Telescope SCL session cleanup is deferred until its owner is inspected.
+
+    def rc_disconnect(self):
+        """Stop using local controller clients, without commanding hardware."""
+        self._probe_generation += 1  # Ignore results from any in-flight probe.
+        self._probe_pending = False
+        self.ip_loc.set("disconnected")
+        self.ui_connection.set("disconnected")
+        self._clear_runtime_connection_state()
+        self.connection_note.set("Disconnected (no hardware power commands sent)")
+        self.update_status_box()
+        self.logger.info("RC1.1: software communication mode disconnected")
+
+    def rc_prepare_for_exit(self):
+        """Invalidate pending callbacks and cached state; preserve saved mode."""
+        self._probe_generation += 1
+        self._probe_pending = False
+        self._clear_runtime_connection_state()
+        # File -> Exit and WM close must not erase a successful 'connected'
+        # preference: that preference is rechecked at next startup.
+
+    def _begin_tcp_probe(self):
+        self._probe_generation += 1
+        generation = self._probe_generation
+        self._probe_pending = True
+        self.ip_loc.set("disconnected")
+        self._clear_runtime_connection_state()
+        self.connection_note.set("Checking PCM, CCD, DMD TCP reachability...")
+        self.update_status_box()
+        addresses = {
+            "PCM": self.IP_PCM.get().strip(),
+            "CCD": self.IP_CCD.get().strip(),
+            "DMD": self.IP_DMD.get().strip(),
+        }
+        results = queue.Queue(maxsize=1)
+
+        def worker():
+            try:
+                outcome = probe_core_servers(addresses, timeout=1.5)
+            except Exception as exc:
+                outcome = {name: (False, str(exc)) for name in CORE_SERVERS}
+            results.put(outcome)
+
+        # Never access Tk/DB from the worker thread.
+        threading.Thread(target=worker, daemon=True, name="SAMOS-TCP-Probe").start()
+        self.after(100, self._poll_tcp_probe, generation, addresses, results)
+
+    def _poll_tcp_probe(self, generation, addresses, results):
+        if generation != self._probe_generation:
+            return
+        try:
+            outcome = results.get_nowait()
+        except queue.Empty:
+            self.after(100, self._poll_tcp_probe, generation, addresses, results)
+            return
+        self._probe_pending = False
+        # Do not accept success for endpoints edited during the probe.
+        current = {"PCM": self.IP_PCM.get().strip(),
+                   "CCD": self.IP_CCD.get().strip(),
+                   "DMD": self.IP_DMD.get().strip()}
+        if current != addresses:
+            self.logger.warning("RC1.1: IP addresses changed during probe; retry required")
+            self.rc_disconnect()
+            return
+        for name in CORE_SERVERS:
+            good, detail = outcome[name]
+            self.logger.info("RC1.1 TCP %s: %s (%s)",
+                             name, "reachable" if good else "unreachable", detail)
+        if all(outcome[name][0] for name in CORE_SERVERS):
+            self._transport_reachable = {name: True for name in CORE_SERVERS}
+            self.ip_loc.set("connected")  # Enables existing hardware clients.
+            self.ui_connection.set("connected")
+            self.connection_note.set(
+                "PCM/CCD/DMD reachable via TCP; press Initialize Components "
+                "to verify controller readiness")
+            self.logger.info("RC1.1: communication mode connected; no hardware commands sent")
+        else:
+            self.logger.warning("RC1.1: one or more servers unavailable; falling back to disconnected")
+            self.rc_disconnect()
+            self.connection_note.set("Connection failed; Disconnected (see log)")
+        self.update_status_box()
+
     @check_enabled
     def startup(self):
-        self.logger.info("CONFIG_GUI: entering startup.")
-        if self.ip_loc.get() == "connected":
-            self.PCM.initialize_motors()
-            self.PCM.power_on()
+        """Deliberate hardware initialization, not a startup/reconnect probe."""
+        self.logger.info("CONFIG_GUI: entering explicit component initialization")
+        if self.ip_loc.get() != "connected" or self._probe_pending:
+            self.logger.warning("Not connected to core controllers; initialization skipped")
+            self.update_status_box()
+            return
+
+        try:
+            pcm_responded = self.PCM.initialize_motors()
+            # Never issue power-on after a failed status query.
+            if pcm_responded:
+                self.PCM.power_on()
+            else:
+                self.logger.warning("PCM status unavailable; no power-on command sent")
+        except Exception:
+            self.PCM._on = False
+            self.logger.exception("PCM initialization failed")
+        try:
             self.CCD.initialize_ccd()
+        except Exception:
+            self.CCD.ccd_on = False
+            self.logger.exception("CCD initialization failed")
+        try:
             self.DMD.initialize()
             self.DMD._open()
-            self.SOAR.echo_client()
-        else:
-            self.logger.info("Disconnected. Doing nothing.")
+        except Exception:
+            self.DMD.is_on = False
+            self.logger.exception("DMD initialization failed")
+        # Telescope is intentionally excluded: initialize it explicitly
+        # on the SOAR TCS page after coordination with the operator.
+        self.PAR.connections_initialized = (
+            bool(self.PCM.is_on) and bool(self.CCD.ccd_on) and bool(self.DMD.is_on))
         self.update_status_box()
-        self.logger.info("CONFIG_GUI: startup complete.")
-
+        self.logger.info("CONFIG_GUI: component initialization complete")
 
     def update_status_box(self):
-        if self.PCM.is_on:
-            self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-            if self.PCM.filter_moving or self.PCM.grism_moving:
-                self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_PENDING_COLOR)
-        else:
-            self.status_box.itemconfig("pcm_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-        if self.CCD.ccd_on:
-            self.status_box.itemconfig("ccd_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-        else:
-            self.status_box.itemconfig("ccd_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-        if self.DMD.is_on:
-            self.status_box.itemconfig("dmd_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-        else:
-            self.status_box.itemconfig("dmd_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-        if self.SOAR.is_on:
-            self.status_box.itemconfig("soar_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-        else:
-            self.status_box.itemconfig("soar_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
-        sami_status = False
-        if sami_status:
-            self.status_box.itemconfig("sami_ind", fill=INDICATOR_LIGHT_ON_COLOR)
-        else:
-            self.status_box.itemconfig("sami_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
+        if self.ip_loc.get() != "connected":
+            for tag in ("pcm_ind", "ccd_ind", "dmd_ind", "soar_ind", "sami_ind"):
+                self.status_box.itemconfig(tag, fill=INDICATOR_LIGHT_OFF_COLOR)
+            return
+        # Green = last successful hardware readiness check.  Amber/pending =
+        # TCP reachable but controller has not been initialized/verified.
+        for name, ready, moving in (
+            ("PCM", bool(self.PCM.is_on), self.PCM.filter_moving or self.PCM.grism_moving),
+            ("CCD", bool(self.CCD.ccd_on), False),
+            ("DMD", bool(self.DMD.is_on), False),
+        ):
+            tag = name.lower() + "_ind"
+            if moving or (not ready and self._transport_reachable[name]):
+                color = INDICATOR_LIGHT_PENDING_COLOR
+            elif ready:
+                color = INDICATOR_LIGHT_ON_COLOR
+            else:
+                color = INDICATOR_LIGHT_OFF_COLOR
+            self.status_box.itemconfig(tag, fill=color)
+        self.status_box.itemconfig("soar_ind", fill=(
+            INDICATOR_LIGHT_ON_COLOR if self.SOAR.is_on
+            else INDICATOR_LIGHT_OFF_COLOR))
+        self.status_box.itemconfig("sami_ind", fill=INDICATOR_LIGHT_OFF_COLOR)
 
 
     def set_enabled(self, run_from_main=False):
